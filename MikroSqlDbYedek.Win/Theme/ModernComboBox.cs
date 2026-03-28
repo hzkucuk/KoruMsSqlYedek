@@ -107,6 +107,15 @@ namespace MikroSqlDbYedek.Win.Theme
         {
             using (Graphics g = CreateGraphics())
             {
+                // Native dropdown butonunu arka plan rengiyle ört
+                int dropBtnWidth = SystemInformation.VerticalScrollBarWidth;
+                var dropRect = new Rectangle(Width - dropBtnWidth - 1, 1, dropBtnWidth, Height - 2);
+                using (var bgBrush = new SolidBrush(BackColor))
+                {
+                    g.FillRectangle(bgBrush, dropRect);
+                }
+
+                // Kenar çiz
                 var rect = new Rectangle(0, 0, Width - 1, Height - 1);
                 Color borderClr = (Focused || _isHovered) ? _focusBorderColor : _borderColor;
 
@@ -115,9 +124,9 @@ namespace MikroSqlDbYedek.Win.Theme
                     g.DrawRectangle(pen, rect);
                 }
 
-                // Dropdown oku
+                // Özel dropdown oku
                 int arrowSize = 8;
-                int arrowX = Width - 20;
+                int arrowX = Width - dropBtnWidth / 2 - arrowSize / 2;
                 int arrowY = (Height - arrowSize / 2) / 2;
 
                 using (var brush = new SolidBrush(Focused ? _focusBorderColor : ModernTheme.TextSecondary))

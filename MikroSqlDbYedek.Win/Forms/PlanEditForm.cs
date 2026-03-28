@@ -16,7 +16,7 @@ namespace MikroSqlDbYedek.Win.Forms
     /// Plan ekleme/düzenleme formu — 8 sekmeli TabControl.
     /// Tüm BackupPlan alanlarını düzenleme imkanı sağlar.
     /// </summary>
-    public partial class PlanEditForm : Form
+    public partial class PlanEditForm : Theme.ModernFormBase
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<PlanEditForm>();
         private readonly IPlanManager _planManager;
@@ -35,6 +35,7 @@ namespace MikroSqlDbYedek.Win.Forms
             if (sqlBackupService == null) throw new ArgumentNullException(nameof(sqlBackupService));
 
             InitializeComponent();
+            ApplyIcons();
             _planManager = planManager;
             _sqlBackupService = sqlBackupService;
 
@@ -50,6 +51,51 @@ namespace MikroSqlDbYedek.Win.Forms
                 _isNew = true;
                 Text = Res.Get("PlanEdit_TitleNew");
             }
+        }
+
+        private void ApplyIcons()
+        {
+            const int sz = 16;
+            var ph = typeof(Theme.PhosphorIcons);
+
+            _btnSave.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FloppyDisk, System.Drawing.Color.White, sz);
+            _btnSave.Text = "Kaydet";
+            _btnSave.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnCancel.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, System.Drawing.Color.White, sz);
+            _btnCancel.Text = "Iptal";
+            _btnCancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnBrowseLocal.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Folder, Theme.ModernTheme.AccentPrimary, 14);
+            _btnBrowseLocal.Text = "";
+
+            _btnTestSql.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Plug, System.Drawing.Color.White, sz);
+            _btnTestSql.Text = "Baglantiyi Test Et";
+            _btnTestSql.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnAddCloud.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PlusCircle, System.Drawing.Color.White, sz);
+            _btnAddCloud.Text = "Ekle";
+            _btnAddCloud.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnEditCloud.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PencilSimple, System.Drawing.Color.White, sz);
+            _btnEditCloud.Text = "Duzenle";
+            _btnEditCloud.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnRemoveCloud.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Trash, System.Drawing.Color.White, sz);
+            _btnRemoveCloud.Text = "Kaldir";
+            _btnRemoveCloud.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnAddFileSource.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PlusCircle, System.Drawing.Color.White, sz);
+            _btnAddFileSource.Text = "Ekle";
+            _btnAddFileSource.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnEditFileSource.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PencilSimple, System.Drawing.Color.White, sz);
+            _btnEditFileSource.Text = "Duzenle";
+            _btnEditFileSource.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnRemoveFileSource.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Trash, System.Drawing.Color.White, sz);
+            _btnRemoveFileSource.Text = "Kaldir";
+            _btnRemoveFileSource.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
         }
 
         protected override void OnLoad(EventArgs e)

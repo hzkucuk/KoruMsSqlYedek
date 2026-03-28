@@ -7,11 +7,15 @@
     <AssemblyName>MikroSqlDbYedek.Win</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ApplicationVersion>0.18.0.0</ApplicationVersion>
+    <ApplicationVersion>0.19.0.0</ApplicationVersion>
     <NoWarn>$(NoWarn);WFO1000</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Fonts\Phosphor-Fill.ttf" />
+    <EmbeddedResource Include="Resources\Fonts\Phosphor-Bold.ttf" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac" Version="8.1.1" />

@@ -21,7 +21,7 @@ namespace MikroSqlDbYedek.Win.Forms
             _txtSourceName = new System.Windows.Forms.TextBox();
             _lblSourcePath = new System.Windows.Forms.Label();
             _txtSourcePath = new System.Windows.Forms.TextBox();
-            _btnBrowsePath = new System.Windows.Forms.Button();
+            _btnBrowsePath = new Theme.ModernButton();
             _chkRecursive = new System.Windows.Forms.CheckBox();
             _chkUseVss = new System.Windows.Forms.CheckBox();
             _chkEnabled = new System.Windows.Forms.CheckBox();
@@ -30,8 +30,8 @@ namespace MikroSqlDbYedek.Win.Forms
             _lblExclude = new System.Windows.Forms.Label();
             _txtExcludePatterns = new System.Windows.Forms.TextBox();
             _lblHint = new System.Windows.Forms.Label();
-            _btnSave = new System.Windows.Forms.Button();
-            _btnCancel = new System.Windows.Forms.Button();
+            _btnSave = new Theme.ModernButton();
+            _btnCancel = new Theme.ModernButton();
 
             SuspendLayout();
 
@@ -53,7 +53,8 @@ namespace MikroSqlDbYedek.Win.Forms
             _txtSourcePath.Location = new System.Drawing.Point(tx, y);
             _txtSourcePath.Size = new System.Drawing.Size(tw - 35, 23);
             _btnBrowsePath.Text = "...";
-            _btnBrowsePath.Size = new System.Drawing.Size(30, 23);
+            _btnBrowsePath.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnBrowsePath.Size = new System.Drawing.Size(30, 28);
             _btnBrowsePath.Location = new System.Drawing.Point(tx + tw - 30, y);
             _btnBrowsePath.Click += OnBrowseSourcePath;
 
@@ -102,12 +103,14 @@ namespace MikroSqlDbYedek.Win.Forms
             // Butonlar
             y += 45;
             _btnSave.Text = "\U0001f4be Kaydet";
-            _btnSave.Size = new System.Drawing.Size(90, 30);
-            _btnSave.Location = new System.Drawing.Point(245, y);
+            _btnSave.ButtonStyle = Theme.ModernButtonStyle.Primary;
+            _btnSave.Size = new System.Drawing.Size(100, 34);
+            _btnSave.Location = new System.Drawing.Point(235, y);
             _btnSave.Click += OnSaveClick;
 
             _btnCancel.Text = "İptal";
-            _btnCancel.Size = new System.Drawing.Size(80, 30);
+            _btnCancel.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnCancel.Size = new System.Drawing.Size(90, 34);
             _btnCancel.Location = new System.Drawing.Point(345, y);
             _btnCancel.Click += OnCancelClick;
 
@@ -149,7 +152,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.TextBox _txtSourceName;
         private System.Windows.Forms.Label _lblSourcePath;
         private System.Windows.Forms.TextBox _txtSourcePath;
-        private System.Windows.Forms.Button _btnBrowsePath;
+        private Theme.ModernButton _btnBrowsePath;
         private System.Windows.Forms.CheckBox _chkRecursive;
         private System.Windows.Forms.CheckBox _chkUseVss;
         private System.Windows.Forms.CheckBox _chkEnabled;
@@ -158,7 +161,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.Label _lblExclude;
         private System.Windows.Forms.TextBox _txtExcludePatterns;
         private System.Windows.Forms.Label _lblHint;
-        private System.Windows.Forms.Button _btnSave;
-        private System.Windows.Forms.Button _btnCancel;
+        private Theme.ModernButton _btnSave;
+        private Theme.ModernButton _btnCancel;
     }
 }

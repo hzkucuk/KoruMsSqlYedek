@@ -45,7 +45,7 @@ namespace MikroSqlDbYedek.Win.Forms
             _grpLocal = new System.Windows.Forms.GroupBox();
             _lblLocalOrUncPath = new System.Windows.Forms.Label();
             _txtLocalOrUncPath = new System.Windows.Forms.TextBox();
-            _btnBrowseLocal = new System.Windows.Forms.Button();
+            _btnBrowseLocal = new Theme.ModernButton();
             _lblUncUser = new System.Windows.Forms.Label();
             _txtUncUser = new System.Windows.Forms.TextBox();
             _lblUncPassword = new System.Windows.Forms.Label();
@@ -59,8 +59,8 @@ namespace MikroSqlDbYedek.Win.Forms
             _chkPermanentDelete = new System.Windows.Forms.CheckBox();
 
             // Butonlar
-            _btnSave = new System.Windows.Forms.Button();
-            _btnCancel = new System.Windows.Forms.Button();
+            _btnSave = new Theme.ModernButton();
+            _btnCancel = new Theme.ModernButton();
 
             ((System.ComponentModel.ISupportInitialize)_nudPort).BeginInit();
             ((System.ComponentModel.ISupportInitialize)_nudBandwidth).BeginInit();
@@ -169,7 +169,8 @@ namespace MikroSqlDbYedek.Win.Forms
             _txtLocalOrUncPath.Location = new System.Drawing.Point(130, 22);
             _txtLocalOrUncPath.Size = new System.Drawing.Size(235, 23);
             _btnBrowseLocal.Text = "...";
-            _btnBrowseLocal.Size = new System.Drawing.Size(30, 23);
+            _btnBrowseLocal.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnBrowseLocal.Size = new System.Drawing.Size(30, 28);
             _btnBrowseLocal.Location = new System.Drawing.Point(370, 22);
             _btnBrowseLocal.Click += OnBrowseLocalPath;
 
@@ -217,12 +218,14 @@ namespace MikroSqlDbYedek.Win.Forms
 
             // === Butonlar ===
             _btnSave.Text = "💾 Kaydet";
-            _btnSave.Size = new System.Drawing.Size(90, 30);
-            _btnSave.Location = new System.Drawing.Point(245, 370);
+            _btnSave.ButtonStyle = Theme.ModernButtonStyle.Primary;
+            _btnSave.Size = new System.Drawing.Size(100, 34);
+            _btnSave.Location = new System.Drawing.Point(235, 370);
             _btnSave.Click += OnSaveClick;
 
             _btnCancel.Text = "İptal";
-            _btnCancel.Size = new System.Drawing.Size(80, 30);
+            _btnCancel.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnCancel.Size = new System.Drawing.Size(90, 34);
             _btnCancel.Location = new System.Drawing.Point(345, 370);
             _btnCancel.Click += OnCancelClick;
 
@@ -296,7 +299,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.GroupBox _grpLocal;
         private System.Windows.Forms.Label _lblLocalOrUncPath;
         private System.Windows.Forms.TextBox _txtLocalOrUncPath;
-        private System.Windows.Forms.Button _btnBrowseLocal;
+        private Theme.ModernButton _btnBrowseLocal;
         private System.Windows.Forms.Label _lblUncUser;
         private System.Windows.Forms.TextBox _txtUncUser;
         private System.Windows.Forms.Label _lblUncPassword;
@@ -310,7 +313,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.CheckBox _chkPermanentDelete;
 
         // Butonlar
-        private System.Windows.Forms.Button _btnSave;
-        private System.Windows.Forms.Button _btnCancel;
+        private Theme.ModernButton _btnSave;
+        private Theme.ModernButton _btnCancel;
     }
 }

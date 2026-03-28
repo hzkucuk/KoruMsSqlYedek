@@ -5,76 +5,115 @@ using System.Windows.Forms;
 
 namespace MikroSqlDbYedek.Win.Theme
 {
+    internal enum ThemeMode { Dark, Light }
+
     /// <summary>
     /// Modern WinForms teması — renk paleti, font tanımları ve kontrol stillendirme metodları.
-    /// Tüm formlar bu sınıfı kullanarak tutarlı görünüm sağlar.
+    /// ApplyTheme() ile çalışma zamanında Dark/Light arasında geçiş yapılabilir.
     /// </summary>
     internal static class ModernTheme
     {
-        // ═══════════════ COLOR PALETTE ═══════════════
+        // ═══════════════ THEME STATE ═══════════════
 
-        /// <summary>Ana arka plan (koyu gri).</summary>
-        internal static readonly Color BackgroundColor = Color.FromArgb(30, 30, 30);
+        internal static ThemeMode CurrentTheme { get; private set; } = ThemeMode.Dark;
 
-        /// <summary>Kart / panel arka plan (orta koyu).</summary>
-        internal static readonly Color SurfaceColor = Color.FromArgb(40, 40, 40);
+        // ═══════════════ COLOR PALETTE (mutable for runtime theme switch) ═══════════════
 
-        /// <summary>Kenar çizgisi rengi.</summary>
-        internal static readonly Color BorderColor = Color.FromArgb(70, 70, 70);
+        internal static Color BackgroundColor = Color.FromArgb(30, 30, 30);
+        internal static Color SurfaceColor = Color.FromArgb(40, 40, 40);
+        internal static Color BorderColor = Color.FromArgb(70, 70, 70);
+        internal static Color DividerColor = Color.FromArgb(50, 50, 50);
 
-        /// <summary>İnce ayırıcı çizgi rengi.</summary>
-        internal static readonly Color DividerColor = Color.FromArgb(50, 50, 50);
+        // Accent
+        internal static Color AccentPrimary = Color.FromArgb(0, 150, 80);
+        internal static Color AccentPrimaryDark = Color.FromArgb(0, 120, 60);
+        internal static Color AccentPrimaryHover = Color.FromArgb(0, 175, 95);
 
-        // --- Accent Colors ---
-        /// <summary>Birincil vurgu (yeşil).</summary>
-        internal static readonly Color AccentPrimary = Color.FromArgb(0, 150, 80);
+        // Status
+        internal static Color StatusSuccess = Color.FromArgb(0, 190, 110);
+        internal static Color StatusWarning = Color.FromArgb(201, 128, 0);
+        internal static Color StatusError = Color.FromArgb(220, 40, 40);
+        internal static Color StatusCancelled = Color.FromArgb(128, 128, 128);
+        internal static Color StatusInfo = Color.FromArgb(100, 180, 255);
 
-        /// <summary>İkincil vurgu (koyu yeşil).</summary>
-        internal static readonly Color AccentPrimaryDark = Color.FromArgb(0, 120, 60);
+        // Text
+        internal static Color TextPrimary = Color.FromArgb(230, 230, 230);
+        internal static Color TextSecondary = Color.FromArgb(180, 180, 180);
+        internal static Color TextDisabled = Color.FromArgb(120, 120, 120);
+        internal static Color TextOnAccent = Color.White;
 
-        /// <summary>Hover durumu accent.</summary>
-        internal static readonly Color AccentPrimaryHover = Color.FromArgb(0, 175, 95);
+        // Grid
+        internal static Color GridAlternateRow = Color.FromArgb(35, 35, 35);
+        internal static Color GridSelection = Color.FromArgb(0, 150, 80);
+        internal static Color GridHeaderBack = Color.FromArgb(40, 40, 40);
+        internal static Color GridHeaderText = Color.FromArgb(180, 180, 180);
 
-        /// <summary>Başarı / yeşil.</summary>
-        internal static readonly Color StatusSuccess = Color.FromArgb(0, 190, 110);
+        // ═══════════════ THEME APPLY ═══════════════
 
-        /// <summary>Uyarı / turuncu.</summary>
-        internal static readonly Color StatusWarning = Color.FromArgb(201, 128, 0);
+        internal static void ApplyTheme(ThemeMode mode)
+        {
+            CurrentTheme = mode;
+            if (mode == ThemeMode.Dark)
+                ApplyDarkColors();
+            else
+                ApplyLightColors();
+        }
 
-        /// <summary>Hata / kırmızı.</summary>
-        internal static readonly Color StatusError = Color.FromArgb(220, 40, 40);
+        private static void ApplyDarkColors()
+        {
+            BackgroundColor = Color.FromArgb(30, 30, 30);
+            SurfaceColor = Color.FromArgb(40, 40, 40);
+            BorderColor = Color.FromArgb(70, 70, 70);
+            DividerColor = Color.FromArgb(50, 50, 50);
 
-        /// <summary>İptal / gri.</summary>
-        internal static readonly Color StatusCancelled = Color.FromArgb(128, 128, 128);
+            AccentPrimary = Color.FromArgb(0, 150, 80);
+            AccentPrimaryDark = Color.FromArgb(0, 120, 60);
+            AccentPrimaryHover = Color.FromArgb(0, 175, 95);
 
-        /// <summary>Bilgi / açık mavi.</summary>
-        internal static readonly Color StatusInfo = Color.FromArgb(100, 180, 255);
+            StatusSuccess = Color.FromArgb(0, 190, 110);
+            StatusWarning = Color.FromArgb(201, 128, 0);
+            StatusError = Color.FromArgb(220, 40, 40);
+            StatusCancelled = Color.FromArgb(128, 128, 128);
+            StatusInfo = Color.FromArgb(100, 180, 255);
 
-        // --- Text Colors ---
-        /// <summary>Birincil metin (açık).</summary>
-        internal static readonly Color TextPrimary = Color.FromArgb(230, 230, 230);
+            TextPrimary = Color.FromArgb(230, 230, 230);
+            TextSecondary = Color.FromArgb(180, 180, 180);
+            TextDisabled = Color.FromArgb(120, 120, 120);
+            TextOnAccent = Color.White;
 
-        /// <summary>İkincil metin (gri).</summary>
-        internal static readonly Color TextSecondary = Color.FromArgb(180, 180, 180);
+            GridAlternateRow = Color.FromArgb(35, 35, 35);
+            GridSelection = Color.FromArgb(0, 150, 80);
+            GridHeaderBack = Color.FromArgb(40, 40, 40);
+            GridHeaderText = Color.FromArgb(180, 180, 180);
+        }
 
-        /// <summary>Devre dışı / pasif metin.</summary>
-        internal static readonly Color TextDisabled = Color.FromArgb(120, 120, 120);
+        private static void ApplyLightColors()
+        {
+            BackgroundColor = Color.FromArgb(245, 245, 248);
+            SurfaceColor = Color.White;
+            BorderColor = Color.FromArgb(200, 200, 210);
+            DividerColor = Color.FromArgb(220, 220, 225);
 
-        /// <summary>Beyaz metin (koyu arkaplan üzerinde).</summary>
-        internal static readonly Color TextOnAccent = Color.White;
+            AccentPrimary = Color.FromArgb(0, 140, 70);
+            AccentPrimaryDark = Color.FromArgb(0, 110, 55);
+            AccentPrimaryHover = Color.FromArgb(0, 165, 85);
 
-        // --- DataGridView Colors ---
-        /// <summary>Satır alternatif arkaplan.</summary>
-        internal static readonly Color GridAlternateRow = Color.FromArgb(35, 35, 35);
+            StatusSuccess = Color.FromArgb(0, 155, 80);
+            StatusWarning = Color.FromArgb(180, 95, 0);
+            StatusError = Color.FromArgb(195, 30, 30);
+            StatusCancelled = Color.FromArgb(110, 110, 110);
+            StatusInfo = Color.FromArgb(0, 110, 200);
 
-        /// <summary>Seçili satır.</summary>
-        internal static readonly Color GridSelection = Color.FromArgb(0, 150, 80);
+            TextPrimary = Color.FromArgb(32, 31, 30);
+            TextSecondary = Color.FromArgb(100, 100, 110);
+            TextDisabled = Color.FromArgb(160, 160, 165);
+            TextOnAccent = Color.White;
 
-        /// <summary>Grid header arkaplan.</summary>
-        internal static readonly Color GridHeaderBack = Color.FromArgb(40, 40, 40);
-
-        /// <summary>Grid header metin.</summary>
-        internal static readonly Color GridHeaderText = Color.FromArgb(180, 180, 180);
+            GridAlternateRow = Color.FromArgb(248, 248, 250);
+            GridSelection = Color.FromArgb(0, 140, 70);
+            GridHeaderBack = Color.FromArgb(240, 241, 244);
+            GridHeaderText = Color.FromArgb(80, 80, 90);
+        }
 
         // ═══════════════ FONTS ═══════════════
 
@@ -92,29 +131,15 @@ namespace MikroSqlDbYedek.Win.Theme
 
         // ═══════════════ METRICS ═══════════════
 
-        /// <summary>Kart köşe yuvarlaklık yarıçapı.</summary>
         internal const int CardRadius = 8;
-
-        /// <summary>Buton köşe yuvarlaklık yarıçapı.</summary>
         internal const int ButtonRadius = 6;
-
-        /// <summary>Badge köşe yuvarlaklık yarıçapı.</summary>
         internal const int BadgeRadius = 10;
-
-        /// <summary>Standart padding.</summary>
         internal const int PaddingStandard = 12;
-
-        /// <summary>Büyük padding.</summary>
         internal const int PaddingLarge = 16;
-
-        /// <summary>Küçük padding.</summary>
         internal const int PaddingSmall = 6;
 
         // ═══════════════ STYLING METHODS ═══════════════
 
-        /// <summary>
-        /// Forma modern tema uygular (arka plan, font, border).
-        /// </summary>
         internal static void ApplyFormTheme(Form form)
         {
             form.BackColor = BackgroundColor;
@@ -122,18 +147,12 @@ namespace MikroSqlDbYedek.Win.Theme
             form.FormBorderStyle = FormBorderStyle.FixedSingle;
         }
 
-        /// <summary>
-        /// Forma sizable modern tema uygular.
-        /// </summary>
         internal static void ApplySizableFormTheme(Form form)
         {
             form.BackColor = BackgroundColor;
             form.Font = FontBody;
         }
 
-        /// <summary>
-        /// DataGridView'e modern stil uygular.
-        /// </summary>
         internal static void StyleDataGridView(DataGridView dgv)
         {
             dgv.EnableHeadersVisualStyles = false;
@@ -142,7 +161,6 @@ namespace MikroSqlDbYedek.Win.Theme
             dgv.GridColor = DividerColor;
             dgv.BackgroundColor = SurfaceColor;
 
-            // Header style
             dgv.ColumnHeadersDefaultCellStyle.BackColor = GridHeaderBack;
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = GridHeaderText;
             dgv.ColumnHeadersDefaultCellStyle.Font = FontCaptionBold;
@@ -152,7 +170,6 @@ namespace MikroSqlDbYedek.Win.Theme
             dgv.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             dgv.ColumnHeadersHeight = 38;
 
-            // Row style
             dgv.DefaultCellStyle.BackColor = SurfaceColor;
             dgv.DefaultCellStyle.ForeColor = TextPrimary;
             dgv.DefaultCellStyle.Font = FontBody;
@@ -161,18 +178,12 @@ namespace MikroSqlDbYedek.Win.Theme
             dgv.DefaultCellStyle.Padding = new Padding(8, 4, 8, 4);
             dgv.RowTemplate.Height = 36;
 
-            // Alternating row
             dgv.AlternatingRowsDefaultCellStyle.BackColor = GridAlternateRow;
-
-            // Scrollbars
             dgv.RowHeadersVisible = false;
             dgv.AllowUserToResizeRows = false;
             dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         }
 
-        /// <summary>
-        /// ListView'e modern stil uygular.
-        /// </summary>
         internal static void StyleListView(ListView lv)
         {
             lv.BorderStyle = BorderStyle.None;
@@ -183,9 +194,6 @@ namespace MikroSqlDbYedek.Win.Theme
             lv.BackColor = SurfaceColor;
         }
 
-        /// <summary>
-        /// ToolStrip'e modern stil uygular.
-        /// </summary>
         internal static void StyleToolStrip(ToolStrip ts)
         {
             ts.BackColor = SurfaceColor;
@@ -195,9 +203,6 @@ namespace MikroSqlDbYedek.Win.Theme
             ts.RenderMode = ToolStripRenderMode.ManagerRenderMode;
         }
 
-        /// <summary>
-        /// StatusStrip'e modern stil uygular.
-        /// </summary>
         internal static void StyleStatusStrip(StatusStrip ss)
         {
             ss.BackColor = SurfaceColor;
@@ -206,18 +211,12 @@ namespace MikroSqlDbYedek.Win.Theme
             ss.SizingGrip = false;
         }
 
-        /// <summary>
-        /// TabControl'e modern stil uygular.
-        /// </summary>
         internal static void StyleTabControl(TabControl tc)
         {
             tc.Font = FontBody;
             tc.Padding = new Point(14, 6);
         }
 
-        /// <summary>
-        /// TextBox'a modern stil uygular.
-        /// </summary>
         internal static void StyleTextBox(TextBox txt)
         {
             txt.BorderStyle = BorderStyle.FixedSingle;
@@ -226,9 +225,6 @@ namespace MikroSqlDbYedek.Win.Theme
             txt.ForeColor = TextPrimary;
         }
 
-        /// <summary>
-        /// ComboBox'a modern stil uygular.
-        /// </summary>
         internal static void StyleComboBox(ComboBox cmb)
         {
             cmb.FlatStyle = FlatStyle.Flat;
@@ -237,9 +233,6 @@ namespace MikroSqlDbYedek.Win.Theme
             cmb.ForeColor = TextPrimary;
         }
 
-        /// <summary>
-        /// GroupBox'a modern stil uygular.
-        /// </summary>
         internal static void StyleGroupBox(GroupBox grp)
         {
             grp.FlatStyle = FlatStyle.Flat;
@@ -250,9 +243,6 @@ namespace MikroSqlDbYedek.Win.Theme
 
         // ═══════════════ GDI+ HELPERS ═══════════════
 
-        /// <summary>
-        /// Yuvarlatılmış dikdörtgen GraphicsPath oluşturur.
-        /// </summary>
         internal static GraphicsPath CreateRoundedRectanglePath(Rectangle rect, int radius)
         {
             var path = new GraphicsPath();
@@ -263,18 +253,11 @@ namespace MikroSqlDbYedek.Win.Theme
 
             var arc = new Rectangle(rect.Location, new Size(diameter, diameter));
 
-            // Sol üst
             path.AddArc(arc, 180, 90);
-
-            // Sağ üst
             arc.X = rect.Right - diameter;
             path.AddArc(arc, 270, 90);
-
-            // Sağ alt
             arc.Y = rect.Bottom - diameter;
             path.AddArc(arc, 0, 90);
-
-            // Sol alt
             arc.X = rect.Left;
             path.AddArc(arc, 90, 90);
 
@@ -282,9 +265,6 @@ namespace MikroSqlDbYedek.Win.Theme
             return path;
         }
 
-        /// <summary>
-        /// Antialiased çizim için Graphics ayarlarını yapılandırır.
-        /// </summary>
         internal static void SetHighQuality(Graphics g)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;

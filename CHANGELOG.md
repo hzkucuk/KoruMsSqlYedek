@@ -1,3 +1,45 @@
+## [0.19.0] - 2026-03-28 — Faz 21: Tam Dark Mode + Phosphor Icons Entegrasyonu
+
+### Değiştirilenler
+- **ModernFormBase**: `ApplyControlTheme()` 6 kontrol tipinden 16'ya genişletildi — Button, TextBox, ComboBox, CheckBox, RadioButton, NumericUpDown, CheckedListBox, Label, Panel, TabPage artık otomatik karanlık temada
+- **ModernFormBase**: `public` yapıldı (tüm formlar türeyebilsin)
+- **DWM Dark Title Bar**: `OnHandleCreated` override'ında `DwmSetWindowAttribute(DWMWA_USE_IMMERSIVE_DARK_MODE)` — Windows 10/11'de pencere başlık çubuğu artık koyu
+- **NativeMethods**: `DwmSetWindowAttribute` P/Invoke ve `DWMWA_USE_IMMERSIVE_DARK_MODE` sabiti eklendi
+- **MainWindow**: Base class `Form` → `ModernFormBase`, 9 Button→ModernButton, 4 CheckBox→ModernCheckBox, 1 TabControl→ModernTabControl
+- **PlanEditForm**: Base class `Form` → `ModernFormBase`, 10 Button→ModernButton, 1 TabControl→ModernTabControl
+- **CloudTargetEditDialog**: Base class `Form` → `ModernFormBase`, 3 Button→ModernButton
+- **FileBackupSourceEditDialog**: Base class `Form` → `ModernFormBase`, 3 Button→ModernButton
+- **ButtonStyle atamaları**: Primary (Kaydet, Test, Başlat), Secondary (İptal, Gözat, Yenile), Danger (Kaldır), Ghost (Temizle, Dışa Aktar)
+
+### Eklenenler
+- **Phosphor Icons (MIT)**: `Phosphor-Fill.ttf` ve `Phosphor-Bold.ttf` gömülü resource olarak eklendi
+- **`PhosphorIcons` sınıfı**: TTF font'tan cache'li Bitmap üretir; Get/GetAccent/GetDanger/GetWarning/GetInfo yardımcıları, 32 ikon sabiti
+- Tüm formlarda `ApplyIcons()`: butonlar emoji yerine gerçek ikonlar kullanıyor (Play, Stop, Save, Cancel, Folder, Plug, Envelope, Refresh, Export, Eraser, Plus, Pencil, Trash)
+
+### Düzeltmeler
+- Beyaz arka planlı butonlar (metin okunmuyor) — ModernButton ile tamamen koyu tema
+- Beyaz TextBox/NumericUpDown/ComboBox input alanları — ApplyControlTheme ile otomatik renklendirildi
+- Ayarlar iç TabControl beyaz sekme başlıkları — ModernTabControl ile yeşil accent underline
+- CheckBox/CheckedListBox OS varsayılan renkleri — tema motoru ile koyu renklendirildi
+- Label renk koruma: Yalnızca varsayılan renkli (SystemColors.ControlText / Color.Black) label'lar değiştirilir — dashboard özel renkli label'lar korunur
+- **ComboBox çift ok**: `ModernComboBox.DrawBorder()` native dropdown butonunu arka plan rengiyle örterek tek özel ok çiziyor
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/Theme/ModernFormBase.cs
+- MikroSqlDbYedek.Win/NativeMethods.cs
+- MikroSqlDbYedek.Win/MainWindow.cs
+- MikroSqlDbYedek.Win/MainWindow.Designer.cs
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs
+- MikroSqlDbYedek.Win/Forms/CloudTargetEditDialog.cs
+- MikroSqlDbYedek.Win/Forms/CloudTargetEditDialog.Designer.cs
+- MikroSqlDbYedek.Win/Forms/FileBackupSourceEditDialog.cs
+- MikroSqlDbYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
+
+---
+
 ## [0.18.1] - 2026-03-28 — Faz 20: Görsel Düzeltmeler & Dark/Light Tema Seçimi
 
 ### Düzeltmeler

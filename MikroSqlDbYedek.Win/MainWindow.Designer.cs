@@ -85,8 +85,8 @@ namespace MikroSqlDbYedek.Win
             _progressBar = new Theme.ModernProgressBar();
             _txtBackupLog = new System.Windows.Forms.TextBox();
             _flpBackupButtons = new System.Windows.Forms.FlowLayoutPanel();
-            _btnStart = new System.Windows.Forms.Button();
-            _btnCancelBackup = new System.Windows.Forms.Button();
+            _btnStart = new Theme.ModernButton();
+            _btnCancelBackup = new Theme.ModernButton();
 
             // ── Tab 3: Loglar ────────────────────────────────────────────
             _tlpLogsMain = new System.Windows.Forms.TableLayoutPanel();
@@ -95,12 +95,12 @@ namespace MikroSqlDbYedek.Win
             _cmbLogFile = new Theme.ModernComboBox();
             _lblLevel = new System.Windows.Forms.Label();
             _cmbLevel = new Theme.ModernComboBox();
-            _chkAutoTail = new System.Windows.Forms.CheckBox();
+            _chkAutoTail = new Theme.ModernCheckBox();
             _lblLogSearch = new System.Windows.Forms.Label();
             _txtLogSearch = new System.Windows.Forms.TextBox();
-            _btnClearLogFilter = new System.Windows.Forms.Button();
-            _btnLogRefresh = new System.Windows.Forms.Button();
-            _btnLogExport = new System.Windows.Forms.Button();
+            _btnClearLogFilter = new Theme.ModernButton();
+            _btnLogRefresh = new Theme.ModernButton();
+            _btnLogExport = new Theme.ModernButton();
             _dgvLogs = new System.Windows.Forms.DataGridView();
             _colTimestamp = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _colLevel = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -111,7 +111,7 @@ namespace MikroSqlDbYedek.Win
 
             // ── Tab 4: Ayarlar ───────────────────────────────────────────
             _tlpSettingsOuter = new System.Windows.Forms.TableLayoutPanel();
-            _tabSettings2 = new System.Windows.Forms.TabControl();
+            _tabSettings2 = new Theme.ModernTabControl();
             _tabGeneral = new System.Windows.Forms.TabPage();
             _tabSmtp = new System.Windows.Forms.TabPage();
             _tlpGeneral = new System.Windows.Forms.TableLayoutPanel();
@@ -119,11 +119,11 @@ namespace MikroSqlDbYedek.Win
             _cmbLanguage = new Theme.ModernComboBox();
             _lblTheme = new System.Windows.Forms.Label();
             _cmbTheme = new Theme.ModernComboBox();
-            _chkStartWithWindows = new System.Windows.Forms.CheckBox();
-            _chkMinimizeToTray = new System.Windows.Forms.CheckBox();
+            _chkStartWithWindows = new Theme.ModernCheckBox();
+            _chkMinimizeToTray = new Theme.ModernCheckBox();
             _lblDefaultBackupPath = new System.Windows.Forms.Label();
             _txtDefaultBackupPath = new System.Windows.Forms.TextBox();
-            _btnBrowseBackupPath = new System.Windows.Forms.Button();
+            _btnBrowseBackupPath = new Theme.ModernButton();
             _lblLogRetention = new System.Windows.Forms.Label();
             _nudLogRetention = new System.Windows.Forms.NumericUpDown();
             _lblLogRetentionSuffix = new System.Windows.Forms.Label();
@@ -136,7 +136,7 @@ namespace MikroSqlDbYedek.Win
             _lblSmtpPort = new System.Windows.Forms.Label();
             _pnlPortSsl = new System.Windows.Forms.FlowLayoutPanel();
             _nudSmtpPort = new System.Windows.Forms.NumericUpDown();
-            _chkSmtpSsl = new System.Windows.Forms.CheckBox();
+            _chkSmtpSsl = new Theme.ModernCheckBox();
             _lblSmtpUsername = new System.Windows.Forms.Label();
             _txtSmtpUsername = new System.Windows.Forms.TextBox();
             _lblSmtpPassword = new System.Windows.Forms.Label();
@@ -147,10 +147,10 @@ namespace MikroSqlDbYedek.Win
             _txtSmtpSenderName = new System.Windows.Forms.TextBox();
             _lblSmtpRecipients = new System.Windows.Forms.Label();
             _txtSmtpRecipients = new System.Windows.Forms.TextBox();
-            _btnSmtpTest = new System.Windows.Forms.Button();
+            _btnSmtpTest = new Theme.ModernButton();
             _flpSettingsButtons = new System.Windows.Forms.FlowLayoutPanel();
-            _btnSaveSettings = new System.Windows.Forms.Button();
-            _btnCancelSettings = new System.Windows.Forms.Button();
+            _btnSaveSettings = new Theme.ModernButton();
+            _btnCancelSettings = new Theme.ModernButton();
 
             // ─────────────────────────────────────────────────────────────
             // Begin Init
@@ -491,14 +491,16 @@ namespace MikroSqlDbYedek.Win
             _flpBackupButtons.Controls.Add(_btnStart);
 
             _btnStart.Text = "▶ Yedeklemeyi Başlat";
+            _btnStart.ButtonStyle = Theme.ModernButtonStyle.Primary;
             _btnStart.AutoSize = true;
             _btnStart.Padding = new System.Windows.Forms.Padding(10, 4, 10, 4);
-            _btnStart.Height = 32;
+            _btnStart.Height = 36;
             _btnStart.Margin = new System.Windows.Forms.Padding(4);
             _btnStart.Click += OnStartBackupClick;
 
             _btnCancelBackup.Text = "■ İptal Et";
-            _btnCancelBackup.Size = new System.Drawing.Size(100, 32);
+            _btnCancelBackup.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnCancelBackup.Size = new System.Drawing.Size(110, 36);
             _btnCancelBackup.Margin = new System.Windows.Forms.Padding(4);
             _btnCancelBackup.Enabled = false;
             _btnCancelBackup.Click += OnCancelBackupClick;
@@ -582,12 +584,15 @@ namespace MikroSqlDbYedek.Win
             _txtLogSearch.TextChanged += OnLogSearchTextChanged;
 
             _btnClearLogFilter.Text = "Temizle"; _btnClearLogFilter.AutoSize = true;
+            _btnClearLogFilter.ButtonStyle = Theme.ModernButtonStyle.Ghost;
             _btnClearLogFilter.Margin = new System.Windows.Forms.Padding(3, 3, 3, 6);
             _btnClearLogFilter.Click += OnClearLogFilterClick;
             _btnLogRefresh.Text = "↻ Yenile"; _btnLogRefresh.AutoSize = true;
+            _btnLogRefresh.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnLogRefresh.Margin = new System.Windows.Forms.Padding(3, 3, 3, 6);
             _btnLogRefresh.Click += OnLogRefreshClick;
             _btnLogExport.Text = "💾 Dışa Aktar"; _btnLogExport.AutoSize = true;
+            _btnLogExport.ButtonStyle = Theme.ModernButtonStyle.Ghost;
             _btnLogExport.Margin = new System.Windows.Forms.Padding(3, 3, 3, 6);
             _btnLogExport.Click += OnLogExportClick;
 
@@ -702,7 +707,8 @@ namespace MikroSqlDbYedek.Win
             _lblDefaultBackupPath.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
             _txtDefaultBackupPath.Dock = System.Windows.Forms.DockStyle.Fill;
             _txtDefaultBackupPath.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
-            _btnBrowseBackupPath.Text = "..."; _btnBrowseBackupPath.Size = new System.Drawing.Size(32, 23);
+            _btnBrowseBackupPath.Text = "..."; _btnBrowseBackupPath.Size = new System.Drawing.Size(36, 28);
+            _btnBrowseBackupPath.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnBrowseBackupPath.Margin = new System.Windows.Forms.Padding(3, 5, 3, 3);
             _btnBrowseBackupPath.Click += OnBrowseBackupPath;
 
@@ -791,6 +797,7 @@ namespace MikroSqlDbYedek.Win
             _lblSmtpRecipients.Text = "Alıcılar:"; AddSmtpRow(6, _lblSmtpRecipients, _txtSmtpRecipients);
             _tlpSmtp.Controls.Add(_btnSmtpTest, 1, 7);
             _btnSmtpTest.Text = "✉ Test E-postası Gönder"; _btnSmtpTest.AutoSize = true;
+            _btnSmtpTest.ButtonStyle = Theme.ModernButtonStyle.Primary;
             _btnSmtpTest.Margin = new System.Windows.Forms.Padding(3, 8, 3, 3);
             _btnSmtpTest.Click += OnSmtpTestClick;
 
@@ -804,11 +811,13 @@ namespace MikroSqlDbYedek.Win
             _flpSettingsButtons.Controls.Add(_btnCancelSettings);
             _flpSettingsButtons.Controls.Add(_btnSaveSettings);
 
-            _btnSaveSettings.Text = "Kaydet"; _btnSaveSettings.Size = new System.Drawing.Size(90, 30);
+            _btnSaveSettings.Text = "Kaydet"; _btnSaveSettings.Size = new System.Drawing.Size(100, 36);
+            _btnSaveSettings.ButtonStyle = Theme.ModernButtonStyle.Primary;
             _btnSaveSettings.Margin = new System.Windows.Forms.Padding(4);
             _btnSaveSettings.Click += OnSaveSettingsClick;
 
-            _btnCancelSettings.Text = "İptal"; _btnCancelSettings.Size = new System.Drawing.Size(90, 30);
+            _btnCancelSettings.Text = "İptal"; _btnCancelSettings.Size = new System.Drawing.Size(100, 36);
+            _btnCancelSettings.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnCancelSettings.Margin = new System.Windows.Forms.Padding(4);
             _btnCancelSettings.Click += OnCancelSettingsClick;
 
@@ -962,8 +971,8 @@ namespace MikroSqlDbYedek.Win
         private Theme.ModernProgressBar _progressBar;
         private System.Windows.Forms.TextBox _txtBackupLog;
         private System.Windows.Forms.FlowLayoutPanel _flpBackupButtons;
-        private System.Windows.Forms.Button _btnStart;
-        private System.Windows.Forms.Button _btnCancelBackup;
+        private Theme.ModernButton _btnStart;
+        private Theme.ModernButton _btnCancelBackup;
 
         // Logs
         private System.Windows.Forms.TableLayoutPanel _tlpLogsMain;
@@ -972,12 +981,12 @@ namespace MikroSqlDbYedek.Win
         private Theme.ModernComboBox _cmbLogFile;
         private System.Windows.Forms.Label _lblLevel;
         private Theme.ModernComboBox _cmbLevel;
-        private System.Windows.Forms.CheckBox _chkAutoTail;
+        private Theme.ModernCheckBox _chkAutoTail;
         private System.Windows.Forms.Label _lblLogSearch;
         private System.Windows.Forms.TextBox _txtLogSearch;
-        private System.Windows.Forms.Button _btnClearLogFilter;
-        private System.Windows.Forms.Button _btnLogRefresh;
-        private System.Windows.Forms.Button _btnLogExport;
+        private Theme.ModernButton _btnClearLogFilter;
+        private Theme.ModernButton _btnLogRefresh;
+        private Theme.ModernButton _btnLogExport;
         private System.Windows.Forms.DataGridView _dgvLogs;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colTimestamp;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colLevel;
@@ -988,7 +997,7 @@ namespace MikroSqlDbYedek.Win
 
         // Settings
         private System.Windows.Forms.TableLayoutPanel _tlpSettingsOuter;
-        private System.Windows.Forms.TabControl _tabSettings2;
+        private Theme.ModernTabControl _tabSettings2;
         private System.Windows.Forms.TabPage _tabGeneral;
         private System.Windows.Forms.TabPage _tabSmtp;
         private System.Windows.Forms.TableLayoutPanel _tlpGeneral;
@@ -996,11 +1005,11 @@ namespace MikroSqlDbYedek.Win
         private Theme.ModernComboBox _cmbLanguage;
         private System.Windows.Forms.Label _lblTheme;
         private Theme.ModernComboBox _cmbTheme;
-        private System.Windows.Forms.CheckBox _chkStartWithWindows;
-        private System.Windows.Forms.CheckBox _chkMinimizeToTray;
+        private Theme.ModernCheckBox _chkStartWithWindows;
+        private Theme.ModernCheckBox _chkMinimizeToTray;
         private System.Windows.Forms.Label _lblDefaultBackupPath;
         private System.Windows.Forms.TextBox _txtDefaultBackupPath;
-        private System.Windows.Forms.Button _btnBrowseBackupPath;
+        private Theme.ModernButton _btnBrowseBackupPath;
         private System.Windows.Forms.Label _lblLogRetention;
         private System.Windows.Forms.NumericUpDown _nudLogRetention;
         private System.Windows.Forms.Label _lblLogRetentionSuffix;
@@ -1013,7 +1022,7 @@ namespace MikroSqlDbYedek.Win
         private System.Windows.Forms.Label _lblSmtpPort;
         private System.Windows.Forms.FlowLayoutPanel _pnlPortSsl;
         private System.Windows.Forms.NumericUpDown _nudSmtpPort;
-        private System.Windows.Forms.CheckBox _chkSmtpSsl;
+        private Theme.ModernCheckBox _chkSmtpSsl;
         private System.Windows.Forms.Label _lblSmtpUsername;
         private System.Windows.Forms.TextBox _txtSmtpUsername;
         private System.Windows.Forms.Label _lblSmtpPassword;
@@ -1024,9 +1033,9 @@ namespace MikroSqlDbYedek.Win
         private System.Windows.Forms.TextBox _txtSmtpSenderName;
         private System.Windows.Forms.Label _lblSmtpRecipients;
         private System.Windows.Forms.TextBox _txtSmtpRecipients;
-        private System.Windows.Forms.Button _btnSmtpTest;
+        private Theme.ModernButton _btnSmtpTest;
         private System.Windows.Forms.FlowLayoutPanel _flpSettingsButtons;
-        private System.Windows.Forms.Button _btnSaveSettings;
-        private System.Windows.Forms.Button _btnCancelSettings;
+        private Theme.ModernButton _btnSaveSettings;
+        private Theme.ModernButton _btnCancelSettings;
     }
 }

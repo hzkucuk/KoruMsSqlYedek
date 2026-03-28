@@ -10,7 +10,7 @@ namespace MikroSqlDbYedek.Win.Forms
     /// Bulut hedef ekleme/düzenleme dialogu.
     /// Provider türüne göre dinamik alan görünürlüğü sağlar.
     /// </summary>
-    public partial class CloudTargetEditDialog : Form
+    public partial class CloudTargetEditDialog : Theme.ModernFormBase
     {
         private readonly CloudTargetConfig _target;
         private readonly bool _isNew;
@@ -25,6 +25,7 @@ namespace MikroSqlDbYedek.Win.Forms
         public CloudTargetEditDialog(CloudTargetConfig existing)
         {
             InitializeComponent();
+            ApplyIcons();
 
             if (existing != null)
             {
@@ -38,6 +39,21 @@ namespace MikroSqlDbYedek.Win.Forms
                 _isNew = true;
                 Text = Res.Get("CloudTarget_TitleNew");
             }
+        }
+
+        private void ApplyIcons()
+        {
+            const int sz = 16;
+            _btnSave.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FloppyDisk, System.Drawing.Color.White, sz);
+            _btnSave.Text = "Kaydet";
+            _btnSave.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnCancel.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, System.Drawing.Color.White, sz);
+            _btnCancel.Text = "Iptal";
+            _btnCancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnBrowseLocal.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Folder, Theme.ModernTheme.AccentPrimary, 14);
+            _btnBrowseLocal.Text = "";
         }
 
         protected override void OnLoad(EventArgs e)

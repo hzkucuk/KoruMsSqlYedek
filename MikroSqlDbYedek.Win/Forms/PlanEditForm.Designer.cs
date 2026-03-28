@@ -16,7 +16,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            _tabControl = new System.Windows.Forms.TabControl();
+            _tabControl = new Theme.ModernTabControl();
 
             // === Tab pages ===
             _tabGeneral = new System.Windows.Forms.TabPage();
@@ -30,8 +30,8 @@ namespace MikroSqlDbYedek.Win.Forms
 
             // === Bottom buttons ===
             _pnlButtons = new System.Windows.Forms.Panel();
-            _btnSave = new System.Windows.Forms.Button();
-            _btnCancel = new System.Windows.Forms.Button();
+            _btnSave = new Theme.ModernButton();
+            _btnCancel = new Theme.ModernButton();
 
             // ========== TAB 1: Genel ==========
             _lblPlanName = new System.Windows.Forms.Label();
@@ -39,7 +39,7 @@ namespace MikroSqlDbYedek.Win.Forms
             _chkEnabled = new System.Windows.Forms.CheckBox();
             _lblLocalPath = new System.Windows.Forms.Label();
             _txtLocalPath = new System.Windows.Forms.TextBox();
-            _btnBrowseLocal = new System.Windows.Forms.Button();
+            _btnBrowseLocal = new Theme.ModernButton();
 
             // ========== TAB 2: SQL ==========
             _lblServer = new System.Windows.Forms.Label();
@@ -52,7 +52,7 @@ namespace MikroSqlDbYedek.Win.Forms
             _txtSqlPassword = new System.Windows.Forms.TextBox();
             _lblTimeout = new System.Windows.Forms.Label();
             _nudTimeout = new System.Windows.Forms.NumericUpDown();
-            _btnTestSql = new System.Windows.Forms.Button();
+            _btnTestSql = new Theme.ModernButton();
             _grpDatabases = new System.Windows.Forms.GroupBox();
             _clbDatabases = new System.Windows.Forms.CheckedListBox();
 
@@ -82,9 +82,9 @@ namespace MikroSqlDbYedek.Win.Forms
             _colCtName = new System.Windows.Forms.ColumnHeader();
             _colCtType = new System.Windows.Forms.ColumnHeader();
             _colCtStatus = new System.Windows.Forms.ColumnHeader();
-            _btnAddCloud = new System.Windows.Forms.Button();
-            _btnEditCloud = new System.Windows.Forms.Button();
-            _btnRemoveCloud = new System.Windows.Forms.Button();
+            _btnAddCloud = new Theme.ModernButton();
+            _btnEditCloud = new Theme.ModernButton();
+            _btnRemoveCloud = new Theme.ModernButton();
 
             // ========== TAB 6: Retention ==========
             _lblRetention = new System.Windows.Forms.Label();
@@ -122,9 +122,9 @@ namespace MikroSqlDbYedek.Win.Forms
             _colFsPath = new System.Windows.Forms.ColumnHeader();
             _colFsVss = new System.Windows.Forms.ColumnHeader();
             _colFsStatus = new System.Windows.Forms.ColumnHeader();
-            _btnAddFileSource = new System.Windows.Forms.Button();
-            _btnEditFileSource = new System.Windows.Forms.Button();
-            _btnRemoveFileSource = new System.Windows.Forms.Button();
+            _btnAddFileSource = new Theme.ModernButton();
+            _btnEditFileSource = new Theme.ModernButton();
+            _btnRemoveFileSource = new Theme.ModernButton();
 
             SuspendLayout();
 
@@ -144,7 +144,8 @@ namespace MikroSqlDbYedek.Win.Forms
             ConfigLabel(_lblLocalPath, "Yerel Yedek Yolu:", lx, y, _tabGeneral);
             ConfigTextBox(_txtLocalPath, tx, y, tw - 35, _tabGeneral);
             _btnBrowseLocal.Text = "...";
-            _btnBrowseLocal.Size = new System.Drawing.Size(30, 23);
+            _btnBrowseLocal.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnBrowseLocal.Size = new System.Drawing.Size(30, 28);
             _btnBrowseLocal.Location = new System.Drawing.Point(tx + tw - 30, y);
             _btnBrowseLocal.Click += OnBrowseLocalPathClick;
             _tabGeneral.Controls.Add(_btnBrowseLocal);
@@ -179,8 +180,9 @@ namespace MikroSqlDbYedek.Win.Forms
             _tabSql.Controls.Add(_nudTimeout);
             y += 35;
             _btnTestSql.Text = "\U0001f50c Bağlantıyı Test Et";
+            _btnTestSql.ButtonStyle = Theme.ModernButtonStyle.Primary;
             _btnTestSql.Location = new System.Drawing.Point(tx, y);
-            _btnTestSql.AutoSize = true;
+            _btnTestSql.Size = new System.Drawing.Size(180, 36);
             _btnTestSql.Click += OnTestSqlConnectionClick;
             _tabSql.Controls.Add(_btnTestSql);
             y += 40;
@@ -261,20 +263,23 @@ namespace MikroSqlDbYedek.Win.Forms
 
             int bx = 405;
             _btnAddCloud.Text = "➕ Ekle";
+            _btnAddCloud.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnAddCloud.Location = new System.Drawing.Point(bx, 15);
-            _btnAddCloud.Size = new System.Drawing.Size(85, 28);
+            _btnAddCloud.Size = new System.Drawing.Size(85, 32);
             _btnAddCloud.Click += OnAddCloudTarget;
             _tabCloud.Controls.Add(_btnAddCloud);
 
             _btnEditCloud.Text = "✏️ Düzenle";
-            _btnEditCloud.Location = new System.Drawing.Point(bx, 50);
-            _btnEditCloud.Size = new System.Drawing.Size(85, 28);
+            _btnEditCloud.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnEditCloud.Location = new System.Drawing.Point(bx, 52);
+            _btnEditCloud.Size = new System.Drawing.Size(85, 32);
             _btnEditCloud.Click += OnEditCloudTarget;
             _tabCloud.Controls.Add(_btnEditCloud);
 
             _btnRemoveCloud.Text = "🗑️ Kaldır";
-            _btnRemoveCloud.Location = new System.Drawing.Point(bx, 85);
-            _btnRemoveCloud.Size = new System.Drawing.Size(85, 28);
+            _btnRemoveCloud.ButtonStyle = Theme.ModernButtonStyle.Danger;
+            _btnRemoveCloud.Location = new System.Drawing.Point(bx, 89);
+            _btnRemoveCloud.Size = new System.Drawing.Size(85, 32);
             _btnRemoveCloud.Click += OnRemoveCloudTarget;
             _tabCloud.Controls.Add(_btnRemoveCloud);
 
@@ -385,20 +390,23 @@ namespace MikroSqlDbYedek.Win.Forms
             _pnlFileBackup.Controls.Add(_lvFileSources);
 
             _btnAddFileSource.Text = "➕ Ekle";
+            _btnAddFileSource.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnAddFileSource.Location = new System.Drawing.Point(410, 38);
-            _btnAddFileSource.Size = new System.Drawing.Size(85, 28);
+            _btnAddFileSource.Size = new System.Drawing.Size(85, 32);
             _btnAddFileSource.Click += OnAddFileSource;
             _pnlFileBackup.Controls.Add(_btnAddFileSource);
 
             _btnEditFileSource.Text = "✏️ Düzenle";
-            _btnEditFileSource.Location = new System.Drawing.Point(410, 73);
-            _btnEditFileSource.Size = new System.Drawing.Size(85, 28);
+            _btnEditFileSource.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnEditFileSource.Location = new System.Drawing.Point(410, 75);
+            _btnEditFileSource.Size = new System.Drawing.Size(85, 32);
             _btnEditFileSource.Click += OnEditFileSource;
             _pnlFileBackup.Controls.Add(_btnEditFileSource);
 
             _btnRemoveFileSource.Text = "🗑️ Kaldır";
-            _btnRemoveFileSource.Location = new System.Drawing.Point(410, 108);
-            _btnRemoveFileSource.Size = new System.Drawing.Size(85, 28);
+            _btnRemoveFileSource.ButtonStyle = Theme.ModernButtonStyle.Danger;
+            _btnRemoveFileSource.Location = new System.Drawing.Point(410, 112);
+            _btnRemoveFileSource.Size = new System.Drawing.Size(85, 32);
             _btnRemoveFileSource.Click += OnRemoveFileSource;
             _pnlFileBackup.Controls.Add(_btnRemoveFileSource);
 
@@ -439,12 +447,14 @@ namespace MikroSqlDbYedek.Win.Forms
             _pnlButtons.BackColor = Theme.ModernTheme.SurfaceColor;
 
             _btnSave.Text = "💾 Kaydet";
-            _btnSave.Size = new System.Drawing.Size(90, 30);
+            _btnSave.ButtonStyle = Theme.ModernButtonStyle.Primary;
+            _btnSave.Size = new System.Drawing.Size(100, 34);
             _btnSave.Dock = System.Windows.Forms.DockStyle.Right;
             _btnSave.Click += OnSaveClick;
 
             _btnCancel.Text = "İptal";
-            _btnCancel.Size = new System.Drawing.Size(80, 30);
+            _btnCancel.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnCancel.Size = new System.Drawing.Size(90, 34);
             _btnCancel.Dock = System.Windows.Forms.DockStyle.Right;
             _btnCancel.Click += OnCancelClick;
 
@@ -487,7 +497,7 @@ namespace MikroSqlDbYedek.Win.Forms
         #endregion
 
         // Tab control
-        private System.Windows.Forms.TabControl _tabControl;
+        private Theme.ModernTabControl _tabControl;
         private System.Windows.Forms.TabPage _tabGeneral;
         private System.Windows.Forms.TabPage _tabSql;
         private System.Windows.Forms.TabPage _tabStrategy;
@@ -499,8 +509,8 @@ namespace MikroSqlDbYedek.Win.Forms
 
         // Bottom
         private System.Windows.Forms.Panel _pnlButtons;
-        private System.Windows.Forms.Button _btnSave;
-        private System.Windows.Forms.Button _btnCancel;
+        private Theme.ModernButton _btnSave;
+        private Theme.ModernButton _btnCancel;
 
         // Tab 1: Genel
         private System.Windows.Forms.Label _lblPlanName;
@@ -508,7 +518,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.CheckBox _chkEnabled;
         private System.Windows.Forms.Label _lblLocalPath;
         private System.Windows.Forms.TextBox _txtLocalPath;
-        private System.Windows.Forms.Button _btnBrowseLocal;
+        private Theme.ModernButton _btnBrowseLocal;
 
         // Tab 2: SQL
         private System.Windows.Forms.Label _lblServer;
@@ -521,7 +531,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.TextBox _txtSqlPassword;
         private System.Windows.Forms.Label _lblTimeout;
         private System.Windows.Forms.NumericUpDown _nudTimeout;
-        private System.Windows.Forms.Button _btnTestSql;
+        private Theme.ModernButton _btnTestSql;
         private System.Windows.Forms.GroupBox _grpDatabases;
         private System.Windows.Forms.CheckedListBox _clbDatabases;
 
@@ -551,9 +561,9 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.ColumnHeader _colCtName;
         private System.Windows.Forms.ColumnHeader _colCtType;
         private System.Windows.Forms.ColumnHeader _colCtStatus;
-        private System.Windows.Forms.Button _btnAddCloud;
-        private System.Windows.Forms.Button _btnEditCloud;
-        private System.Windows.Forms.Button _btnRemoveCloud;
+        private Theme.ModernButton _btnAddCloud;
+        private Theme.ModernButton _btnEditCloud;
+        private Theme.ModernButton _btnRemoveCloud;
 
         // Tab 6: Retention
         private System.Windows.Forms.Label _lblRetention;
@@ -591,8 +601,8 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.ColumnHeader _colFsPath;
         private System.Windows.Forms.ColumnHeader _colFsVss;
         private System.Windows.Forms.ColumnHeader _colFsStatus;
-        private System.Windows.Forms.Button _btnAddFileSource;
-        private System.Windows.Forms.Button _btnEditFileSource;
-        private System.Windows.Forms.Button _btnRemoveFileSource;
+        private Theme.ModernButton _btnAddFileSource;
+        private Theme.ModernButton _btnEditFileSource;
+        private Theme.ModernButton _btnRemoveFileSource;
     }
 }

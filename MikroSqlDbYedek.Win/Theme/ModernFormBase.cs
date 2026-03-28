@@ -1,6 +1,5 @@
 using System;
 using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace MikroSqlDbYedek.Win.Theme
@@ -8,7 +7,7 @@ namespace MikroSqlDbYedek.Win.Theme
     /// <summary>
     /// Modern form temel sınıfı — tutarlı tema, DPI-awareness, tüm alt formlar bu sınıftan türer.
     /// </summary>
-    internal class ModernFormBase : Form
+    public class ModernFormBase : Form
     {
         public ModernFormBase()
         {
@@ -21,6 +20,24 @@ namespace MikroSqlDbYedek.Win.Theme
 
             // Global renderer
             ToolStripManager.Renderer = new ModernToolStripRenderer();
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+
+            // Windows 10/11 dark title bar
+            if (ModernTheme.CurrentTheme == ThemeMode.Dark)
+            {
+                try
+                {
+                    int value = 1;
+                    NativeMethods.DwmSetWindowAttribute(
+                        Handle, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE,
+                        ref value, sizeof(int));
+                }
+                catch { /* DWM API mevcut değilse sessizce geç */ }
+            }
         }
 
         protected override void OnLoad(EventArgs e)
@@ -45,8 +62,20 @@ namespace MikroSqlDbYedek.Win.Theme
             }
         }
 
+        private static readonly Color DefaultControlText = SystemColors.ControlText;
+        private static readonly Color DefaultControl = SystemColors.Control;
+        private static readonly Color DefaultWindow = SystemColors.Window;
+
         private static void ApplyControlTheme(Control c)
         {
+            // Zaten custom Modern* kontrol ise dokunma
+            if (c is ModernButton || c is ModernTextBox || c is ModernComboBox
+                || c is ModernCheckBox || c is ModernNumericUpDown || c is ModernProgressBar
+                || c is ModernCardPanel || c is ModernGroupBox || c is ModernSearchBox
+                || c is ModernToggleSwitch || c is ModernDivider || c is ModernHeaderPanel
+                || c is ModernLoadingOverlay)
+                return;
+
             // DataGridView
             if (c is DataGridView dgv)
             {
@@ -88,6 +117,97 @@ namespace MikroSqlDbYedek.Win.Theme
             if (c is GroupBox grp)
             {
                 ModernTheme.StyleGroupBox(grp);
+                return;
+            }
+
+            // Button
+            if (c is Button btn)
+            {
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderColor = ModernTheme.BorderColor;
+                btn.FlatAppearance.BorderSize = 1;
+                btn.BackColor = ModernTheme.SurfaceColor;
+                btn.ForeColor = ModernTheme.TextPrimary;
+                btn.Font = ModernTheme.FontBody;
+                return;
+            }
+
+            // TextBox
+            if (c is TextBox txt)
+            {
+                ModernTheme.StyleTextBox(txt);
+                return;
+            }
+
+            // ComboBox
+            if (c is ComboBox cmb)
+            {
+                ModernTheme.StyleComboBox(cmb);
+                return;
+            }
+
+            // CheckBox
+            if (c is CheckBox chk)
+            {
+                chk.BackColor = Color.Transparent;
+                chk.ForeColor = ModernTheme.TextPrimary;
+                chk.Font = ModernTheme.FontBody;
+                return;
+            }
+
+            // RadioButton
+            if (c is RadioButton rb)
+            {
+                rb.BackColor = Color.Transparent;
+                rb.ForeColor = ModernTheme.TextPrimary;
+                rb.Font = ModernTheme.FontBody;
+                return;
+            }
+
+            // NumericUpDown
+            if (c is NumericUpDown nud)
+            {
+                nud.BackColor = ModernTheme.SurfaceColor;
+                nud.ForeColor = ModernTheme.TextPrimary;
+                nud.Font = ModernTheme.FontBody;
+                nud.BorderStyle = BorderStyle.FixedSingle;
+                return;
+            }
+
+            // CheckedListBox
+            if (c is CheckedListBox clb)
+            {
+                clb.BackColor = ModernTheme.SurfaceColor;
+                clb.ForeColor = ModernTheme.TextPrimary;
+                clb.Font = ModernTheme.FontBody;
+                clb.BorderStyle = BorderStyle.None;
+                return;
+            }
+
+            // Label — sadece varsayılan renkli ise değiştir (özel renkli label'ları koru)
+            if (c is Label lbl)
+            {
+                if (lbl.ForeColor == DefaultControlText || lbl.ForeColor == Color.Black)
+                    lbl.ForeColor = ModernTheme.TextPrimary;
+                return;
+            }
+
+            // TabPage
+            if (c is TabPage tp)
+            {
+                tp.BackColor = ModernTheme.BackgroundColor;
+                tp.ForeColor = ModernTheme.TextPrimary;
+                return;
+            }
+
+            // Panel / FlowLayoutPanel / TableLayoutPanel
+            if (c is Panel pnl)
+            {
+                if (pnl.BackColor == DefaultControl || pnl.BackColor == DefaultWindow
+                    || pnl.BackColor == Color.Transparent)
+                {
+                    pnl.BackColor = ModernTheme.BackgroundColor;
+                }
                 return;
             }
         }

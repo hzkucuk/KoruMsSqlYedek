@@ -9,7 +9,7 @@ namespace MikroSqlDbYedek.Win.Forms
     /// Dosya yedekleme kaynağı ekleme/düzenleme dialogu.
     /// Kaynak adı, dizin yolu, include/exclude pattern, recursive ve VSS ayarları.
     /// </summary>
-    public partial class FileBackupSourceEditDialog : Form
+    public partial class FileBackupSourceEditDialog : Theme.ModernFormBase
     {
         private readonly FileBackupSource _source;
 
@@ -23,6 +23,7 @@ namespace MikroSqlDbYedek.Win.Forms
         public FileBackupSourceEditDialog(FileBackupSource existing)
         {
             InitializeComponent();
+            ApplyIcons();
 
             if (existing != null)
             {
@@ -34,6 +35,21 @@ namespace MikroSqlDbYedek.Win.Forms
                 _source = new FileBackupSource();
                 Text = Res.Get("FileSource_TitleNew");
             }
+        }
+
+        private void ApplyIcons()
+        {
+            const int sz = 16;
+            _btnSave.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FloppyDisk, System.Drawing.Color.White, sz);
+            _btnSave.Text = "Kaydet";
+            _btnSave.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnCancel.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, System.Drawing.Color.White, sz);
+            _btnCancel.Text = "Iptal";
+            _btnCancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnBrowsePath.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Folder, Theme.ModernTheme.AccentPrimary, 14);
+            _btnBrowsePath.Text = "";
         }
 
         protected override void OnLoad(EventArgs e)

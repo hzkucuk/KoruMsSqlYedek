@@ -20,7 +20,7 @@ namespace MikroSqlDbYedek.Win
     /// Tek pencereli ana form. 5 sekme: Dashboard, Planlar, Yedekleme, Loglar, Ayarlar.
     /// Tray ikonundan açılır; kapatıldığında gizlenir, uygulama kapanmaz.
     /// </summary>
-    public partial class MainWindow : Form
+    public partial class MainWindow : Theme.ModernFormBase
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<MainWindow>();
 
@@ -68,7 +68,7 @@ namespace MikroSqlDbYedek.Win
                 "MikroSqlDbYedek", "Logs");
 
             InitializeComponent();
-            ApplyLocalization();
+            ApplyIcons();
 
             _dashboardTimer = new System.Windows.Forms.Timer { Interval = 30000 };
             _dashboardTimer.Tick += (s, e) => LoadDashboardData();
@@ -77,6 +77,47 @@ namespace MikroSqlDbYedek.Win
             _logTimer.Tick += OnLogAutoRefreshTick;
 
             _tabControl.SelectedIndexChanged += OnTabChanged;
+        }
+
+        private void ApplyIcons()
+        {
+            const int sz = 18;
+            _btnStart.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Play, Color.White, sz);
+            _btnStart.Text = "Yedeklemeyi Baslat";
+            _btnStart.TextImageRelation = TextImageRelation.ImageBeforeText;
+            _btnStart.ImageAlign = ContentAlignment.MiddleLeft;
+
+            _btnCancelBackup.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Stop, Color.White, sz);
+            _btnCancelBackup.Text = "Iptal Et";
+            _btnCancelBackup.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            _btnClearLogFilter.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Eraser, Theme.ModernTheme.TextSecondary, sz);
+            _btnClearLogFilter.Text = "Temizle";
+            _btnClearLogFilter.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            _btnLogRefresh.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.ArrowClockwise, Color.White, sz);
+            _btnLogRefresh.Text = "Yenile";
+            _btnLogRefresh.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            _btnLogExport.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Export, Theme.ModernTheme.TextSecondary, sz);
+            _btnLogExport.Text = "Disa Aktar";
+            _btnLogExport.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            _btnBrowseBackupPath.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Folder, Theme.ModernTheme.AccentPrimary, 14);
+            _btnBrowseBackupPath.Text = "";
+            _btnBrowseBackupPath.ImageAlign = ContentAlignment.MiddleCenter;
+
+            _btnSmtpTest.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Envelope, Color.White, sz);
+            _btnSmtpTest.Text = "Test E-postasi Gonder";
+            _btnSmtpTest.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            _btnSaveSettings.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FloppyDisk, Color.White, sz);
+            _btnSaveSettings.Text = "Kaydet";
+            _btnSaveSettings.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            _btnCancelSettings.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, Color.White, sz);
+            _btnCancelSettings.Text = "Iptal";
+            _btnCancelSettings.TextImageRelation = TextImageRelation.ImageBeforeText;
         }
 
         /// <summary>
