@@ -1,3 +1,27 @@
+## [0.17.0] - 2026-03-28 — Faz 18: Koyu Tema (MikroUpdate.Win ile senkronizasyon)
+
+### Değiştirilenler
+- **ModernTheme.cs**: Renk paleti light → dark tema olarak güncellendi
+  - Arka plan: RGB(245,245,248) → RGB(30,30,30)
+  - Surface: White → RGB(40,40,40)
+  - Accent: Mavi RGB(0,120,212) → Yeşil RGB(0,150,80)
+  - Metin: Koyu → Açık RGB(230,230,230)
+  - Grid renkleri koyu tonlara güncellendi
+- **ModernToolStripRenderer.cs**: Hover overlay renkleri koyu tema için düzeltildi (mavi alpha → beyaz/yeşil alpha)
+
+### Eklenenler
+- **Theme/VersionSidebarRenderer.cs**: Tray menüsüne yeşil gradient sidebar + dikey versiyon metni (MikroUpdate.Win'den port)
+- **TrayApplicationContext.cs**: Tray context menüsüne `VersionSidebarRenderer` uygulandı
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/Theme/ModernTheme.cs
+- MikroSqlDbYedek.Win/Theme/ModernToolStripRenderer.cs
+- MikroSqlDbYedek.Win/Theme/VersionSidebarRenderer.cs (yeni)
+- MikroSqlDbYedek.Win/TrayApplicationContext.cs
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
+
+---
+
 ## [0.16.0] - 2026-03-28 — Faz 17: .NET 10 Migrasyonu
 
 ### Değiştirilenler

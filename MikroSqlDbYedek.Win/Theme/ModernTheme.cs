@@ -13,68 +13,68 @@ namespace MikroSqlDbYedek.Win.Theme
     {
         // ═══════════════ COLOR PALETTE ═══════════════
 
-        /// <summary>Ana arka plan (açık gri).</summary>
-        internal static readonly Color BackgroundColor = Color.FromArgb(245, 245, 248);
+        /// <summary>Ana arka plan (koyu gri).</summary>
+        internal static readonly Color BackgroundColor = Color.FromArgb(30, 30, 30);
 
-        /// <summary>Kart / panel arka plan (beyaz).</summary>
-        internal static readonly Color SurfaceColor = Color.White;
+        /// <summary>Kart / panel arka plan (orta koyu).</summary>
+        internal static readonly Color SurfaceColor = Color.FromArgb(40, 40, 40);
 
         /// <summary>Kenar çizgisi rengi.</summary>
-        internal static readonly Color BorderColor = Color.FromArgb(218, 220, 228);
+        internal static readonly Color BorderColor = Color.FromArgb(70, 70, 70);
 
         /// <summary>İnce ayırıcı çizgi rengi.</summary>
-        internal static readonly Color DividerColor = Color.FromArgb(232, 234, 240);
+        internal static readonly Color DividerColor = Color.FromArgb(50, 50, 50);
 
         // --- Accent Colors ---
-        /// <summary>Birincil vurgu (mavi).</summary>
-        internal static readonly Color AccentPrimary = Color.FromArgb(0, 120, 212);
+        /// <summary>Birincil vurgu (yeşil).</summary>
+        internal static readonly Color AccentPrimary = Color.FromArgb(0, 150, 80);
 
-        /// <summary>İkincil vurgu (koyu mavi).</summary>
-        internal static readonly Color AccentPrimaryDark = Color.FromArgb(0, 95, 170);
+        /// <summary>İkincil vurgu (koyu yeşil).</summary>
+        internal static readonly Color AccentPrimaryDark = Color.FromArgb(0, 120, 60);
 
         /// <summary>Hover durumu accent.</summary>
-        internal static readonly Color AccentPrimaryHover = Color.FromArgb(16, 137, 230);
+        internal static readonly Color AccentPrimaryHover = Color.FromArgb(0, 175, 95);
 
         /// <summary>Başarı / yeşil.</summary>
-        internal static readonly Color StatusSuccess = Color.FromArgb(16, 124, 16);
+        internal static readonly Color StatusSuccess = Color.FromArgb(0, 190, 110);
 
         /// <summary>Uyarı / turuncu.</summary>
         internal static readonly Color StatusWarning = Color.FromArgb(201, 128, 0);
 
         /// <summary>Hata / kırmızı.</summary>
-        internal static readonly Color StatusError = Color.FromArgb(196, 43, 28);
+        internal static readonly Color StatusError = Color.FromArgb(220, 40, 40);
 
         /// <summary>İptal / gri.</summary>
         internal static readonly Color StatusCancelled = Color.FromArgb(128, 128, 128);
 
-        /// <summary>Bilgi / mavi.</summary>
-        internal static readonly Color StatusInfo = Color.FromArgb(0, 120, 212);
+        /// <summary>Bilgi / açık mavi.</summary>
+        internal static readonly Color StatusInfo = Color.FromArgb(100, 180, 255);
 
         // --- Text Colors ---
-        /// <summary>Birincil metin (koyu).</summary>
-        internal static readonly Color TextPrimary = Color.FromArgb(32, 31, 30);
+        /// <summary>Birincil metin (açık).</summary>
+        internal static readonly Color TextPrimary = Color.FromArgb(230, 230, 230);
 
         /// <summary>İkincil metin (gri).</summary>
-        internal static readonly Color TextSecondary = Color.FromArgb(96, 94, 92);
+        internal static readonly Color TextSecondary = Color.FromArgb(180, 180, 180);
 
         /// <summary>Devre dışı / pasif metin.</summary>
-        internal static readonly Color TextDisabled = Color.FromArgb(160, 160, 160);
+        internal static readonly Color TextDisabled = Color.FromArgb(120, 120, 120);
 
         /// <summary>Beyaz metin (koyu arkaplan üzerinde).</summary>
         internal static readonly Color TextOnAccent = Color.White;
 
         // --- DataGridView Colors ---
         /// <summary>Satır alternatif arkaplan.</summary>
-        internal static readonly Color GridAlternateRow = Color.FromArgb(250, 250, 252);
+        internal static readonly Color GridAlternateRow = Color.FromArgb(35, 35, 35);
 
         /// <summary>Seçili satır.</summary>
-        internal static readonly Color GridSelection = Color.FromArgb(0, 120, 212);
+        internal static readonly Color GridSelection = Color.FromArgb(0, 150, 80);
 
         /// <summary>Grid header arkaplan.</summary>
-        internal static readonly Color GridHeaderBack = Color.FromArgb(240, 241, 244);
+        internal static readonly Color GridHeaderBack = Color.FromArgb(40, 40, 40);
 
         /// <summary>Grid header metin.</summary>
-        internal static readonly Color GridHeaderText = Color.FromArgb(50, 49, 48);
+        internal static readonly Color GridHeaderText = Color.FromArgb(180, 180, 180);
 
         // ═══════════════ FONTS ═══════════════
 

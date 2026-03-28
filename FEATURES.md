@@ -26,6 +26,7 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 | **Faz 15** | Inno Setup Dağıtım Paketi | ✅ Tamamlandı |
 | **Faz 16** | WinForms UI Modernizasyon | ✅ Tamamlandı |
 | **Faz 17** | .NET 10 Migrasyonu | ✅ Tamamlandı |
+| **Faz 18** | Koyu Tema — MikroUpdate.Win Senkronizasyonu | ✅ Tamamlandı |
 
 ---
 
@@ -255,6 +256,17 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 - [x] Build-Release.ps1 otomasyon scripti
 - [x] Minimum gereksinim kontrolü (.NET 4.8, Windows 10+)
 
+
+## Faz 18 — Koyu Tema / MikroUpdate.Win Senkronizasyonu (v0.17.0) ✅
+
+- [x] ModernTheme.cs renk paleti light → dark olarak güncellendi (16 renk sabiti)
+- [x] Accent rengi mavi → yeşil RGB(0,150,80)
+- [x] ModernToolStripRenderer hover overlay'leri koyu tema için düzeltildi
+- [x] VersionSidebarRenderer portlandı — tray menüsünde yeşil gradient sidebar
+- [x] TrayApplicationContext'e VersionSidebarRenderer uygulandı
+- [x] 0 hata ile build doğrulandı
+
+---
 
 ## Faz 17 — .NET 10 Migrasyonu (v0.16.0) ✅
 

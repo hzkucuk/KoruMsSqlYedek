@@ -58,6 +58,10 @@ namespace MikroSqlDbYedek.Win
         {
             var menu = new ContextMenuStrip();
 
+            var version = System.Reflection.Assembly
+                .GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.17";
+            menu.Renderer = new Theme.VersionSidebarRenderer($"v{version}");
+
             var tsmDashboard = new ToolStripMenuItem(Res.Get("Tray_MenuDashboard"), null, OnDashboardClick);
             tsmDashboard.Font = new System.Drawing.Font(tsmDashboard.Font, System.Drawing.FontStyle.Bold);
 
