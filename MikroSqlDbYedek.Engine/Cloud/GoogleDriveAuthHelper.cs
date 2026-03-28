@@ -1,0 +1,208 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2.Responses;
+using Google.Apis.Drive.v3;
+using Google.Apis.Services;
+using Google.Apis.Util.Store;
+using Newtonsoft.Json;
+using Serilog;
+using MikroSqlDbYedek.Core.Helpers;
+using MikroSqlDbYedek.Core.Models;
+
+namespace MikroSqlDbYedek.Engine.Cloud
+{
+    /// <summary>
+    /// Google Drive OAuth2 kimlik doğrulama yardımcı sınıfı.
+    /// Token yönetimi, yenileme ve DriveService oluşturma işlemlerini sağlar.
+    /// </summary>
+    public static class GoogleDriveAuthHelper
+    {
+        private static readonly ILogger Log = Serilog.Log.ForContext(typeof(GoogleDriveAuthHelper));
+
+        private static readonly string[] Scopes = { DriveService.Scope.DriveFile };
+
+        private const string ApplicationName = "MikroSqlDbYedek";
+
+        /// <summary>
+        /// CloudTargetConfig'den DriveService oluşturur.
+        /// Token bilgisi OAuthTokenJson'dan yüklenir.
+        /// </summary>
+        public static async Task<DriveService> CreateDriveServiceAsync(
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
+        {
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            var credential = await GetCredentialAsync(config, cancellationToken).ConfigureAwait(false);
+
+            return new DriveService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName
+            });
+        }
+
+        /// <summary>
+        /// OAuth2 interaktif kimlik doğrulama akışını başlatır (tarayıcı açılır).
+        /// Sonuç token JSON olarak döner ve CloudTargetConfig.OAuthTokenJson'a kaydedilmelidir.
+        /// </summary>
+        public static async Task<string> AuthorizeInteractiveAsync(
+            string clientId,
+            string clientSecret,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(clientId))
+                throw new ArgumentException("OAuth2 Client ID boş olamaz.", nameof(clientId));
+            if (string.IsNullOrEmpty(clientSecret))
+                throw new ArgumentException("OAuth2 Client Secret boş olamaz.", nameof(clientSecret));
+
+            var clientSecrets = new ClientSecrets
+            {
+                ClientId = clientId,
+                ClientSecret = clientSecret
+            };
+
+            var credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                clientSecrets,
+                Scopes,
+                "user",
+                cancellationToken,
+                new NullDataStore()).ConfigureAwait(false);
+
+            var tokenJson = SerializeToken(credential.Token);
+
+            Log.Information("Google Drive OAuth2 kimlik doğrulama başarılı.");
+            return tokenJson;
+        }
+
+        /// <summary>
+        /// Mevcut token'ı yenileyerek güncel token JSON döner.
+        /// </summary>
+        public static async Task<string> RefreshTokenAsync(
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
+        {
+            var credential = await GetCredentialAsync(config, cancellationToken).ConfigureAwait(false);
+
+            if (await credential.RefreshTokenAsync(cancellationToken).ConfigureAwait(false))
+            {
+                Log.Debug("Google Drive token yenilendi.");
+                return SerializeToken(credential.Token);
+            }
+
+            Log.Warning("Google Drive token yenilenemedi.");
+            return null;
+        }
+
+        /// <summary>
+        /// Token'ın geçerli olup olmadığını kontrol eder.
+        /// </summary>
+        public static bool IsTokenValid(string oauthTokenJson)
+        {
+            if (string.IsNullOrEmpty(oauthTokenJson))
+                return false;
+
+            try
+            {
+                string json = DecryptIfNeeded(oauthTokenJson);
+                var token = JsonConvert.DeserializeObject<TokenResponse>(json);
+                return token != null && !string.IsNullOrEmpty(token.RefreshToken);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        #region Private Helpers
+
+        private static async Task<UserCredential> GetCredentialAsync(
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
+        {
+            string clientId = config.OAuthClientId;
+            string clientSecret = DecryptIfNeeded(config.OAuthClientSecret);
+            string tokenJson = DecryptIfNeeded(config.OAuthTokenJson);
+
+            if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
+                throw new InvalidOperationException("OAuth2 Client ID veya Client Secret yapılandırılmamış.");
+
+            if (string.IsNullOrEmpty(tokenJson))
+                throw new InvalidOperationException("OAuth2 token bulunamadı. Önce interaktif kimlik doğrulama yapılmalıdır.");
+
+            var token = JsonConvert.DeserializeObject<TokenResponse>(tokenJson);
+            if (token == null)
+                throw new InvalidOperationException("OAuth2 token JSON geçersiz.");
+
+            var clientSecrets = new ClientSecrets
+            {
+                ClientId = clientId,
+                ClientSecret = clientSecret
+            };
+
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = clientSecrets,
+                Scopes = Scopes
+            });
+
+            var credential = new UserCredential(flow, "user", token);
+
+            // Token süresi dolmuşsa otomatik yenile
+            if (credential.Token.IsStale)
+            {
+                Log.Debug("Google Drive token süresi dolmuş, yenileniyor...");
+                await credential.RefreshTokenAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            return credential;
+        }
+
+        private static string DecryptIfNeeded(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            try
+            {
+                return PasswordProtector.IsProtected(value)
+                    ? PasswordProtector.Unprotect(value)
+                    : value;
+            }
+            catch
+            {
+                return value;
+            }
+        }
+
+        private static string SerializeToken(TokenResponse token)
+        {
+            return JsonConvert.SerializeObject(new
+            {
+                access_token = token.AccessToken,
+                refresh_token = token.RefreshToken,
+                token_type = token.TokenType,
+                expires_in = token.ExpiresInSeconds,
+                issued = token.IssuedUtc.ToString("O")
+            });
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Token saklamayan IDataStore implementasyonu.
+        /// Etkileşimli auth sırasında kullanılır; token CloudTargetConfig'de DPAPI ile saklanır.
+        /// </summary>
+        private class NullDataStore : IDataStore
+        {
+            public Task StoreAsync<T>(string key, T value) => Task.CompletedTask;
+            public Task DeleteAsync<T>(string key) => Task.CompletedTask;
+            public Task<T> GetAsync<T>(string key) => Task.FromResult(default(T));
+            public Task ClearAsync() => Task.CompletedTask;
+        }
+    }
+}

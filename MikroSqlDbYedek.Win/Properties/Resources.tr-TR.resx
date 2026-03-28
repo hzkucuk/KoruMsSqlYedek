@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- ===== Common ===== -->
+  <data name="AppName" xml:space="preserve"><value>MikroSqlDbYedek</value></data>
+  <data name="Error" xml:space="preserve"><value>Hata</value></data>
+  <data name="Warning" xml:space="preserve"><value>Uyarı</value></data>
+  <data name="Info" xml:space="preserve"><value>Bilgi</value></data>
+  <data name="Success" xml:space="preserve"><value>Başarılı</value></data>
+  <data name="ValidationError" xml:space="preserve"><value>Doğrulama Hatası</value></data>
+  <data name="Active" xml:space="preserve"><value>Aktif</value></data>
+  <data name="Passive" xml:space="preserve"><value>Pasif</value></data>
+  <data name="YesLabel" xml:space="preserve"><value>Evet</value></data>
+  <data name="NoLabel" xml:space="preserve"><value>Hayır</value></data>
+
+  <!-- ===== Tray ===== -->
+  <data name="Tray_Tooltip" xml:space="preserve"><value>MikroSqlDbYedek — SQL Yedekleme &amp; Bulut Senkronizasyon</value></data>
+  <data name="Tray_BalloonRunning" xml:space="preserve"><value>Uygulama sistem tepsisinde çalışıyor.</value></data>
+  <data name="Tray_MenuDashboard" xml:space="preserve"><value>Dashboard Aç</value></data>
+  <data name="Tray_MenuPlans" xml:space="preserve"><value>Planlar</value></data>
+  <data name="Tray_MenuLog" xml:space="preserve"><value>Log Görüntüle</value></data>
+  <data name="Tray_MenuSettings" xml:space="preserve"><value>Ayarlar</value></data>
+  <data name="Tray_MenuManualBackup" xml:space="preserve"><value>Manuel Yedekleme</value></data>
+  <data name="Tray_MenuExit" xml:space="preserve"><value>Çıkış</value></data>
+  <data name="Tray_ExitConfirmMessage" xml:space="preserve"><value>MikroSqlDbYedek uygulamasını kapatmak istediğinize emin misiniz?
+
+Not: Windows Servisi çalışmaya devam eder, zamanlanmış yedeklemeler etkilenmez.</value></data>
+  <data name="Tray_ExitConfirmTitle" xml:space="preserve"><value>MikroSqlDbYedek — Çıkış</value></data>
+
+  <!-- ===== Program ===== -->
+  <data name="Program_CriticalErrorMessage" xml:space="preserve"><value>Uygulama beklenmeyen bir hata ile karşılaştı.
+
+Detaylı bilgi log dosyasında bulunabilir.</value></data>
+  <data name="Program_CriticalErrorTitle" xml:space="preserve"><value>MikroSqlDbYedek — Kritik Hata</value></data>
+  <data name="Program_ThreadErrorMessage" xml:space="preserve"><value>Bir hata oluştu.
+
+Detaylı bilgi log dosyasında bulunabilir.</value></data>
+  <data name="Program_ThreadErrorTitle" xml:space="preserve"><value>MikroSqlDbYedek — Hata</value></data>
+
+  <!-- ===== Dashboard ===== -->
+  <data name="Dashboard_Title" xml:space="preserve"><value>MikroSqlDbYedek — Dashboard</value></data>
+  <data name="Dashboard_StatusCaption" xml:space="preserve"><value>Durum:</value></data>
+  <data name="Dashboard_Ready" xml:space="preserve"><value>Hazır</value></data>
+  <data name="Dashboard_NextBackupCaption" xml:space="preserve"><value>Sonraki Yedekleme:</value></data>
+  <data name="Dashboard_ActivePlansCaption" xml:space="preserve"><value>Aktif Planlar:</value></data>
+  <data name="Dashboard_LastBackupsGroup" xml:space="preserve"><value>Son Yedeklemeler</value></data>
+  <data name="Dashboard_ColDate" xml:space="preserve"><value>Tarih</value></data>
+  <data name="Dashboard_ColPlan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Dashboard_ColDatabase" xml:space="preserve"><value>Veritabanı</value></data>
+  <data name="Dashboard_ColResult" xml:space="preserve"><value>Sonuç</value></data>
+  <data name="Dashboard_ColSize" xml:space="preserve"><value>Boyut</value></data>
+  <data name="Dashboard_LastUpdate" xml:space="preserve"><value>Son güncelleme: {0}</value></data>
+  <data name="Dashboard_DataLoadError" xml:space="preserve"><value>Veri yükleme hatası</value></data>
+  <data name="Dashboard_NoBackupYet" xml:space="preserve"><value>Henüz yedekleme yok</value></data>
+  <data name="Dashboard_StatusSuccess" xml:space="preserve"><value>Başarılı ✔</value></data>
+  <data name="Dashboard_StatusPartial" xml:space="preserve"><value>Kısmi Başarı ⚠</value></data>
+  <data name="Dashboard_StatusFailed" xml:space="preserve"><value>Başarısız ✘</value></data>
+  <data name="Dashboard_StatusCancelled" xml:space="preserve"><value>İptal Edildi</value></data>
+  <data name="Dashboard_TypeFull" xml:space="preserve"><value>Tam</value></data>
+  <data name="Dashboard_TypeDiff" xml:space="preserve"><value>Fark</value></data>
+  <data name="Dashboard_TypeInc" xml:space="preserve"><value>Artırımlı</value></data>
+  <data name="Dashboard_ResultSuccess" xml:space="preserve"><value>Başarılı</value></data>
+  <data name="Dashboard_ResultPartial" xml:space="preserve"><value>Kısmi</value></data>
+  <data name="Dashboard_ResultFailed" xml:space="preserve"><value>Başarısız</value></data>
+  <data name="Dashboard_ResultCancelled" xml:space="preserve"><value>İptal</value></data>
+  <data name="Dashboard_TimeJustNow" xml:space="preserve"><value>az önce</value></data>
+  <data name="Dashboard_TimeMinFormat" xml:space="preserve"><value>{0} dk</value></data>
+  <data name="Dashboard_TimeHourFormat" xml:space="preserve"><value>{0} saat</value></data>
+  <data name="Dashboard_TimeDayFormat" xml:space="preserve"><value>{0} gün</value></data>
+  <data name="Dashboard_TimeAgo" xml:space="preserve"><value>önce</value></data>
+
+  <!-- ===== PlanList ===== -->
+  <data name="PlanList_Title" xml:space="preserve"><value>Yedekleme Planları</value></data>
+  <data name="PlanList_Unnamed" xml:space="preserve"><value>(İsimsiz)</value></data>
+  <data name="PlanList_TargetFormat" xml:space="preserve"><value>{0} hedef</value></data>
+  <data name="PlanList_TotalFormat" xml:space="preserve"><value>Toplam {0} plan</value></data>
+  <data name="PlanList_StratFull" xml:space="preserve"><value>Tam Yedek</value></data>
+  <data name="PlanList_StratFullDiff" xml:space="preserve"><value>Tam + Fark</value></data>
+  <data name="PlanList_StratFullDiffInc" xml:space="preserve"><value>Tam + Fark + Artırımlı</value></data>
+  <data name="PlanList_LoadError" xml:space="preserve"><value>Plan listesi yüklenirken bir hata oluştu.
+
+{0}</value></data>
+  <data name="PlanList_DeleteConfirm" xml:space="preserve"><value>'{0}' planını silmek istediğinize emin misiniz?
+
+Bu işlem geri alınamaz.</value></data>
+  <data name="PlanList_DeleteTitle" xml:space="preserve"><value>Plan Sil</value></data>
+  <data name="PlanList_DeleteError" xml:space="preserve"><value>Plan silinirken hata oluştu.
+
+{0}</value></data>
+  <data name="PlanList_ExportDialogTitle" xml:space="preserve"><value>Planı Dışa Aktar</value></data>
+  <data name="PlanList_ExportFilter" xml:space="preserve"><value>JSON Dosyası|*.json</value></data>
+  <data name="PlanList_ExportSuccess" xml:space="preserve"><value>Plan başarıyla dışa aktarıldı.</value></data>
+  <data name="PlanList_ExportError" xml:space="preserve"><value>Dışa aktarma sırasında hata oluştu.
+
+{0}</value></data>
+  <data name="PlanList_ImportDialogTitle" xml:space="preserve"><value>Plan İçe Aktar</value></data>
+  <data name="PlanList_ImportSuccess" xml:space="preserve"><value>'{0}' planı başarıyla içe aktarıldı.</value></data>
+  <data name="PlanList_ImportError" xml:space="preserve"><value>İçe aktarma sırasında hata oluştu.
+
+{0}</value></data>
+  <data name="PlanList_SelectPlan" xml:space="preserve"><value>Lütfen bir plan seçin.</value></data>
+  <data name="PlanList_ColEnabled" xml:space="preserve"><value>Aktif</value></data>
+  <data name="PlanList_ColPlanName" xml:space="preserve"><value>Plan Adı</value></data>
+  <data name="PlanList_ColStrategy" xml:space="preserve"><value>Strateji</value></data>
+  <data name="PlanList_ColDatabases" xml:space="preserve"><value>Veritabanları</value></data>
+  <data name="PlanList_ColSchedule" xml:space="preserve"><value>Zamanlama</value></data>
+  <data name="PlanList_ColCloud" xml:space="preserve"><value>Bulut</value></data>
+  <data name="PlanList_ColCreatedAt" xml:space="preserve"><value>Oluşturma</value></data>
+  <data name="PlanList_BtnNew" xml:space="preserve"><value>➕ Yeni Plan</value></data>
+  <data name="PlanList_BtnEdit" xml:space="preserve"><value>✏️ Düzenle</value></data>
+  <data name="PlanList_BtnDelete" xml:space="preserve"><value>🗑️ Sil</value></data>
+  <data name="PlanList_BtnExport" xml:space="preserve"><value>📤 Dışa Aktar</value></data>
+  <data name="PlanList_BtnImport" xml:space="preserve"><value>📥 İçe Aktar</value></data>
+
+  <!-- ===== PlanEdit ===== -->
+  <data name="PlanEdit_TitleNew" xml:space="preserve"><value>Yeni Yedekleme Planı</value></data>
+  <data name="PlanEdit_TitleEdit" xml:space="preserve"><value>Plan Düzenle — {0}</value></data>
+  <data name="PlanEdit_AuthWindows" xml:space="preserve"><value>Windows Authentication</value></data>
+  <data name="PlanEdit_AuthSql" xml:space="preserve"><value>SQL Server Authentication</value></data>
+  <data name="PlanEdit_StratFullOnly" xml:space="preserve"><value>Yalnızca Tam Yedek</value></data>
+  <data name="PlanEdit_StratFullDiff" xml:space="preserve"><value>Tam + Fark Yedek</value></data>
+  <data name="PlanEdit_StratFullDiffInc" xml:space="preserve"><value>Tam + Fark + Artırımlı Yedek</value></data>
+  <data name="PlanEdit_AlgoLzma2" xml:space="preserve"><value>LZMA2 (Önerilen)</value></data>
+  <data name="PlanEdit_AlgoLzma" xml:space="preserve"><value>LZMA</value></data>
+  <data name="PlanEdit_AlgoBzip2" xml:space="preserve"><value>BZip2</value></data>
+  <data name="PlanEdit_AlgoDeflate" xml:space="preserve"><value>Deflate</value></data>
+  <data name="PlanEdit_LevelNone" xml:space="preserve"><value>Yok</value></data>
+  <data name="PlanEdit_LevelFast" xml:space="preserve"><value>Hızlı</value></data>
+  <data name="PlanEdit_LevelNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="PlanEdit_LevelMax" xml:space="preserve"><value>Maksimum</value></data>
+  <data name="PlanEdit_LevelUltra" xml:space="preserve"><value>Ultra (Önerilen)</value></data>
+  <data name="PlanEdit_RetKeepLast" xml:space="preserve"><value>Son N Yedeği Tut</value></data>
+  <data name="PlanEdit_RetDeleteOlder" xml:space="preserve"><value>X Günden Eski Olanları Sil</value></data>
+  <data name="PlanEdit_RetBoth" xml:space="preserve"><value>Her İkisi</value></data>
+  <data name="PlanEdit_NameRequired" xml:space="preserve"><value>Plan adı boş olamaz.</value></data>
+  <data name="PlanEdit_SaveError" xml:space="preserve"><value>Plan kaydedilirken hata oluştu.
+
+{0}</value></data>
+  <data name="PlanEdit_Testing" xml:space="preserve"><value>Test Ediliyor...</value></data>
+  <data name="PlanEdit_TestBtn" xml:space="preserve"><value>🔌 Bağlantıyı Test Et</value></data>
+  <data name="PlanEdit_ConnSuccess" xml:space="preserve"><value>SQL Server bağlantısı başarılı!</value></data>
+  <data name="PlanEdit_ConnSuccessTitle" xml:space="preserve"><value>Bağlantı Testi</value></data>
+  <data name="PlanEdit_ConnFailed" xml:space="preserve"><value>SQL Server bağlantısı başarısız!</value></data>
+  <data name="PlanEdit_ConnError" xml:space="preserve"><value>Bağlantı testi hatası:
+
+{0}</value></data>
+  <data name="PlanEdit_BrowseLocalPath" xml:space="preserve"><value>Yerel yedek dizini seçin</value></data>
+  <data name="PlanEdit_RemoveTargetConfirm" xml:space="preserve"><value>'{0}' hedefini kaldırmak istiyor musunuz?</value></data>
+  <data name="PlanEdit_RemoveTargetTitle" xml:space="preserve"><value>Hedef Kaldır</value></data>
+  <data name="PlanEdit_DbSizeFormat" xml:space="preserve"><value>{0} ({1:N0} MB)</value></data>
+
+  <!-- ===== ManualBackup ===== -->
+  <data name="ManualBackup_Title" xml:space="preserve"><value>Manuel Yedekleme</value></data>
+  <data name="ManualBackup_SelectPlanDefault" xml:space="preserve"><value>-- Plan seçin --</value></data>
+  <data name="ManualBackup_PleaseSelectPlan" xml:space="preserve"><value>Lütfen bir plan seçin.</value></data>
+  <data name="ManualBackup_PleaseSelectDb" xml:space="preserve"><value>Lütfen en az bir veritabanı seçin.</value></data>
+  <data name="ManualBackup_Starting" xml:space="preserve"><value>Yedekleme başlatılıyor...</value></data>
+  <data name="ManualBackup_ProgressFormat" xml:space="preserve"><value>[{0}/{1}] {2} yedekleniyor...</value></data>
+  <data name="ManualBackup_BackingUpFormat" xml:space="preserve"><value>▶ {0} ({1}) yedekleniyor...</value></data>
+  <data name="ManualBackup_SuccessFormat" xml:space="preserve"><value>  ✓ Başarılı — {0} MB → {1}</value></data>
+  <data name="ManualBackup_FailedFormat" xml:space="preserve"><value>  ✗ Başarısız — {0}</value></data>
+  <data name="ManualBackup_ErrorFormat" xml:space="preserve"><value>  ✗ Hata — {0}</value></data>
+  <data name="ManualBackup_CompletedFormat" xml:space="preserve"><value>Tamamlandı: {0} başarılı, {1} başarısız</value></data>
+  <data name="ManualBackup_ResultFormat" xml:space="preserve"><value>
+═══ Sonuç: {0} başarılı, {1} başarısız ═══</value></data>
+  <data name="ManualBackup_Cancelled" xml:space="preserve"><value>Yedekleme iptal edildi.</value></data>
+  <data name="ManualBackup_CancelledLog" xml:space="preserve"><value>
+⚠ İşlem kullanıcı tarafından iptal edildi.</value></data>
+  <data name="ManualBackup_UnexpectedError" xml:space="preserve"><value>Beklenmeyen hata oluştu.</value></data>
+  <data name="ManualBackup_UnexpectedErrorLog" xml:space="preserve"><value>
+✗ Beklenmeyen hata: {0}</value></data>
+  <data name="ManualBackup_Cancelling" xml:space="preserve"><value>İptal ediliyor...</value></data>
+  <data name="ManualBackup_CloseWhileRunning" xml:space="preserve"><value>Yedekleme devam ediyor. İptal edip kapatılsın mı?</value></data>
+
+  <!-- ===== Settings ===== -->
+  <data name="Settings_Title" xml:space="preserve"><value>Ayarlar</value></data>
+  <data name="Settings_LoadError" xml:space="preserve"><value>Ayarlar yüklenirken hata oluştu: {0}</value></data>
+  <data name="Settings_BackupPathRequired" xml:space="preserve"><value>Varsayılan yedek dizini boş olamaz.</value></data>
+  <data name="Settings_SmtpSenderRequired" xml:space="preserve"><value>SMTP sunucusu girildiyse gönderici e-posta adresi zorunludur.</value></data>
+  <data name="Settings_SmtpRecipientRequired" xml:space="preserve"><value>SMTP sunucusu girildiyse alıcı e-posta adresi zorunludur.</value></data>
+  <data name="Settings_BrowsePath" xml:space="preserve"><value>Varsayılan yedek dizinini seçin</value></data>
+  <data name="Settings_SavedMessage" xml:space="preserve"><value>Ayarlar başarıyla kaydedildi.
+
+Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></data>
+  <data name="Settings_SavedTitle" xml:space="preserve"><value>Ayarlar Kaydedildi</value></data>
+  <data name="Settings_SaveError" xml:space="preserve"><value>Ayarlar kaydedilirken hata oluştu: {0}</value></data>
+  <data name="Settings_SmtpServerRequired" xml:space="preserve"><value>SMTP sunucu adresi girin.</value></data>
+  <data name="Settings_SmtpRecipientTestRequired" xml:space="preserve"><value>Alıcı e-posta adresi girin.</value></data>
+  <data name="Settings_SmtpTestBody" xml:space="preserve"><value>Bu bir test e-postasıdır. SMTP ayarlarınız doğru çalışıyor.</value></data>
+  <data name="Settings_SmtpTestSubject" xml:space="preserve"><value>[MikroSqlDbYedek] SMTP Test — {0}</value></data>
+  <data name="Settings_SmtpTestSuccess" xml:space="preserve"><value>Test e-postası başarıyla gönderildi!</value></data>
+  <data name="Settings_SmtpTestErrorTitle" xml:space="preserve"><value>SMTP Test Hatası</value></data>
+  <data name="Settings_SmtpTestError" xml:space="preserve"><value>E-posta gönderilemedi:
+
+{0}</value></data>
+  <data name="Settings_TabGeneral" xml:space="preserve"><value>Genel</value></data>
+  <data name="Settings_TabSmtp" xml:space="preserve"><value>SMTP</value></data>
+
+  <!-- ===== LogViewer ===== -->
+  <data name="LogViewer_Title" xml:space="preserve"><value>Log Görüntüleyici</value></data>
+  <data name="LogViewer_NoDirFound" xml:space="preserve"><value>(Log dizini bulunamadı)</value></data>
+  <data name="LogViewer_NoFilesFound" xml:space="preserve"><value>(Log dosyası bulunamadı)</value></data>
+  <data name="LogViewer_LevelAll" xml:space="preserve"><value>Tümü</value></data>
+  <data name="LogViewer_LevelVerbose" xml:space="preserve"><value>VRB — Verbose</value></data>
+  <data name="LogViewer_LevelDebug" xml:space="preserve"><value>DBG — Debug</value></data>
+  <data name="LogViewer_LevelInfo" xml:space="preserve"><value>INF — Information</value></data>
+  <data name="LogViewer_LevelWarning" xml:space="preserve"><value>WRN — Warning</value></data>
+  <data name="LogViewer_LevelError" xml:space="preserve"><value>ERR — Error</value></data>
+  <data name="LogViewer_LevelFatal" xml:space="preserve"><value>FTL — Fatal</value></data>
+  <data name="LogViewer_RecordCount" xml:space="preserve"><value>{0} kayıt</value></data>
+  <data name="LogViewer_ReadError" xml:space="preserve"><value>Okuma hatası</value></data>
+  <data name="LogViewer_FilteredCount" xml:space="preserve"><value>{0} gösteriliyor</value></data>
+  <data name="LogViewer_ExportDialogTitle" xml:space="preserve"><value>Log Dışa Aktar</value></data>
+  <data name="LogViewer_ExportFilter" xml:space="preserve"><value>Metin Dosyası (*.txt)|*.txt|Tüm Dosyalar (*.*)|*.*</value></data>
+  <data name="LogViewer_ExportSuccessFormat" xml:space="preserve"><value>{0} kayıt dışa aktarıldı.</value></data>
+  <data name="LogViewer_ExportSuccessTitle" xml:space="preserve"><value>Dışa Aktarma Başarılı</value></data>
+  <data name="LogViewer_ExportError" xml:space="preserve"><value>Dışa aktarma hatası: {0}</value></data>
+  <data name="LogViewer_ColTime" xml:space="preserve"><value>Zaman</value></data>
+  <data name="LogViewer_ColLevel" xml:space="preserve"><value>Seviye</value></data>
+  <data name="LogViewer_ColMessage" xml:space="preserve"><value>Mesaj</value></data>
+
+  <!-- ===== CloudTarget ===== -->
+  <data name="CloudTarget_TitleNew" xml:space="preserve"><value>Yeni Bulut Hedef</value></data>
+  <data name="CloudTarget_TitleEdit" xml:space="preserve"><value>Bulut Hedef Düzenle</value></data>
+  <data name="CloudTarget_NameRequired" xml:space="preserve"><value>Görünen ad boş olamaz.</value></data>
+  <data name="CloudTarget_BrowsePath" xml:space="preserve"><value>Yerel veya ağ yolu seçin</value></data>
+  <data name="CloudTarget_GooglePersonal" xml:space="preserve"><value>Google Drive (Bireysel)</value></data>
+  <data name="CloudTarget_GoogleWorkspace" xml:space="preserve"><value>Google Drive (Workspace)</value></data>
+  <data name="CloudTarget_OneDrivePersonal" xml:space="preserve"><value>OneDrive (Bireysel)</value></data>
+  <data name="CloudTarget_OneDriveBusiness" xml:space="preserve"><value>OneDrive (Kurumsal)</value></data>
+  <data name="CloudTarget_Ftp" xml:space="preserve"><value>FTP</value></data>
+  <data name="CloudTarget_Ftps" xml:space="preserve"><value>FTPS</value></data>
+  <data name="CloudTarget_Sftp" xml:space="preserve"><value>SFTP</value></data>
+  <data name="CloudTarget_LocalPath" xml:space="preserve"><value>Yerel Yol</value></data>
+  <data name="CloudTarget_UncPath" xml:space="preserve"><value>UNC Ağ Paylaşımı</value></data>
+
+  <!-- ===== FileSource ===== -->
+  <data name="FileSource_TitleNew" xml:space="preserve"><value>Yeni Dosya Kaynağı</value></data>
+  <data name="FileSource_TitleEdit" xml:space="preserve"><value>Dosya Kaynağı Düzenle</value></data>
+  <data name="FileSource_NameRequired" xml:space="preserve"><value>Kaynak adı boş olamaz.</value></data>
+  <data name="FileSource_PathRequired" xml:space="preserve"><value>Kaynak dizin yolu boş olamaz.</value></data>
+  <data name="FileSource_BrowsePath" xml:space="preserve"><value>Yedeklenecek kaynak dizini seçin</value></data>
+
+</root>
