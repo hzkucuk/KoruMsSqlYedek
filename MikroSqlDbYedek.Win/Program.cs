@@ -48,8 +48,9 @@ namespace MikroSqlDbYedek.Win
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
-                // Dil ayarını uygula (container'dan önce — UI string'leri etkilemesi için)
+                // Dil ve tema ayarlarını uygula (container'dan önce)
                 ApplyLanguageSetting();
+                ApplyThemeSetting();
 
                 Log.Information("MikroSqlDbYedek başlatılıyor — v{Version}",
                     System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
@@ -116,6 +117,24 @@ namespace MikroSqlDbYedek.Win
             catch (Exception ex)
             {
                 Log.Warning(ex, "Dil ayarı uygulanırken hata, varsayılan (tr-TR) kullanılacak.");
+            }
+        }
+
+        private static void ApplyThemeSetting()
+        {
+            try
+            {
+                var settingsManager = new AppSettingsManager();
+                var settings = settingsManager.Load();
+                var mode = settings.Theme == "light"
+                    ? Theme.ThemeMode.Light
+                    : Theme.ThemeMode.Dark;
+                Theme.ModernTheme.ApplyTheme(mode);
+                Log.Information("Tema ayarı uygulandı: {Theme}", settings.Theme);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Tema ayarı uygulanırken hata, varsayılan (dark) kullanılacak.");
             }
         }
 

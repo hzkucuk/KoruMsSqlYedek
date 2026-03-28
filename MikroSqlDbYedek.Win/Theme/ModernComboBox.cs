@@ -62,7 +62,7 @@ namespace MikroSqlDbYedek.Win.Theme
                 e.Graphics.FillRectangle(brush, e.Bounds);
             }
 
-            string text = Items[e.Index]?.ToString() ?? string.Empty;
+            string text = GetItemText(Items[e.Index]);
             var textRect = new Rectangle(
                 e.Bounds.X + 8,
                 e.Bounds.Y,

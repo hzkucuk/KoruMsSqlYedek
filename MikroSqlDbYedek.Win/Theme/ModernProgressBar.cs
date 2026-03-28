@@ -16,7 +16,7 @@ namespace MikroSqlDbYedek.Win.Theme
         private int _minimum;
         private int _maximum = 100;
         private Color _progressColor = ModernTheme.AccentPrimary;
-        private Color _trackColor = Color.FromArgb(230, 232, 236);
+        private Color _trackColor = ModernTheme.BorderColor;
         private bool _showPercentage = true;
         private int _radius = 6;
         private ProgressBarDisplayMode _displayMode = ProgressBarDisplayMode.Percentage;

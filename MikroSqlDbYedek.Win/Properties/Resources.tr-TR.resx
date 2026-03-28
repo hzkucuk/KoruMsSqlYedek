@@ -290,4 +290,16 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="FileSource_PathRequired" xml:space="preserve"><value>Kaynak dizin yolu boş olamaz.</value></data>
   <data name="FileSource_BrowsePath" xml:space="preserve"><value>Yedeklenecek kaynak dizini seçin</value></data>
 
+  <!-- ===== Tabs ===== -->
+  <data name="Tab_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Tab_Plans" xml:space="preserve"><value>Planlar</value></data>
+  <data name="Tab_Backup" xml:space="preserve"><value>Yedekleme</value></data>
+  <data name="Tab_Logs" xml:space="preserve"><value>Loglar</value></data>
+  <data name="Tab_Settings" xml:space="preserve"><value>Ayarlar</value></data>
+
+  <!-- ===== Theme ===== -->
+  <data name="Settings_Theme" xml:space="preserve"><value>Tema:</value></data>
+  <data name="Theme_Dark" xml:space="preserve"><value>Koyu (Dark)</value></data>
+  <data name="Theme_Light" xml:space="preserve"><value>Açık (Light)</value></data>
+
 </root>

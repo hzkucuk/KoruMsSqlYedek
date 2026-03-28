@@ -76,13 +76,13 @@ namespace MikroSqlDbYedek.Win
             // ── Tab 2: Yedekleme ─────────────────────────────────────────
             _tlpBackup = new System.Windows.Forms.TableLayoutPanel();
             _lblPlan = new System.Windows.Forms.Label();
-            _cmbPlan = new System.Windows.Forms.ComboBox();
+            _cmbPlan = new Theme.ModernComboBox();
             _lblBackupType = new System.Windows.Forms.Label();
-            _cmbBackupType = new System.Windows.Forms.ComboBox();
+            _cmbBackupType = new Theme.ModernComboBox();
             _lblDatabases = new System.Windows.Forms.Label();
             _clbDatabases = new System.Windows.Forms.CheckedListBox();
             _lblBackupStatus = new System.Windows.Forms.Label();
-            _progressBar = new System.Windows.Forms.ProgressBar();
+            _progressBar = new Theme.ModernProgressBar();
             _txtBackupLog = new System.Windows.Forms.TextBox();
             _flpBackupButtons = new System.Windows.Forms.FlowLayoutPanel();
             _btnStart = new System.Windows.Forms.Button();
@@ -92,9 +92,9 @@ namespace MikroSqlDbYedek.Win
             _tlpLogsMain = new System.Windows.Forms.TableLayoutPanel();
             _tlpLogToolbar = new System.Windows.Forms.TableLayoutPanel();
             _lblLogFile = new System.Windows.Forms.Label();
-            _cmbLogFile = new System.Windows.Forms.ComboBox();
+            _cmbLogFile = new Theme.ModernComboBox();
             _lblLevel = new System.Windows.Forms.Label();
-            _cmbLevel = new System.Windows.Forms.ComboBox();
+            _cmbLevel = new Theme.ModernComboBox();
             _chkAutoTail = new System.Windows.Forms.CheckBox();
             _lblLogSearch = new System.Windows.Forms.Label();
             _txtLogSearch = new System.Windows.Forms.TextBox();
@@ -116,7 +116,9 @@ namespace MikroSqlDbYedek.Win
             _tabSmtp = new System.Windows.Forms.TabPage();
             _tlpGeneral = new System.Windows.Forms.TableLayoutPanel();
             _lblLanguage = new System.Windows.Forms.Label();
-            _cmbLanguage = new System.Windows.Forms.ComboBox();
+            _cmbLanguage = new Theme.ModernComboBox();
+            _lblTheme = new System.Windows.Forms.Label();
+            _cmbTheme = new Theme.ModernComboBox();
             _chkStartWithWindows = new System.Windows.Forms.CheckBox();
             _chkMinimizeToTray = new System.Windows.Forms.CheckBox();
             _lblDefaultBackupPath = new System.Windows.Forms.Label();
@@ -466,8 +468,7 @@ namespace MikroSqlDbYedek.Win
             _progressBar.Dock = System.Windows.Forms.DockStyle.Fill;
             _progressBar.Height = 22;
             _progressBar.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            _progressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
-            _progressBar.ForeColor = Theme.ModernTheme.AccentPrimary;
+            _progressBar.ShowPercentage = false;
 
             _tlpBackup.Controls.Add(_txtBackupLog, 0, 6);
             _tlpBackup.SetColumnSpan(_txtBackupLog, 2);
@@ -490,7 +491,9 @@ namespace MikroSqlDbYedek.Win
             _flpBackupButtons.Controls.Add(_btnStart);
 
             _btnStart.Text = "▶ Yedeklemeyi Başlat";
-            _btnStart.Size = new System.Drawing.Size(150, 32);
+            _btnStart.AutoSize = true;
+            _btnStart.Padding = new System.Windows.Forms.Padding(10, 4, 10, 4);
+            _btnStart.Height = 32;
             _btnStart.Margin = new System.Windows.Forms.Padding(4);
             _btnStart.Click += OnStartBackupClick;
 
@@ -666,8 +669,8 @@ namespace MikroSqlDbYedek.Win
             _tlpGeneral.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             _tlpGeneral.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
-            _tlpGeneral.RowCount = 7;
-            for (int i = 0; i < 6; i++)
+            _tlpGeneral.RowCount = 8;
+            for (int i = 0; i < 7; i++)
                 _tlpGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
 
@@ -730,6 +733,15 @@ namespace MikroSqlDbYedek.Win
             _lblHistoryRetentionSuffix.ForeColor = Theme.ModernTheme.TextPrimary;
             _lblHistoryRetentionSuffix.Anchor = System.Windows.Forms.AnchorStyles.Left;
             _lblHistoryRetentionSuffix.Margin = new System.Windows.Forms.Padding(3, 8, 3, 3);
+
+            _tlpGeneral.Controls.Add(_lblTheme, 0, 6); _tlpGeneral.Controls.Add(_cmbTheme, 1, 6);
+            _lblTheme.Text = "Tema:"; _lblTheme.AutoSize = true;
+            _lblTheme.ForeColor = Theme.ModernTheme.TextPrimary;
+            _lblTheme.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            _lblTheme.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _cmbTheme.Items.AddRange(new object[] { "Koyu (Dark)", "Açık (Light)" });
+            _cmbTheme.Width = 200;
+            _cmbTheme.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
 
             // Tab: SMTP
             _tabSmtp.Controls.Add(_tlpSmtp);
@@ -941,13 +953,13 @@ namespace MikroSqlDbYedek.Win
         // Backup
         private System.Windows.Forms.TableLayoutPanel _tlpBackup;
         private System.Windows.Forms.Label _lblPlan;
-        private System.Windows.Forms.ComboBox _cmbPlan;
+        private Theme.ModernComboBox _cmbPlan;
         private System.Windows.Forms.Label _lblBackupType;
-        private System.Windows.Forms.ComboBox _cmbBackupType;
+        private Theme.ModernComboBox _cmbBackupType;
         private System.Windows.Forms.Label _lblDatabases;
         private System.Windows.Forms.CheckedListBox _clbDatabases;
         private System.Windows.Forms.Label _lblBackupStatus;
-        private System.Windows.Forms.ProgressBar _progressBar;
+        private Theme.ModernProgressBar _progressBar;
         private System.Windows.Forms.TextBox _txtBackupLog;
         private System.Windows.Forms.FlowLayoutPanel _flpBackupButtons;
         private System.Windows.Forms.Button _btnStart;
@@ -957,9 +969,9 @@ namespace MikroSqlDbYedek.Win
         private System.Windows.Forms.TableLayoutPanel _tlpLogsMain;
         private System.Windows.Forms.TableLayoutPanel _tlpLogToolbar;
         private System.Windows.Forms.Label _lblLogFile;
-        private System.Windows.Forms.ComboBox _cmbLogFile;
+        private Theme.ModernComboBox _cmbLogFile;
         private System.Windows.Forms.Label _lblLevel;
-        private System.Windows.Forms.ComboBox _cmbLevel;
+        private Theme.ModernComboBox _cmbLevel;
         private System.Windows.Forms.CheckBox _chkAutoTail;
         private System.Windows.Forms.Label _lblLogSearch;
         private System.Windows.Forms.TextBox _txtLogSearch;
@@ -981,7 +993,9 @@ namespace MikroSqlDbYedek.Win
         private System.Windows.Forms.TabPage _tabSmtp;
         private System.Windows.Forms.TableLayoutPanel _tlpGeneral;
         private System.Windows.Forms.Label _lblLanguage;
-        private System.Windows.Forms.ComboBox _cmbLanguage;
+        private Theme.ModernComboBox _cmbLanguage;
+        private System.Windows.Forms.Label _lblTheme;
+        private Theme.ModernComboBox _cmbTheme;
         private System.Windows.Forms.CheckBox _chkStartWithWindows;
         private System.Windows.Forms.CheckBox _chkMinimizeToTray;
         private System.Windows.Forms.Label _lblDefaultBackupPath;

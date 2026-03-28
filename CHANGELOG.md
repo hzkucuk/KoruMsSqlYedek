@@ -1,3 +1,30 @@
+## [0.18.1] - 2026-03-28 — Faz 20: Görsel Düzeltmeler & Dark/Light Tema Seçimi
+
+### Düzeltmeler
+- **Sekme adları**: `Tab_Dashboard` / `Tab_Plans` vb. kaynak anahtarları her iki .resx dosyasına eklendi — artık "Tab_Dashboard" yerine "Dashboard" / "Planlar" görünüyor
+- **ComboBox**: Tüm `System.Windows.Forms.ComboBox` → `Theme.ModernComboBox` olarak değiştirildi; owner-draw ile tam karanlık tema desteği sağlandı
+- **ModernComboBox.OnDrawItem**: `Items[e.Index]?.ToString()` → `GetItemText(Items[e.Index])` — `DisplayMember` özelliğine artık saygı gösteriyor (ör. BackupPlan.PlanName)
+- **ModernProgressBar**: `_trackColor` varsayılanı `Color.FromArgb(230,232,236)` (açık gri) → `ModernTheme.BorderColor` (koyu temada RGB 70,70,70) olarak güncellendi
+- **Yedekleme Butonu**: `_btnStart` sabit `Size(150,32)` → `AutoSize = true + Padding(10,4)` — "▶ Yedeklemeyi Başlat" metni artık kırpılmıyor
+
+### Eklenenler
+- **Dark / Light Tema Seçimi**: Ayarlar sekmesine "Tema" açılır menüsü eklendi (Koyu / Açık)
+- **AppSettings.Theme**: `"dark"` veya `"light"` değeri JSON ayarlarına kaydediliyor
+- **Program.cs ApplyThemeSetting()**: Uygulama başlangıcında tema ayarı okunup uygulanıyor
+- **ModernTheme.ApplyTheme()**: Kaydet sonrasında anlık olarak çağrılıyor; tam etki için yeniden başlatma gerekebilir
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/Properties/Resources.resx
+- MikroSqlDbYedek.Win/Properties/Resources.tr-TR.resx
+- MikroSqlDbYedek.Win/Theme/ModernComboBox.cs
+- MikroSqlDbYedek.Win/Theme/ModernProgressBar.cs
+- MikroSqlDbYedek.Core/Models/AppSettings.cs
+- MikroSqlDbYedek.Win/MainWindow.Designer.cs
+- MikroSqlDbYedek.Win/MainWindow.cs
+- MikroSqlDbYedek.Win/Program.cs
+
+---
+
 ## [0.18.0] - 2026-03-28 — Faz 19: Tek Pencere — Sekmeli Ana Form
 
 ### Değiştirilenler

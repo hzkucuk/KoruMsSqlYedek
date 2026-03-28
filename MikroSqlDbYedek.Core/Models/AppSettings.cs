@@ -36,6 +36,10 @@ namespace MikroSqlDbYedek.Core.Models
         [JsonProperty("smtp")]
         public SmtpSettings Smtp { get; set; } = new SmtpSettings();
 
+        /// <summary>Uygulama teması ("dark" veya "light").</summary>
+        [JsonProperty("theme")]
+        public string Theme { get; set; } = "dark";
+
         /// <summary>Ayar şeması versiyonu (geriye uyumluluk).</summary>
         [JsonProperty("schemaVersion")]
         public int SchemaVersion { get; set; } = 1;

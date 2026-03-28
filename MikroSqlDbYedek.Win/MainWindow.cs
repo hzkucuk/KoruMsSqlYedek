@@ -913,6 +913,7 @@ namespace MikroSqlDbYedek.Win
         private void SettingsToControls(AppSettings s)
         {
             _cmbLanguage.SelectedIndex = s.Language == "en-US" ? 1 : 0;
+            _cmbTheme.SelectedIndex = s.Theme == "light" ? 1 : 0;
             _chkStartWithWindows.Checked = s.StartWithWindows;
             _chkMinimizeToTray.Checked = s.MinimizeToTray;
             _txtDefaultBackupPath.Text = s.DefaultBackupPath;
@@ -939,6 +940,7 @@ namespace MikroSqlDbYedek.Win
             var s = _settings ?? new AppSettings();
 
             s.Language = _cmbLanguage.SelectedIndex == 1 ? "en-US" : "tr-TR";
+            s.Theme = _cmbTheme.SelectedIndex == 1 ? "light" : "dark";
             s.StartWithWindows = _chkStartWithWindows.Checked;
             s.MinimizeToTray = _chkMinimizeToTray.Checked;
             s.DefaultBackupPath = _txtDefaultBackupPath.Text.Trim();
@@ -1013,6 +1015,8 @@ namespace MikroSqlDbYedek.Win
             {
                 var settings = ControlsToSettings();
                 _settingsManager.Save(settings);
+                Theme.ModernTheme.ApplyTheme(settings.Theme == "light"
+                    ? Theme.ThemeMode.Light : Theme.ThemeMode.Dark);
                 Log.Information("Ayarlar kaydedildi.");
                 MessageBox.Show(Res.Get("Settings_SavedMessage"),
                     Res.Get("Settings_SavedTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1134,6 +1138,15 @@ namespace MikroSqlDbYedek.Win
             _colCloudTargets.HeaderText = Res.Get("PlanList_ColCloud");
             _colCreatedAt.HeaderText = Res.Get("PlanList_ColCreatedAt");
             _tslPlanCount.Text = Res.Format("PlanList_TotalFormat", 0);
+
+            // Settings — theme items
+            _lblTheme.Text = Res.Get("Settings_Theme");
+            int prevThemeIdx = _cmbTheme.SelectedIndex;
+            _cmbTheme.Items.Clear();
+            _cmbTheme.Items.Add(Res.Get("Theme_Dark"));
+            _cmbTheme.Items.Add(Res.Get("Theme_Light"));
+            if (prevThemeIdx >= 0 && prevThemeIdx < _cmbTheme.Items.Count)
+                _cmbTheme.SelectedIndex = prevThemeIdx;
 
             // Status bar
             _tslStatus.Text = Res.Get("Dashboard_Ready");

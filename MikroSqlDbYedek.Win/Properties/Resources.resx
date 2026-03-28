@@ -290,4 +290,16 @@ Language change requires application restart.</value></data>
   <data name="FileSource_PathRequired" xml:space="preserve"><value>Source directory path cannot be empty.</value></data>
   <data name="FileSource_BrowsePath" xml:space="preserve"><value>Select source directory to backup</value></data>
 
+  <!-- ===== Tabs ===== -->
+  <data name="Tab_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Tab_Plans" xml:space="preserve"><value>Plans</value></data>
+  <data name="Tab_Backup" xml:space="preserve"><value>Backup</value></data>
+  <data name="Tab_Logs" xml:space="preserve"><value>Logs</value></data>
+  <data name="Tab_Settings" xml:space="preserve"><value>Settings</value></data>
+
+  <!-- ===== Theme ===== -->
+  <data name="Settings_Theme" xml:space="preserve"><value>Theme:</value></data>
+  <data name="Theme_Dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Theme_Light" xml:space="preserve"><value>Light</value></data>
+
 </root>
