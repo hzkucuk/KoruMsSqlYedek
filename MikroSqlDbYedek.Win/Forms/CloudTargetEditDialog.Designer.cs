@@ -28,7 +28,7 @@ namespace MikroSqlDbYedek.Win.Forms
             _lblHost = new System.Windows.Forms.Label();
             _txtHost = new System.Windows.Forms.TextBox();
             _lblPort = new System.Windows.Forms.Label();
-            _nudPort = new System.Windows.Forms.NumericUpDown();
+            _nudPort = new Theme.ModernNumericUpDown();
             _lblUsername = new System.Windows.Forms.Label();
             _txtUsername = new System.Windows.Forms.TextBox();
             _lblPassword = new System.Windows.Forms.Label();
@@ -55,15 +55,13 @@ namespace MikroSqlDbYedek.Win.Forms
             _lblRemotePath = new System.Windows.Forms.Label();
             _txtRemotePath = new System.Windows.Forms.TextBox();
             _lblBandwidth = new System.Windows.Forms.Label();
-            _nudBandwidth = new System.Windows.Forms.NumericUpDown();
+            _nudBandwidth = new Theme.ModernNumericUpDown();
             _chkPermanentDelete = new System.Windows.Forms.CheckBox();
 
             // Butonlar
             _btnSave = new Theme.ModernButton();
             _btnCancel = new Theme.ModernButton();
 
-            ((System.ComponentModel.ISupportInitialize)_nudPort).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)_nudBandwidth).BeginInit();
             _grpFtp.SuspendLayout();
             _grpOAuth.SuspendLayout();
             _grpLocal.SuspendLayout();
@@ -257,8 +255,6 @@ namespace MikroSqlDbYedek.Win.Forms
             StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             Text = "Bulut Hedef";
 
-            ((System.ComponentModel.ISupportInitialize)_nudPort).EndInit();
-            ((System.ComponentModel.ISupportInitialize)_nudBandwidth).EndInit();
             _grpFtp.ResumeLayout(false);
             _grpFtp.PerformLayout();
             _grpOAuth.ResumeLayout(false);
@@ -282,7 +278,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.Label _lblHost;
         private System.Windows.Forms.TextBox _txtHost;
         private System.Windows.Forms.Label _lblPort;
-        private System.Windows.Forms.NumericUpDown _nudPort;
+        private Theme.ModernNumericUpDown _nudPort;
         private System.Windows.Forms.Label _lblUsername;
         private System.Windows.Forms.TextBox _txtUsername;
         private System.Windows.Forms.Label _lblPassword;
@@ -309,7 +305,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.Label _lblRemotePath;
         private System.Windows.Forms.TextBox _txtRemotePath;
         private System.Windows.Forms.Label _lblBandwidth;
-        private System.Windows.Forms.NumericUpDown _nudBandwidth;
+        private Theme.ModernNumericUpDown _nudBandwidth;
         private System.Windows.Forms.CheckBox _chkPermanentDelete;
 
         // Butonlar

@@ -51,7 +51,7 @@ namespace MikroSqlDbYedek.Win.Forms
             _lblSqlPassword = new System.Windows.Forms.Label();
             _txtSqlPassword = new System.Windows.Forms.TextBox();
             _lblTimeout = new System.Windows.Forms.Label();
-            _nudTimeout = new System.Windows.Forms.NumericUpDown();
+            _nudTimeout = new Theme.ModernNumericUpDown();
             _btnTestSql = new Theme.ModernButton();
             _grpDatabases = new System.Windows.Forms.GroupBox();
             _clbDatabases = new System.Windows.Forms.CheckedListBox();
@@ -66,7 +66,7 @@ namespace MikroSqlDbYedek.Win.Forms
             _lblIncrCron = new System.Windows.Forms.Label();
             _txtIncrCron = new System.Windows.Forms.TextBox();
             _lblAutoPromote = new System.Windows.Forms.Label();
-            _nudAutoPromote = new System.Windows.Forms.NumericUpDown();
+            _nudAutoPromote = new Theme.ModernNumericUpDown();
             _chkVerify = new System.Windows.Forms.CheckBox();
 
             // ========== TAB 4: Sıkıştırma ==========
@@ -90,9 +90,9 @@ namespace MikroSqlDbYedek.Win.Forms
             _lblRetention = new System.Windows.Forms.Label();
             _cmbRetention = new System.Windows.Forms.ComboBox();
             _lblKeepLastN = new System.Windows.Forms.Label();
-            _nudKeepLastN = new System.Windows.Forms.NumericUpDown();
+            _nudKeepLastN = new Theme.ModernNumericUpDown();
             _lblDeleteDays = new System.Windows.Forms.Label();
-            _nudDeleteDays = new System.Windows.Forms.NumericUpDown();
+            _nudDeleteDays = new Theme.ModernNumericUpDown();
 
             // ========== TAB 7: Bildirim ==========
             _chkEmailEnabled = new System.Windows.Forms.CheckBox();
@@ -102,7 +102,7 @@ namespace MikroSqlDbYedek.Win.Forms
             _lblSmtpServer = new System.Windows.Forms.Label();
             _txtSmtpServer = new System.Windows.Forms.TextBox();
             _lblSmtpPort = new System.Windows.Forms.Label();
-            _nudSmtpPort = new System.Windows.Forms.NumericUpDown();
+            _nudSmtpPort = new Theme.ModernNumericUpDown();
             _chkSmtpSsl = new System.Windows.Forms.CheckBox();
             _lblSmtpUser = new System.Windows.Forms.Label();
             _txtSmtpUser = new System.Windows.Forms.TextBox();
@@ -436,8 +436,9 @@ namespace MikroSqlDbYedek.Win.Forms
                 _tabCloud, _tabRetention, _tabNotification, _tabFileBackup
             });
             _tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            _tabControl.Multiline = true;
             _tabControl.Name = "_tabControl";
-            _tabControl.Padding = new System.Drawing.Point(14, 6);
+            _tabControl.Padding = new System.Drawing.Point(10, 5);
             _tabControl.Font = Theme.ModernTheme.FontBody;
 
             // ========== Bottom buttons ==========
@@ -465,7 +466,7 @@ namespace MikroSqlDbYedek.Win.Forms
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             BackColor = Theme.ModernTheme.BackgroundColor;
-            ClientSize = new System.Drawing.Size(560, 500);
+            ClientSize = new System.Drawing.Size(660, 520);
             Controls.Add(_tabControl);
             Controls.Add(_pnlButtons);
             Font = Theme.ModernTheme.FontBody;
@@ -530,7 +531,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.Label _lblSqlPassword;
         private System.Windows.Forms.TextBox _txtSqlPassword;
         private System.Windows.Forms.Label _lblTimeout;
-        private System.Windows.Forms.NumericUpDown _nudTimeout;
+        private Theme.ModernNumericUpDown _nudTimeout;
         private Theme.ModernButton _btnTestSql;
         private System.Windows.Forms.GroupBox _grpDatabases;
         private System.Windows.Forms.CheckedListBox _clbDatabases;
@@ -545,7 +546,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.Label _lblIncrCron;
         private System.Windows.Forms.TextBox _txtIncrCron;
         private System.Windows.Forms.Label _lblAutoPromote;
-        private System.Windows.Forms.NumericUpDown _nudAutoPromote;
+        private Theme.ModernNumericUpDown _nudAutoPromote;
         private System.Windows.Forms.CheckBox _chkVerify;
 
         // Tab 4: Sıkıştırma
@@ -569,9 +570,9 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.Label _lblRetention;
         private System.Windows.Forms.ComboBox _cmbRetention;
         private System.Windows.Forms.Label _lblKeepLastN;
-        private System.Windows.Forms.NumericUpDown _nudKeepLastN;
+        private Theme.ModernNumericUpDown _nudKeepLastN;
         private System.Windows.Forms.Label _lblDeleteDays;
-        private System.Windows.Forms.NumericUpDown _nudDeleteDays;
+        private Theme.ModernNumericUpDown _nudDeleteDays;
 
         // Tab 7: Bildirim
         private System.Windows.Forms.CheckBox _chkEmailEnabled;
@@ -581,7 +582,7 @@ namespace MikroSqlDbYedek.Win.Forms
         private System.Windows.Forms.Label _lblSmtpServer;
         private System.Windows.Forms.TextBox _txtSmtpServer;
         private System.Windows.Forms.Label _lblSmtpPort;
-        private System.Windows.Forms.NumericUpDown _nudSmtpPort;
+        private Theme.ModernNumericUpDown _nudSmtpPort;
         private System.Windows.Forms.CheckBox _chkSmtpSsl;
         private System.Windows.Forms.Label _lblSmtpUser;
         private System.Windows.Forms.TextBox _txtSmtpUser;

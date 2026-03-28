@@ -80,6 +80,8 @@ namespace MikroSqlDbYedek.Win.Theme
             if (c is DataGridView dgv)
             {
                 ModernTheme.StyleDataGridView(dgv);
+                // Dark scrollbar (Windows 10/11)
+                try { NativeMethods.SetWindowTheme(dgv.Handle, "DarkMode_Explorer", null); } catch { }
                 return;
             }
 
@@ -87,6 +89,7 @@ namespace MikroSqlDbYedek.Win.Theme
             if (c is ListView lv)
             {
                 ModernTheme.StyleListView(lv);
+                try { NativeMethods.SetWindowTheme(lv.Handle, "DarkMode_Explorer", null); } catch { }
                 return;
             }
 

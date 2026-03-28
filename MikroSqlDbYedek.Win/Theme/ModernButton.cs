@@ -126,10 +126,14 @@ namespace MikroSqlDbYedek.Win.Theme
 
         private void DrawContent(Graphics g, Rectangle rect, Color fgColor)
         {
-            int textX = rect.X;
-            int availableWidth = rect.Width;
+            // Phosphor / custom Image destegi
+            if (Image != null)
+            {
+                DrawImageAndText(g, rect, fgColor);
+                return;
+            }
 
-            // Icon
+            // Segoe MDL2 Assets ikon destegi
             if (!string.IsNullOrEmpty(_iconSymbol))
             {
                 using (var iconFont = new Font("Segoe MDL2 Assets", 10f))
@@ -162,6 +166,36 @@ namespace MikroSqlDbYedek.Win.Theme
                     Trimming = StringTrimming.EllipsisCharacter
                 };
                 g.DrawString(Text, Font, textBrush, rect, sf);
+            }
+        }
+
+        private void DrawImageAndText(Graphics g, Rectangle rect, Color fgColor)
+        {
+            var img = Image;
+            bool hasText = !string.IsNullOrEmpty(Text);
+
+            if (!hasText)
+            {
+                // Sadece ikon — ortala
+                int ix = rect.X + (rect.Width - img.Width) / 2;
+                int iy = rect.Y + (rect.Height - img.Height) / 2;
+                g.DrawImage(img, ix, iy, img.Width, img.Height);
+                return;
+            }
+
+            // Ikon + metin yatay ortalı
+            var textSize = g.MeasureString(Text, Font);
+            int gap = 5;
+            float totalW = img.Width + gap + textSize.Width;
+            float startX = rect.X + (rect.Width - totalW) / 2f;
+            float imgY = rect.Y + (rect.Height - img.Height) / 2f;
+            float textY = rect.Y + (rect.Height - textSize.Height) / 2f;
+
+            g.DrawImage(img, startX, imgY, img.Width, img.Height);
+
+            using (var brush = new SolidBrush(fgColor))
+            {
+                g.DrawString(Text, Font, brush, startX + img.Width + gap, textY);
             }
         }
 

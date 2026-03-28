@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(grep -E \"^.*error CS|Hata$|succeeded|başarılı\")",
+      "Bash(grep -E \" error | Hata$|succeeded|başarılı\")",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\Hzk\\\\source\\\\repos\\\\MikroSqlDbYedek\\\\MikroSqlDbYedek.Engine\\\\bin\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\Hzk\\\\source\\\\repos\\\\MikroSqlDbYedek\\\\MikroSqlDbYedek.Engine\\\\obj\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Temizlendi\")",
+      "Bash(for d:*)",
+      "Bash(do rm:*)",
+      "Bash(done)",
+      "Bash(cd:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebSearch",
+      "Bash(for type:*)",
+      "Bash(do echo:*)",
+      "Bash(grep -c \"System\\\\.Windows\\\\.Forms\\\\.$type \" MikroSqlDbYedek.Win/MainWindow.Designer.cs MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs MikroSqlDbYedek.Win/Forms/CloudTargetEditDialog.Designer.cs MikroSqlDbYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:unpkg.com)",
+      "Bash(npm pack:*)",
+      "Bash(tar xzf:*)",
+      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/regular/Phosphor.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
+      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/fill/Phosphor-Fill.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
+      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/bold/Phosphor-Bold.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
+      "Bash(dotnet run:*)"
+    ]
+  }
+}
