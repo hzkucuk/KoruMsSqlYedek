@@ -5,7 +5,7 @@ namespace MikroSqlDbYedek.Win.IoC
 {
     /// <summary>
     /// Win (Tray) uygulaması için Autofac container yapılandırması.
-    /// Engine servislerini ve Win formlarını kaydeder.
+    /// Engine servislerini ve MainWindow'u kaydeder.
     /// </summary>
     internal static class WinContainerBootstrap
     {
@@ -19,32 +19,26 @@ namespace MikroSqlDbYedek.Win.IoC
             // Engine katmanı modülü (tüm servisler)
             builder.RegisterModule<EngineModule>();
 
-            // Win formları — her çağrıda yeni instance
+            // TrayApplicationContext — tek instance
             builder.RegisterType<TrayApplicationContext>()
                 .AsSelf()
                 .SingleInstance();
 
-            builder.RegisterType<MainDashboardForm>()
+            // Ana pencere — tek instance (tray'den her açılışta aynı pencere)
+            builder.RegisterType<MainWindow>()
                 .AsSelf()
-                .InstancePerDependency();
+                .SingleInstance();
 
-            builder.RegisterType<Forms.PlanListForm>()
-                .AsSelf()
-                .InstancePerDependency();
-
+            // Düzenleme formları — ayrı pencere olarak kalır, her açılışta yeni instance
             builder.RegisterType<Forms.PlanEditForm>()
                 .AsSelf()
                 .InstancePerDependency();
 
-            builder.RegisterType<Forms.ManualBackupDialog>()
+            builder.RegisterType<Forms.CloudTargetEditDialog>()
                 .AsSelf()
                 .InstancePerDependency();
 
-            builder.RegisterType<Forms.SettingsForm>()
-                .AsSelf()
-                .InstancePerDependency();
-
-            builder.RegisterType<Forms.LogViewerForm>()
+            builder.RegisterType<Forms.FileBackupSourceEditDialog>()
                 .AsSelf()
                 .InstancePerDependency();
 

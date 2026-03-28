@@ -1,3 +1,34 @@
+## [0.18.0] - 2026-03-28 — Faz 19: Tek Pencere — Sekmeli Ana Form
+
+### Değiştirilenler
+- **UI Mimarisi**: 5 ayrı pencere (Dashboard, Planlar, Loglar, Ayarlar, Manuel Yedekleme) → tek `MainWindow` içinde 5 sekme olarak birleştirildi
+- **TrayApplicationContext.cs**: Çoklu form yönetimi kaldırıldı; tek `MainWindow` referansı + `SelectTab(int)` ile sekme yönlendirmesi
+- **WinContainerBootstrap.cs**: PlanListForm, LogViewerForm, SettingsForm, ManualBackupDialog kayıtları kaldırıldı; `MainWindow` SingleInstance olarak kaydedildi
+
+### Eklenenler
+- **MainWindow.cs** + **MainWindow.Designer.cs**: 5 sekmeli ana form
+  - Tab 0 — Dashboard: 3 KPI kart + yedekleme geçmişi ListView + 30s otomatik yenileme
+  - Tab 1 — Planlar: ToolStrip (Yeni/Düzenle/Sil/Dışa/İçe Aktar) + DataGridView + CRUD
+  - Tab 2 — Yedekleme: Plan seç, DB seç, tür seç, ProgressBar, gerçek zamanlı log + async iptal
+  - Tab 3 — Loglar: Dosya seç, seviye/arama filtresi, DataGridView, 5s otomatik takip
+  - Tab 4 — Ayarlar: Genel + SMTP sekmeleri, Kaydet/İptal
+
+### Silinenler
+- MainDashboardForm.cs / Designer.cs
+- Forms/PlanListForm.cs / Designer.cs
+- Forms/LogViewerForm.cs / Designer.cs
+- Forms/SettingsForm.cs / Designer.cs
+- Forms/ManualBackupDialog.cs / Designer.cs
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/MainWindow.cs (yeni)
+- MikroSqlDbYedek.Win/MainWindow.Designer.cs (yeni)
+- MikroSqlDbYedek.Win/TrayApplicationContext.cs
+- MikroSqlDbYedek.Win/IoC/WinContainerBootstrap.cs
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
+
+---
+
 ## [0.17.0] - 2026-03-28 — Faz 18: Koyu Tema (MikroUpdate.Win ile senkronizasyon)
 
 ### Değiştirilenler

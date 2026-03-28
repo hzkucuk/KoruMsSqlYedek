@@ -1,8 +1,6 @@
 using System;
-using System.Threading;
 using System.Windows.Forms;
 using Autofac;
-using MikroSqlDbYedek.Win.Forms;
 using MikroSqlDbYedek.Win.Helpers;
 using Serilog;
 
@@ -10,7 +8,7 @@ namespace MikroSqlDbYedek.Win
 {
     /// <summary>
     /// System Tray tabanlı uygulama bağlamı.
-    /// NotifyIcon ile tray'de çalışır; menüden Dashboard, Planlar, Log, Ayarlar erişilir.
+    /// NotifyIcon ile tray'de çalışır; menüden tek MainWindow açılır, sekme seçimi ile yönlendirilir.
     /// </summary>
     internal class TrayApplicationContext : ApplicationContext
     {
@@ -19,7 +17,7 @@ namespace MikroSqlDbYedek.Win
         private readonly NotifyIcon _notifyIcon;
         private readonly ContextMenuStrip _contextMenu;
         private readonly ILifetimeScope _scope;
-        private MainDashboardForm _dashboardForm;
+        private MainWindow _mainWindow;
 
         public TrayApplicationContext(ILifetimeScope scope)
         {
@@ -49,7 +47,7 @@ namespace MikroSqlDbYedek.Win
                 Visible = true
             };
 
-            icon.DoubleClick += OnDashboardClick;
+            icon.DoubleClick += (s, e) => OpenMainWindow(0);
 
             return icon;
         }
@@ -59,16 +57,16 @@ namespace MikroSqlDbYedek.Win
             var menu = new ContextMenuStrip();
 
             var version = System.Reflection.Assembly
-                .GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.17";
+                .GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
             menu.Renderer = new Theme.VersionSidebarRenderer($"v{version}");
 
-            var tsmDashboard = new ToolStripMenuItem(Res.Get("Tray_MenuDashboard"), null, OnDashboardClick);
+            var tsmDashboard = new ToolStripMenuItem(Res.Get("Tray_MenuDashboard"), null, (s, e) => OpenMainWindow(0));
             tsmDashboard.Font = new System.Drawing.Font(tsmDashboard.Font, System.Drawing.FontStyle.Bold);
 
-            var tsmPlans = new ToolStripMenuItem(Res.Get("Tray_MenuPlans"), null, OnPlansClick);
-            var tsmLog = new ToolStripMenuItem(Res.Get("Tray_MenuLog"), null, OnLogClick);
-            var tsmSettings = new ToolStripMenuItem(Res.Get("Tray_MenuSettings"), null, OnSettingsClick);
-            var tsmManualBackup = new ToolStripMenuItem(Res.Get("Tray_MenuManualBackup"), null, OnManualBackupClick);
+            var tsmPlans = new ToolStripMenuItem(Res.Get("Tray_MenuPlans"), null, (s, e) => OpenMainWindow(1));
+            var tsmManualBackup = new ToolStripMenuItem(Res.Get("Tray_MenuManualBackup"), null, (s, e) => OpenMainWindow(2));
+            var tsmLog = new ToolStripMenuItem(Res.Get("Tray_MenuLog"), null, (s, e) => OpenMainWindow(3));
+            var tsmSettings = new ToolStripMenuItem(Res.Get("Tray_MenuSettings"), null, (s, e) => OpenMainWindow(4));
             var tsmExit = new ToolStripMenuItem(Res.Get("Tray_MenuExit"), null, OnExitClick);
 
             menu.Items.Add(tsmDashboard);
@@ -86,80 +84,22 @@ namespace MikroSqlDbYedek.Win
 
         #endregion
 
-        #region Menu Event Handlers
+        #region MainWindow
 
-        private void OnDashboardClick(object sender, EventArgs e)
+        private void OpenMainWindow(int tabIndex)
         {
-            ShowDashboard();
+            if (_mainWindow == null || _mainWindow.IsDisposed)
+            {
+                _mainWindow = _scope.Resolve<MainWindow>();
+                _mainWindow.FormClosed += (s, e) => _mainWindow = null;
+            }
+
+            _mainWindow.SelectTab(tabIndex);
         }
 
-        private PlanListForm _planListForm;
+        #endregion
 
-        private void OnPlansClick(object sender, EventArgs e)
-        {
-            if (_planListForm == null || _planListForm.IsDisposed)
-            {
-                _planListForm = _scope.Resolve<PlanListForm>();
-                _planListForm.FormClosed += (s, args) => _planListForm = null;
-            }
-
-            if (_planListForm.Visible)
-            {
-                _planListForm.Activate();
-            }
-            else
-            {
-                _planListForm.Show();
-            }
-        }
-
-        private LogViewerForm _logViewerForm;
-
-        private void OnLogClick(object sender, EventArgs e)
-        {
-            if (_logViewerForm == null || _logViewerForm.IsDisposed)
-            {
-                _logViewerForm = _scope.Resolve<LogViewerForm>();
-                _logViewerForm.FormClosed += (s, args) => _logViewerForm = null;
-            }
-
-            if (_logViewerForm.Visible)
-            {
-                _logViewerForm.Activate();
-            }
-            else
-            {
-                _logViewerForm.Show();
-            }
-        }
-
-        private void OnSettingsClick(object sender, EventArgs e)
-        {
-            using (var settingsForm = _scope.Resolve<SettingsForm>())
-            {
-                settingsForm.ShowDialog();
-            }
-        }
-
-        private ManualBackupDialog _manualBackupDialog;
-
-        private void OnManualBackupClick(object sender, EventArgs e)
-        {
-            if (_manualBackupDialog == null || _manualBackupDialog.IsDisposed)
-            {
-                _manualBackupDialog = _scope.Resolve<ManualBackupDialog>();
-                _manualBackupDialog.FormClosed += (s, args) => _manualBackupDialog = null;
-            }
-
-            if (_manualBackupDialog.Visible)
-            {
-                _manualBackupDialog.Activate();
-            }
-            else
-            {
-                _manualBackupDialog.Show();
-            }
-        }
+        #region Exit
 
         private void OnExitClick(object sender, EventArgs e)
         {
@@ -178,31 +118,23 @@ namespace MikroSqlDbYedek.Win
             }
         }
 
-        #endregion
-
-        #region Dashboard
-
-        private void ShowDashboard()
+        private void ExitApplication()
         {
-            if (_dashboardForm == null || _dashboardForm.IsDisposed)
+            Log.Information("Tray uygulaması kapatılıyor...");
+
+            _notifyIcon.Visible = false;
+
+            if (_mainWindow != null && !_mainWindow.IsDisposed)
             {
-                _dashboardForm = _scope.Resolve<MainDashboardForm>();
-                _dashboardForm.FormClosed += OnDashboardFormClosed;
+                _mainWindow.FormClosed -= (s, e) => _mainWindow = null;
+                _mainWindow.Close();
+                _mainWindow = null;
             }
 
-            if (_dashboardForm.Visible)
-            {
-                _dashboardForm.Activate();
-            }
-            else
-            {
-                _dashboardForm.Show();
-            }
-        }
+            _notifyIcon.Dispose();
+            _contextMenu.Dispose();
 
-        private void OnDashboardFormClosed(object sender, FormClosedEventArgs e)
-        {
-            _dashboardForm = null;
+            ExitThread();
         }
 
         #endregion
@@ -232,7 +164,6 @@ namespace MikroSqlDbYedek.Win
                     : tooltipText;
             }
 
-            // Eski ikonu serbest bırak (ancak sistem ikonlarını dispose etme)
             if (oldIcon != null)
             {
                 try { NativeMethods.DestroyIcon(oldIcon.Handle); }
@@ -244,36 +175,6 @@ namespace MikroSqlDbYedek.Win
 
         #region Cleanup
 
-        private void ExitApplication()
-        {
-            Log.Information("Tray uygulaması kapatılıyor...");
-
-            _notifyIcon.Visible = false;
-
-            if (_dashboardForm != null && !_dashboardForm.IsDisposed)
-            {
-                _dashboardForm.Close();
-                _dashboardForm = null;
-            }
-
-            if (_logViewerForm != null && !_logViewerForm.IsDisposed)
-            {
-                _logViewerForm.Close();
-                _logViewerForm = null;
-            }
-
-            if (_manualBackupDialog != null && !_manualBackupDialog.IsDisposed)
-            {
-                _manualBackupDialog.Close();
-                _manualBackupDialog = null;
-            }
-
-            _notifyIcon.Dispose();
-            _contextMenu.Dispose();
-
-            ExitThread();
-        }
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -281,20 +182,8 @@ namespace MikroSqlDbYedek.Win
                 _notifyIcon?.Dispose();
                 _contextMenu?.Dispose();
 
-                if (_dashboardForm != null && !_dashboardForm.IsDisposed)
-                {
-                    _dashboardForm.Close();
-                }
-
-                if (_logViewerForm != null && !_logViewerForm.IsDisposed)
-                {
-                    _logViewerForm.Close();
-                }
-
-                if (_manualBackupDialog != null && !_manualBackupDialog.IsDisposed)
-                {
-                    _manualBackupDialog.Close();
-                }
+                if (_mainWindow != null && !_mainWindow.IsDisposed)
+                    _mainWindow.Close();
             }
 
             base.Dispose(disposing);
