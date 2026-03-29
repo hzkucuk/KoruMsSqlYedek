@@ -25,7 +25,9 @@
       "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/regular/Phosphor.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
       "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/fill/Phosphor-Fill.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
       "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/bold/Phosphor-Bold.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
-      "Bash(dotnet run:*)"
+      "Bash(dotnet run:*)",
+      "Bash(dotnet list:*)",
+      "Bash(dotnet add:*)"
     ]
   }
 }

@@ -123,20 +123,23 @@ namespace MikroSqlDbYedek.Win.Theme
             ModernTheme.SetHighQuality(g);
 
             var rect = new Rectangle(0, 0, Width - 1, Height - 1);
+            int radius = 4;
 
             // Arka plan
+            using (var path = ModernTheme.CreateRoundedRectanglePath(rect, radius))
             using (var brush = new SolidBrush(BackColor))
             {
-                g.FillRectangle(brush, rect);
+                g.FillPath(brush, path);
             }
 
-            // Kenar
+            // Kenar — yuvarlatılmış
             Color borderClr = _isFocused ? _focusBorderColor : _borderColor;
             float borderWidth = _isFocused ? 2f : 1f;
 
+            using (var path = ModernTheme.CreateRoundedRectanglePath(rect, radius))
             using (var pen = new Pen(borderClr, borderWidth))
             {
-                g.DrawRectangle(pen, rect);
+                g.DrawPath(pen, path);
             }
 
             // Buton ayırıcı çizgi
@@ -144,19 +147,21 @@ namespace MikroSqlDbYedek.Win.Theme
             int btnX = Width - btnWidth - 1;
             using (var pen = new Pen(ModernTheme.DividerColor, 1f))
             {
-                g.DrawLine(pen, btnX, 2, btnX, Height - 3);
+                g.DrawLine(pen, btnX, 4, btnX, Height - 5);
             }
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+            if (_textBox == null) return; // constructor henüz tamamlanmadı
             LayoutControls();
         }
 
         protected override void OnFontChanged(EventArgs e)
         {
             base.OnFontChanged(e);
+            if (_textBox == null) return;
             _textBox.Font = Font;
         }
 
@@ -166,7 +171,7 @@ namespace MikroSqlDbYedek.Win.Theme
             int btnX = Width - btnWidth - 1;
             int halfH = Height / 2;
 
-            _textBox.Location = new Point(6, (Height - _textBox.PreferredHeight) / 2);
+             _textBox.Location = new Point(6, (Height - _textBox.PreferredHeight) / 2);
             _textBox.Width = btnX - 10;
 
             _btnUp.SetBounds(btnX, 1, btnWidth, halfH - 1);

@@ -13,7 +13,7 @@ namespace MikroSqlDbYedek.Win.Theme
     internal class ModernCardPanel : Panel
     {
         private Color _borderColor = ModernTheme.BorderColor;
-        private Color _shadowColor = Color.FromArgb(15, 0, 0, 0);
+        private Color _shadowColor = Color.FromArgb(50, 0, 0, 0);
         private int _radius = ModernTheme.CardRadius;
         private bool _showShadow = true;
         private string _headerText = string.Empty;

@@ -1,3 +1,223 @@
+## [0.25.2] - 2025-07-12 — 7z.dll Entegrasyonu: Sıkıştırma Çalışır Hale Getirildi
+
+### Düzeltmeler
+- **7z.dll eksikliği düzeltildi**: `Squid-Box.SevenZipSharp` paketi native `7z.dll`'yi içermiyordu — sıkıştırma uyarı verip çalışmıyordu
+- **Native DLL entegrasyonu**: `Engine\Native\x64\7z.dll` projeye eklendi, build'de output'a kopyalanır
+- **Geliştirilmiş DLL arama**: 3 aşamalı fallback: `x64/7z.dll` → `7z.dll` → `Program Files\7-Zip`
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Engine/Native/x64/7z.dll (yeni — native binary)
+- MikroSqlDbYedek.Engine/MikroSqlDbYedek.Engine.csproj (Content copy to output)
+- MikroSqlDbYedek.Engine/Compression/SevenZipCompressionService.cs (Initialize fallback güncellendi)
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.2)
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.25.2)
+
+---
+
+## [0.25.1] - 2025-07-12 — Faz 25b: Autofac Constructor Hatası + Dosya Yedekleme Pipeline
+
+### Düzeltmeler
+- **Autofac DependencyResolutionException düzeltildi**: `CloudUploadOrchestrator` iki aynı uzunlukta constructor içeriyordu — `UsingConstructor(typeof(ICloudProviderFactory))` ile belirlendi
+- **Dosya yedekleme manuel pipeline'a eklendi**: Plan'da `FileBackup.IsEnabled` aktifse dosya kaynakları yedeklenir
+  - VSS ile açık/kilitli dosyalar desteklenir (Outlook PST/OST vb.)
+  - Dosya yedekleri sıkıştırılır (dizin → .7z arşiv)
+  - Bulut modda dosya arşivi hedeflere yüklenir
+- **`IFileBackupService`** MainWindow constructor'ına enjekte edildi
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Engine/IoC/EngineModule.cs (UsingConstructor eklendi)
+- MikroSqlDbYedek.Win/MainWindow.cs (IFileBackupService eklendi, dosya yedekleme pipeline)
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.1)
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.25.1)
+
+---
+
+## [0.25.0] - 2025-07-12 — Faz 25: Manuel Yedekleme Pipeline Tamamlama
+
+### Düzeltmeler
+- **Manuel yedekleme tam pipeline**: Sıkıştırma, doğrulama, bulut upload ve geçmiş kayıt artık manuel yedeklemede de çalışıyor
+  - SQL Backup → Verify (RESTORE VERIFYONLY) → Compress (.7z LZMA2) → Cloud Upload → History
+- **Yeni bağımlılıklar**: `ICompressionService` ve `ICloudUploadOrchestrator` MainWindow'a Autofac ile enjekte edildi
+- **`SaveBackupHistory()`**: Yedek sonuçlarını correlationId ile geçmişe kaydeden helper metod
+- **Detaylı log çıktısı**: Her pipeline adımı ↳/✓/✗ göstergeleriyle raporlanır
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/MainWindow.cs (constructor genişletildi, OnStartBackupClick tam pipeline, SaveBackupHistory eklendi)
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.0)
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.25.0)
+
+---
+
+## [0.24.0] - 2025-07-11 — Faz 24: Wizard Yedekleme Modu Seçimi (Yerel/Bulut)
+
+### Yeni Özellikler
+- **Yedekleme Modu Seçimi**: Plan oluştururken ilk adımda yerel veya bulut yedekleme seçimi
+  - Yerel: Disk, UNC, ağ paylaşımı, harici disk — Hedefler adımı atlanır (5 adım)
+  - Bulut: Google Drive, OneDrive, FTP/SFTP — tüm adımlar gösterilir (6 adım)
+- **`BackupMode` enum**: `Local` / `Cloud` seçenekleri (Enums.cs)
+- **`BackupPlan.Mode`**: Plan modeli mod bilgisini JSON'da saklar
+- **Dinamik wizard navigasyonu**: Mod seçimine göre adımlar otomatik yapılandırılır
+- **Dinamik adım göstergesi**: 5 veya 6 nokta, mod değişiminde anında güncellenir
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Core/Models/Enums.cs (BackupMode enum)
+- MikroSqlDbYedek.Core/Models/BackupPlan.cs (Mode özelliği)
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs (RadioButton kontrolleri, _activeSteps)
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (dinamik navigasyon, RebuildActiveSteps, RebuildStepIndicator)
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.24.0)
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.24.0)
+
+---
+
+## [0.23.0] - 2025-07-11 — Faz 23: Wizard Adım Yeniden Yapılandırma + İkon Düzeltmeleri
+
+### Yeni Özellikler
+- **6 Adımlı Wizard**: 5 adım → 6 adıma yeniden yapılandırıldı
+  - Adım 1: Bağlantı (Plan bilgileri + SQL sunucu)
+  - Adım 2: Kaynaklar (Veritabanları + Dosya/Klasör kaynakları birlikte)
+  - Adım 3: Zamanlama (SQL strateji + Dosya zamanlama — koşullu görünürlük)
+  - Adım 4: Sıkıştırma & Saklama (değişmedi)
+  - Adım 5: Hedefler (Bulut/Uzak — ayrı adım, açıklayıcı ipucu metni)
+  - Adım 6: Bildirim & Rapor (E-posta + Periyodik rapor — son adım)
+- **Phosphor Arrow İkonları**: ArrowLeft/ArrowRight sabitleri eklendi, navigasyon butonlarında kullanılıyor
+
+### Düzeltmeler
+- **Çift ikon sorunu**: Tüm butonlardan `TextImageRelation` kaldırıldı — ModernButton özel OnPaint ile çakışma giderildi
+- **Unicode ok karakterleri**: ▶/◀ buton metinlerinden kaldırıldı, yerine Phosphor ikonları
+- **Secondary buton ikon rengi**: Beyaz → TextPrimary (daha iyi kontrast)
+
+### İyileştirmeler
+- Form boyutu: 640x640 → 660x680
+- Alan genişliği: tw=340 → tw=420
+- Hedefler ListView: 430x100 → 478x380 (tam sayfa)
+- `UpdateFileScheduleVisibility()`: Dosya zamanlama koşullu görünürlük
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı — 6 adım)
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (6 adım mantığı, ikon düzeltmeleri)
+- MikroSqlDbYedek.Win/Theme/PhosphorIcons.cs (ArrowLeft/ArrowRight sabitleri)
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.23.0)
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.23.0)
+
+---
+
+## [0.22.0] - 2025-07-11 — Faz 22: Cron UI Builder + Tooltips + Raporlama + Layout
+
+### Yeni Özellikler
+- **CronBuilderPanel**: Kullanıcı dostu cron zamanlama oluşturucu UserControl
+  - Sıklık seçimi: Günlük / Haftalık / Aylık / Özel (Cron)
+  - Haftalık: gün seçimi checkbox'ları (Pzt-Paz)
+  - Aylık: ayın günü spinner (1-28)
+  - Saat/dakika seçimi
+  - Canlı önizleme: insan okunabilir açıklama + ham cron ifadesi
+  - Mevcut cron ifadelerini geri ayrıştırma (günlük/haftalık/aylık/özel algılama)
+- **ToolTip Sistemi**: Tüm form alanlarında detaylı Türkçe açıklamalar ve örnekler (15s görüntüleme)
+- **Raporlama Yapılandırması**: Plan bazında yedek rapor ayarları
+  - Rapor sıklığı: Günlük / Haftalık / Aylık
+  - Alıcı e-posta ve gönderim saati
+  - ReportingConfig modeli + ReportFrequency enum
+
+### İyileştirmeler
+- **Türkçe etiketler düzeltildi**: "Bağlantıyı Sına", "Yerel Yedek Klasörü", "Sunucu Adı / IP", "Sıkıştırma Algoritması"
+- **Form boyutu optimize edildi**: 580x560 → 640x640, etiket sütunu genişletildi (tx=150, tw=340)
+- **Bölüm numaralandırma**: ① ② ③ ④ ⑤ ⑥ ile görsel bölüm ayrımı
+- **Varsayılan değerler**: Tüm alanlar için anlamlı varsayılanlar (saat 02:00, LZMA2, Ultra sıkıştırma vb.)
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/Controls/CronBuilderPanel.cs (yeni)
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı)
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (CronBuilderPanel + raporlama entegrasyonu)
+- MikroSqlDbYedek.Core/Models/Enums.cs (ReportFrequency enum)
+- MikroSqlDbYedek.Core/Models/ConfigModels.cs (ReportingConfig sınıfı)
+- MikroSqlDbYedek.Core/Models/BackupPlan.cs (Reporting özelliği)
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.22.0)
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.22.0)
+
+---
+
+## [0.21.0] - 2025-07-10 — Faz 21: Plan Düzenleme Wizard + SSL & DB Adı Düzeltmeleri
+
+### Yeni Özellikler
+- **Wizard Tabanlı Plan Düzenleme**: 8-tab TabControl → 5 adımlı wizard panele dönüştürüldü
+  - Adım 1: Plan Bilgileri + SQL Bağlantı
+  - Adım 2: Veritabanı Seçimi (Tümünü Seç + Yenile butonları)
+  - Adım 3: Yedekleme Stratejisi & Zamanlama
+  - Adım 4: Sıkıştırma & Saklama Politikası
+  - Adım 5: Bulut Hedefler + Bildirim + Dosya Yedekleme
+- **Adım göstergesi**: Üst barda 5 adım noktası (tamamlanan=✓ yeşil, aktif=beyaz, gelecek=devre dışı)
+- **Otomatik veritabanı yükleme**: Adım 1→2 geçişinde bağlantı testi + DB listesi otomatik yüklenir
+- **TrustServerCertificate**: SQL bağlantısında SSL sertifika doğrulama kontrolü (varsayılan: güven)
+
+### Hata Düzeltmeleri
+- **SSL sertifika hatası düzeltildi**: `Microsoft.Data.SqlClient` v4+ `Encrypt=Mandatory` varsayılanı → `TrustServerCertificate=true` ve `Encrypt=Optional` desteği eklendi
+- **Veritabanı adı bozulması düzeltildi**: `CheckedListBox` görüntü metni `"MikroDB_V16 (356 MB)"` yedek adı olarak kaydediliyordu → `DatabaseListItem` sınıfı ile ad ve görüntü metni ayrıştırıldı
+
+### İyileştirmeler
+- **BuildCurrentConnInfo()**: SQL bağlantı bilgisi oluşturma tek noktada toplandı (kod tekrarı giderildi)
+- **CreateServerConnection()**: `BuildConnectionString()` kullanarak yeniden yazıldı (çift kaynak sorunu giderildi)
+- **ApplyIcons()**: Yeni wizard butonları için ikon ataması eklendi (_btnRefreshDatabases)
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı)
+- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (wizard navigasyon + düzeltmeler)
+- MikroSqlDbYedek.Core/Models/ConfigModels.cs (TrustServerCertificate eklendi)
+- MikroSqlDbYedek.Engine/Backup/SqlBackupService.cs (BuildConnectionString + CreateServerConnection)
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.21.0)
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.21.0)
+
+---
+
+## [0.20.0] - 2025-07-09 — Faz 20: .NET 10 Native Dark Mode + Tema Yenileme
+
+### Yeni Özellikler
+- **.NET 10 Native Dark Mode**: `Application.SetColorMode(SystemColorMode.Dark)` ile tüm standart WinForms kontrolleri otomatik koyu temada
+- **Program.cs**: `ApplyNativeColorMode()` metodu — ModernTheme ayarından native SystemColorMode eşlemesi
+
+### İyileştirmeler
+- **Tema Paleti**: Emerald accent(16,185,129), geniş elevation farkı, Tailwind durum renkleri (amber/red/blue)
+- **ModernButton**: Ghost stili beyaz alpha overlay (koyu arka planda görünür)
+- **ModernCardPanel**: Gölge alpha 15→50 (koyu temada görünür)
+- **ModernNumericUpDown**: Yuvarlak köşe (radius=4)
+- **ModernLoadingOverlay**: Tema-duyarlı koyu arka plan
+- **ModernToggleSwitch**: Off rengi (70,70,78) — koyu tema uyumlu
+- **ModernToolStripRenderer**: Dinamik accent rengi, geliştirilmiş hover/press kontrastı
+
+### Temizlik
+- **ModernFormBase**: 217→100 satır — DWM hack ve 12+ standart kontrol manual theming kaldırıldı
+- **NativeMethods**: `DwmSetWindowAttribute`, `SetWindowTheme` P/Invoke kaldırıldı (native API ile gereksiz)
+- **MaterialSkin.2** NuGet paketi kaldırıldı
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/Program.cs
+- MikroSqlDbYedek.Win/Theme/ModernFormBase.cs
+- MikroSqlDbYedek.Win/Theme/ModernTheme.cs
+- MikroSqlDbYedek.Win/Theme/ModernButton.cs
+- MikroSqlDbYedek.Win/Theme/ModernCardPanel.cs
+- MikroSqlDbYedek.Win/Theme/ModernNumericUpDown.cs
+- MikroSqlDbYedek.Win/Theme/ModernLoadingOverlay.cs
+- MikroSqlDbYedek.Win/Theme/ModernToggleSwitch.cs
+- MikroSqlDbYedek.Win/Theme/ModernToolStripRenderer.cs
+- MikroSqlDbYedek.Win/NativeMethods.cs
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj
+- FEATURES.md
+
+---
+
+## [0.19.1] - 2025-07-09 — Faz 19: Dashboard & İkon Düzeltmeleri
+
+### Düzeltmeler
+- **Dashboard ListView başlık beyaz**: `_lvLastBackups` için `OwnerDraw = true` etkinleştirildi; `DrawColumnHeader` handler'ı tema renkleriyle (GridHeaderBack/GridHeaderText) sütun başlıkları çiziyor
+- **KPI kart ikonları görünmüyor**: `_lblStatusIcon`, `_lblNextIcon`, `_lblPlansIcon` — `Label` + `Segoe MDL2 Assets` font → `PictureBox` + Phosphor Render ile değiştirildi
+- **PhosphorIcons sessiz hata**: `catch { return null; }` → `Serilog.Log.Error()` ile hata loglanıyor
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Win/MainWindow.Designer.cs
+- MikroSqlDbYedek.Win/MainWindow.cs
+- MikroSqlDbYedek.Win/Theme/PhosphorIcons.cs
+- FEATURES.md
+
+---
+
 ## [0.19.0] - 2026-03-28 — Faz 21: Tam Dark Mode + Phosphor Icons Entegrasyonu
 
 ### Değiştirilenler

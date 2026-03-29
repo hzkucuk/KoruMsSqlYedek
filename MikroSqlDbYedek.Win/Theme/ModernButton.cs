@@ -223,9 +223,9 @@ namespace MikroSqlDbYedek.Win.Theme
 
                 case ModernButtonStyle.Secondary:
                     bg = _isPressed
-                        ? Color.FromArgb(230, 230, 234)
+                        ? ModernTheme.SurfacePressed
                         : _isHovered
-                            ? Color.FromArgb(240, 240, 244)
+                            ? ModernTheme.SurfaceHover
                             : ModernTheme.SurfaceColor;
                     fg = ModernTheme.TextPrimary;
                     border = ModernTheme.BorderColor;
@@ -243,9 +243,9 @@ namespace MikroSqlDbYedek.Win.Theme
 
                 case ModernButtonStyle.Ghost:
                     bg = _isPressed
-                        ? Color.FromArgb(20, 0, 0, 0)
+                        ? Color.FromArgb(20, 255, 255, 255)
                         : _isHovered
-                            ? Color.FromArgb(10, 0, 0, 0)
+                            ? Color.FromArgb(12, 255, 255, 255)
                             : Color.Transparent;
                     fg = ModernTheme.AccentPrimary;
                     border = Color.Transparent;

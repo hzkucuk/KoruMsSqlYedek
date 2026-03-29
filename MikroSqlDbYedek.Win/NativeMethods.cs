@@ -43,20 +43,5 @@ namespace MikroSqlDbYedek.Win
 
         internal const int SW_RESTORE = 9;
         internal const int HWND_BROADCAST = 0xFFFF;
-
-        /// <summary>
-        /// DWM pencere özniteliği ayarlar (dark title bar vb.).
-        /// </summary>
-        [DllImport("dwmapi.dll")]
-        internal static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
-
-        internal const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-
-        /// <summary>
-        /// UxTheme — pencere veya alt kontrol icin gorsel tema ayarlar.
-        /// Dark scrollbar icin appName="DarkMode_Explorer" kullanilir.
-        /// </summary>
-        [DllImport("uxtheme.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
-        internal static extern int SetWindowTheme(IntPtr hwnd, string appName, string subIdList);
     }
 }

@@ -19,34 +19,36 @@ namespace MikroSqlDbYedek.Win.Theme
 
         // ═══════════════ COLOR PALETTE (mutable for runtime theme switch) ═══════════════
 
-        internal static Color BackgroundColor = Color.FromArgb(30, 30, 30);
-        internal static Color SurfaceColor = Color.FromArgb(40, 40, 40);
-        internal static Color BorderColor = Color.FromArgb(70, 70, 70);
-        internal static Color DividerColor = Color.FromArgb(50, 50, 50);
+        internal static Color BackgroundColor = Color.FromArgb(18, 18, 22);
+        internal static Color SurfaceColor = Color.FromArgb(30, 30, 36);
+        internal static Color SurfaceHover = Color.FromArgb(48, 48, 56);
+        internal static Color SurfacePressed = Color.FromArgb(24, 24, 28);
+        internal static Color BorderColor = Color.FromArgb(56, 56, 64);
+        internal static Color DividerColor = Color.FromArgb(40, 40, 46);
 
-        // Accent
-        internal static Color AccentPrimary = Color.FromArgb(0, 150, 80);
-        internal static Color AccentPrimaryDark = Color.FromArgb(0, 120, 60);
-        internal static Color AccentPrimaryHover = Color.FromArgb(0, 175, 95);
+        // Accent — Emerald green
+        internal static Color AccentPrimary = Color.FromArgb(16, 185, 129);
+        internal static Color AccentPrimaryDark = Color.FromArgb(5, 150, 105);
+        internal static Color AccentPrimaryHover = Color.FromArgb(52, 211, 153);
 
-        // Status
-        internal static Color StatusSuccess = Color.FromArgb(0, 190, 110);
-        internal static Color StatusWarning = Color.FromArgb(201, 128, 0);
-        internal static Color StatusError = Color.FromArgb(220, 40, 40);
-        internal static Color StatusCancelled = Color.FromArgb(128, 128, 128);
-        internal static Color StatusInfo = Color.FromArgb(100, 180, 255);
+        // Status — Tailwind-inspired
+        internal static Color StatusSuccess = Color.FromArgb(16, 185, 129);
+        internal static Color StatusWarning = Color.FromArgb(245, 158, 11);
+        internal static Color StatusError = Color.FromArgb(239, 68, 68);
+        internal static Color StatusCancelled = Color.FromArgb(113, 113, 122);
+        internal static Color StatusInfo = Color.FromArgb(96, 165, 250);
 
         // Text
-        internal static Color TextPrimary = Color.FromArgb(230, 230, 230);
-        internal static Color TextSecondary = Color.FromArgb(180, 180, 180);
-        internal static Color TextDisabled = Color.FromArgb(120, 120, 120);
+        internal static Color TextPrimary = Color.FromArgb(240, 240, 245);
+        internal static Color TextSecondary = Color.FromArgb(160, 160, 170);
+        internal static Color TextDisabled = Color.FromArgb(90, 90, 100);
         internal static Color TextOnAccent = Color.White;
 
         // Grid
-        internal static Color GridAlternateRow = Color.FromArgb(35, 35, 35);
-        internal static Color GridSelection = Color.FromArgb(0, 150, 80);
-        internal static Color GridHeaderBack = Color.FromArgb(40, 40, 40);
-        internal static Color GridHeaderText = Color.FromArgb(180, 180, 180);
+        internal static Color GridAlternateRow = Color.FromArgb(24, 24, 28);
+        internal static Color GridSelection = Color.FromArgb(16, 185, 129);
+        internal static Color GridHeaderBack = Color.FromArgb(36, 36, 42);
+        internal static Color GridHeaderText = Color.FromArgb(160, 160, 170);
 
         // ═══════════════ THEME APPLY ═══════════════
 
@@ -61,36 +63,40 @@ namespace MikroSqlDbYedek.Win.Theme
 
         private static void ApplyDarkColors()
         {
-            BackgroundColor = Color.FromArgb(30, 30, 30);
-            SurfaceColor = Color.FromArgb(40, 40, 40);
-            BorderColor = Color.FromArgb(70, 70, 70);
-            DividerColor = Color.FromArgb(50, 50, 50);
+            BackgroundColor = Color.FromArgb(18, 18, 22);
+            SurfaceColor = Color.FromArgb(30, 30, 36);
+            SurfaceHover = Color.FromArgb(48, 48, 56);
+            SurfacePressed = Color.FromArgb(24, 24, 28);
+            BorderColor = Color.FromArgb(56, 56, 64);
+            DividerColor = Color.FromArgb(40, 40, 46);
 
-            AccentPrimary = Color.FromArgb(0, 150, 80);
-            AccentPrimaryDark = Color.FromArgb(0, 120, 60);
-            AccentPrimaryHover = Color.FromArgb(0, 175, 95);
+            AccentPrimary = Color.FromArgb(16, 185, 129);
+            AccentPrimaryDark = Color.FromArgb(5, 150, 105);
+            AccentPrimaryHover = Color.FromArgb(52, 211, 153);
 
-            StatusSuccess = Color.FromArgb(0, 190, 110);
-            StatusWarning = Color.FromArgb(201, 128, 0);
-            StatusError = Color.FromArgb(220, 40, 40);
-            StatusCancelled = Color.FromArgb(128, 128, 128);
-            StatusInfo = Color.FromArgb(100, 180, 255);
+            StatusSuccess = Color.FromArgb(16, 185, 129);
+            StatusWarning = Color.FromArgb(245, 158, 11);
+            StatusError = Color.FromArgb(239, 68, 68);
+            StatusCancelled = Color.FromArgb(113, 113, 122);
+            StatusInfo = Color.FromArgb(96, 165, 250);
 
-            TextPrimary = Color.FromArgb(230, 230, 230);
-            TextSecondary = Color.FromArgb(180, 180, 180);
-            TextDisabled = Color.FromArgb(120, 120, 120);
+            TextPrimary = Color.FromArgb(240, 240, 245);
+            TextSecondary = Color.FromArgb(160, 160, 170);
+            TextDisabled = Color.FromArgb(90, 90, 100);
             TextOnAccent = Color.White;
 
-            GridAlternateRow = Color.FromArgb(35, 35, 35);
-            GridSelection = Color.FromArgb(0, 150, 80);
-            GridHeaderBack = Color.FromArgb(40, 40, 40);
-            GridHeaderText = Color.FromArgb(180, 180, 180);
+            GridAlternateRow = Color.FromArgb(24, 24, 28);
+            GridSelection = Color.FromArgb(16, 185, 129);
+            GridHeaderBack = Color.FromArgb(36, 36, 42);
+            GridHeaderText = Color.FromArgb(160, 160, 170);
         }
 
         private static void ApplyLightColors()
         {
             BackgroundColor = Color.FromArgb(245, 245, 248);
             SurfaceColor = Color.White;
+            SurfaceHover = Color.FromArgb(240, 240, 244);
+            SurfacePressed = Color.FromArgb(230, 230, 234);
             BorderColor = Color.FromArgb(200, 200, 210);
             DividerColor = Color.FromArgb(220, 220, 225);
 

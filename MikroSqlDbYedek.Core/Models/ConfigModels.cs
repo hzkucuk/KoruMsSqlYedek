@@ -25,6 +25,13 @@ namespace MikroSqlDbYedek.Core.Models
 
         [JsonProperty("connectionTimeoutSeconds")]
         public int ConnectionTimeoutSeconds { get; set; } = 30;
+
+        /// <summary>
+        /// Self-signed sertifikalı SQL Server bağlantıları için sertifika doğrulamasını atlar.
+        /// Yerel ve güvenilir ağ sunucuları için varsayılan true.
+        /// </summary>
+        [JsonProperty("trustServerCertificate")]
+        public bool TrustServerCertificate { get; set; } = true;
     }
 
     /// <summary>
@@ -179,5 +186,26 @@ namespace MikroSqlDbYedek.Core.Models
 
         [JsonProperty("toastEnabled")]
         public bool ToastEnabled { get; set; } = true;
+    }
+
+    /// <summary>
+    /// Yedekleme raporu yapılandırması.
+    /// Belirli periyotlarda (günlük/haftalık/aylık) yedekleme özet raporunu yöneticiye gönderir.
+    /// </summary>
+    public class ReportingConfig
+    {
+        [JsonProperty("isEnabled")]
+        public bool IsEnabled { get; set; }
+
+        [JsonProperty("frequency")]
+        public ReportFrequency Frequency { get; set; } = ReportFrequency.Weekly;
+
+        /// <summary>Rapor alıcı e-posta adresi. Boşsa bildirim e-postası kullanılır.</summary>
+        [JsonProperty("emailTo")]
+        public string EmailTo { get; set; }
+
+        /// <summary>Rapor gönderilecek saat (0-23).</summary>
+        [JsonProperty("sendHour")]
+        public int SendHour { get; set; } = 8;
     }
 }

@@ -15,6 +15,7 @@ namespace MikroSqlDbYedek.Win.Theme
     /// </summary>
     internal static class PhosphorIcons
     {
+        private static readonly Serilog.ILogger Log = Serilog.Log.ForContext(typeof(PhosphorIcons));
         private static readonly PrivateFontCollection _fontCollection = new();
         private static FontFamily _fillFamily;
         private static FontFamily _boldFamily;
@@ -31,6 +32,8 @@ namespace MikroSqlDbYedek.Win.Theme
         public const char Folder = '\ue24a';
         public const char ArrowsClockwise = '\ue094';
         public const char ArrowClockwise = '\ue036';
+        public const char ArrowLeft = '\ue038';
+        public const char ArrowRight = '\ue044';
         public const char Export = '\ueaf0';
         public const char Trash = '\ue4a6';
         public const char PlusCircle = '\ue3d6';
@@ -104,7 +107,14 @@ namespace MikroSqlDbYedek.Win.Theme
                     return cached;
             }
 
-            EnsureInitialized();
+            try { EnsureInitialized(); }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Phosphor font yüklenemedi — ikon oluşturulamaz.");
+                return null;
+            }
+
+            if (_fillFamily == null) return null;
 
             var family = useBold ? _boldFamily : _fillFamily;
             var bmp = new Bitmap(size, size);

@@ -93,4 +93,32 @@ namespace MikroSqlDbYedek.Core.Models
         DeleteOlderThanDays = 1,
         Both = 2
     }
+
+    /// <summary>
+    /// Yedekleme raporu gönderim sıklığı.
+    /// </summary>
+    public enum ReportFrequency
+    {
+        /// <summary>Her gün özet rapor.</summary>
+        Daily = 0,
+
+        /// <summary>Haftalık özet rapor (Pazartesi).</summary>
+        Weekly = 1,
+
+        /// <summary>Aylık özet rapor (ayın 1'i).</summary>
+        Monthly = 2
+    }
+
+    /// <summary>
+    /// Yedekleme modu — hedefin yerel mi yoksa bulut mu olduğunu belirler.
+    /// Wizard adımları bu seçime göre dinamik olarak yapılandırılır.
+    /// </summary>
+    public enum BackupMode
+    {
+        /// <summary>Yerel yedekleme: Disk, UNC, ağ paylaşımı, harici disk.</summary>
+        Local = 0,
+
+        /// <summary>Bulut yedekleme: Google Drive, OneDrive, FTP/SFTP + yerel staging.</summary>
+        Cloud = 1
+    }
 }

@@ -18,7 +18,7 @@ namespace MikroSqlDbYedek.Win.Theme
         private readonly Timer _animTimer;
 
         private Color _onColor = ModernTheme.AccentPrimary;
-        private Color _offColor = Color.FromArgb(190, 190, 195);
+        private Color _offColor = Color.FromArgb(70, 70, 78);
         private string _onText = "ON";
         private string _offText = "OFF";
         private bool _showText = true;
@@ -148,7 +148,7 @@ namespace MikroSqlDbYedek.Win.Theme
             {
                 trackColor = _isChecked
                     ? ModernTheme.AccentPrimaryHover
-                    : Color.FromArgb(170, 170, 175);
+                    : Color.FromArgb(85, 85, 95);
             }
 
             // Track çiz

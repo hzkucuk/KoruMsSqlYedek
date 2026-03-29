@@ -233,22 +233,9 @@ namespace MikroSqlDbYedek.Engine.Backup
 
         private ServerConnection CreateServerConnection(SqlConnInfo connectionInfo)
         {
-            var serverConnection = new ServerConnection
-            {
-                ServerInstance = connectionInfo.Server,
-                ConnectTimeout = connectionInfo.ConnectionTimeoutSeconds
-            };
-
-            if (connectionInfo.AuthMode == SqlAuthMode.Windows)
-            {
-                serverConnection.LoginSecure = true;
-            }
-            else
-            {
-                serverConnection.LoginSecure = false;
-                serverConnection.Login = connectionInfo.Username;
-                serverConnection.Password = PasswordProtector.Unprotect(connectionInfo.Password);
-            }
+            var connectionString = BuildConnectionString(connectionInfo);
+            var sqlConnection = new SqlConnection(connectionString);
+            var serverConnection = new ServerConnection(sqlConnection);
 
             return serverConnection;
         }
@@ -258,7 +245,11 @@ namespace MikroSqlDbYedek.Engine.Backup
             var builder = new SqlConnectionStringBuilder
             {
                 DataSource = connectionInfo.Server,
-                ConnectTimeout = connectionInfo.ConnectionTimeoutSeconds
+                ConnectTimeout = connectionInfo.ConnectionTimeoutSeconds,
+                TrustServerCertificate = connectionInfo.TrustServerCertificate,
+                Encrypt = connectionInfo.TrustServerCertificate
+                    ? SqlConnectionEncryptOption.Optional
+                    : SqlConnectionEncryptOption.Mandatory
             };
 
             if (connectionInfo.AuthMode == SqlAuthMode.Windows)

@@ -19,6 +19,13 @@ namespace MikroSqlDbYedek.Core.Models
         [JsonProperty("isEnabled")]
         public bool IsEnabled { get; set; } = true;
 
+        /// <summary>
+        /// Yedekleme modu: Yerel (disk/UNC) veya Bulut (Google Drive/OneDrive/FTP).
+        /// Wizard adımları bu seçime göre dinamik olarak yapılandırılır.
+        /// </summary>
+        [JsonProperty("backupMode")]
+        public BackupMode Mode { get; set; } = BackupMode.Local;
+
         [JsonProperty("sqlConnection")]
         public SqlConnectionInfo SqlConnection { get; set; } = new SqlConnectionInfo();
 
@@ -56,6 +63,12 @@ namespace MikroSqlDbYedek.Core.Models
         /// </summary>
         [JsonProperty("fileBackup")]
         public FileBackupConfig FileBackup { get; set; }
+
+        /// <summary>
+        /// Yedekleme raporlama ayarları. Günlük/haftalık/aylık özet rapor gönderimi.
+        /// </summary>
+        [JsonProperty("reporting")]
+        public ReportingConfig Reporting { get; set; } = new ReportingConfig();
 
         /// <summary>
         /// Yedek sonrası RESTORE VERIFYONLY ile doğrulama yapılsın mı?

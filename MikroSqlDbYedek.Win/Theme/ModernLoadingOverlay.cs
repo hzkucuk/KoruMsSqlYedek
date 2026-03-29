@@ -78,8 +78,9 @@ namespace MikroSqlDbYedek.Win.Theme
             Graphics g = e.Graphics;
             ModernTheme.SetHighQuality(g);
 
-            // Yarı saydam arka plan
-            using (var bgBrush = new SolidBrush(Color.FromArgb(_overlayAlpha, 245, 245, 248)))
+            // Yarı saydam arka plan (tema uyumlu)
+            var bgBase = ModernTheme.BackgroundColor;
+            using (var bgBrush = new SolidBrush(Color.FromArgb(_overlayAlpha, bgBase.R, bgBase.G, bgBase.B)))
             {
                 g.FillRectangle(bgBrush, ClientRectangle);
             }

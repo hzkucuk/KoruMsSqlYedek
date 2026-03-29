@@ -28,6 +28,9 @@ namespace MikroSqlDbYedek.Win
         private readonly IBackupHistoryManager _historyManager;
         private readonly ISqlBackupService _sqlBackupService;
         private readonly IAppSettingsManager _settingsManager;
+        private readonly ICompressionService _compressionService;
+        private readonly ICloudUploadOrchestrator _cloudOrchestrator;
+        private readonly IFileBackupService _fileBackupService;
 
         // Timers
         private readonly System.Windows.Forms.Timer _dashboardTimer;
@@ -51,17 +54,25 @@ namespace MikroSqlDbYedek.Win
             IPlanManager planManager,
             IBackupHistoryManager historyManager,
             ISqlBackupService sqlBackupService,
-            IAppSettingsManager settingsManager)
+            IAppSettingsManager settingsManager,
+            ICompressionService compressionService,
+            ICloudUploadOrchestrator cloudOrchestrator,
+            IFileBackupService fileBackupService)
         {
             if (planManager == null) throw new ArgumentNullException(nameof(planManager));
             if (historyManager == null) throw new ArgumentNullException(nameof(historyManager));
             if (sqlBackupService == null) throw new ArgumentNullException(nameof(sqlBackupService));
             if (settingsManager == null) throw new ArgumentNullException(nameof(settingsManager));
+            if (compressionService == null) throw new ArgumentNullException(nameof(compressionService));
+            if (fileBackupService == null) throw new ArgumentNullException(nameof(fileBackupService));
 
             _planManager = planManager;
             _historyManager = historyManager;
             _sqlBackupService = sqlBackupService;
             _settingsManager = settingsManager;
+            _compressionService = compressionService;
+            _cloudOrchestrator = cloudOrchestrator;
+            _fileBackupService = fileBackupService;
 
             _logDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -118,6 +129,48 @@ namespace MikroSqlDbYedek.Win
             _btnCancelSettings.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, Color.White, sz);
             _btnCancelSettings.Text = "Iptal";
             _btnCancelSettings.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            // Dashboard KPI kart ikonları (Phosphor)
+            _lblStatusIcon.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.CheckCircle, Theme.ModernTheme.StatusSuccess, 24);
+            _lblNextIcon.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Clock, Theme.ModernTheme.AccentPrimary, 24);
+            _lblPlansIcon.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Database, Theme.ModernTheme.StatusWarning, 24);
+
+            // ToolStrip butonları — Phosphor ikonları
+            ApplyToolStripIcons(sz);
+        }
+
+        private void ApplyToolStripIcons(int sz)
+        {
+            var col = Theme.ModernTheme.TextPrimary;
+            _tsbNew.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PlusCircle, col, sz);
+            _tsbNew.Text = "Yeni Plan";
+            _tsbNew.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
+            _tsbNew.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _tsbEdit.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PencilSimple, col, sz);
+            _tsbEdit.Text = "Düzenle";
+            _tsbEdit.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
+            _tsbEdit.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _tsbDelete.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Trash, Theme.ModernTheme.StatusError, sz);
+            _tsbDelete.Text = "Sil";
+            _tsbDelete.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
+            _tsbDelete.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _tsbExport.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Export, col, sz);
+            _tsbExport.Text = "Dışa Aktar";
+            _tsbExport.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
+            _tsbExport.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _tsbImport.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Download, col, sz);
+            _tsbImport.Text = "İçe Aktar";
+            _tsbImport.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
+            _tsbImport.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _tsbRefreshPlans.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.ArrowClockwise, col, sz);
+            _tsbRefreshPlans.Text = "Yenile";
+            _tsbRefreshPlans.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
+            _tsbRefreshPlans.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
         }
 
         /// <summary>
@@ -336,6 +389,35 @@ namespace MikroSqlDbYedek.Win
             if (span.TotalMinutes < 60) return Res.Format("Dashboard_TimeMinFormat", (int)span.TotalMinutes);
             if (span.TotalHours < 24) return Res.Format("Dashboard_TimeHourFormat", (int)span.TotalHours);
             return Res.Format("Dashboard_TimeDayFormat", (int)span.TotalDays);
+        }
+
+        private void OnListViewDrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
+        {
+            using var bgBrush = new SolidBrush(Theme.ModernTheme.GridHeaderBack);
+            e.Graphics.FillRectangle(bgBrush, e.Bounds);
+
+            using var borderPen = new Pen(Theme.ModernTheme.DividerColor);
+            e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+
+            using var textBrush = new SolidBrush(Theme.ModernTheme.GridHeaderText);
+            var textRect = new Rectangle(e.Bounds.X + 8, e.Bounds.Y, e.Bounds.Width - 16, e.Bounds.Height);
+            using var sf = new StringFormat
+            {
+                LineAlignment = StringAlignment.Center,
+                Trimming = StringTrimming.EllipsisCharacter,
+                FormatFlags = StringFormatFlags.NoWrap
+            };
+            e.Graphics.DrawString(e.Header.Text, Theme.ModernTheme.FontCaptionBold, textBrush, textRect, sf);
+        }
+
+        private void OnListViewDrawItem(object sender, DrawListViewItemEventArgs e)
+        {
+            e.DrawDefault = true;
+        }
+
+        private void OnListViewDrawSubItem(object sender, DrawListViewSubItemEventArgs e)
+        {
+            e.DrawDefault = true;
         }
 
         #endregion
@@ -597,6 +679,7 @@ namespace MikroSqlDbYedek.Win
             int successCount = 0;
             int failCount = 0;
             int totalProgress = 0;
+            string correlationId = Guid.NewGuid().ToString("N");
 
             try
             {
@@ -617,21 +700,88 @@ namespace MikroSqlDbYedek.Win
 
                     try
                     {
+                        // 1. SQL Backup
                         var result = await _sqlBackupService.BackupDatabaseAsync(
                             plan.SqlConnection, dbName, backupType, plan.LocalPath,
                             progress, _cts.Token);
 
-                        if (result.Status == BackupResultStatus.Success)
-                        {
-                            successCount++;
-                            string sizeMb = (result.FileSizeBytes / 1048576.0).ToString("F1");
-                            AppendBackupLog(Res.Format("ManualBackup_SuccessFormat", sizeMb, result.BackupFilePath));
-                        }
-                        else
+                        if (result.Status != BackupResultStatus.Success)
                         {
                             failCount++;
                             AppendBackupLog(Res.Format("ManualBackup_FailedFormat", result.ErrorMessage));
+                            SaveBackupHistory(result, plan, correlationId);
+                            continue;
                         }
+
+                        string sizeMb = (result.FileSizeBytes / 1048576.0).ToString("F1");
+                        AppendBackupLog(Res.Format("ManualBackup_SuccessFormat", sizeMb, result.BackupFilePath));
+
+                        // 2. Verify (isteğe bağlı)
+                        if (plan.VerifyAfterBackup)
+                        {
+                            AppendBackupLog($"  ↳ Doğrulanıyor (RESTORE VERIFYONLY)...");
+                            result.VerifyResult = await _sqlBackupService.VerifyBackupAsync(
+                                plan.SqlConnection, result.BackupFilePath, _cts.Token);
+                            AppendBackupLog(result.VerifyResult == true
+                                ? "  ✓ Doğrulama başarılı."
+                                : "  ✗ Doğrulama başarısız!");
+                        }
+
+                        // 3. Compress
+                        if (plan.Compression != null)
+                        {
+                            try
+                            {
+                                string archivePath = Path.ChangeExtension(result.BackupFilePath, ".7z");
+                                string password = !string.IsNullOrEmpty(plan.Compression.ArchivePassword)
+                                    ? PasswordProtector.Unprotect(plan.Compression.ArchivePassword)
+                                    : null;
+
+                                AppendBackupLog($"  ↳ Sıkıştırılıyor → {Path.GetFileName(archivePath)}");
+                                result.CompressedSizeBytes = await _compressionService.CompressAsync(
+                                    result.BackupFilePath, archivePath, password, null, _cts.Token);
+                                result.CompressedFilePath = archivePath;
+
+                                string compMb = (result.CompressedSizeBytes / 1048576.0).ToString("F1");
+                                AppendBackupLog($"  ✓ Sıkıştırma tamamlandı: {compMb} MB");
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "Manuel yedekleme sıkıştırma hatası: {Database}", dbName);
+                                AppendBackupLog($"  ✗ Sıkıştırma hatası: {ex.Message}");
+                            }
+                        }
+
+                        // 4. Cloud Upload (bulut modundaysa)
+                        if (_cloudOrchestrator != null && plan.CloudTargets != null
+                            && plan.CloudTargets.Any(t => t.IsEnabled)
+                            && plan.Mode == BackupMode.Cloud)
+                        {
+                            try
+                            {
+                                string fileToUpload = !string.IsNullOrEmpty(result.CompressedFilePath)
+                                    ? result.CompressedFilePath
+                                    : result.BackupFilePath;
+                                string remoteFileName = Path.GetFileName(fileToUpload);
+
+                                AppendBackupLog($"  ↳ Bulut hedeflere yükleniyor...");
+                                result.CloudUploadResults = await _cloudOrchestrator.UploadToAllAsync(
+                                    fileToUpload, remoteFileName, plan.CloudTargets, null, _cts.Token);
+
+                                int upSuccess = result.CloudUploadResults.Count(r => r.IsSuccess);
+                                int upTotal = result.CloudUploadResults.Count;
+                                AppendBackupLog($"  ✓ Bulut upload: {upSuccess}/{upTotal} başarılı");
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "Manuel yedekleme bulut upload hatası: {Database}", dbName);
+                                AppendBackupLog($"  ✗ Bulut upload hatası: {ex.Message}");
+                            }
+                        }
+
+                        // 5. History
+                        SaveBackupHistory(result, plan, correlationId);
+                        successCount++;
                     }
                     catch (Exception ex)
                     {
@@ -642,6 +792,87 @@ namespace MikroSqlDbYedek.Win
 
                     totalProgress += 100;
                     _progressBar.Value = Math.Min(totalProgress, _progressBar.Maximum);
+                }
+
+                // ── Dosya Yedekleme ──
+                if (plan.FileBackup != null && plan.FileBackup.IsEnabled
+                    && plan.FileBackup.Sources.Any(s => s.IsEnabled))
+                {
+                    try
+                    {
+                        AppendBackupLog("");
+                        AppendBackupLog("── Dosya Yedekleme ──");
+                        _lblBackupStatus.Text = "Dosya yedekleme çalışıyor...";
+
+                        var fileResults = await _fileBackupService.BackupFilesAsync(plan, null, _cts.Token);
+
+                        foreach (var fr in fileResults)
+                        {
+                            if (fr.Status == BackupResultStatus.Success)
+                            {
+                                string sizeMb = (fr.TotalSizeBytes / 1048576.0).ToString("F1");
+                                AppendBackupLog($"  ✓ {fr.SourceName}: {fr.FilesCopied} dosya, {sizeMb} MB");
+                            }
+                            else
+                            {
+                                AppendBackupLog($"  ✗ {fr.SourceName}: başarısız");
+                            }
+                        }
+
+                        // Dosya yedekleri sıkıştırma
+                        if (plan.Compression != null && fileResults.Any(r => r.Status == BackupResultStatus.Success))
+                        {
+                            string filesDir = Path.Combine(plan.LocalPath, "Files");
+                            if (Directory.Exists(filesDir))
+                            {
+                                try
+                                {
+                                    string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                                    string archivePath = Path.Combine(plan.LocalPath, $"Files_{timestamp}.7z");
+                                    string password = !string.IsNullOrEmpty(plan.Compression.ArchivePassword)
+                                        ? PasswordProtector.Unprotect(plan.Compression.ArchivePassword)
+                                        : null;
+
+                                    AppendBackupLog($"  ↳ Dosya yedekleri sıkıştırılıyor → {Path.GetFileName(archivePath)}");
+
+                                    var sevenZip = _compressionService as Engine.Compression.SevenZipCompressionService;
+                                    if (sevenZip != null)
+                                    {
+                                        long archiveSize = await sevenZip.CompressDirectoryAsync(
+                                            filesDir, archivePath, password,
+                                            plan.Compression.Level, null, _cts.Token);
+
+                                        string compMb = (archiveSize / 1048576.0).ToString("F1");
+                                        AppendBackupLog($"  ✓ Dosya arşivi tamamlandı: {compMb} MB");
+
+                                        // Bulut upload
+                                        if (_cloudOrchestrator != null && plan.CloudTargets != null
+                                            && plan.CloudTargets.Any(t => t.IsEnabled)
+                                            && plan.Mode == BackupMode.Cloud)
+                                        {
+                                            AppendBackupLog($"  ↳ Dosya arşivi buluta yükleniyor...");
+                                            var uploadResults = await _cloudOrchestrator.UploadToAllAsync(
+                                                archivePath, Path.GetFileName(archivePath),
+                                                plan.CloudTargets, null, _cts.Token);
+
+                                            int upOk = uploadResults.Count(r => r.IsSuccess);
+                                            AppendBackupLog($"  ✓ Dosya arşiv upload: {upOk}/{uploadResults.Count} başarılı");
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error(ex, "Dosya yedek sıkıştırma/upload hatası");
+                                    AppendBackupLog($"  ✗ Dosya sıkıştırma hatası: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Dosya yedekleme hatası");
+                        AppendBackupLog($"  ✗ Dosya yedekleme hatası: {ex.Message}");
+                    }
                 }
 
                 _lblBackupStatus.Text = Res.Format("ManualBackup_CompletedFormat", successCount, failCount);
@@ -700,6 +931,22 @@ namespace MikroSqlDbYedek.Win
         private void AppendBackupLog(string text)
         {
             _txtBackupLog.AppendText(text + Environment.NewLine);
+        }
+
+        private void SaveBackupHistory(BackupResult result, BackupPlan plan, string correlationId)
+        {
+            result.PlanId = plan.PlanId;
+            result.PlanName = plan.PlanName;
+            result.CorrelationId = correlationId;
+
+            try
+            {
+                _historyManager.SaveResult(result);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Yedek geçmişi kaydedilemedi: {CorrelationId}", correlationId);
+            }
         }
 
         #endregion

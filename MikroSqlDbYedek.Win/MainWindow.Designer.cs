@@ -31,15 +31,15 @@ namespace MikroSqlDbYedek.Win
             // ── Tab 0: Dashboard ─────────────────────────────────────────
             _tlpCards = new System.Windows.Forms.TableLayoutPanel();
             _cardStatus = new Theme.ModernCardPanel();
-            _lblStatusIcon = new System.Windows.Forms.Label();
+            _lblStatusIcon = new System.Windows.Forms.PictureBox();
             _lblStatusCaption = new System.Windows.Forms.Label();
             _lblStatusValue = new System.Windows.Forms.Label();
             _cardNextBackup = new Theme.ModernCardPanel();
-            _lblNextIcon = new System.Windows.Forms.Label();
+            _lblNextIcon = new System.Windows.Forms.PictureBox();
             _lblNextBackupCaption = new System.Windows.Forms.Label();
             _lblNextBackupValue = new System.Windows.Forms.Label();
             _cardActivePlans = new Theme.ModernCardPanel();
-            _lblPlansIcon = new System.Windows.Forms.Label();
+            _lblPlansIcon = new System.Windows.Forms.PictureBox();
             _lblActivePlansCaption = new System.Windows.Forms.Label();
             _lblActivePlansValue = new System.Windows.Forms.Label();
             _pnlGrid = new Theme.ModernCardPanel();
@@ -165,6 +165,9 @@ namespace MikroSqlDbYedek.Win
             _tlpCards.SuspendLayout();
             _toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)_dgvPlans).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)_lblStatusIcon).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)_lblNextIcon).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)_lblPlansIcon).BeginInit();
             _statusStripPlans.SuspendLayout();
             _tlpBackup.SuspendLayout();
             _flpBackupButtons.SuspendLayout();
@@ -220,10 +223,9 @@ namespace MikroSqlDbYedek.Win
             _cardStatus.Dock = System.Windows.Forms.DockStyle.Fill;
             _cardStatus.Margin = new System.Windows.Forms.Padding(4);
             _cardStatus.Padding = new System.Windows.Forms.Padding(14, 10, 14, 10);
-            _lblStatusIcon.Text = Helpers.SymbolIconHelper.SymbolCheckmark;
-            _lblStatusIcon.Font = new System.Drawing.Font("Segoe MDL2 Assets", 18F);
-            _lblStatusIcon.ForeColor = Theme.ModernTheme.StatusSuccess;
-            _lblStatusIcon.AutoSize = true;
+            _lblStatusIcon.Size = new System.Drawing.Size(28, 28);
+            _lblStatusIcon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            _lblStatusIcon.BackColor = System.Drawing.Color.Transparent;
             _lblStatusIcon.Location = new System.Drawing.Point(14, 14);
             _cardStatus.Controls.Add(_lblStatusIcon);
             _lblStatusCaption.AutoSize = true;
@@ -243,10 +245,9 @@ namespace MikroSqlDbYedek.Win
             _cardNextBackup.Dock = System.Windows.Forms.DockStyle.Fill;
             _cardNextBackup.Margin = new System.Windows.Forms.Padding(4);
             _cardNextBackup.Padding = new System.Windows.Forms.Padding(14, 10, 14, 10);
-            _lblNextIcon.Text = Helpers.SymbolIconHelper.SymbolClock;
-            _lblNextIcon.Font = new System.Drawing.Font("Segoe MDL2 Assets", 18F);
-            _lblNextIcon.ForeColor = Theme.ModernTheme.AccentPrimary;
-            _lblNextIcon.AutoSize = true;
+            _lblNextIcon.Size = new System.Drawing.Size(28, 28);
+            _lblNextIcon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            _lblNextIcon.BackColor = System.Drawing.Color.Transparent;
             _lblNextIcon.Location = new System.Drawing.Point(14, 14);
             _cardNextBackup.Controls.Add(_lblNextIcon);
             _lblNextBackupCaption.AutoSize = true;
@@ -266,10 +267,9 @@ namespace MikroSqlDbYedek.Win
             _cardActivePlans.Dock = System.Windows.Forms.DockStyle.Fill;
             _cardActivePlans.Margin = new System.Windows.Forms.Padding(4);
             _cardActivePlans.Padding = new System.Windows.Forms.Padding(14, 10, 14, 10);
-            _lblPlansIcon.Text = Helpers.SymbolIconHelper.SymbolDocument;
-            _lblPlansIcon.Font = new System.Drawing.Font("Segoe MDL2 Assets", 18F);
-            _lblPlansIcon.ForeColor = Theme.ModernTheme.StatusWarning;
-            _lblPlansIcon.AutoSize = true;
+            _lblPlansIcon.Size = new System.Drawing.Size(28, 28);
+            _lblPlansIcon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            _lblPlansIcon.BackColor = System.Drawing.Color.Transparent;
             _lblPlansIcon.Location = new System.Drawing.Point(14, 14);
             _cardActivePlans.Controls.Add(_lblPlansIcon);
             _lblActivePlansCaption.AutoSize = true;
@@ -304,6 +304,10 @@ namespace MikroSqlDbYedek.Win
             _lvLastBackups.ForeColor = Theme.ModernTheme.TextPrimary;
             _lvLastBackups.BackColor = Theme.ModernTheme.SurfaceColor;
             _lvLastBackups.UseCompatibleStateImageBehavior = false;
+            _lvLastBackups.OwnerDraw = true;
+            _lvLastBackups.DrawColumnHeader += OnListViewDrawColumnHeader;
+            _lvLastBackups.DrawItem += OnListViewDrawItem;
+            _lvLastBackups.DrawSubItem += OnListViewDrawSubItem;
             _lvLastBackups.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
                 _colDate, _colPlan, _colDatabase, _colType, _colResult, _colSize });
             _pnlGrid.Controls.Add(_lvLastBackups);
@@ -331,12 +335,12 @@ namespace MikroSqlDbYedek.Win
             _toolStrip.Renderer = new Theme.ModernToolStripRenderer();
             _toolStrip.Dock = System.Windows.Forms.DockStyle.Top;
 
-            _tsbNew.Text = "➕ Yeni Plan"; _tsbNew.Click += OnNewPlanClick;
-            _tsbEdit.Text = "✏️ Düzenle"; _tsbEdit.Click += OnEditPlanClick;
-            _tsbDelete.Text = "🗑️ Sil"; _tsbDelete.Click += OnDeletePlanClick;
-            _tsbExport.Text = "📤 Dışa Aktar"; _tsbExport.Click += OnExportPlanClick;
-            _tsbImport.Text = "📥 İçe Aktar"; _tsbImport.Click += OnImportPlanClick;
-            _tsbRefreshPlans.Text = "🔄 Yenile"; _tsbRefreshPlans.Click += OnRefreshPlansClick;
+            _tsbNew.Text = "Yeni Plan"; _tsbNew.Click += OnNewPlanClick;
+            _tsbEdit.Text = "Düzenle"; _tsbEdit.Click += OnEditPlanClick;
+            _tsbDelete.Text = "Sil"; _tsbDelete.Click += OnDeletePlanClick;
+            _tsbExport.Text = "Dışa Aktar"; _tsbExport.Click += OnExportPlanClick;
+            _tsbImport.Text = "İçe Aktar"; _tsbImport.Click += OnImportPlanClick;
+            _tsbRefreshPlans.Text = "Yenile"; _tsbRefreshPlans.Click += OnRefreshPlansClick;
 
             _dgvPlans.AllowUserToAddRows = false;
             _dgvPlans.AllowUserToDeleteRows = false;
@@ -852,6 +856,9 @@ namespace MikroSqlDbYedek.Win
             // ─────────────────────────────────────────────────────────────
             // Resume
             // ─────────────────────────────────────────────────────────────
+            ((System.ComponentModel.ISupportInitialize)_lblStatusIcon).EndInit();
+            ((System.ComponentModel.ISupportInitialize)_lblNextIcon).EndInit();
+            ((System.ComponentModel.ISupportInitialize)_lblPlansIcon).EndInit();
             _tabControl.ResumeLayout(false);
             _tabDashboard.ResumeLayout(false);
             _tabPlans.ResumeLayout(false);
@@ -911,15 +918,15 @@ namespace MikroSqlDbYedek.Win
         // Dashboard
         private System.Windows.Forms.TableLayoutPanel _tlpCards;
         private Theme.ModernCardPanel _cardStatus;
-        private System.Windows.Forms.Label _lblStatusIcon;
+        private System.Windows.Forms.PictureBox _lblStatusIcon;
         private System.Windows.Forms.Label _lblStatusCaption;
         private System.Windows.Forms.Label _lblStatusValue;
         private Theme.ModernCardPanel _cardNextBackup;
-        private System.Windows.Forms.Label _lblNextIcon;
+        private System.Windows.Forms.PictureBox _lblNextIcon;
         private System.Windows.Forms.Label _lblNextBackupCaption;
         private System.Windows.Forms.Label _lblNextBackupValue;
         private Theme.ModernCardPanel _cardActivePlans;
-        private System.Windows.Forms.Label _lblPlansIcon;
+        private System.Windows.Forms.PictureBox _lblPlansIcon;
         private System.Windows.Forms.Label _lblActivePlansCaption;
         private System.Windows.Forms.Label _lblActivePlansValue;
         private Theme.ModernCardPanel _pnlGrid;

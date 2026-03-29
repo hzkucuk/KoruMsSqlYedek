@@ -39,8 +39,8 @@ namespace MikroSqlDbYedek.Win.Theme
                 ModernTheme.SetHighQuality(g);
 
                 var bgColor = e.Item.Pressed
-                    ? Color.FromArgb(40, 255, 255, 255)
-                    : Color.FromArgb(20, 255, 255, 255);
+                    ? Color.FromArgb(55, 255, 255, 255)
+                    : Color.FromArgb(35, 255, 255, 255);
 
                 using (var path = ModernTheme.CreateRoundedRectanglePath(rect, 4))
                 using (var brush = new SolidBrush(bgColor))
@@ -68,6 +68,13 @@ namespace MikroSqlDbYedek.Win.Theme
             }
         }
 
+        protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
+        {
+            // Image margin (sol gümüş şerit) bastır — dark temada görünmemeli
+            using (var brush = new SolidBrush(ModernTheme.SurfaceColor))
+                e.Graphics.FillRectangle(brush, e.AffectedBounds);
+        }
+
         protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
         {
             // Varsayılan 3D bordürü bastır — alt çizgi zaten çiziliyor
@@ -83,7 +90,10 @@ namespace MikroSqlDbYedek.Win.Theme
             if (e.Item.Selected && e.Item.Enabled)
             {
                 var rect = new Rectangle(2, 1, e.Item.Width - 4, e.Item.Height - 2);
-                using (var brush = new SolidBrush(Color.FromArgb(25, 0, 150, 80)))
+                var r = ModernTheme.AccentPrimary.R;
+                var g2 = ModernTheme.AccentPrimary.G;
+                var b = ModernTheme.AccentPrimary.B;
+                using (var brush = new SolidBrush(Color.FromArgb(30, r, g2, b)))
                 {
                     e.Graphics.FillRectangle(brush, rect);
                 }
@@ -109,12 +119,12 @@ namespace MikroSqlDbYedek.Win.Theme
         public override Color ImageMarginGradientEnd => ModernTheme.SurfaceColor;
         public override Color SeparatorDark => ModernTheme.DividerColor;
         public override Color SeparatorLight => ModernTheme.SurfaceColor;
-        public override Color MenuItemSelected => Color.FromArgb(25, 0, 150, 80);
+        public override Color MenuItemSelected => Color.FromArgb(30, ModernTheme.AccentPrimary);
         public override Color MenuItemBorder => Color.Transparent;
-        public override Color ButtonSelectedHighlight => Color.FromArgb(20, 255, 255, 255);
-        public override Color ButtonSelectedGradientBegin => Color.FromArgb(20, 255, 255, 255);
-        public override Color ButtonSelectedGradientEnd => Color.FromArgb(20, 255, 255, 255);
-        public override Color ButtonPressedGradientBegin => Color.FromArgb(40, 255, 255, 255);
-        public override Color ButtonPressedGradientEnd => Color.FromArgb(40, 255, 255, 255);
+        public override Color ButtonSelectedHighlight => Color.FromArgb(35, 255, 255, 255);
+        public override Color ButtonSelectedGradientBegin => Color.FromArgb(35, 255, 255, 255);
+        public override Color ButtonSelectedGradientEnd => Color.FromArgb(35, 255, 255, 255);
+        public override Color ButtonPressedGradientBegin => Color.FromArgb(55, 255, 255, 255);
+        public override Color ButtonPressedGradientEnd => Color.FromArgb(55, 255, 255, 255);
     }
 }

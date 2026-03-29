@@ -71,6 +71,7 @@ namespace MikroSqlDbYedek.Engine.IoC
                 .SingleInstance();
 
             builder.RegisterType<CloudUploadOrchestrator>()
+                .UsingConstructor(typeof(ICloudProviderFactory))
                 .As<ICloudUploadOrchestrator>()
                 .InstancePerDependency();
 

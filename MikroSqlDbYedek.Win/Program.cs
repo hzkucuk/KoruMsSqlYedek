@@ -52,6 +52,9 @@ namespace MikroSqlDbYedek.Win
                 ApplyLanguageSetting();
                 ApplyThemeSetting();
 
+                // .NET 10 native dark mode — tema ayarına göre
+                ApplyNativeColorMode();
+
                 Log.Information("MikroSqlDbYedek başlatılıyor — v{Version}",
                     System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
@@ -135,6 +138,26 @@ namespace MikroSqlDbYedek.Win
             catch (Exception ex)
             {
                 Log.Warning(ex, "Tema ayarı uygulanırken hata, varsayılan (dark) kullanılacak.");
+            }
+        }
+
+        /// <summary>
+        /// .NET 10 native dark mode — ModernTheme ayarına göre SystemColorMode belirler.
+        /// UI oluşturulmadan önce çağrılmalıdır.
+        /// </summary>
+        private static void ApplyNativeColorMode()
+        {
+            try
+            {
+                var colorMode = Theme.ModernTheme.CurrentTheme == Theme.ThemeMode.Dark
+                    ? SystemColorMode.Dark
+                    : SystemColorMode.Classic;
+                Application.SetColorMode(colorMode);
+                Log.Information(".NET 10 native color mode uygulandı: {ColorMode}", colorMode);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Native color mode uygulanırken hata.");
             }
         }
 

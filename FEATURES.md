@@ -27,6 +27,13 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 | **Faz 16** | WinForms UI Modernizasyon | ✅ Tamamlandı |
 | **Faz 17** | .NET 10 Migrasyonu | ✅ Tamamlandı |
 | **Faz 18** | Koyu Tema — MikroUpdate.Win Senkronizasyonu | ✅ Tamamlandı |
+| **Faz 19** | Dashboard & İkon Düzeltmeleri | ✅ Tamamlandı |
+| **Faz 20** | .NET 10 Native Dark Mode + Tema Yenileme | ✅ Tamamlandı |
+| **Faz 21** | Plan Düzenleme Wizard + SSL & DB Adı Düzeltmeleri | ✅ Tamamlandı |
+| **Faz 22** | Cron UI Builder + Tooltips + Raporlama + Layout | ✅ Tamamlandı |
+| **Faz 23** | Wizard Adım Yeniden Yapılandırma + İkon Düzeltmeleri | ✅ Tamamlandı |
+| **Faz 24** | Wizard Yedekleme Modu Seçimi (Yerel/Bulut) | ✅ Tamamlandı |
+| **Faz 25** | Manuel Yedekleme Pipeline Tamamlama | ✅ Tamamlandı |
 
 ---
 
@@ -256,6 +263,188 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 - [x] Build-Release.ps1 otomasyon scripti
 - [x] Minimum gereksinim kontrolü (.NET 4.8, Windows 10+)
 
+
+## Faz 19 — Dashboard & İkon Düzeltmeleri (v0.19.1) ✅
+
+- [x] Dashboard ListView (`_lvLastBackups`) OwnerDraw etkinleştirildi — sütun başlıkları tema renkleriyle (GridHeaderBack/GridHeaderText) çiziliyor
+- [x] DrawColumnHeader/DrawItem/DrawSubItem event handler'ları eklendi
+- [x] KPI kart ikonları `Segoe MDL2 Assets` Label → `PictureBox` + Phosphor ikonlarına dönüştürüldü (CheckCircle, Clock, Database)
+- [x] PhosphorIcons sessiz hata yakalama (`catch { return null; }`) → Serilog Error loglama ile değiştirildi
+- [x] 0 hata ile build doğrulandı
+
+---
+
+## Faz 21 — Plan Düzenleme Wizard + SSL & DB Adı Düzeltmeleri (v0.21.0) ✅
+
+### Wizard Tabanlı Plan Düzenleme
+- [x] 8-tab TabControl → 5 adımlı wizard panel sistemi (PlanEditForm.Designer.cs tamamen yeniden yazıldı)
+- [x] Adım 1: Plan Bilgileri + SQL Bağlantı (eski Tab 1+2 birleştirildi)
+- [x] Adım 2: Veritabanı Seçimi (Tümünü Seç + Yenile butonları, otomatik DB yükleme)
+- [x] Adım 3: Yedekleme Stratejisi & Zamanlama
+- [x] Adım 4: Sıkıştırma & Saklama Politikası (eski Tab 4+6 birleştirildi)
+- [x] Adım 5: Bulut Hedefler + Bildirim + Dosya Yedekleme (eski Tab 5+7+8 birleştirildi)
+- [x] Adım göstergesi (üst bar): tamamlanan=✓ yeşil, aktif=beyaz, gelecek=devre dışı
+- [x] Geri/İleri/Kaydet/İptal navigasyon çubuğu (alt bar)
+- [x] Adım geçişlerinde doğrulama (plan adı + sunucu zorunlu)
+- [x] Adım 1→2 geçişinde otomatik bağlantı testi + veritabanı listesi yükleme
+
+### SSL Sertifika Düzeltmesi
+- [x] `SqlConnectionInfo` modeline `TrustServerCertificate` özelliği eklendi (varsayılan: true)
+- [x] `BuildConnectionString()`: TrustServerCertificate=true → Encrypt=Optional, aksi halde Mandatory
+- [x] `CreateServerConnection()`: `BuildConnectionString()` kullanarak yeniden yazıldı (kod tekrarı giderildi)
+- [x] PlanEditForm'a `_chkTrustCert` checkbox eklendi
+
+### Veritabanı Adı Bozulması Düzeltmesi
+- [x] `DatabaseListItem` sınıfı: `Name` (gerçek DB adı) + `DisplayText` (biçimlendirilmiş) ayrımı
+- [x] `LoadDatabaseListAsync()`, `LoadPlanToUi()`, `SaveUiToPlan()` → DatabaseListItem kullanımı
+
+### Kod Kalitesi
+- [x] `BuildCurrentConnInfo()`: SQL bağlantı bilgisi tek noktada toplanarak kod tekrarı giderildi
+- [x] `OnTestSqlConnectionClick` → `BuildCurrentConnInfo()` kullanacak şekilde sadeleştirildi
+- [x] `ApplyIcons()`: `_btnRefreshDatabases` ikonu eklendi, kullanılmayan değişken temizlendi
+- [x] 0 hata ile build doğrulandı
+
+---
+
+## Faz 22 — Cron UI Builder + Tooltips + Raporlama + Layout (v0.22.0) ✅
+
+### CronBuilderPanel UserControl
+- [x] Sıklık seçimi ComboBox: Günlük / Haftalık / Aylık / Özel (Cron)
+- [x] Haftalık mod: 7 gün checkbox'ı (Pzt-Paz), çoklu gün seçimi
+- [x] Aylık mod: ayın günü spinner (1-28)
+- [x] Saat/dakika spinner'ları (varsayılan 02:00)
+- [x] Özel mod: ham Quartz cron ifadesi girişi (PlaceholderText ile)
+- [x] Canlı önizleme: insan okunabilir açıklama + ham cron ifadesi
+- [x] `GetCronExpression()` / `SetCronExpression(string)` public API
+- [x] Mevcut cron ifadesini geri ayrıştırma (günlük/haftalık/aylık/özel algılama)
+- [x] Quartz.NET 6-alan formatı: saniye dakika saat ayGünü ay haftaGünü
+
+### ToolTip Sistemi
+- [x] `ToolTip` bileşeni: 15 saniyelik AutoPopDelay ile detaylı açıklamalar
+- [x] Tüm form alanlarında Türkçe tooltip'ler (örnekli: "Örn: SQLSERVER01 veya 192.168.1.100")
+- [x] Cron alanları, sıkıştırma, saklama politikası, bildirim ayarları dahil
+
+### Raporlama Yapılandırması
+- [x] `ReportFrequency` enum: Daily, Weekly, Monthly (Enums.cs)
+- [x] `ReportingConfig` modeli: IsEnabled, Frequency, EmailTo, SendHour (ConfigModels.cs)
+- [x] `BackupPlan.Reporting` özelliği (varsayılan: new ReportingConfig())
+- [x] PlanEditForm UI: Rapor etkinleştirme, sıklık, e-posta, gönderim saati
+- [x] `OnReportEnabledChanged` + `UpdateReportFieldsVisibility` görünürlük yönetimi
+
+### Layout & Türkçe İyileştirmeleri
+- [x] Form boyutu: 580x560 → 640x640 (CronBuilderPanel için geniş alan)
+- [x] Etiket sütunu: tx=140→150, tw=320→340 (daha iyi hizalama)
+- [x] Türkçe etiket düzeltmeleri: "Bağlantıyı Sına", "Yerel Yedek Klasörü", "Sunucu Adı / IP"
+- [x] Bölüm numaralandırma: ① ② ③ ④ ⑤ ⑥ ile görsel ayrım
+- [x] Tüm alanlar için anlamlı varsayılan değerler
+- [x] PlanEditForm.cs: TextBox cron referansları → CronBuilderPanel API'sine güncellendi
+- [x] 0 hata ile build doğrulandı
+
+---
+
+## Faz 23 — Wizard Adım Yeniden Yapılandırma + İkon Düzeltmeleri (v0.23.0) ✅
+
+### 6 Adımlı Wizard Yapısı (5→6)
+- [x] Kaynaklar ayrıldı: Adım 2 = Veritabanları + Dosya Kaynakları (SQL + VSS dosyalar birlikte)
+- [x] Hedefler ayrıldı: Adım 5 = Bulut / Uzak Hedefler (Google Drive, OneDrive, FTP/SFTP, UNC)
+- [x] Bildirim & Rapor son adıma taşındı: Adım 6 = E-posta Bildirimleri + Periyodik Rapor
+- [x] Zamanlama birleştirildi: Adım 3 = SQL Strateji + Dosya Zamanlama (dosya bölümü koşullu görünürlük)
+- [x] Adım göstergesi 5→6 noktaya genişletildi (stepW=103, font 8.25F/7.5F)
+- [x] Adım başlıkları: Bağlantı → Kaynaklar → Zamanlama → Sıkıştırma → Hedefler → Bildirim
+
+### Çift İkon Düzeltmesi
+- [x] Tüm butonlardan `TextImageRelation` kaldırıldı — ModernButton'un özel `OnPaint` çizimiyle çakışma giderildi
+- [x] Navigasyon butonlarına Phosphor ikonları eklendi: ArrowLeft (Geri), ArrowRight (İleri), FloppyDisk (Kaydet), XCircle (İptal)
+- [x] `PhosphorIcons.cs`: ArrowLeft (\ue038) ve ArrowRight (\ue044) sabitleri eklendi
+- [x] Secondary/Ghost buton ikonları TextPrimary rengiyle (beyaz yerine daha iyi kontrast)
+
+### Layout İyileştirmeleri
+- [x] Form boyutu: 640x640 → 660x680 (6 adım ve geniş içerik için)
+- [x] Alan genişliği: tw=340 → tw=420 (daha geniş TextBox/ComboBox'lar)
+- [x] Hedefler adımı: Açıklayıcı ipucu metni + büyük ListView (478x380)
+- [x] Buton metinlerinden Unicode oklar (▶/◀) kaldırıldı — sadece Phosphor ikonları
+- [x] `UpdateFileScheduleVisibility()`: Dosya zamanlama bölümü koşullu görünürlük
+- [x] 0 hata ile build doğrulandı
+
+---
+
+## Faz 25 — Manuel Yedekleme Pipeline Tamamlama (v0.25.1) ✅
+
+### Manuel Yedekleme Tam Pipeline
+- [x] `ICompressionService` ve `ICloudUploadOrchestrator` bağımlılıkları MainWindow'a eklendi
+- [x] Manuel yedekleme artık tam pipeline çalıştırıyor: SQL Backup → Verify → Compress → Cloud Upload → History
+- [x] Sıkıştırma: Plan'daki `Compression` ayarı varsa `.bak` → `.7z` arşivleme (LZMA2, DPAPI şifreli)
+- [x] Doğrulama: Plan'da `VerifyAfterBackup` aktifse RESTORE VERIFYONLY çalıştırılır
+- [x] Bulut Upload: Plan modu `Cloud` ve hedefler aktifse sıkıştırılmış/ham dosya bulut hedeflere yüklenir
+- [x] Geçmiş Kayıt: Her yedek sonucu `correlationId` ile `IBackupHistoryManager`'a kaydedilir
+- [x] `SaveBackupHistory()` helper metodu eklendi
+- [x] Her pipeline adımı detaylı log çıktısı üretir (↳/✓/✗ göstergeleri)
+
+### Autofac + Dosya Yedekleme Düzeltmeleri (v0.25.1)
+- [x] `CloudUploadOrchestrator` Autofac `UsingConstructor(typeof(ICloudProviderFactory))` ile belirtildi
+- [x] `IFileBackupService` MainWindow constructor'ına enjekte edildi
+- [x] Dosya yedekleme pipeline eklendi: FileBackup → Compress (.7z dizin arşivi) → Cloud Upload
+- [x] VSS desteği ile açık/kilitli dosyalar (Outlook PST/OST vb.) yedeklenir
+- [x] 0 hata ile build doğrulandı
+
+### 7z.dll Entegrasyonu (v0.25.2)
+- [x] `7z.dll` (x64) native binary projeye eklendi (`Engine\Native\x64\7z.dll`)
+- [x] Build'de output dizinine otomatik kopyalama (`PreserveNewest`)
+- [x] `Initialize()` metodu 3 aşamalı fallback ile güncellendi
+- [x] Tüm projeler (Win, Service, Tests) build sonrası `x64\7z.dll` içerir
+- [x] 0 hata ile build doğrulandı
+
+---
+
+## Faz 24 — Wizard Yedekleme Modu Seçimi (Yerel/Bulut) (v0.24.0) ✅
+
+### Yedekleme Modu Seçimi
+- [x] `BackupMode` enum eklendi: `Local` (Disk/UNC/Ağ) ve `Cloud` (Google Drive/OneDrive/FTP/SFTP)
+- [x] `BackupPlan.Mode` özelliği eklendi (varsayılan: Local, JSON serileştirme destekli)
+- [x] Step 1'e RadioButton seçimi: "Yerel (Disk / UNC / Ağ Paylaşımı)" ve "Bulut (Google Drive / OneDrive / FTP / SFTP)"
+- [x] Detaylı tooltip açıklamaları her iki mod için
+
+### Dinamik Wizard Navigasyonu
+- [x] `_activeSteps` listesi: Yedekleme moduna göre aktif adımları dinamik hesaplar
+- [x] Yerel mod: 5 adım (Bağlantı → Kaynaklar → Zamanlama → Sıkıştırma → Bildirim) — Hedefler atlanır
+- [x] Bulut mod: 6 adım (Bağlantı → Kaynaklar → Zamanlama → Sıkıştırma → Hedefler → Bildirim)
+- [x] `RebuildActiveSteps()`: Mod değiştiğinde adım listesini yeniden oluşturur
+- [x] `RebuildStepIndicator()`: Üst bar göstergesini aktif adımlara göre dinamik çizer (5 veya 6 nokta)
+- [x] Adım genişliği otomatik ayarlanır: 5 adım=124px, 6 adım=103px
+- [x] `ShowStep()`, `OnNextClick()`, `OnBackClick()` — `_activeSteps` indeksleri üzerinden navigasyon
+- [x] `ValidateCurrentStep()` — panel indeksine göre doğrulama
+- [x] `OnBackupModeChanged()` — mod değiştiğinde wizard'u anında yeniden yapılandırır
+- [x] `LoadPlanToUi()` / `SaveUiToPlan()` — BackupMode okuma/yazma
+- [x] 0 hata ile build doğrulandı
+
+---
+
+## Faz 20 — .NET 10 Native Dark Mode + Tema Yenileme (v0.20.0) ✅
+
+### Native Dark Mode Entegrasyonu
+- [x] `Application.SetColorMode(SystemColorMode.Dark)` — .NET 10 native dark mode etkinleştirildi
+- [x] Program.cs: `ApplyNativeColorMode()` metodu eklendi (ModernTheme ayarı → SystemColorMode eşlemesi)
+- [x] ModernFormBase: DWM dark title bar hack kaldırıldı (native API yönetiyor)
+- [x] ModernFormBase: 12+ standart kontrol manual theming kaldırıldı (TextBox, ComboBox, CheckBox, RadioButton, NumericUpDown, CheckedListBox, Label, ListView, TabControl, GroupBox, Button — native auto-dark)
+- [x] ModernFormBase: `ApplyThemeToAllChildren` → `ApplyThemeToCustomControls` yeniden adlandırıldı
+- [x] NativeMethods: `DwmSetWindowAttribute`, `DWMWA_USE_IMMERSIVE_DARK_MODE`, `SetWindowTheme` P/Invoke kaldırıldı
+
+### Tema Paleti Yenileme
+- [x] Emerald accent renk: `(0,150,80)` → `(16,185,129)` (Tailwind emerald-500)
+- [x] Daha geniş elevation farkı: Background(18,18,22) → Surface(30,30,36) → Hover(48,48,56)
+- [x] Modern durum renkleri: Success=emerald, Warning=amber(245,158,11), Error=red(239,68,68), Info=blue(96,165,250)
+
+### Kontrol Görsel Düzeltmeleri
+- [x] ModernButton Ghost stili: siyah alpha → beyaz alpha overlay (koyu arka planda görünür)
+- [x] ModernCardPanel gölge alpha: 15 → 50 (koyu temada görünür)
+- [x] ModernNumericUpDown: dikdörtgen → yuvarlak köşe (radius=4)
+- [x] ModernLoadingOverlay: sabit açık arka plan → tema-duyarlı koyu arka plan
+- [x] ModernToggleSwitch off rengi: (190,190,195) → (70,70,78)
+- [x] ModernToolStripRenderer: sabit accent → dinamik, hover alpha 20 → 35
+- [x] MaterialSkin.2 NuGet paketi kaldırıldı
+- [x] 0 hata ile build doğrulandı
+
+---
 
 ## Faz 18 — Koyu Tema / MikroUpdate.Win Senkronizasyonu (v0.17.0) ✅
 

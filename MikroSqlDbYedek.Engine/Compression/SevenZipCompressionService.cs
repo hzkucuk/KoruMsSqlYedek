@@ -29,21 +29,36 @@ namespace MikroSqlDbYedek.Engine.Compression
 
             if (string.IsNullOrEmpty(sevenZipDllPath))
             {
-                // Varsayılan: uygulama dizininde 7z.dll
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                sevenZipDllPath = Environment.Is64BitProcess
+
+                // 1. Uygulama dizini/x64/7z.dll (build output)
+                string candidate = Environment.Is64BitProcess
                     ? Path.Combine(appDir, "x64", "7z.dll")
                     : Path.Combine(appDir, "x86", "7z.dll");
-            }
 
-            if (!File.Exists(sevenZipDllPath))
-            {
-                // Fallback: uygulama dizininde düz 7z.dll
-                string fallback = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "7z.dll");
-                if (File.Exists(fallback))
-                    sevenZipDllPath = fallback;
-                else
-                    throw new FileNotFoundException("7z.dll bulunamadı. Uygulama dizininde x64/7z.dll veya 7z.dll olmalıdır.", sevenZipDllPath);
+                if (!File.Exists(candidate))
+                {
+                    // 2. Uygulama dizininde düz 7z.dll
+                    candidate = Path.Combine(appDir, "7z.dll");
+                }
+
+                if (!File.Exists(candidate))
+                {
+                    // 3. Program Files — 7-Zip kurulumu
+                    string programFiles = Environment.Is64BitProcess
+                        ? Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
+                        : Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+                    candidate = Path.Combine(programFiles, "7-Zip", "7z.dll");
+                }
+
+                if (!File.Exists(candidate))
+                {
+                    throw new FileNotFoundException(
+                        "7z.dll bulunamadı. x64/7z.dll (build output) veya 7-Zip kurulumu gereklidir.",
+                        candidate);
+                }
+
+                sevenZipDllPath = candidate;
             }
 
             SevenZipBase.SetLibraryPath(sevenZipDllPath);

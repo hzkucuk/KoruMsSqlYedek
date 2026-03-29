@@ -32,7 +32,7 @@
     <PackageReference Include="Squid-Box.SevenZipSharp" Version="1.6.2.24" />
 
     <!-- E-posta -->
-    <PackageReference Include="MailKit" Version="4.3.0" />
+    <PackageReference Include="MailKit" Version="4.15.1" />
 
     <!-- IoC -->
     <PackageReference Include="Autofac" Version="8.1.1" />
@@ -49,10 +49,18 @@
 
     <!-- Cloud: FTP/SFTP -->
     <PackageReference Include="FluentFTP" Version="51.0.0" />
-    <PackageReference Include="SSH.NET" Version="2024.1.0" />
+    <PackageReference Include="SSH.NET" Version="2025.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MikroSqlDbYedek.Core\MikroSqlDbYedek.Core.csproj" />
+  </ItemGroup>
+
+  <!-- 7z.dll native library — SevenZipSharp runtime dependency -->
+  <ItemGroup>
+    <Content Include="Native\x64\7z.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>x64\7z.dll</Link>
+    </Content>
   </ItemGroup>
 </Project>
