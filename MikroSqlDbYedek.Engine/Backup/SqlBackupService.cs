@@ -20,6 +20,13 @@ namespace MikroSqlDbYedek.Engine.Backup
     public class SqlBackupService : ISqlBackupService
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<SqlBackupService>();
+        private const double BytesPerMb = 1048576.0;
+
+        /// <summary>Geçici hatalarda yeniden deneme sayısı.</summary>
+        private const int MaxRetryCount = 3;
+
+        /// <summary>Yeniden denemeler arası temel bekleme süresi (ms).</summary>
+        private const int RetryBaseDelayMs = 2000;
 
         public async Task<BackupResult> BackupDatabaseAsync(
             SqlConnInfo connectionInfo,
@@ -42,44 +49,80 @@ namespace MikroSqlDbYedek.Engine.Backup
                 string fileName = PathHelper.GenerateBackupFileName(databaseName, backupType.ToString());
                 string fullPath = Path.Combine(destinationPath, fileName);
 
-                var serverConnection = CreateServerConnection(connectionInfo);
+                using var sqlConn1 = new SqlConnection(BuildConnectionString(connectionInfo));
+                var serverConnection = new ServerConnection(sqlConn1);
                 var server = new Server(serverConnection);
 
-                    var backup = new Microsoft.SqlServer.Management.Smo.Backup
-                    {
-                        Action = BackupActionType.Database,
-                        Database = databaseName,
-                        Incremental = backupType == SqlBackupType.Differential
-                    };
-
-                    if (backupType == SqlBackupType.Incremental)
-                    {
-                        backup.Action = BackupActionType.Log;
-                        backup.Incremental = false;
-                    }
-
-                    backup.Devices.AddDevice(fullPath, DeviceType.File);
-                    backup.PercentComplete += (sender, e) =>
-                    {
-                        progress?.Report(e.Percent);
-                    };
-
-                    await Task.Run(() => backup.SqlBackup(server), cancellationToken);
-
-                    var fileInfo = new FileInfo(fullPath);
-                    result.BackupFilePath = fullPath;
-                    result.FileSizeBytes = fileInfo.Length;
-                    result.Status = BackupResultStatus.Success;
+                // ── Pre-backup health check ──────────────────────────────
+                Database dbObj = server.Databases[databaseName];
+                if (dbObj == null)
+                {
+                    result.Status = BackupResultStatus.Failed;
+                    result.ErrorMessage = $"'{databaseName}' veritabanı SQL Server üzerinde bulunamadı.";
                     result.CompletedAt = DateTime.UtcNow;
+                    Log.Warning("Veritabanı bulunamadı: {Database}", databaseName);
+                    return result;
+                }
 
-                    Log.Information(
-                        "Yedekleme başarılı: {Database} ({BackupType}) → {FilePath} [{SizeMb:F1} MB]",
-                        databaseName, backupType, fullPath, fileInfo.Length / 1048576.0);
+                if (dbObj.Status != DatabaseStatus.Normal)
+                {
+                    string statusText = dbObj.Status.ToString();
+                    result.Status = BackupResultStatus.Failed;
+                    result.ErrorMessage =
+                        $"'{databaseName}' veritabanı yedeklenmeye uygun değil. " +
+                        $"Mevcut durum: {statusText}. " +
+                        "Veritabanının Online (Normal) durumda olduğundan emin olun.";
+                    result.CompletedAt = DateTime.UtcNow;
+                    Log.Warning("Veritabanı durumu uygun değil: {Database} — {Status}", databaseName, statusText);
+                    return result;
+                }
+
+                // ── Backup with retry ────────────────────────────────────
+                var backup = new Microsoft.SqlServer.Management.Smo.Backup
+                {
+                    Action = BackupActionType.Database,
+                    Database = databaseName,
+                    Incremental = backupType == SqlBackupType.Differential,
+                    CopyOnly = backupType != SqlBackupType.Incremental
+                };
+
+                if (backupType == SqlBackupType.Incremental)
+                {
+                    backup.Action = BackupActionType.Log;
+                    backup.Incremental = false;
+                }
+
+                backup.Devices.AddDevice(fullPath, DeviceType.File);
+                backup.PercentComplete += (sender, e) =>
+                {
+                    progress?.Report(e.Percent);
+                };
+
+                await ExecuteWithRetryAsync(
+                    () => backup.SqlBackup(server),
+                    databaseName, fullPath, cancellationToken);
+
+                var fileInfo = new FileInfo(fullPath);
+                result.BackupFilePath = fullPath;
+                result.FileSizeBytes = fileInfo.Length;
+                result.Status = BackupResultStatus.Success;
+                result.CompletedAt = DateTime.UtcNow;
+
+                Log.Information(
+                    "Yedekleme başarılı: {Database} ({BackupType}) → {FilePath} [{SizeMb:F1} MB]",
+                    databaseName, backupType, fullPath, fileInfo.Length / BytesPerMb);
+            }
+            catch (OperationCanceledException)
+            {
+                result.Status = BackupResultStatus.Cancelled;
+                result.ErrorMessage = "Yedekleme işlemi kullanıcı tarafından iptal edildi.";
+                result.CompletedAt = DateTime.UtcNow;
+                Log.Warning("Yedekleme iptal edildi: {Database} ({BackupType})", databaseName, backupType);
             }
             catch (Exception ex)
             {
                 result.Status = BackupResultStatus.Failed;
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = TranslateBackupError(ex);
                 result.CompletedAt = DateTime.UtcNow;
                 Log.Error(ex, "Yedekleme başarısız: {Database} ({BackupType})", databaseName, backupType);
             }
@@ -94,7 +137,8 @@ namespace MikroSqlDbYedek.Engine.Backup
         {
             try
             {
-                var serverConnection = CreateServerConnection(connectionInfo);
+                using var sqlConn2 = new SqlConnection(BuildConnectionString(connectionInfo));
+                var serverConnection = new ServerConnection(sqlConn2);
                 var server = new Server(serverConnection);
 
                 var restore = new Restore();
@@ -144,7 +188,8 @@ namespace MikroSqlDbYedek.Engine.Backup
                         cancellationToken);
                 }
 
-                var serverConnection = CreateServerConnection(connectionInfo);
+                using var sqlConn3 = new SqlConnection(BuildConnectionString(connectionInfo));
+                var serverConnection = new ServerConnection(sqlConn3);
                 var server = new Server(serverConnection);
 
                 var restore = new Restore
@@ -180,7 +225,8 @@ namespace MikroSqlDbYedek.Engine.Backup
 
             try
             {
-                var serverConnection = CreateServerConnection(connectionInfo);
+                using var sqlConn4 = new SqlConnection(BuildConnectionString(connectionInfo));
+                var serverConnection = new ServerConnection(sqlConn4);
                 var server = new Server(serverConnection);
 
                 await Task.Run(() =>
@@ -231,14 +277,107 @@ namespace MikroSqlDbYedek.Engine.Backup
             }
         }
 
-        private ServerConnection CreateServerConnection(SqlConnInfo connectionInfo)
-        {
-            var connectionString = BuildConnectionString(connectionInfo);
-            var sqlConnection = new SqlConnection(connectionString);
-            var serverConnection = new ServerConnection(sqlConnection);
+        #region Retry & Error Helpers
 
-            return serverConnection;
+        /// <summary>
+        /// Geçici hatalarda otomatik yeniden deneme ile çalıştırır.
+        /// </summary>
+        private async Task ExecuteWithRetryAsync(
+            Action action, string databaseName, string filePath,
+            CancellationToken cancellationToken)
+        {
+            int attempt = 0;
+            while (true)
+            {
+                attempt++;
+                try
+                {
+                    await Task.Run(action, cancellationToken);
+                    return;
+                }
+                catch (Exception ex) when (attempt < MaxRetryCount && IsTransientError(ex))
+                {
+                    Log.Warning(
+                        "Geçici hata, yeniden deneniyor ({Attempt}/{MaxRetry}): {Database} — {Error}",
+                        attempt, MaxRetryCount, databaseName, ExtractInnermostMessage(ex));
+
+                    TryDeleteFile(filePath);
+                    await Task.Delay(RetryBaseDelayMs * attempt, cancellationToken);
+                }
+            }
         }
+
+        /// <summary>
+        /// Exception zincirinde geçici (transient) hata olup olmadığını kontrol eder.
+        /// </summary>
+        private static bool IsTransientError(Exception ex)
+        {
+            string msg = ExtractInnermostMessage(ex).ToLowerInvariant();
+            return msg.Contains("operating system error 32")
+                || msg.Contains("sharing violation")
+                || msg.Contains("timeout")
+                || msg.Contains("the semaphore timeout period has expired");
+        }
+
+        /// <summary>
+        /// SMO exception zincirinden en içteki (asıl) hata mesajını çıkarır.
+        /// </summary>
+        private static string ExtractInnermostMessage(Exception ex)
+        {
+            var inner = ex;
+            while (inner.InnerException != null)
+                inner = inner.InnerException;
+            return inner.Message;
+        }
+
+        /// <summary>
+        /// Bilinen SQL/SMO hata kalıpları için Türkçe açıklama üretir.
+        /// </summary>
+        private static string TranslateBackupError(Exception ex)
+        {
+            string innerMsg = ExtractInnermostMessage(ex);
+            string lowerMsg = innerMsg.ToLowerInvariant();
+
+            if (lowerMsg.Contains("operating system error 32") || lowerMsg.Contains("sharing violation"))
+                return $"Veritabanı dosyası başka bir işlem tarafından kullanılıyor. " +
+                       $"Mikro yazılımını kapatıp tekrar deneyin. (Detay: {innerMsg})";
+
+            if (lowerMsg.Contains("cannot be opened") && lowerMsg.Contains("inaccessible"))
+                return $"Veritabanı dosyalarına erişilemiyor. MDF/LDF dosyalarının SQL Server tarafından " +
+                       $"erişilebilir olduğunu kontrol edin. (Detay: {innerMsg})";
+
+            if (lowerMsg.Contains("insufficient disk space") || lowerMsg.Contains("not enough space on the disk"))
+                return $"Yetersiz disk alanı. Yedek dizininde yeterli boş alan olduğundan emin olun. (Detay: {innerMsg})";
+
+            if (lowerMsg.Contains("insufficient memory") || lowerMsg.Contains("not enough memory"))
+                return $"Yetersiz bellek. SQL Server'ın yeterli RAM'e sahip olduğundan emin olun. (Detay: {innerMsg})";
+
+            if (lowerMsg.Contains("access is denied") || lowerMsg.Contains("operating system error 5"))
+                return $"Erişim reddedildi. SQL Server servis hesabının yedek dizinine yazma yetkisi " +
+                       $"olduğundan emin olun. (Detay: {innerMsg})";
+
+            if (lowerMsg.Contains("is not accessible") || lowerMsg.Contains("offline"))
+                return $"Veritabanı çevrimdışı veya erişilemez durumda. " +
+                       $"SQL Server Management Studio'dan veritabanı durumunu kontrol edin. (Detay: {innerMsg})";
+
+            // Bilinmeyen hata — SMO sarmalayıcısı yerine asıl mesajı göster
+            return innerMsg;
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Başarısız yedek dosyası silinemedi: {Path}", path);
+            }
+        }
+
+        #endregion
 
         private string BuildConnectionString(SqlConnInfo connectionInfo)
         {

@@ -19,6 +19,7 @@ namespace MikroSqlDbYedek.Engine.Notification
     public class EmailNotificationService : INotificationService
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<EmailNotificationService>();
+        private const double BytesPerMb = 1048576.0;
 
         public async Task NotifyAsync(
             BackupResult result,
@@ -108,7 +109,7 @@ namespace MikroSqlDbYedek.Engine.Notification
             {
                 sb.AppendLine($@"
         <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Dosya Boyutu</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.FileSizeBytes / 1048576.0:F1} MB</td></tr>");
+            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.FileSizeBytes / BytesPerMb:F1} MB</td></tr>");
             }
 
             if (result.CompressedSizeBytes > 0)
@@ -118,7 +119,7 @@ namespace MikroSqlDbYedek.Engine.Notification
                     : 0;
                 sb.AppendLine($@"
         <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Sıkıştırılmış</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.CompressedSizeBytes / 1048576.0:F1} MB (%{ratio:F0} kazanç)</td></tr>");
+            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.CompressedSizeBytes / BytesPerMb:F1} MB (%{ratio:F0} kazanç)</td></tr>");
             }
 
             // Doğrulama sonucu
@@ -140,7 +141,7 @@ namespace MikroSqlDbYedek.Engine.Notification
                     string cloudStatus = cloud.IsSuccess ? "✓" : "✗";
                     sb.AppendLine($@"
         <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Bulut: {cloud.DisplayName}</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd; color: {cloudColor};'>{cloudStatus} {(cloud.IsSuccess ? "" : cloud.ErrorMessage)}</td></tr>");
+            <td style='padding: 8px; border-bottom: 1px solid #ddd; color: {cloudColor};'>{cloudStatus} {(cloud.IsSuccess ? "" : SanitizeForEmail(cloud.ErrorMessage))}</td></tr>");
                 }
             }
 
@@ -148,7 +149,7 @@ namespace MikroSqlDbYedek.Engine.Notification
         <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Correlation ID</b></td>
             <td style='padding: 8px; border-bottom: 1px solid #ddd;'><code>{result.CorrelationId}</code></td></tr>
     </table>
-    {(isSuccess ? "" : $"<p style='color: red;'><b>Hata:</b> {result.ErrorMessage}</p>")}
+    {(isSuccess ? "" : $"<p style='color: red;'><b>Hata:</b> {SanitizeForEmail(result.ErrorMessage)}</p>")}
     <p style='color: #666; font-size: 12px;'>Bu e-posta MikroSqlDbYedek tarafından otomatik gönderilmiştir.</p>
 </div>");
 
@@ -231,7 +232,7 @@ namespace MikroSqlDbYedek.Engine.Notification
 <div style='font-family: Segoe UI, Arial; max-width: 600px;'>
     <h2 style='color: {color};'>Dosya Yedekleme {statusText}</h2>
     <p><b>Plan:</b> {planName}</p>
-    <p><b>Toplam:</b> {totalCopied} dosya kopyalandı, {totalSkipped} atlandı [{totalSize / 1048576.0:F1} MB]</p>
+    <p><b>Toplam:</b> {totalCopied} dosya kopyalandı, {totalSkipped} atlandı [{totalSize / BytesPerMb:F1} MB]</p>
     <table style='border-collapse: collapse; width: 100%;'>");
 
             foreach (var r in results)
@@ -251,6 +252,35 @@ namespace MikroSqlDbYedek.Engine.Notification
 </div>");
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// E-posta gövdesine eklenmeden önce hata mesajından hassas bilgileri temizler.
+        /// Dosya yolları, sunucu adresleri ve stack trace bilgilerini gizler; HTML encode uygular.
+        /// </summary>
+        private static string SanitizeForEmail(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return "Bilinmeyen hata";
+
+            // Stack trace varsa kaldır
+            int stackIdx = message.IndexOf("   at ", StringComparison.Ordinal);
+            if (stackIdx > 0)
+                message = message.Substring(0, stackIdx).Trim();
+
+            // Dosya yollarını gizle
+            message = System.Text.RegularExpressions.Regex.Replace(
+                message,
+                @"[A-Za-z]:\\[^\s""']+|\\\\[^\s""']+",
+                "[yol gizlendi]");
+
+            // Uzun mesajları kısalt
+            const int maxLength = 300;
+            if (message.Length > maxLength)
+                message = message.Substring(0, maxLength) + "…";
+
+            // HTML encode — XSS önlemi
+            return System.Net.WebUtility.HtmlEncode(message);
         }
     }
 }

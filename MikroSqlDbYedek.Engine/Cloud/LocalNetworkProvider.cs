@@ -149,8 +149,15 @@ namespace MikroSqlDbYedek.Engine.Cloud
 
                         // Yazma izni kontrolü: geçici dosya oluştur ve sil
                         string testFile = Path.Combine(path, $".write_test_{Guid.NewGuid():N}.tmp");
-                        File.WriteAllText(testFile, "test");
-                        File.Delete(testFile);
+                        try
+                        {
+                            File.WriteAllText(testFile, "test");
+                        }
+                        finally
+                        {
+                            if (File.Exists(testFile))
+                                File.Delete(testFile);
+                        }
 
                         Log.Information("Bağlantı testi başarılı: {Path}", path);
                         return true;

@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using MikroSqlDbYedek.Core.Interfaces;
 using MikroSqlDbYedek.Core.Models;
 using MikroSqlDbYedek.Engine.Retention;
 
@@ -21,7 +23,8 @@ namespace MikroSqlDbYedek.Tests
         {
             _testDir = Path.Combine(Path.GetTempPath(), "MikroSqlDbYedek_RetentionTests", Guid.NewGuid().ToString());
             Directory.CreateDirectory(_testDir);
-            _service = new RetentionCleanupService();
+            var mockHistory = new Mock<IBackupHistoryManager>();
+            _service = new RetentionCleanupService(mockHistory.Object);
         }
 
         [TestCleanup]

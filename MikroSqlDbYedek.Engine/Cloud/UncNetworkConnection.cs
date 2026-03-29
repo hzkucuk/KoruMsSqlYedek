@@ -71,13 +71,20 @@ namespace MikroSqlDbYedek.Engine.Cloud
 
             try
             {
-                return PasswordProtector.IsProtected(encryptedPassword)
-                    ? PasswordProtector.Unprotect(encryptedPassword)
-                    : encryptedPassword;
+                if (PasswordProtector.IsProtected(encryptedPassword))
+                    return PasswordProtector.Unprotect(encryptedPassword);
+
+                // DPAPI koruması yok — güvenlik riski, şifre düz metin saklanmış
+                Log.Warning(
+                    "UNC şifresi DPAPI koruması olmadan saklanmış — güvenlik riski! " +
+                    "Şifreyi ayarlardan yeniden kaydedin.");
+                return encryptedPassword;
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "DPAPI şifre çözme başarısız, düz metin olarak deneniyor.");
+                Log.Error(ex,
+                    "DPAPI şifre çözme başarısız. Şifre kullanılamıyor — " +
+                    "şifreyi ayarlardan yeniden kaydedin.");
                 return encryptedPassword;
             }
         }

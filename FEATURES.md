@@ -34,6 +34,8 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 | **Faz 23** | Wizard Adım Yeniden Yapılandırma + İkon Düzeltmeleri | ✅ Tamamlandı |
 | **Faz 24** | Wizard Yedekleme Modu Seçimi (Yerel/Bulut) | ✅ Tamamlandı |
 | **Faz 25** | Manuel Yedekleme Pipeline Tamamlama | ✅ Tamamlandı |
+| **Faz 26** | Bulut Yedek Koruma: Gönderilmemiş Dosya Silme Engeli | ✅ Tamamlandı |
+| **Faz 26.2** | Güvenlik Sertleştirme: TLS/SSH Doğrulama, Hata Sanitizasyonu | ✅ Tamamlandı |
 
 ---
 
@@ -365,6 +367,42 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 - [x] Buton metinlerinden Unicode oklar (▶/◀) kaldırıldı — sadece Phosphor ikonları
 - [x] `UpdateFileScheduleVisibility()`: Dosya zamanlama bölümü koşullu görünürlük
 - [x] 0 hata ile build doğrulandı
+
+---
+
+## Faz 26 — Bulut Yedek Koruma: Gönderilmemiş Dosya Silme Engeli (v0.26.0) ✅
+
+### Retention Bulut Koruma Mantığı
+- [x] `RetentionCleanupService` constructor'ına `IBackupHistoryManager` enjekte edildi
+- [x] Bulut modda (`BackupMode.Cloud`): geçmiş kayıtları sorgulanır, buluta gönderilmemiş dosyalar silinmez
+- [x] `BuildCloudProtectedFileSet()`: Başarısız cloud upload'lu dosyaların tam yol seti oluşturulur
+- [x] Geçmiş okunamadığında güvenlik modu: hiçbir dosya silinmez (`*PROTECT_ALL*`)
+- [x] Yerel modda (`BackupMode.Local`): mevcut davranış korunur (bulut kontrolü yapılmaz)
+- [x] Detaylı loglama: silinen, korunan ve atlanan dosyalar ayrı ayrı raporlanır
+- [x] Mevcut 8 retention testi geçiyor (Moq mock ile güncellendi)
+- [x] 0 hata ile build doğrulandı
+
+---
+
+## Faz 26.2 — Güvenlik Sertleştirme: TLS/SSH Doğrulama, Hata Sanitizasyonu (v0.26.2) ✅
+
+### FTPS Sertifika Doğrulaması
+- [x] FTPS bağlantılarında varsayılan olarak sertifika doğrulaması aktif (FluentFTP sistem CA deposu kullanır)
+- [x] `FtpsSkipCertificateValidation` ayarı ile self-signed sertifikalar için bilinçli bypass
+
+### SFTP Host Key Doğrulaması (TOFU)
+- [x] İlk SFTP bağlantısında sunucu parmak izi otomatik kaydedilir
+- [x] Sonraki bağlantılarda parmak izi eşleşmezse bağlantı reddedilir (MITM koruması)
+- [x] `HostFingerprintUpdated` event ile plan dosyasına persist desteği
+
+### Hata Mesajı Sanitizasyonu
+- [x] `MainWindow.SanitizeErrorMessage()`: Dosya yolları, stack trace gizlenir
+- [x] `EmailNotificationService.SanitizeForEmail()`: HTML encode + yol gizleme + uzunluk sınırı
+- [x] Bulut upload hata mesajları e-postada sanitize edilir
+
+### Plaintext Şifre Tespiti
+- [x] FTP/SFTP ve UNC bağlantılarında DPAPI korumasız şifre loglanır
+- [x] DPAPI çözme hatası `Log.Error` seviyesine yükseltildi
 
 ---
 

@@ -1,6 +1,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using Serilog;
 
 namespace MikroSqlDbYedek.Core.Helpers
 {
@@ -10,6 +11,7 @@ namespace MikroSqlDbYedek.Core.Helpers
     /// </summary>
     public static class PasswordProtector
     {
+        private static readonly ILogger Log = Serilog.Log.ForContext(typeof(PasswordProtector));
         /// <summary>
         /// Düz metni DPAPI ile şifreler ve Base64 olarak döndürür.
         /// </summary>
@@ -61,8 +63,9 @@ namespace MikroSqlDbYedek.Core.Helpers
                 Unprotect(value);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Debug(ex, "DPAPI çözme başarısız — değer korumalı değil");
                 return false;
             }
         }

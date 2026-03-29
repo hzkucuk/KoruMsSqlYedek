@@ -1,3 +1,71 @@
+## [0.26.2] - 2026-03-29 — Güvenlik Sertleştirme: TLS/SSH Doğrulama, Hata Mesajı Sanitizasyonu
+
+### Güvenlik
+- **FTPS sertifika doğrulaması**: Artık varsayılan olarak sertifika doğrulaması aktif; `FtpsSkipCertificateValidation` ayarı ile yalnızca bilinçli olarak devre dışı bırakılabilir (MITM koruması)
+- **SFTP host key doğrulaması**: Trust-on-first-use (TOFU) mekanizması eklendi — ilk bağlantıda parmak izi kaydedilir, sonraki bağlantılarda doğrulanır; uyuşmazlıkta bağlantı reddedilir
+- **Hata mesajı sanitizasyonu**: Kullanıcıya gösterilen hata mesajlarından dosya yolları ve stack trace bilgileri temizleniyor (MainWindow + e-posta bildirimi)
+- **HTML XSS önlemi**: E-posta bildirimlerindeki hata mesajlarına `HtmlEncode` uygulandı
+- **Plaintext şifre uyarısı**: FTP/SFTP ve UNC bağlantılarında DPAPI korumasız şifre tespit edildiğinde log uyarısı verilir
+
+### Yeni Ayarlar (ConfigModels)
+- `CloudTargetConfig.FtpsSkipCertificateValidation` — FTPS sertifika doğrulamasını atlar (varsayılan: false)
+- `CloudTargetConfig.SftpHostFingerprint` — SFTP sunucu parmak izi (TOFU ile otomatik kaydedilir)
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Core/Models/ConfigModels.cs
+- MikroSqlDbYedek.Engine/Cloud/FtpSftpProvider.cs
+- MikroSqlDbYedek.Engine/Cloud/UncNetworkConnection.cs
+- MikroSqlDbYedek.Engine/Notification/EmailNotificationService.cs
+- MikroSqlDbYedek.Win/MainWindow.cs
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj
+
+---
+
+## [0.26.1] - 2026-03-29 — Güvenlik & Kod Kalitesi Düzeltmeleri
+
+### Güvenlik
+- **FtpSftpProvider**: `BuildRemotePath` — `Path.GetFileName()` ile path traversal (`../`) engellendi
+- **FtpSftpProvider**: Constructor'a enum doğrulaması eklendi (Ftp/Ftps/Sftp dışı tip reddedilir)
+
+### Düzeltmeler
+- **SqlBackupService**: `BackupDatabaseAsync`, `VerifyBackupAsync`, `RestoreDatabaseAsync`, `ListDatabasesAsync` — `SqlConnection` artık `using var` ile dispose ediliyor; kullanılmayan `CreateServerConnection` metodu silindi
+- **FileBackupService**: Constructor — `ArgumentNullException.ThrowIfNull(vssService)` eklendi
+- **PasswordProtector**: `IsProtected` boş catch → `Log.Debug` ile hata loglanıyor
+- **OneDriveAuthHelper**: `DecryptIfNeeded` boş catch → `Log.Warning` ile hata loglanıyor
+- **LocalNetworkProvider**: Bağlantı testi sırasında geçici dosya silinmesi `try/finally` ile garanti altına alındı
+- **Magic number**: `1048576.0` sabiti `BytesPerMb` olarak tanımlandı — `SqlBackupService`, `FileBackupService`, `SevenZipCompressionService`, `EmailNotificationService`, `MainWindow`
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Engine/Cloud/FtpSftpProvider.cs
+- MikroSqlDbYedek.Engine/Backup/SqlBackupService.cs
+- MikroSqlDbYedek.Engine/FileBackup/FileBackupService.cs
+- MikroSqlDbYedek.Core/Helpers/PasswordProtector.cs
+- MikroSqlDbYedek.Engine/Cloud/OneDriveAuthHelper.cs
+- MikroSqlDbYedek.Engine/Cloud/LocalNetworkProvider.cs
+- MikroSqlDbYedek.Engine/Compression/SevenZipCompressionService.cs
+- MikroSqlDbYedek.Engine/Notification/EmailNotificationService.cs
+- MikroSqlDbYedek.Win/MainWindow.cs
+
+---
+
+## [0.26.0] - 2025-07-12 — Faz 26: Bulut Yedek Koruma — Gönderilmemiş Dosya Silme Engeli
+
+### Yeni Özellikler
+- **Bulut koruma**: Retention temizliği artık buluta başarıyla gönderilmemiş dosyaları silmiyor
+  - Plan `BackupMode.Cloud` ise geçmiş kayıtları sorgulanır
+  - Tüm cloud upload'ları başarılı olmayan dosyalar retention'dan korunur
+  - Geçmiş okunamazsa güvenlik modu: hiçbir dosya silinmez
+- **Detaylı retention logları**: Silinen, korunan ve atlanan dosyalar ayrı ayrı raporlanır
+
+### Etkilenen Dosyalar
+- MikroSqlDbYedek.Engine/Retention/RetentionCleanupService.cs (IBackupHistoryManager enjeksiyonu, bulut koruma mantığı)
+- MikroSqlDbYedek.Tests/RetentionCleanupServiceTests.cs (Moq mock güncellemesi)
+- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.26.0)
+- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.26.0)
+
+---
+
 ## [0.25.2] - 2025-07-12 — 7z.dll Entegrasyonu: Sıkıştırma Çalışır Hale Getirildi
 
 ### Düzeltmeler

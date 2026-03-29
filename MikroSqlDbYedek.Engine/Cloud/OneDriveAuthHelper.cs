@@ -186,8 +186,9 @@ namespace MikroSqlDbYedek.Engine.Cloud
                     ? PasswordProtector.Unprotect(value)
                     : value;
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Warning(ex, "OneDrive token çözme başarısız, ham değer kullanılıyor");
                 return value;
             }
         }

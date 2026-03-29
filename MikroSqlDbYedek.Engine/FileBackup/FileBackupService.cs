@@ -20,9 +20,11 @@ namespace MikroSqlDbYedek.Engine.FileBackup
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<FileBackupService>();
         private readonly IVssService _vssService;
+        private const double BytesPerMb = 1048576.0;
 
         public FileBackupService(IVssService vssService)
         {
+            ArgumentNullException.ThrowIfNull(vssService);
             _vssService = vssService;
         }
 
@@ -179,7 +181,7 @@ namespace MikroSqlDbYedek.Engine.FileBackup
                 Log.Information(
                     "Dosya yedekleme tamamlandı: {SourceName} — {Copied} kopyalandı, {Skipped} atlandı [{SizeMb:F1} MB]",
                     source.SourceName, result.FilesCopied, result.FilesSkipped,
-                    result.TotalSizeBytes / 1048576.0);
+                    result.TotalSizeBytes / BytesPerMb);
             }
             catch (Exception ex)
             {

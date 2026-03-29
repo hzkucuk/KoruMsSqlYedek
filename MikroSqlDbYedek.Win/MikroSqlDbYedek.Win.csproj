@@ -7,7 +7,7 @@
     <AssemblyName>MikroSqlDbYedek.Win</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ApplicationVersion>0.25.2.0</ApplicationVersion>
+    <ApplicationVersion>0.26.2.0</ApplicationVersion>
     <NoWarn>$(NoWarn);WFO1000;CA1416</NoWarn>
   </PropertyGroup>
   <ItemGroup>

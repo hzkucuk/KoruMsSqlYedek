@@ -23,6 +23,11 @@ namespace MikroSqlDbYedek.Engine.Cloud
 
         public FtpSftpProvider(CloudProviderType type)
         {
+            if (type != CloudProviderType.Ftp &&
+                type != CloudProviderType.Ftps &&
+                type != CloudProviderType.Sftp)
+                throw new ArgumentOutOfRangeException(nameof(type), $"FtpSftpProvider yalnızca Ftp/Ftps/Sftp türlerini destekler: {type}");
+
             _type = type;
         }
 
@@ -232,7 +237,15 @@ namespace MikroSqlDbYedek.Engine.Cloud
             if (_type == CloudProviderType.Ftps)
             {
                 client.Config.EncryptionMode = FtpEncryptionMode.Explicit;
-                client.ValidateCertificate += (control, e) => { e.Accept = true; };
+
+                if (config.FtpsSkipCertificateValidation)
+                {
+                    Log.Warning(
+                        "FTPS sertifika doğrulaması devre dışı — MITM riski mevcut: {Host}:{Port}",
+                        config.Host, port);
+                    client.ValidateCertificate += (control, e) => { e.Accept = true; };
+                }
+                // else: FluentFTP varsayılan olarak sistem sertifika deposunu kullanarak doğrular
             }
 
             return client;
@@ -318,6 +331,9 @@ namespace MikroSqlDbYedek.Engine.Cloud
 
                     client.Disconnect();
                 }
+
+                // TOFU: Yeni parmak izi kaydedildiyse persist et
+                HostFingerprintUpdated?.Invoke(config);
             }, cancellationToken);
         }
 
@@ -346,17 +362,64 @@ namespace MikroSqlDbYedek.Engine.Cloud
                     client.Connect();
                     bool connected = client.IsConnected;
                     client.Disconnect();
+
+                    // TOFU: Yeni parmak izi kaydedildiyse persist et
+                    if (connected)
+                        HostFingerprintUpdated?.Invoke(config);
+
                     return connected;
                 }
             }, cancellationToken);
         }
 
+        /// <summary>
+        /// SFTP istemcisi oluşturur.
+        /// Host key doğrulaması: trust-on-first-use (TOFU) — ilk bağlantıda parmak izi kaydedilir,
+        /// sonraki bağlantılarda doğrulanır.
+        /// </summary>
         private Renci.SshNet.SftpClient CreateSftpClient(CloudTargetConfig config)
         {
             int port = config.Port ?? 22;
             string password = DecryptPassword(config.Password);
-            return new Renci.SshNet.SftpClient(config.Host, port, config.Username, password);
+            var client = new Renci.SshNet.SftpClient(config.Host, port, config.Username, password);
+
+            client.HostKeyReceived += (sender, e) =>
+            {
+                string receivedFingerprint = BitConverter.ToString(e.FingerPrint).Replace("-", "").ToLowerInvariant();
+
+                if (string.IsNullOrEmpty(config.SftpHostFingerprint))
+                {
+                    // TOFU: İlk bağlantı — parmak izini kaydet
+                    config.SftpHostFingerprint = receivedFingerprint;
+                    Log.Information(
+                        "SFTP host key kaydedildi (TOFU): {Host}:{Port} — SHA256:{Fingerprint}",
+                        config.Host, port, receivedFingerprint);
+                    e.CanTrust = true;
+                }
+                else if (string.Equals(config.SftpHostFingerprint, receivedFingerprint, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Parmak izi eşleşiyor — güvenilir
+                    e.CanTrust = true;
+                }
+                else
+                {
+                    // Parmak izi değişmiş — olası MITM saldırısı!
+                    Log.Error(
+                        "SFTP host key UYUŞMAZLIĞI — olası MITM saldırısı! " +
+                        "Host: {Host}:{Port}, Beklenen: {Expected}, Alınan: {Received}",
+                        config.Host, port, config.SftpHostFingerprint, receivedFingerprint);
+                    e.CanTrust = false;
+                }
+            };
+
+            return client;
         }
+
+        /// <summary>
+        /// SFTP bağlantısı sonrası host key parmak izini kalıcı olarak kaydetmek için kullanılır.
+        /// Çağıran kod, config değişikliğini plan dosyasına persist etmelidir.
+        /// </summary>
+        public event Action<CloudTargetConfig> HostFingerprintUpdated;
 
         private void EnsureSftpDirectoryExists(Renci.SshNet.SftpClient client, string remotePath)
         {
@@ -415,11 +478,16 @@ namespace MikroSqlDbYedek.Engine.Cloud
 
         private string BuildRemotePath(string remoteFolderPath, string remoteFileName)
         {
+            // Path traversal önlemi: yalnızca dosya adını al (../.. gibi girdileri temizler)
+            string safeFileName = Path.GetFileName(remoteFileName);
+            if (string.IsNullOrEmpty(safeFileName))
+                throw new ArgumentException("Geçersiz uzak dosya adı.", nameof(remoteFileName));
+
             if (string.IsNullOrEmpty(remoteFolderPath))
-                return "/" + remoteFileName;
+                return "/" + safeFileName;
 
             string folder = remoteFolderPath.TrimEnd('/', '\\');
-            return folder + "/" + remoteFileName;
+            return folder + "/" + safeFileName;
         }
 
         private string GetRemoteDirectory(string remotePath)
@@ -437,13 +505,19 @@ namespace MikroSqlDbYedek.Engine.Cloud
             {
                 if (Core.Helpers.PasswordProtector.IsProtected(encryptedPassword))
                     return Core.Helpers.PasswordProtector.Unprotect(encryptedPassword);
+
+                Log.Warning(
+                    "FTP/SFTP şifresi DPAPI koruması olmadan saklanmış — güvenlik riski! " +
+                    "Şifreyi ayarlardan yeniden kaydedin.");
+                return encryptedPassword;
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Şifre çözme hatası, düz metin olarak kullanılıyor");
+                Log.Error(ex,
+                    "DPAPI şifre çözme başarısız. Şifre kullanılamıyor — " +
+                    "şifreyi ayarlardan yeniden kaydedin.");
+                return encryptedPassword;
             }
-
-            return encryptedPassword;
         }
 
         private string ComputeLocalMd5(string filePath)

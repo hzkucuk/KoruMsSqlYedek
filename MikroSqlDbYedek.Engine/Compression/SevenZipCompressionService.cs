@@ -18,6 +18,7 @@ namespace MikroSqlDbYedek.Engine.Compression
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<SevenZipCompressionService>();
         private static bool _initialized;
+        private const double BytesPerMb = 1048576.0;
 
         /// <summary>
         /// 7z.dll yolunu ayarlar. Uygulama başlangıcında bir kez çağrılmalıdır.
@@ -117,7 +118,7 @@ namespace MikroSqlDbYedek.Engine.Compression
             Log.Information(
                 "Sıkıştırma tamamlandı: {Archive} [{SizeMb:F1} MB, oran: %{Ratio:F1}]",
                 destinationArchivePath,
-                archiveInfo.Length / 1048576.0,
+                archiveInfo.Length / BytesPerMb,
                 ratio);
 
             return archiveInfo.Length;
@@ -176,7 +177,7 @@ namespace MikroSqlDbYedek.Engine.Compression
             Log.Information(
                 "Çoklu sıkıştırma tamamlandı: {Archive} [{SizeMb:F1} MB]",
                 destinationArchivePath,
-                archiveInfo.Length / 1048576.0);
+                archiveInfo.Length / BytesPerMb);
 
             return archiveInfo.Length;
         }
@@ -235,7 +236,7 @@ namespace MikroSqlDbYedek.Engine.Compression
             Log.Information(
                 "Dizin sıkıştırma tamamlandı: {Archive} [{SizeMb:F1} MB]",
                 destinationArchivePath,
-                archiveInfo.Length / 1048576.0);
+                archiveInfo.Length / BytesPerMb);
 
             return archiveInfo.Length;
         }

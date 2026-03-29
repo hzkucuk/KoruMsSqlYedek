@@ -17,12 +17,13 @@ using Serilog;
 namespace MikroSqlDbYedek.Win
 {
     /// <summary>
-    /// Tek pencereli ana form. 5 sekme: Dashboard, Planlar, Yedekleme, Loglar, Ayarlar.
+    /// Tek pencereli ana form. 4 sekme: Dashboard, Planlar, Loglar, Ayarlar.
     /// Tray ikonundan açılır; kapatıldığında gizlenir, uygulama kapanmaz.
     /// </summary>
     public partial class MainWindow : Theme.ModernFormBase
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<MainWindow>();
+        private const double BytesPerMb = 1048576.0;
 
         private readonly IPlanManager _planManager;
         private readonly IBackupHistoryManager _historyManager;
@@ -97,6 +98,17 @@ namespace MikroSqlDbYedek.Win
             _btnStart.Text = "Yedeklemeyi Baslat";
             _btnStart.TextImageRelation = TextImageRelation.ImageBeforeText;
             _btnStart.ImageAlign = ContentAlignment.MiddleLeft;
+
+            _btnCancelBackup.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Stop, Color.White, sz);
+            _btnCancelBackup.Text = "Iptal Et";
+            _btnCancelBackup.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            // Context menu ikonları
+            _ctxBackupNow.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Play, Theme.ModernTheme.StatusSuccess, sz);
+            _ctxStopBackup.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Stop, Theme.ModernTheme.StatusError, sz);
+            _ctxEditPlan.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PencilSimple, Theme.ModernTheme.TextPrimary, sz);
+            _ctxDeletePlan.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Trash, Theme.ModernTheme.StatusError, sz);
+            _ctxExportPlan.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Export, Theme.ModernTheme.TextPrimary, sz);
 
             _btnCancelBackup.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Stop, Color.White, sz);
             _btnCancelBackup.Text = "Iptal Et";
@@ -229,14 +241,10 @@ namespace MikroSqlDbYedek.Win
                     LoadDashboardData();
                     _dashboardTimer.Start();
                     break;
-                case 1: // Planlar
+                case 1: // Planlar + Yedekleme
                     RefreshPlanList();
                     break;
-                case 2: // Yedekleme
-                    // Plan listesi güncel olsun
-                    LoadBackupPlans();
-                    break;
-                case 3: // Loglar
+                case 2: // Loglar
                     if (_allLogEntries.Count == 0)
                     {
                         PopulateLogFiles();
@@ -246,7 +254,7 @@ namespace MikroSqlDbYedek.Win
                     if (_chkAutoTail.Checked)
                         _logTimer.Start();
                     break;
-                case 4: // Ayarlar
+                case 3: // Ayarlar
                     LoadSettings();
                     break;
             }
@@ -422,7 +430,7 @@ namespace MikroSqlDbYedek.Win
 
         #endregion
 
-        #region ── TAB 1: Planlar ───────────────────────────────────────────
+        #region ── TAB 1: Planlar + Yedekleme ─────────────────────────────
 
         private void RefreshPlanList()
         {
@@ -454,6 +462,7 @@ namespace MikroSqlDbYedek.Win
                 }
 
                 _tslPlanCount.Text = Res.Format("PlanList_TotalFormat", plans.Count);
+                UpdateBackupButtonStates();
             }
             catch (Exception ex)
             {
@@ -589,6 +598,17 @@ namespace MikroSqlDbYedek.Win
             OnEditPlanClick(sender, e);
         }
 
+        private void OnPlanGridSelectionChanged(object sender, EventArgs e)
+        {
+            UpdateBackupButtonStates();
+            var plan = GetSelectedPlanSilent();
+            if (plan != null)
+            {
+                _lblBackupStatus.Text = Res.Format("ManualBackup_PlanSelected", plan.PlanName);
+                _lblBackupStatus.ForeColor = Theme.ModernTheme.TextSecondary;
+            }
+        }
+
         private BackupPlan GetSelectedPlan()
         {
             if (_dgvPlans.CurrentRow == null || _dgvPlans.CurrentRow.Tag == null)
@@ -600,50 +620,49 @@ namespace MikroSqlDbYedek.Win
             return _dgvPlans.CurrentRow.Tag as BackupPlan;
         }
 
-        #endregion
-
-        #region ── TAB 2: Manuel Yedekleme ─────────────────────────────────
-
-        private void LoadBackupPlans()
+        /// <summary>Mesaj göstermeden seçili planı döndürür.</summary>
+        private BackupPlan GetSelectedPlanSilent()
         {
-            _cmbPlan.Items.Clear();
-            _cmbPlan.Items.Add(Res.Get("ManualBackup_SelectPlanDefault"));
-
-            try
-            {
-                var plans = _planManager.GetAllPlans();
-                foreach (var plan in plans.Where(p => p.IsEnabled))
-                    _cmbPlan.Items.Add(plan);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Yedekleme planları yüklenemedi.");
-            }
-
-            _cmbPlan.SelectedIndex = 0;
-            _cmbPlan.DisplayMember = "PlanName";
+            if (_dgvPlans.CurrentRow == null || _dgvPlans.CurrentRow.Tag == null)
+                return null;
+            return _dgvPlans.CurrentRow.Tag as BackupPlan;
         }
 
-        private void OnPlanSelectedChanged(object sender, EventArgs e)
-        {
-            _clbDatabases.Items.Clear();
+        // ── Context menu ──
 
-            var plan = _cmbPlan.SelectedItem as BackupPlan;
+        private void OnContextMenuOpening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var plan = GetSelectedPlanSilent();
             if (plan == null)
             {
-                UpdateBackupButtonStates();
+                e.Cancel = true;
                 return;
             }
 
-            foreach (string db in plan.Databases)
-                _clbDatabases.Items.Add(db, true);
-
-            UpdateBackupButtonStates();
+            _ctxBackupNow.Enabled = !_isBackupRunning;
+            _ctxStopBackup.Enabled = _isBackupRunning;
+            _ctxEditPlan.Enabled = !_isBackupRunning;
+            _ctxDeletePlan.Enabled = !_isBackupRunning;
+            _ctxExportPlan.Enabled = !_isBackupRunning;
         }
+
+        private void OnCtxBackupNowClick(object sender, EventArgs e)
+        {
+            OnStartBackupClick(sender, e);
+        }
+
+        private void OnCtxStopBackupClick(object sender, EventArgs e)
+        {
+            OnCancelBackupClick(sender, e);
+        }
+
+        #endregion
+
+        #region ── Manuel Yedekleme ─────────────────────────────────────────
 
         private async void OnStartBackupClick(object sender, EventArgs e)
         {
-            var plan = _cmbPlan.SelectedItem as BackupPlan;
+            var plan = GetSelectedPlanSilent();
             if (plan == null)
             {
                 MessageBox.Show(Res.Get("ManualBackup_PleaseSelectPlan"), Res.Get("Warning"),
@@ -651,7 +670,7 @@ namespace MikroSqlDbYedek.Win
                 return;
             }
 
-            var selectedDatabases = _clbDatabases.CheckedItems.Cast<string>().ToList();
+            var selectedDatabases = plan.Databases?.ToList() ?? new List<string>();
             if (selectedDatabases.Count == 0)
             {
                 MessageBox.Show(Res.Get("ManualBackup_PleaseSelectDb"), Res.Get("Warning"),
@@ -713,7 +732,7 @@ namespace MikroSqlDbYedek.Win
                             continue;
                         }
 
-                        string sizeMb = (result.FileSizeBytes / 1048576.0).ToString("F1");
+                        string sizeMb = (result.FileSizeBytes / BytesPerMb).ToString("F1");
                         AppendBackupLog(Res.Format("ManualBackup_SuccessFormat", sizeMb, result.BackupFilePath));
 
                         // 2. Verify (isteğe bağlı)
@@ -742,7 +761,7 @@ namespace MikroSqlDbYedek.Win
                                     result.BackupFilePath, archivePath, password, null, _cts.Token);
                                 result.CompressedFilePath = archivePath;
 
-                                string compMb = (result.CompressedSizeBytes / 1048576.0).ToString("F1");
+                                string compMb = (result.CompressedSizeBytes / BytesPerMb).ToString("F1");
                                 AppendBackupLog($"  ✓ Sıkıştırma tamamlandı: {compMb} MB");
                             }
                             catch (Exception ex)
@@ -810,7 +829,7 @@ namespace MikroSqlDbYedek.Win
                         {
                             if (fr.Status == BackupResultStatus.Success)
                             {
-                                string sizeMb = (fr.TotalSizeBytes / 1048576.0).ToString("F1");
+                                string sizeMb = (fr.TotalSizeBytes / BytesPerMb).ToString("F1");
                                 AppendBackupLog($"  ✓ {fr.SourceName}: {fr.FilesCopied} dosya, {sizeMb} MB");
                             }
                             else
@@ -842,7 +861,7 @@ namespace MikroSqlDbYedek.Win
                                             filesDir, archivePath, password,
                                             plan.Compression.Level, null, _cts.Token);
 
-                                        string compMb = (archiveSize / 1048576.0).ToString("F1");
+                                        string compMb = (archiveSize / BytesPerMb).ToString("F1");
                                         AppendBackupLog($"  ✓ Dosya arşivi tamamlandı: {compMb} MB");
 
                                         // Bulut upload
@@ -911,21 +930,13 @@ namespace MikroSqlDbYedek.Win
             }
         }
 
-        private void OnDatabaseItemCheck(object sender, ItemCheckEventArgs e)
-        {
-            BeginInvoke(new Action(UpdateBackupButtonStates));
-        }
-
         private void UpdateBackupButtonStates()
         {
-            bool hasPlan = _cmbPlan.SelectedItem is BackupPlan;
-            bool hasDb = _clbDatabases.CheckedItems.Count > 0;
+            bool hasPlan = GetSelectedPlanSilent() != null;
 
-            _btnStart.Enabled = !_isBackupRunning && hasPlan && hasDb;
+            _btnStart.Enabled = !_isBackupRunning && hasPlan;
             _btnCancelBackup.Enabled = _isBackupRunning;
-            _cmbPlan.Enabled = !_isBackupRunning;
             _cmbBackupType.Enabled = !_isBackupRunning;
-            _clbDatabases.Enabled = !_isBackupRunning;
         }
 
         private void AppendBackupLog(string text)
@@ -951,7 +962,7 @@ namespace MikroSqlDbYedek.Win
 
         #endregion
 
-        #region ── TAB 3: Loglar ────────────────────────────────────────────
+        #region ── TAB 2: Loglar ────────────────────────────────────────────
 
         private void PopulateLogFiles()
         {
@@ -1181,7 +1192,7 @@ namespace MikroSqlDbYedek.Win
 
         #endregion
 
-        #region ── TAB 4: Ayarlar ───────────────────────────────────────────
+        #region ── TAB 3: Ayarlar ───────────────────────────────────────────
 
         private void LoadSettings()
         {
@@ -1376,7 +1387,9 @@ namespace MikroSqlDbYedek.Win
             catch (Exception ex)
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
-                MessageBox.Show(Res.Format("Settings_SmtpTestError", ex.Message),
+                // Güvenlik: Tam exception mesajı yerine sanitize edilmiş mesaj göster
+                string safeMessage = SanitizeErrorMessage(ex.Message);
+                MessageBox.Show(Res.Format("Settings_SmtpTestError", safeMessage),
                     Res.Get("Settings_SmtpTestErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -1396,7 +1409,6 @@ namespace MikroSqlDbYedek.Win
             // Tab headers
             _tabDashboard.Text = Res.Get("Tab_Dashboard");
             _tabPlans.Text = Res.Get("Tab_Plans");
-            _tabBackup.Text = Res.Get("Tab_Backup");
             _tabLogs.Text = Res.Get("Tab_Logs");
             _tabSettings.Text = Res.Get("Tab_Settings");
 
@@ -1438,6 +1450,38 @@ namespace MikroSqlDbYedek.Win
 
             // Status bar
             _tslStatus.Text = Res.Get("Dashboard_Ready");
+        }
+
+        #endregion
+
+        #region ── Security Helpers ────────────────────────────────────────
+
+        /// <summary>
+        /// Hata mesajından hassas bilgileri (dosya yolları, sunucu adresleri, stack trace) temizler.
+        /// Kullanıcıya gösterilecek mesajlarda bilgi sızıntısını önler.
+        /// </summary>
+        private static string SanitizeErrorMessage(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return Res.Get("Error_Unknown");
+
+            // Stack trace varsa kaldır
+            int stackIdx = message.IndexOf("   at ", StringComparison.Ordinal);
+            if (stackIdx > 0)
+                message = message.Substring(0, stackIdx).Trim();
+
+            // Dosya yollarını gizle (C:\..., \\server\... vb.)
+            message = System.Text.RegularExpressions.Regex.Replace(
+                message,
+                @"[A-Za-z]:\\[^\s""']+|\\\\[^\s""']+",
+                "[yol gizlendi]");
+
+            // Uzun mesajları kısalt
+            const int maxLength = 300;
+            if (message.Length > maxLength)
+                message = message.Substring(0, maxLength) + "…";
+
+            return message;
         }
 
         #endregion

@@ -142,6 +142,21 @@ namespace MikroSqlDbYedek.Core.Models
         [JsonProperty("oauthClientSecret")]
         public string OAuthClientSecret { get; set; }
 
+        /// <summary>
+        /// FTPS bağlantısında sunucu sertifikası doğrulamasını atlar.
+        /// Yalnızca self-signed sertifikalı güvenilir iç ağ sunucuları için true yapın.
+        /// Varsayılan false — sertifika doğrulaması etkin.
+        /// </summary>
+        [JsonProperty("ftpsSkipCertificateValidation")]
+        public bool FtpsSkipCertificateValidation { get; set; }
+
+        /// <summary>
+        /// SFTP sunucu parmak izi (SHA-256 hex). İlk bağlantıda otomatik kaydedilir (trust-on-first-use).
+        /// Sonraki bağlantılarda bu parmak izi ile doğrulama yapılır.
+        /// </summary>
+        [JsonProperty("sftpHostFingerprint")]
+        public string SftpHostFingerprint { get; set; }
+
         /// <summary>Upload hız limiti (MB/s). null = sınırsız.</summary>
         [JsonProperty("bandwidthLimitMbps")]
         public int? BandwidthLimitMbps { get; set; }

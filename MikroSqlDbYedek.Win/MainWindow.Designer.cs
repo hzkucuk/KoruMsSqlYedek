@@ -21,7 +21,6 @@ namespace MikroSqlDbYedek.Win
             _tabControl = new Theme.ModernTabControl();
             _tabDashboard = new System.Windows.Forms.TabPage();
             _tabPlans = new System.Windows.Forms.TabPage();
-            _tabBackup = new System.Windows.Forms.TabPage();
             _tabLogs = new System.Windows.Forms.TabPage();
             _tabSettings = new System.Windows.Forms.TabPage();
             _statusStrip = new System.Windows.Forms.StatusStrip();
@@ -53,6 +52,7 @@ namespace MikroSqlDbYedek.Win
             _colSize = new System.Windows.Forms.ColumnHeader();
 
             // ── Tab 1: Planlar ───────────────────────────────────────────
+            _splitPlans = new System.Windows.Forms.SplitContainer();
             _toolStrip = new System.Windows.Forms.ToolStrip();
             _tsbNew = new System.Windows.Forms.ToolStripButton();
             _tsbEdit = new System.Windows.Forms.ToolStripButton();
@@ -63,6 +63,14 @@ namespace MikroSqlDbYedek.Win
             _tsSep2 = new System.Windows.Forms.ToolStripSeparator();
             _tsbRefreshPlans = new System.Windows.Forms.ToolStripButton();
             _dgvPlans = new System.Windows.Forms.DataGridView();
+            _ctxPlan = new System.Windows.Forms.ContextMenuStrip(components);
+            _ctxBackupNow = new System.Windows.Forms.ToolStripMenuItem();
+            _ctxStopBackup = new System.Windows.Forms.ToolStripMenuItem();
+            _ctxSep1 = new System.Windows.Forms.ToolStripSeparator();
+            _ctxEditPlan = new System.Windows.Forms.ToolStripMenuItem();
+            _ctxDeletePlan = new System.Windows.Forms.ToolStripMenuItem();
+            _ctxSep2 = new System.Windows.Forms.ToolStripSeparator();
+            _ctxExportPlan = new System.Windows.Forms.ToolStripMenuItem();
             _colEnabled = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             _colPlanName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _colStrategy = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -73,14 +81,10 @@ namespace MikroSqlDbYedek.Win
             _statusStripPlans = new System.Windows.Forms.StatusStrip();
             _tslPlanCount = new System.Windows.Forms.ToolStripStatusLabel();
 
-            // ── Tab 2: Yedekleme ─────────────────────────────────────────
+            // ── Yedekleme panel kontrolleri (Planlar sekmesi alt panel) ──
             _tlpBackup = new System.Windows.Forms.TableLayoutPanel();
-            _lblPlan = new System.Windows.Forms.Label();
-            _cmbPlan = new Theme.ModernComboBox();
             _lblBackupType = new System.Windows.Forms.Label();
             _cmbBackupType = new Theme.ModernComboBox();
-            _lblDatabases = new System.Windows.Forms.Label();
-            _clbDatabases = new System.Windows.Forms.CheckedListBox();
             _lblBackupStatus = new System.Windows.Forms.Label();
             _progressBar = new Theme.ModernProgressBar();
             _txtBackupLog = new System.Windows.Forms.TextBox();
@@ -158,7 +162,10 @@ namespace MikroSqlDbYedek.Win
             _tabControl.SuspendLayout();
             _tabDashboard.SuspendLayout();
             _tabPlans.SuspendLayout();
-            _tabBackup.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)_splitPlans).BeginInit();
+            _splitPlans.Panel1.SuspendLayout();
+            _splitPlans.Panel2.SuspendLayout();
+            _splitPlans.SuspendLayout();
             _tabLogs.SuspendLayout();
             _tabSettings.SuspendLayout();
             _statusStrip.SuspendLayout();
@@ -189,7 +196,6 @@ namespace MikroSqlDbYedek.Win
             // ═════════════════════════════════════════════════════════════
             _tabControl.Controls.Add(_tabDashboard);
             _tabControl.Controls.Add(_tabPlans);
-            _tabControl.Controls.Add(_tabBackup);
             _tabControl.Controls.Add(_tabLogs);
             _tabControl.Controls.Add(_tabSettings);
             _tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -319,13 +325,12 @@ namespace MikroSqlDbYedek.Win
             _colSize.Text = "Boyut"; _colSize.Width = 80;
 
             // ═════════════════════════════════════════════════════════════
-            // TAB 1 — PLANLAR
+            // TAB 1 — PLANLAR (SplitContainer: üst=grid, alt=yedekleme)
             // ═════════════════════════════════════════════════════════════
             _tabPlans.Text = "Planlar";
             _tabPlans.BackColor = Theme.ModernTheme.BackgroundColor;
-            _tabPlans.Controls.Add(_dgvPlans);
+            _tabPlans.Controls.Add(_splitPlans);
             _tabPlans.Controls.Add(_toolStrip);
-            _tabPlans.Controls.Add(_statusStripPlans);
 
             _toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
                 _tsbNew, _tsbEdit, _tsbDelete, _tsSep1, _tsbExport, _tsbImport, _tsSep2, _tsbRefreshPlans });
@@ -341,6 +346,19 @@ namespace MikroSqlDbYedek.Win
             _tsbExport.Text = "Dışa Aktar"; _tsbExport.Click += OnExportPlanClick;
             _tsbImport.Text = "İçe Aktar"; _tsbImport.Click += OnImportPlanClick;
             _tsbRefreshPlans.Text = "Yenile"; _tsbRefreshPlans.Click += OnRefreshPlansClick;
+
+            // SplitContainer
+            _splitPlans.Dock = System.Windows.Forms.DockStyle.Fill;
+            _splitPlans.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            _splitPlans.SplitterDistance = 280;
+            _splitPlans.SplitterWidth = 6;
+            _splitPlans.BackColor = Theme.ModernTheme.DividerColor;
+            _splitPlans.Panel1.BackColor = Theme.ModernTheme.BackgroundColor;
+            _splitPlans.Panel2.BackColor = Theme.ModernTheme.BackgroundColor;
+
+            // Panel1: DataGridView + StatusStrip
+            _splitPlans.Panel1.Controls.Add(_dgvPlans);
+            _splitPlans.Panel1.Controls.Add(_statusStripPlans);
 
             _dgvPlans.AllowUserToAddRows = false;
             _dgvPlans.AllowUserToDeleteRows = false;
@@ -375,6 +393,8 @@ namespace MikroSqlDbYedek.Win
             _dgvPlans.RowHeadersVisible = false;
             _dgvPlans.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             _dgvPlans.CellDoubleClick += OnPlanGridDoubleClick;
+            _dgvPlans.ContextMenuStrip = _ctxPlan;
+            _dgvPlans.SelectionChanged += OnPlanGridSelectionChanged;
 
             _colEnabled.HeaderText = "Aktif"; _colEnabled.ReadOnly = true; _colEnabled.FillWeight = 30;
             _colPlanName.HeaderText = "Plan Adı"; _colPlanName.ReadOnly = true; _colPlanName.FillWeight = 100;
@@ -393,85 +413,68 @@ namespace MikroSqlDbYedek.Win
             _statusStripPlans.Renderer = new Theme.ModernToolStripRenderer();
             _tslPlanCount.Text = "Toplam 0 plan";
 
-            // ═════════════════════════════════════════════════════════════
-            // TAB 2 — MANUEL YEDEKLEMEo
-            // ═════════════════════════════════════════════════════════════
-            _tabBackup.Text = "Yedekleme";
-            _tabBackup.BackColor = Theme.ModernTheme.BackgroundColor;
-            _tabBackup.Controls.Add(_tlpBackup);
-            _tabBackup.Controls.Add(_flpBackupButtons);
+            // ContextMenuStrip — plan sağ tık menüsü
+            _ctxPlan.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+                _ctxBackupNow, _ctxStopBackup, _ctxSep1, _ctxEditPlan, _ctxDeletePlan, _ctxSep2, _ctxExportPlan });
+            _ctxPlan.Renderer = new Theme.ModernToolStripRenderer();
+            _ctxPlan.Opening += OnContextMenuOpening;
+
+            _ctxBackupNow.Text = "Şimdi Yedekle";
+            _ctxBackupNow.Click += OnCtxBackupNowClick;
+            _ctxStopBackup.Text = "Yedeklemeyi Durdur";
+            _ctxStopBackup.Enabled = false;
+            _ctxStopBackup.Click += OnCtxStopBackupClick;
+            _ctxEditPlan.Text = "Düzenle";
+            _ctxEditPlan.Click += OnEditPlanClick;
+            _ctxDeletePlan.Text = "Sil";
+            _ctxDeletePlan.Click += OnDeletePlanClick;
+            _ctxExportPlan.Text = "Dışa Aktar";
+            _ctxExportPlan.Click += OnExportPlanClick;
+
+            // Panel2: Manuel yedekleme kontrolleri
+            _splitPlans.Panel2.Controls.Add(_tlpBackup);
+            _splitPlans.Panel2.Controls.Add(_flpBackupButtons);
 
             _tlpBackup.ColumnCount = 2;
             _tlpBackup.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpBackup.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             _tlpBackup.Dock = System.Windows.Forms.DockStyle.Fill;
-            _tlpBackup.Padding = new System.Windows.Forms.Padding(8);
-            _tlpBackup.RowCount = 7;
+            _tlpBackup.Padding = new System.Windows.Forms.Padding(8, 4, 8, 0);
+            _tlpBackup.RowCount = 4;
             _tlpBackup.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            _tlpBackup.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            _tlpBackup.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            _tlpBackup.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 120F));
             _tlpBackup.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpBackup.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpBackup.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
 
-            _tlpBackup.Controls.Add(_lblPlan, 0, 0);
-            _tlpBackup.Controls.Add(_cmbPlan, 1, 0);
-            _lblPlan.Text = "Plan:";
-            _lblPlan.AutoSize = true;
-            _lblPlan.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            _lblPlan.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
-            _lblPlan.ForeColor = Theme.ModernTheme.TextPrimary;
-            _cmbPlan.Dock = System.Windows.Forms.DockStyle.Fill;
-            _cmbPlan.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            _cmbPlan.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
-            _cmbPlan.SelectedIndexChanged += OnPlanSelectedChanged;
-
-            _tlpBackup.Controls.Add(_lblBackupType, 0, 1);
-            _tlpBackup.Controls.Add(_cmbBackupType, 1, 1);
+            _tlpBackup.Controls.Add(_lblBackupType, 0, 0);
+            _tlpBackup.Controls.Add(_cmbBackupType, 1, 0);
             _lblBackupType.Text = "Yedek Türü:";
             _lblBackupType.AutoSize = true;
             _lblBackupType.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            _lblBackupType.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _lblBackupType.Margin = new System.Windows.Forms.Padding(3, 6, 8, 3);
             _lblBackupType.ForeColor = Theme.ModernTheme.TextPrimary;
             _cmbBackupType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbBackupType.Items.AddRange(new object[] { "Full (Tam)", "Differential (Fark)", "Incremental (Artırımlı)" });
             _cmbBackupType.SelectedIndex = 0;
             _cmbBackupType.Width = 200;
-            _cmbBackupType.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
+            _cmbBackupType.Margin = new System.Windows.Forms.Padding(3, 4, 3, 3);
 
-            _tlpBackup.Controls.Add(_lblDatabases, 0, 2);
-            _lblDatabases.Text = "Veritabanları:";
-            _lblDatabases.AutoSize = true;
-            _lblDatabases.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Top;
-            _lblDatabases.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
-            _lblDatabases.ForeColor = Theme.ModernTheme.TextPrimary;
-
-            _tlpBackup.Controls.Add(_clbDatabases, 1, 2);
-            _tlpBackup.SetRowSpan(_clbDatabases, 2);
-            _clbDatabases.Dock = System.Windows.Forms.DockStyle.Fill;
-            _clbDatabases.CheckOnClick = true;
-            _clbDatabases.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
-            _clbDatabases.BackColor = Theme.ModernTheme.SurfaceColor;
-            _clbDatabases.ForeColor = Theme.ModernTheme.TextPrimary;
-            _clbDatabases.ItemCheck += OnDatabaseItemCheck;
-
-            _tlpBackup.Controls.Add(_lblBackupStatus, 0, 4);
+            _tlpBackup.Controls.Add(_lblBackupStatus, 0, 1);
             _tlpBackup.SetColumnSpan(_lblBackupStatus, 2);
-            _lblBackupStatus.Text = "Hazır.";
+            _lblBackupStatus.Text = "Hazır — listeden plan seçin.";
             _lblBackupStatus.AutoSize = true;
             _lblBackupStatus.Font = Theme.ModernTheme.FontBodyBold;
             _lblBackupStatus.ForeColor = Theme.ModernTheme.TextSecondary;
-            _lblBackupStatus.Margin = new System.Windows.Forms.Padding(3, 10, 3, 3);
+            _lblBackupStatus.Margin = new System.Windows.Forms.Padding(3, 8, 3, 3);
 
-            _tlpBackup.Controls.Add(_progressBar, 0, 5);
+            _tlpBackup.Controls.Add(_progressBar, 0, 2);
             _tlpBackup.SetColumnSpan(_progressBar, 2);
             _progressBar.Dock = System.Windows.Forms.DockStyle.Fill;
             _progressBar.Height = 22;
             _progressBar.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             _progressBar.ShowPercentage = false;
 
-            _tlpBackup.Controls.Add(_txtBackupLog, 0, 6);
+            _tlpBackup.Controls.Add(_txtBackupLog, 0, 3);
             _tlpBackup.SetColumnSpan(_txtBackupLog, 2);
             _txtBackupLog.Dock = System.Windows.Forms.DockStyle.Fill;
             _txtBackupLog.Multiline = true;
@@ -486,7 +489,7 @@ namespace MikroSqlDbYedek.Win
             _flpBackupButtons.Dock = System.Windows.Forms.DockStyle.Bottom;
             _flpBackupButtons.AutoSize = true;
             _flpBackupButtons.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            _flpBackupButtons.Padding = new System.Windows.Forms.Padding(0, 4, 8, 8);
+            _flpBackupButtons.Padding = new System.Windows.Forms.Padding(0, 4, 8, 4);
             _flpBackupButtons.BackColor = Theme.ModernTheme.SurfaceColor;
             _flpBackupButtons.Controls.Add(_btnCancelBackup);
             _flpBackupButtons.Controls.Add(_btnStart);
@@ -863,8 +866,12 @@ namespace MikroSqlDbYedek.Win
             _tabDashboard.ResumeLayout(false);
             _tabPlans.ResumeLayout(false);
             _tabPlans.PerformLayout();
-            _tabBackup.ResumeLayout(false);
-            _tabBackup.PerformLayout();
+            _splitPlans.Panel1.ResumeLayout(false);
+            _splitPlans.Panel1.PerformLayout();
+            _splitPlans.Panel2.ResumeLayout(false);
+            _splitPlans.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)_splitPlans).EndInit();
+            _splitPlans.ResumeLayout(false);
             _tabLogs.ResumeLayout(false);
             _tabLogs.PerformLayout();
             _tabSettings.ResumeLayout(false);
@@ -908,7 +915,6 @@ namespace MikroSqlDbYedek.Win
         private Theme.ModernTabControl _tabControl;
         private System.Windows.Forms.TabPage _tabDashboard;
         private System.Windows.Forms.TabPage _tabPlans;
-        private System.Windows.Forms.TabPage _tabBackup;
         private System.Windows.Forms.TabPage _tabLogs;
         private System.Windows.Forms.TabPage _tabSettings;
         private System.Windows.Forms.StatusStrip _statusStrip;
@@ -940,6 +946,7 @@ namespace MikroSqlDbYedek.Win
         private System.Windows.Forms.ColumnHeader _colSize;
 
         // Plans
+        private System.Windows.Forms.SplitContainer _splitPlans;
         private System.Windows.Forms.ToolStrip _toolStrip;
         private System.Windows.Forms.ToolStripButton _tsbNew;
         private System.Windows.Forms.ToolStripButton _tsbEdit;
@@ -950,6 +957,14 @@ namespace MikroSqlDbYedek.Win
         private System.Windows.Forms.ToolStripSeparator _tsSep2;
         private System.Windows.Forms.ToolStripButton _tsbRefreshPlans;
         private System.Windows.Forms.DataGridView _dgvPlans;
+        private System.Windows.Forms.ContextMenuStrip _ctxPlan;
+        private System.Windows.Forms.ToolStripMenuItem _ctxBackupNow;
+        private System.Windows.Forms.ToolStripMenuItem _ctxStopBackup;
+        private System.Windows.Forms.ToolStripSeparator _ctxSep1;
+        private System.Windows.Forms.ToolStripMenuItem _ctxEditPlan;
+        private System.Windows.Forms.ToolStripMenuItem _ctxDeletePlan;
+        private System.Windows.Forms.ToolStripSeparator _ctxSep2;
+        private System.Windows.Forms.ToolStripMenuItem _ctxExportPlan;
         private System.Windows.Forms.DataGridViewCheckBoxColumn _colEnabled;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colPlanName;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colStrategy;
@@ -962,12 +977,8 @@ namespace MikroSqlDbYedek.Win
 
         // Backup
         private System.Windows.Forms.TableLayoutPanel _tlpBackup;
-        private System.Windows.Forms.Label _lblPlan;
-        private Theme.ModernComboBox _cmbPlan;
         private System.Windows.Forms.Label _lblBackupType;
         private Theme.ModernComboBox _cmbBackupType;
-        private System.Windows.Forms.Label _lblDatabases;
-        private System.Windows.Forms.CheckedListBox _clbDatabases;
         private System.Windows.Forms.Label _lblBackupStatus;
         private Theme.ModernProgressBar _progressBar;
         private System.Windows.Forms.TextBox _txtBackupLog;
