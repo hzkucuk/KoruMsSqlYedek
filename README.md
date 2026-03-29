@@ -1,8 +1,8 @@
-# MikroSqlDbYedek
+﻿# KoruMsSqlYedek
 
 **SQL Server Yedekleme & Bulut Senkronizasyon Sistemi**
 
-MikroSqlDbYedek, SQL Server veritabanlarını ve dosya/klasörleri otomatik olarak yedekleyip bulut depolama servislerine gönderen, Windows tray uygulaması ve Windows Service olarak çalışan profesyonel bir yedekleme çözümüdür.
+KoruMsSqlYedek, SQL Server veritabanlarını ve dosya/klasörleri otomatik olarak yedekleyip bulut depolama servislerine gönderen, Windows tray uygulaması ve Windows Service olarak çalışan profesyonel bir yedekleme çözümüdür.
 
 ---
 
@@ -43,12 +43,12 @@ MikroSqlDbYedek, SQL Server veritabanlarını ve dosya/klasörleri otomatik olar
 ## Mimari
 
 ```
-MikroSqlDbYedek.sln
-├── MikroSqlDbYedek.Core       # Paylaşılan modeller, arayüzler, yardımcılar
-├── MikroSqlDbYedek.Engine     # İş mantığı: yedekleme, sıkıştırma, bulut, zamanlama
-├── MikroSqlDbYedek.Win        # System Tray WinForms UI uygulaması
-├── MikroSqlDbYedek.Service    # Windows Service (Topshelf)
-└── MikroSqlDbYedek.Tests      # Unit testler (MSTest)
+KoruMsSqlYedek.sln
+├── KoruMsSqlYedek.Core       # Paylaşılan modeller, arayüzler, yardımcılar
+├── KoruMsSqlYedek.Engine     # İş mantığı: yedekleme, sıkıştırma, bulut, zamanlama
+├── KoruMsSqlYedek.Win        # System Tray WinForms UI uygulaması
+├── KoruMsSqlYedek.Service    # Windows Service (Topshelf)
+└── KoruMsSqlYedek.Tests      # Unit testler (MSTest)
 ```
 
 ---
@@ -69,10 +69,10 @@ MikroSqlDbYedek.sln
 ### Geliştirici Kurulumu
 
 ```bash
-git clone https://github.com/hzkucuk/MikroSqlDbYedek.git
-cd MikroSqlDbYedek
-dotnet restore MikroSqlDbYedek.slnx
-dotnet build MikroSqlDbYedek.slnx
+git clone https://github.com/hzkucuk/KoruMsSqlYedek.git
+cd KoruMsSqlYedek
+dotnet restore KoruMsSqlYedek.slnx
+dotnet build KoruMsSqlYedek.slnx
 ```
 
 ### Üretim Kurulumu
@@ -83,15 +83,15 @@ Inno Setup ile oluşturulan kurulum paketi kullanılır. Detaylar için [INSTALL
 ## Kullanım
 
 ### Tray Uygulaması
-1. `MikroSqlDbYedek.Win.exe` çalıştırın — System Tray'de ikon belirir
+1. `KoruMsSqlYedek.Win.exe` çalıştırın — System Tray'de ikon belirir
 2. Sağ tık menüsünden **Planlar** ile yedekleme planları oluşturun
 3. Cron ifadesi ile zamanlama belirleyin
 4. Bulut hedeflerini yapılandırın
 
 ### Windows Service
 ```bash
-MikroSqlDbYedek.Service.exe install
-MikroSqlDbYedek.Service.exe start
+KoruMsSqlYedek.Service.exe install
+KoruMsSqlYedek.Service.exe start
 ```
 
 ---

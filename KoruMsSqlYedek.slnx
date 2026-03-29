@@ -1,0 +1,7 @@
+﻿<Solution>
+  <Project Path="KoruMsSqlYedek.Core/KoruMsSqlYedek.Core.csproj" />
+  <Project Path="KoruMsSqlYedek.Engine/KoruMsSqlYedek.Engine.csproj" />
+  <Project Path="KoruMsSqlYedek.Service/KoruMsSqlYedek.Service.csproj" />
+  <Project Path="KoruMsSqlYedek.Tests/KoruMsSqlYedek.Tests.csproj" />
+  <Project Path="KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj" />
+</Solution>

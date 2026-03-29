@@ -1,10 +1,10 @@
-@echo off
-:: MikroSqlDbYedek — Windows Service Kaldirma Scripti
+﻿@echo off
+:: KoruMsSqlYedek — Windows Service Kaldirma Scripti
 :: Yonetici yetkisi ile calistirin.
 :: Topshelf CLI ile service durdurur ve kaldirir.
 
 echo ================================================
-echo  MikroSqlDbYedek Service Kaldirma
+echo  KoruMsSqlYedek Service Kaldirma
 echo ================================================
 echo.
 
@@ -20,7 +20,7 @@ if %errorlevel% neq 0 (
 
 :: Service durdurma
 echo [1/2] Service durduruluyor...
-"%~dp0MikroSqlDbYedek.Service.exe" stop
+"%~dp0KoruMsSqlYedek.Service.exe" stop
 if %errorlevel% neq 0 (
     echo [UYARI] Service durdurulamadi (zaten durdurulmus olabilir).
 )
@@ -29,7 +29,7 @@ echo.
 
 :: Service kaldirma
 echo [2/2] Service kaldiriliyor...
-"%~dp0MikroSqlDbYedek.Service.exe" uninstall
+"%~dp0KoruMsSqlYedek.Service.exe" uninstall
 if %errorlevel% neq 0 (
     echo [HATA] Service kaldirma basarisiz.
     pause

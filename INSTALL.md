@@ -1,4 +1,4 @@
-# Kurulum Kılavuzu
+﻿# Kurulum Kılavuzu
 
 ## Sistem Gereksinimleri
 
@@ -27,26 +27,26 @@
 ### 1. Kaynak Kodu İndirme
 
 ```bash
-git clone https://github.com/hzkucuk/MikroSqlDbYedek.git
-cd MikroSqlDbYedek
+git clone https://github.com/hzkucuk/KoruMsSqlYedek.git
+cd KoruMsSqlYedek
 ```
 
 ### 2. NuGet Paketlerini Geri Yükleme
 
 ```bash
-dotnet restore MikroSqlDbYedek.slnx
+dotnet restore KoruMsSqlYedek.slnx
 ```
 
 ### 3. Derleme
 
 ```bash
-dotnet build MikroSqlDbYedek.slnx
+dotnet build KoruMsSqlYedek.slnx
 ```
 
 ### 4. Testleri Çalıştırma
 
 ```bash
-dotnet test MikroSqlDbYedek.slnx
+dotnet test KoruMsSqlYedek.slnx
 ```
 
 ---
@@ -68,7 +68,7 @@ Script aşağıdaki adımları otomatik gerçekleştirir:
 2. Çözümü Release konfigürasyonunda derler
 3. Testleri çalıştırır (opsiyonel)
 4. Win ve Service projelerini publish eder
-5. ZIP arşivi oluşturur: `releases\MikroSqlDbYedek_vX.Y.Z.zip`
+5. ZIP arşivi oluşturur: `releases\KoruMsSqlYedek_vX.Y.Z.zip`
 
 > **Not:** 7z.dll dosyalarını publish çıktısındaki `x64/` ve `x86/` klasörlerine manuel olarak eklemeniz gerekir.
 > Kaynak: [7-Zip Extra](https://www.7-zip.org/download.html)
@@ -78,13 +78,13 @@ Script aşağıdaki adımları otomatik gerçekleştirir:
 **Gereksinim:** [Inno Setup 6.2+](https://jrsoftware.org/isinfo.php)
 
 1. Önce `Build-Release.ps1` ile publish edin (ZIP yerine publish çıktısı kullanılır)
-2. `Deployment\InnoSetup\MikroSqlDbYedek.iss` dosyasını Inno Setup Compiler ile açın
+2. `Deployment\InnoSetup\KoruMsSqlYedek.iss` dosyasını Inno Setup Compiler ile açın
 3. ISS içindeki `WinPublishDir` ve `ServicePublishDir` yollarını ortamınıza göre doğrulayın
-4. Compile edin → `releases\MikroSqlDbYedek_vX.Y.Z_Setup.exe` oluşur
+4. Compile edin → `releases\KoruMsSqlYedek_vX.Y.Z_Setup.exe` oluşur
 
 ```bash
 # Komut satırından derleme (ISCC yolunuz PATH'te ise)
-ISCC.exe Deployment\InnoSetup\MikroSqlDbYedek.iss
+ISCC.exe Deployment\InnoSetup\KoruMsSqlYedek.iss
 ```
 
 Kurulum paketi özellikleri:
@@ -101,7 +101,7 @@ Kurulum paketi özellikleri:
 
 ### Inno Setup ile Kurulum (Önerilen)
 
-1. `MikroSqlDbYedek_vX.Y.Z_Setup.exe` dosyasını çalıştırın
+1. `KoruMsSqlYedek_vX.Y.Z_Setup.exe` dosyasını çalıştırın
 2. Kurulum türünü seçin:
    - **Tam Kurulum:** Tray Uygulaması + Windows Service
    - **Sadece Tray:** Yalnızca tray uygulaması (manuel yedekleme)
@@ -113,7 +113,7 @@ Kurulum paketi özellikleri:
 
 #### Tray Uygulaması
 1. Publish çıktısını (`publish\Win\`) hedef klasöre kopyalayın
-2. `MikroSqlDbYedek.Win.exe` çalıştırın
+2. `KoruMsSqlYedek.Win.exe` çalıştırın
 
 #### Windows Service
 
@@ -129,16 +129,16 @@ uninstall-service.cmd
 Veya doğrudan `sc.exe` ile (yönetici yetkisi gerekli):
 ```bash
 # Kurulum
-sc create MikroSqlDbYedekService binPath= "C:\...\MikroSqlDbYedek.Service.exe" start= auto
+sc create KoruMsSqlYedekService binPath= "C:\...\KoruMsSqlYedek.Service.exe" start= auto
 
 # Başlatma / Durdurma / Kaldırma
-sc start MikroSqlDbYedekService
-sc stop MikroSqlDbYedekService
-sc delete MikroSqlDbYedekService
+sc start KoruMsSqlYedekService
+sc stop KoruMsSqlYedekService
+sc delete KoruMsSqlYedekService
 ```
 
 > **Service Bilgisi:**
-> - Service adı: `MikroSqlDbYedekService`
+> - Service adı: `KoruMsSqlYedekService`
 > - Host: Microsoft.Extensions.Hosting.WindowsServices (.NET 10)
 > - Otomatik başlama olarak kaydedilir
 
@@ -149,7 +149,7 @@ sc delete MikroSqlDbYedekService
 ### Uygulama Verileri Konumu
 
 ```
-%APPDATA%\MikroSqlDbYedek\
+%APPDATA%\KoruMsSqlYedek\
 ├── Plans\          # JSON plan dosyaları
 ├── Logs\           # Serilog log dosyaları
 └── Config\         # Genel ayarlar (appsettings.json)
@@ -158,7 +158,7 @@ sc delete MikroSqlDbYedekService
 ### Yedek Dosyaları Varsayılan Konumu
 
 ```
-D:\Backups\MikroSqlDbYedek\
+D:\Backups\KoruMsSqlYedek\
 ```
 
 > Konum, her plan içinde `localPath` alanı ile özelleştirilebilir.

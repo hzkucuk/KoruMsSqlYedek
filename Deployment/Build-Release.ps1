@@ -1,6 +1,6 @@
-# MikroSqlDbYedek — Release Build & Package Script
+﻿# KoruMsSqlYedek — Release Build & Package Script
 # Kullanım: .\Deployment\Build-Release.ps1 [-Configuration Release] [-SkipTests]
-# Çıktı: releases\MikroSqlDbYedek_vX.Y.Z.zip
+# Çıktı: releases\KoruMsSqlYedek_vX.Y.Z.zip
 
 param(
     [string]$Configuration = "Release",
@@ -12,11 +12,11 @@ Set-StrictMode -Version Latest
 
 # --- Proje kök dizini ---
 $rootDir = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-if (-not (Test-Path "$rootDir\MikroSqlDbYedek.slnx")) {
+if (-not (Test-Path "$rootDir\KoruMsSqlYedek.slnx")) {
     $rootDir = Split-Path -Parent $PSScriptRoot
-    if (-not (Test-Path "$rootDir\MikroSqlDbYedek.slnx")) {
+    if (-not (Test-Path "$rootDir\KoruMsSqlYedek.slnx")) {
         $rootDir = $PSScriptRoot
-        if (-not (Test-Path "$rootDir\MikroSqlDbYedek.slnx")) {
+        if (-not (Test-Path "$rootDir\KoruMsSqlYedek.slnx")) {
             Write-Error "Solution dosyasi bulunamadi. Script'i proje kokunden calistirin."
             exit 1
         }
@@ -27,7 +27,7 @@ Push-Location $rootDir
 
 try {
     # --- Versiyon bilgisini AssemblyInfo.cs'den oku ---
-    $assemblyInfoPath = Join-Path $rootDir "MikroSqlDbYedek.Win\Properties\AssemblyInfo.cs"
+    $assemblyInfoPath = Join-Path $rootDir "KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs"
     if (-not (Test-Path $assemblyInfoPath)) {
         Write-Error "AssemblyInfo.cs bulunamadi: $assemblyInfoPath"
         exit 1
@@ -43,25 +43,25 @@ try {
     }
 
     Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host " MikroSqlDbYedek Build & Package" -ForegroundColor Cyan
+    Write-Host " KoruMsSqlYedek Build & Package" -ForegroundColor Cyan
     Write-Host " Versiyon: $version" -ForegroundColor Cyan
     Write-Host " Konfigürasyon: $Configuration" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
 
     # --- 1. NuGet Restore ---
     Write-Host "`n[1/6] NuGet paketleri geri yukleniyor..." -ForegroundColor Yellow
-    dotnet restore MikroSqlDbYedek.slnx --verbosity minimal
+    dotnet restore KoruMsSqlYedek.slnx --verbosity minimal
     if ($LASTEXITCODE -ne 0) { Write-Error "NuGet restore basarisiz."; exit 1 }
 
     # --- 2. Build ---
     Write-Host "`n[2/6] Cozum derleniyor ($Configuration)..." -ForegroundColor Yellow
-    dotnet build MikroSqlDbYedek.slnx -c $Configuration --no-restore
+    dotnet build KoruMsSqlYedek.slnx -c $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { Write-Error "Build basarisiz."; exit 1 }
 
     # --- 3. Test ---
     if (-not $SkipTests) {
         Write-Host "`n[3/6] Testler calistiriliyor..." -ForegroundColor Yellow
-        dotnet test MikroSqlDbYedek.slnx -c $Configuration --no-build --verbosity minimal
+        dotnet test KoruMsSqlYedek.slnx -c $Configuration --no-build --verbosity minimal
         if ($LASTEXITCODE -ne 0) { Write-Error "Testler basarisiz."; exit 1 }
     }
     else {
@@ -79,11 +79,11 @@ try {
     if (Test-Path $publishBase) { Remove-Item $publishBase -Recurse -Force }
 
     # Win (Tray App)
-    dotnet publish MikroSqlDbYedek.Win\MikroSqlDbYedek.Win.csproj -c $Configuration -o $winPublish --no-build
+    dotnet publish KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj -c $Configuration -o $winPublish --no-build
     if ($LASTEXITCODE -ne 0) { Write-Error "Win publish basarisiz."; exit 1 }
 
     # Service
-    dotnet publish MikroSqlDbYedek.Service\MikroSqlDbYedek.Service.csproj -c $Configuration -o $servicePublish --no-build
+    dotnet publish KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj -c $Configuration -o $servicePublish --no-build
     if ($LASTEXITCODE -ne 0) { Write-Error "Service publish basarisiz."; exit 1 }
 
     # --- 5. 7z.dll kopyalama (SevenZipSharp icin gerekli) ---
@@ -115,15 +115,15 @@ try {
     $releasesDir = Join-Path $rootDir "releases"
     if (-not (Test-Path $releasesDir)) { New-Item -Path $releasesDir -ItemType Directory -Force | Out-Null }
 
-    $zipName = "MikroSqlDbYedek_v$version.zip"
+    $zipName = "KoruMsSqlYedek_v$version.zip"
     $zipPath = Join-Path $releasesDir $zipName
 
     if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
     # Stage dizini olustur
     $stageDir = Join-Path $publishBase "stage"
-    $stageWin = Join-Path $stageDir "MikroSqlDbYedek"
-    $stageService = Join-Path $stageDir "MikroSqlDbYedek\Service"
+    $stageWin = Join-Path $stageDir "KoruMsSqlYedek"
+    $stageService = Join-Path $stageDir "KoruMsSqlYedek\Service"
 
     if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
     New-Item -Path $stageWin -ItemType Directory -Force | Out-Null
@@ -143,7 +143,7 @@ try {
     }
 
     # ZIP olustur
-    Compress-Archive -Path "$stageDir\MikroSqlDbYedek" -DestinationPath $zipPath -CompressionLevel Optimal
+    Compress-Archive -Path "$stageDir\KoruMsSqlYedek" -DestinationPath $zipPath -CompressionLevel Optimal
     $zipSize = (Get-Item $zipPath).Length / 1MB
 
     Write-Host ""

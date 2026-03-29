@@ -1,10 +1,10 @@
-@echo off
-:: MikroSqlDbYedek — Windows Service Kurulum Scripti
+﻿@echo off
+:: KoruMsSqlYedek — Windows Service Kurulum Scripti
 :: Yonetici yetkisi ile calistirin.
 :: Topshelf CLI ile service kurulumu yapar ve baslatir.
 
 echo ================================================
-echo  MikroSqlDbYedek Service Kurulumu
+echo  KoruMsSqlYedek Service Kurulumu
 echo ================================================
 echo.
 
@@ -20,7 +20,7 @@ if %errorlevel% neq 0 (
 
 :: Service kurulumu
 echo [1/2] Service kuruluyor...
-"%~dp0MikroSqlDbYedek.Service.exe" install
+"%~dp0KoruMsSqlYedek.Service.exe" install
 if %errorlevel% neq 0 (
     echo [HATA] Service kurulumu basarisiz.
     pause
@@ -31,10 +31,10 @@ echo.
 
 :: Service baslatma
 echo [2/2] Service baslatiliyor...
-"%~dp0MikroSqlDbYedek.Service.exe" start
+"%~dp0KoruMsSqlYedek.Service.exe" start
 if %errorlevel% neq 0 (
     echo [UYARI] Service baslatilamadi. Manuel olarak baslatmayi deneyin:
-    echo         net start MikroSqlDbYedekService
+    echo         net start KoruMsSqlYedekService
     pause
     exit /b 1
 )
@@ -42,7 +42,7 @@ if %errorlevel% neq 0 (
 echo.
 echo ================================================
 echo  Service basariyla kuruldu ve baslatildi.
-echo  Service adi: MikroSqlDbYedekService
+echo  Service adi: KoruMsSqlYedekService
 echo ================================================
 echo.
 pause

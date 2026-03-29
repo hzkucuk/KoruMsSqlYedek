@@ -1,11 +1,11 @@
-{
+﻿{
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
       "Bash(grep -E \"^.*error CS|Hata$|succeeded|başarılı\")",
       "Bash(grep -E \" error | Hata$|succeeded|başarılı\")",
-      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\Hzk\\\\source\\\\repos\\\\MikroSqlDbYedek\\\\MikroSqlDbYedek.Engine\\\\bin\" -ErrorAction SilentlyContinue)",
-      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\Hzk\\\\source\\\\repos\\\\MikroSqlDbYedek\\\\MikroSqlDbYedek.Engine\\\\obj\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\Hzk\\\\source\\\\repos\\\\KoruMsSqlYedek\\\\KoruMsSqlYedek.Engine\\\\bin\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\Hzk\\\\source\\\\repos\\\\KoruMsSqlYedek\\\\KoruMsSqlYedek.Engine\\\\obj\" -ErrorAction SilentlyContinue)",
       "Bash(Write-Host \"Temizlendi\")",
       "Bash(for d:*)",
       "Bash(do rm:*)",
@@ -17,18 +17,18 @@
       "WebSearch",
       "Bash(for type:*)",
       "Bash(do echo:*)",
-      "Bash(grep -c \"System\\\\.Windows\\\\.Forms\\\\.$type \" MikroSqlDbYedek.Win/MainWindow.Designer.cs MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs MikroSqlDbYedek.Win/Forms/CloudTargetEditDialog.Designer.cs MikroSqlDbYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs)",
+      "Bash(grep -c \"System\\\\.Windows\\\\.Forms\\\\.$type \" KoruMsSqlYedek.Win/MainWindow.Designer.cs KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.Designer.cs KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:unpkg.com)",
       "Bash(npm pack:*)",
       "Bash(tar xzf:*)",
-      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/regular/Phosphor.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
-      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/fill/Phosphor-Fill.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
-      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/bold/Phosphor-Bold.ttf C:/Users/Hzk/source/repos/MikroSqlDbYedek/MikroSqlDbYedek.Win/Resources/Fonts/)",
+      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/regular/Phosphor.ttf C:/Users/Hzk/source/repos/KoruMsSqlYedek/KoruMsSqlYedek.Win/Resources/Fonts/)",
+      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/fill/Phosphor-Fill.ttf C:/Users/Hzk/source/repos/KoruMsSqlYedek/KoruMsSqlYedek.Win/Resources/Fonts/)",
+      "Bash(cp C:/Users/Hzk/AppData/Local/Temp/phosphor/package/src/bold/Phosphor-Bold.ttf C:/Users/Hzk/source/repos/KoruMsSqlYedek/KoruMsSqlYedek.Win/Resources/Fonts/)",
       "Bash(dotnet run:*)",
       "Bash(dotnet list:*)",
       "Bash(dotnet add:*)",
-      "Bash(find /c/Users/Hzk/source/repos/MikroSqlDbYedek -type f \\\\\\(-name app.config -o -name appsettings.json -o -name *.config \\\\\\))"
+      "Bash(find /c/Users/Hzk/source/repos/KoruMsSqlYedek -type f \\\\\\(-name app.config -o -name appsettings.json -o -name *.config \\\\\\))"
     ]
   }
 }

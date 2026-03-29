@@ -1,3 +1,22 @@
+﻿## [0.27.0] - 2026-03-30 — Proje Yeniden Adlandırma + Depolama Sütunu
+
+### Değişiklikler
+- **Proje yeniden adlandırma**: `MikroSqlDbYedek` → `KoruMsSqlYedek` — tüm namespace, assembly, klasör, solution, proje ve setup dosyalarında uygulandı (124 kaynak dosya)
+- **Inno Setup**: `AppName = "Koru MsSql Yedek"`, service adı `KoruMsSqlYedekService`
+- **Git remote**: `https://github.com/hzkucuk/KoruMsSqlYedek` olarak güncellendi
+
+### Yeni Özellik
+- **Görev listesi Depolama sütunu**: Planın depolama hedefi artık `☁ Bulut (N)` veya `💾 Yerel` olarak gösteriliyor
+
+### Etkilenen Dosyalar
+- Tüm `.cs`, `.csproj`, `.slnx`, `.iss` dosyaları (124 içerik güncellemesi)
+- KoruMsSqlYedek.Win/MainWindow.cs (storageLabel)
+- KoruMsSqlYedek.Win/MainWindow.Designer.cs (_colCloudTargets.HeaderText = "Depolama")
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (0.27.0.0)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (ApplicationVersion 0.27.0.0)
+
+---
+
 ## [0.26.2] - 2026-03-29 — Güvenlik Sertleştirme: TLS/SSH Doğrulama, Hata Mesajı Sanitizasyonu
 
 ### Güvenlik
@@ -12,13 +31,13 @@
 - `CloudTargetConfig.SftpHostFingerprint` — SFTP sunucu parmak izi (TOFU ile otomatik kaydedilir)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Core/Models/ConfigModels.cs
-- MikroSqlDbYedek.Engine/Cloud/FtpSftpProvider.cs
-- MikroSqlDbYedek.Engine/Cloud/UncNetworkConnection.cs
-- MikroSqlDbYedek.Engine/Notification/EmailNotificationService.cs
-- MikroSqlDbYedek.Win/MainWindow.cs
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj
+- KoruMsSqlYedek.Core/Models/ConfigModels.cs
+- KoruMsSqlYedek.Engine/Cloud/FtpSftpProvider.cs
+- KoruMsSqlYedek.Engine/Cloud/UncNetworkConnection.cs
+- KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs
+- KoruMsSqlYedek.Win/MainWindow.cs
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj
 
 ---
 
@@ -37,15 +56,15 @@
 - **Magic number**: `1048576.0` sabiti `BytesPerMb` olarak tanımlandı — `SqlBackupService`, `FileBackupService`, `SevenZipCompressionService`, `EmailNotificationService`, `MainWindow`
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/Cloud/FtpSftpProvider.cs
-- MikroSqlDbYedek.Engine/Backup/SqlBackupService.cs
-- MikroSqlDbYedek.Engine/FileBackup/FileBackupService.cs
-- MikroSqlDbYedek.Core/Helpers/PasswordProtector.cs
-- MikroSqlDbYedek.Engine/Cloud/OneDriveAuthHelper.cs
-- MikroSqlDbYedek.Engine/Cloud/LocalNetworkProvider.cs
-- MikroSqlDbYedek.Engine/Compression/SevenZipCompressionService.cs
-- MikroSqlDbYedek.Engine/Notification/EmailNotificationService.cs
-- MikroSqlDbYedek.Win/MainWindow.cs
+- KoruMsSqlYedek.Engine/Cloud/FtpSftpProvider.cs
+- KoruMsSqlYedek.Engine/Backup/SqlBackupService.cs
+- KoruMsSqlYedek.Engine/FileBackup/FileBackupService.cs
+- KoruMsSqlYedek.Core/Helpers/PasswordProtector.cs
+- KoruMsSqlYedek.Engine/Cloud/OneDriveAuthHelper.cs
+- KoruMsSqlYedek.Engine/Cloud/LocalNetworkProvider.cs
+- KoruMsSqlYedek.Engine/Compression/SevenZipCompressionService.cs
+- KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs
+- KoruMsSqlYedek.Win/MainWindow.cs
 
 ---
 
@@ -59,10 +78,10 @@
 - **Detaylı retention logları**: Silinen, korunan ve atlanan dosyalar ayrı ayrı raporlanır
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/Retention/RetentionCleanupService.cs (IBackupHistoryManager enjeksiyonu, bulut koruma mantığı)
-- MikroSqlDbYedek.Tests/RetentionCleanupServiceTests.cs (Moq mock güncellemesi)
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.26.0)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.26.0)
+- KoruMsSqlYedek.Engine/Retention/RetentionCleanupService.cs (IBackupHistoryManager enjeksiyonu, bulut koruma mantığı)
+- KoruMsSqlYedek.Tests/RetentionCleanupServiceTests.cs (Moq mock güncellemesi)
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.26.0)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (versiyon 0.26.0)
 
 ---
 
@@ -74,11 +93,11 @@
 - **Geliştirilmiş DLL arama**: 3 aşamalı fallback: `x64/7z.dll` → `7z.dll` → `Program Files\7-Zip`
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/Native/x64/7z.dll (yeni — native binary)
-- MikroSqlDbYedek.Engine/MikroSqlDbYedek.Engine.csproj (Content copy to output)
-- MikroSqlDbYedek.Engine/Compression/SevenZipCompressionService.cs (Initialize fallback güncellendi)
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.2)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.25.2)
+- KoruMsSqlYedek.Engine/Native/x64/7z.dll (yeni — native binary)
+- KoruMsSqlYedek.Engine/KoruMsSqlYedek.Engine.csproj (Content copy to output)
+- KoruMsSqlYedek.Engine/Compression/SevenZipCompressionService.cs (Initialize fallback güncellendi)
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.2)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (versiyon 0.25.2)
 
 ---
 
@@ -93,10 +112,10 @@
 - **`IFileBackupService`** MainWindow constructor'ına enjekte edildi
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/IoC/EngineModule.cs (UsingConstructor eklendi)
-- MikroSqlDbYedek.Win/MainWindow.cs (IFileBackupService eklendi, dosya yedekleme pipeline)
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.1)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.25.1)
+- KoruMsSqlYedek.Engine/IoC/EngineModule.cs (UsingConstructor eklendi)
+- KoruMsSqlYedek.Win/MainWindow.cs (IFileBackupService eklendi, dosya yedekleme pipeline)
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.1)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (versiyon 0.25.1)
 
 ---
 
@@ -110,9 +129,9 @@
 - **Detaylı log çıktısı**: Her pipeline adımı ↳/✓/✗ göstergeleriyle raporlanır
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/MainWindow.cs (constructor genişletildi, OnStartBackupClick tam pipeline, SaveBackupHistory eklendi)
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.0)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.25.0)
+- KoruMsSqlYedek.Win/MainWindow.cs (constructor genişletildi, OnStartBackupClick tam pipeline, SaveBackupHistory eklendi)
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.25.0)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (versiyon 0.25.0)
 
 ---
 
@@ -128,12 +147,12 @@
 - **Dinamik adım göstergesi**: 5 veya 6 nokta, mod değişiminde anında güncellenir
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Core/Models/Enums.cs (BackupMode enum)
-- MikroSqlDbYedek.Core/Models/BackupPlan.cs (Mode özelliği)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs (RadioButton kontrolleri, _activeSteps)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (dinamik navigasyon, RebuildActiveSteps, RebuildStepIndicator)
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.24.0)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.24.0)
+- KoruMsSqlYedek.Core/Models/Enums.cs (BackupMode enum)
+- KoruMsSqlYedek.Core/Models/BackupPlan.cs (Mode özelliği)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs (RadioButton kontrolleri, _activeSteps)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.cs (dinamik navigasyon, RebuildActiveSteps, RebuildStepIndicator)
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.24.0)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (versiyon 0.24.0)
 
 ---
 
@@ -161,11 +180,11 @@
 - `UpdateFileScheduleVisibility()`: Dosya zamanlama koşullu görünürlük
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı — 6 adım)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (6 adım mantığı, ikon düzeltmeleri)
-- MikroSqlDbYedek.Win/Theme/PhosphorIcons.cs (ArrowLeft/ArrowRight sabitleri)
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.23.0)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.23.0)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı — 6 adım)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.cs (6 adım mantığı, ikon düzeltmeleri)
+- KoruMsSqlYedek.Win/Theme/PhosphorIcons.cs (ArrowLeft/ArrowRight sabitleri)
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.23.0)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (versiyon 0.23.0)
 
 ---
 
@@ -192,14 +211,14 @@
 - **Varsayılan değerler**: Tüm alanlar için anlamlı varsayılanlar (saat 02:00, LZMA2, Ultra sıkıştırma vb.)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Controls/CronBuilderPanel.cs (yeni)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (CronBuilderPanel + raporlama entegrasyonu)
-- MikroSqlDbYedek.Core/Models/Enums.cs (ReportFrequency enum)
-- MikroSqlDbYedek.Core/Models/ConfigModels.cs (ReportingConfig sınıfı)
-- MikroSqlDbYedek.Core/Models/BackupPlan.cs (Reporting özelliği)
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.22.0)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.22.0)
+- KoruMsSqlYedek.Win/Controls/CronBuilderPanel.cs (yeni)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.cs (CronBuilderPanel + raporlama entegrasyonu)
+- KoruMsSqlYedek.Core/Models/Enums.cs (ReportFrequency enum)
+- KoruMsSqlYedek.Core/Models/ConfigModels.cs (ReportingConfig sınıfı)
+- KoruMsSqlYedek.Core/Models/BackupPlan.cs (Reporting özelliği)
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.22.0)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (versiyon 0.22.0)
 
 ---
 
@@ -226,12 +245,12 @@
 - **ApplyIcons()**: Yeni wizard butonları için ikon ataması eklendi (_btnRefreshDatabases)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (wizard navigasyon + düzeltmeler)
-- MikroSqlDbYedek.Core/Models/ConfigModels.cs (TrustServerCertificate eklendi)
-- MikroSqlDbYedek.Engine/Backup/SqlBackupService.cs (BuildConnectionString + CreateServerConnection)
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.21.0)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (versiyon 0.21.0)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs (tamamen yeniden yazıldı)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.cs (wizard navigasyon + düzeltmeler)
+- KoruMsSqlYedek.Core/Models/ConfigModels.cs (TrustServerCertificate eklendi)
+- KoruMsSqlYedek.Engine/Backup/SqlBackupService.cs (BuildConnectionString + CreateServerConnection)
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs (versiyon 0.21.0)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (versiyon 0.21.0)
 
 ---
 
@@ -256,17 +275,17 @@
 - **MaterialSkin.2** NuGet paketi kaldırıldı
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Program.cs
-- MikroSqlDbYedek.Win/Theme/ModernFormBase.cs
-- MikroSqlDbYedek.Win/Theme/ModernTheme.cs
-- MikroSqlDbYedek.Win/Theme/ModernButton.cs
-- MikroSqlDbYedek.Win/Theme/ModernCardPanel.cs
-- MikroSqlDbYedek.Win/Theme/ModernNumericUpDown.cs
-- MikroSqlDbYedek.Win/Theme/ModernLoadingOverlay.cs
-- MikroSqlDbYedek.Win/Theme/ModernToggleSwitch.cs
-- MikroSqlDbYedek.Win/Theme/ModernToolStripRenderer.cs
-- MikroSqlDbYedek.Win/NativeMethods.cs
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj
+- KoruMsSqlYedek.Win/Program.cs
+- KoruMsSqlYedek.Win/Theme/ModernFormBase.cs
+- KoruMsSqlYedek.Win/Theme/ModernTheme.cs
+- KoruMsSqlYedek.Win/Theme/ModernButton.cs
+- KoruMsSqlYedek.Win/Theme/ModernCardPanel.cs
+- KoruMsSqlYedek.Win/Theme/ModernNumericUpDown.cs
+- KoruMsSqlYedek.Win/Theme/ModernLoadingOverlay.cs
+- KoruMsSqlYedek.Win/Theme/ModernToggleSwitch.cs
+- KoruMsSqlYedek.Win/Theme/ModernToolStripRenderer.cs
+- KoruMsSqlYedek.Win/NativeMethods.cs
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj
 - FEATURES.md
 
 ---
@@ -279,9 +298,9 @@
 - **PhosphorIcons sessiz hata**: `catch { return null; }` → `Serilog.Log.Error()` ile hata loglanıyor
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/MainWindow.Designer.cs
-- MikroSqlDbYedek.Win/MainWindow.cs
-- MikroSqlDbYedek.Win/Theme/PhosphorIcons.cs
+- KoruMsSqlYedek.Win/MainWindow.Designer.cs
+- KoruMsSqlYedek.Win/MainWindow.cs
+- KoruMsSqlYedek.Win/Theme/PhosphorIcons.cs
 - FEATURES.md
 
 ---
@@ -313,18 +332,18 @@
 - **ComboBox çift ok**: `ModernComboBox.DrawBorder()` native dropdown butonunu arka plan rengiyle örterek tek özel ok çiziyor
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Theme/ModernFormBase.cs
-- MikroSqlDbYedek.Win/NativeMethods.cs
-- MikroSqlDbYedek.Win/MainWindow.cs
-- MikroSqlDbYedek.Win/MainWindow.Designer.cs
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.Designer.cs
-- MikroSqlDbYedek.Win/Forms/CloudTargetEditDialog.cs
-- MikroSqlDbYedek.Win/Forms/CloudTargetEditDialog.Designer.cs
-- MikroSqlDbYedek.Win/Forms/FileBackupSourceEditDialog.cs
-- MikroSqlDbYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
+- KoruMsSqlYedek.Win/Theme/ModernFormBase.cs
+- KoruMsSqlYedek.Win/NativeMethods.cs
+- KoruMsSqlYedek.Win/MainWindow.cs
+- KoruMsSqlYedek.Win/MainWindow.Designer.cs
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.cs
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs
+- KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs
+- KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.Designer.cs
+- KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs
+- KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs
 
 ---
 
@@ -344,14 +363,14 @@
 - **ModernTheme.ApplyTheme()**: Kaydet sonrasında anlık olarak çağrılıyor; tam etki için yeniden başlatma gerekebilir
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Properties/Resources.resx
-- MikroSqlDbYedek.Win/Properties/Resources.tr-TR.resx
-- MikroSqlDbYedek.Win/Theme/ModernComboBox.cs
-- MikroSqlDbYedek.Win/Theme/ModernProgressBar.cs
-- MikroSqlDbYedek.Core/Models/AppSettings.cs
-- MikroSqlDbYedek.Win/MainWindow.Designer.cs
-- MikroSqlDbYedek.Win/MainWindow.cs
-- MikroSqlDbYedek.Win/Program.cs
+- KoruMsSqlYedek.Win/Properties/Resources.resx
+- KoruMsSqlYedek.Win/Properties/Resources.tr-TR.resx
+- KoruMsSqlYedek.Win/Theme/ModernComboBox.cs
+- KoruMsSqlYedek.Win/Theme/ModernProgressBar.cs
+- KoruMsSqlYedek.Core/Models/AppSettings.cs
+- KoruMsSqlYedek.Win/MainWindow.Designer.cs
+- KoruMsSqlYedek.Win/MainWindow.cs
+- KoruMsSqlYedek.Win/Program.cs
 
 ---
 
@@ -378,11 +397,11 @@
 - Forms/ManualBackupDialog.cs / Designer.cs
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/MainWindow.cs (yeni)
-- MikroSqlDbYedek.Win/MainWindow.Designer.cs (yeni)
-- MikroSqlDbYedek.Win/TrayApplicationContext.cs
-- MikroSqlDbYedek.Win/IoC/WinContainerBootstrap.cs
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
+- KoruMsSqlYedek.Win/MainWindow.cs (yeni)
+- KoruMsSqlYedek.Win/MainWindow.Designer.cs (yeni)
+- KoruMsSqlYedek.Win/TrayApplicationContext.cs
+- KoruMsSqlYedek.Win/IoC/WinContainerBootstrap.cs
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs
 
 ---
 
@@ -402,11 +421,11 @@
 - **TrayApplicationContext.cs**: Tray context menüsüne `VersionSidebarRenderer` uygulandı
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Theme/ModernTheme.cs
-- MikroSqlDbYedek.Win/Theme/ModernToolStripRenderer.cs
-- MikroSqlDbYedek.Win/Theme/VersionSidebarRenderer.cs (yeni)
-- MikroSqlDbYedek.Win/TrayApplicationContext.cs
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
+- KoruMsSqlYedek.Win/Theme/ModernTheme.cs
+- KoruMsSqlYedek.Win/Theme/ModernToolStripRenderer.cs
+- KoruMsSqlYedek.Win/Theme/VersionSidebarRenderer.cs (yeni)
+- KoruMsSqlYedek.Win/TrayApplicationContext.cs
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs
 
 ---
 
@@ -419,7 +438,7 @@
 - `Program.cs` (Service): `HostFactory.Run(...)` → `Host.CreateDefaultBuilder(...).UseWindowsService(...)`
 - `ServiceContainerBootstrap`: `Build()` → `Configure(ContainerBuilder)` (Autofac.Extensions.DependencyInjection entegrasyonu)
 - `SqlBackupService`: `System.Data.SqlClient` → `Microsoft.Data.SqlClient`
-- `MikroSqlDbYedek.Win.csproj`: `ImportWindowsDesktopTargets` kaldırıldı, `App.config` exclude edildi
+- `KoruMsSqlYedek.Win.csproj`: `ImportWindowsDesktopTargets` kaldırıldı, `App.config` exclude edildi
 - WFO1000 (WinForms designer serileştirme) uyarısı bastırıldı
 
 ### Eklenenler
@@ -438,16 +457,16 @@
 - Core: gereksiz `<Reference Include="System.Security" />` ve `<Reference Include="System.ServiceProcess" />` tagları
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Core/MikroSqlDbYedek.Core.csproj
-- MikroSqlDbYedek.Engine/MikroSqlDbYedek.Engine.csproj
-- MikroSqlDbYedek.Service/MikroSqlDbYedek.Service.csproj
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj
-- MikroSqlDbYedek.Tests/MikroSqlDbYedek.Tests.csproj
-- MikroSqlDbYedek.Service/Program.cs
-- MikroSqlDbYedek.Service/BackupWindowsService.cs
-- MikroSqlDbYedek.Service/IoC/ServiceContainerBootstrap.cs
-- MikroSqlDbYedek.Engine/Backup/SqlBackupService.cs
-- MikroSqlDbYedek.Win/Properties/AssemblyInfo.cs
+- KoruMsSqlYedek.Core/KoruMsSqlYedek.Core.csproj
+- KoruMsSqlYedek.Engine/KoruMsSqlYedek.Engine.csproj
+- KoruMsSqlYedek.Service/KoruMsSqlYedek.Service.csproj
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj
+- KoruMsSqlYedek.Tests/KoruMsSqlYedek.Tests.csproj
+- KoruMsSqlYedek.Service/Program.cs
+- KoruMsSqlYedek.Service/BackupWindowsService.cs
+- KoruMsSqlYedek.Service/IoC/ServiceContainerBootstrap.cs
+- KoruMsSqlYedek.Engine/Backup/SqlBackupService.cs
+- KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs
 
 ---
 
@@ -467,7 +486,7 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 ## [0.14.0] - 2025-07-22 — Faz 15: Inno Setup Dağıtım Paketi
 
 ### Eklenenler
-- **MikroSqlDbYedek.iss** (Deployment/InnoSetup): Inno Setup kurulum scripti — .NET 4.8 ve Windows 10+ ön koşul kontrolü, bileşen seçimi (Tray+Service/ayrı), Topshelf entegrasyonu, Türkçe+İngilizce dil desteği, LZMA2 sıkıştırma
+- **KoruMsSqlYedek.iss** (Deployment/InnoSetup): Inno Setup kurulum scripti — .NET 4.8 ve Windows 10+ ön koşul kontrolü, bileşen seçimi (Tray+Service/ayrı), Topshelf entegrasyonu, Türkçe+İngilizce dil desteği, LZMA2 sıkıştırma
 - **Build-Release.ps1** (Deployment): Otomasyon scripti — NuGet restore, build, test, publish, ZIP paketleme
 - **install-service.cmd** (Deployment): Windows Service kurulum helper scripti (yönetici yetkisi kontrolü)
 - **uninstall-service.cmd** (Deployment): Windows Service kaldırma helper scripti
@@ -478,7 +497,7 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 
 ### Etkilenen Dosyalar
 - Deployment/Build-Release.ps1 (yeni)
-- Deployment/InnoSetup/MikroSqlDbYedek.iss (yeni)
+- Deployment/InnoSetup/KoruMsSqlYedek.iss (yeni)
 - Deployment/InnoSetup/setup_readme.txt (yeni)
 - Deployment/install-service.cmd (yeni)
 - Deployment/uninstall-service.cmd (yeni)
@@ -496,10 +515,10 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - **TestDataFactory** genişletildi: CreatePlanWithMultipleFileBackupSources, CreateFileBackupSource, CreateSuccessFileBackupResult
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Tests/FileBackupServiceTests.cs (yeni)
-- MikroSqlDbYedek.Tests/EmailNotificationServiceTests.cs (yeni)
-- MikroSqlDbYedek.Tests/AppSettingsManagerTests.cs (yeni)
-- MikroSqlDbYedek.Tests/Helpers/TestDataFactory.cs (güncelleme)
+- KoruMsSqlYedek.Tests/FileBackupServiceTests.cs (yeni)
+- KoruMsSqlYedek.Tests/EmailNotificationServiceTests.cs (yeni)
+- KoruMsSqlYedek.Tests/AppSettingsManagerTests.cs (yeni)
+- KoruMsSqlYedek.Tests/Helpers/TestDataFactory.cs (güncelleme)
 
 ### Test İstatistikleri
 - Önceki: 159 test
@@ -529,19 +548,19 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - **Program.cs**: ApplyLanguageSetting() çağrısı + lokalize MessageBox string'leri
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Properties/Resources.resx (yeni)
-- MikroSqlDbYedek.Win/Properties/Resources.tr-TR.resx (yeni)
-- MikroSqlDbYedek.Win/Helpers/Res.cs (yeni)
-- MikroSqlDbYedek.Win/Program.cs (güncelleme)
-- MikroSqlDbYedek.Win/TrayApplicationContext.cs (güncelleme)
-- MikroSqlDbYedek.Win/MainDashboardForm.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/PlanListForm.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/ManualBackupDialog.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/SettingsForm.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/LogViewerForm.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/CloudTargetEditDialog.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/FileBackupSourceEditDialog.cs (güncelleme)
+- KoruMsSqlYedek.Win/Properties/Resources.resx (yeni)
+- KoruMsSqlYedek.Win/Properties/Resources.tr-TR.resx (yeni)
+- KoruMsSqlYedek.Win/Helpers/Res.cs (yeni)
+- KoruMsSqlYedek.Win/Program.cs (güncelleme)
+- KoruMsSqlYedek.Win/TrayApplicationContext.cs (güncelleme)
+- KoruMsSqlYedek.Win/MainDashboardForm.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/PlanListForm.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/ManualBackupDialog.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/SettingsForm.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/LogViewerForm.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs (güncelleme)
 
 ---
 
@@ -565,19 +584,19 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - **Service Program.cs**: ServiceContainerBootstrap.Build() + container.Resolve entegrasyonu (TODO kaldırıldı)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/IoC/EngineModule.cs (yeni)
-- MikroSqlDbYedek.Engine/Scheduling/AutofacJobFactory.cs (yeni)
-- MikroSqlDbYedek.Engine/Scheduling/QuartzSchedulerService.cs (güncelleme)
-- MikroSqlDbYedek.Win/IoC/WinContainerBootstrap.cs (yeni)
-- MikroSqlDbYedek.Win/Program.cs (güncelleme)
-- MikroSqlDbYedek.Win/TrayApplicationContext.cs (güncelleme)
-- MikroSqlDbYedek.Win/MainDashboardForm.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/PlanListForm.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/ManualBackupDialog.cs (güncelleme)
-- MikroSqlDbYedek.Win/Forms/SettingsForm.cs (güncelleme)
-- MikroSqlDbYedek.Service/IoC/ServiceContainerBootstrap.cs (yeni)
-- MikroSqlDbYedek.Service/Program.cs (güncelleme)
+- KoruMsSqlYedek.Engine/IoC/EngineModule.cs (yeni)
+- KoruMsSqlYedek.Engine/Scheduling/AutofacJobFactory.cs (yeni)
+- KoruMsSqlYedek.Engine/Scheduling/QuartzSchedulerService.cs (güncelleme)
+- KoruMsSqlYedek.Win/IoC/WinContainerBootstrap.cs (yeni)
+- KoruMsSqlYedek.Win/Program.cs (güncelleme)
+- KoruMsSqlYedek.Win/TrayApplicationContext.cs (güncelleme)
+- KoruMsSqlYedek.Win/MainDashboardForm.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/PlanListForm.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/ManualBackupDialog.cs (güncelleme)
+- KoruMsSqlYedek.Win/Forms/SettingsForm.cs (güncelleme)
+- KoruMsSqlYedek.Service/IoC/ServiceContainerBootstrap.cs (yeni)
+- KoruMsSqlYedek.Service/Program.cs (güncelleme)
 
 ---
 
@@ -593,14 +612,14 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - **TrayApplicationContext:** Tüm menü handler'ları bağlandı (Log→LogViewerForm, Ayarlar→SettingsForm, Manuel Yedekleme→ManualBackupDialog)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Core/Models/AppSettings.cs (yeni)
-- MikroSqlDbYedek.Core/Interfaces/IAppSettingsManager.cs (yeni)
-- MikroSqlDbYedek.Engine/AppSettingsManager.cs (yeni)
-- MikroSqlDbYedek.Win/MainDashboardForm.cs (güncelleme — canlı veri)
-- MikroSqlDbYedek.Win/Forms/LogViewerForm.cs + .Designer.cs (yeni)
-- MikroSqlDbYedek.Win/Forms/SettingsForm.cs + .Designer.cs (yeni)
-- MikroSqlDbYedek.Win/Forms/ManualBackupDialog.cs + .Designer.cs (yeni)
-- MikroSqlDbYedek.Win/TrayApplicationContext.cs (menü handler'ları güncelleme)
+- KoruMsSqlYedek.Core/Models/AppSettings.cs (yeni)
+- KoruMsSqlYedek.Core/Interfaces/IAppSettingsManager.cs (yeni)
+- KoruMsSqlYedek.Engine/AppSettingsManager.cs (yeni)
+- KoruMsSqlYedek.Win/MainDashboardForm.cs (güncelleme — canlı veri)
+- KoruMsSqlYedek.Win/Forms/LogViewerForm.cs + .Designer.cs (yeni)
+- KoruMsSqlYedek.Win/Forms/SettingsForm.cs + .Designer.cs (yeni)
+- KoruMsSqlYedek.Win/Forms/ManualBackupDialog.cs + .Designer.cs (yeni)
+- KoruMsSqlYedek.Win/TrayApplicationContext.cs (menü handler'ları güncelleme)
 
 ---
 
@@ -618,12 +637,12 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - PasswordProtector.Protect metod adı düzeltmesi (Encrypt → Protect)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/Forms/PlanListForm.cs + .Designer.cs (yeni)
-- MikroSqlDbYedek.Win/Forms/PlanEditForm.cs + .Designer.cs (yeni)
-- MikroSqlDbYedek.Win/Forms/CloudTargetEditDialog.cs + .Designer.cs (yeni)
-- MikroSqlDbYedek.Win/Forms/FileBackupSourceEditDialog.cs + .Designer.cs (yeni)
-- MikroSqlDbYedek.Win/TrayApplicationContext.cs (Planlar menüsü entegrasyonu)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (SDK-style dönüşümü)
+- KoruMsSqlYedek.Win/Forms/PlanListForm.cs + .Designer.cs (yeni)
+- KoruMsSqlYedek.Win/Forms/PlanEditForm.cs + .Designer.cs (yeni)
+- KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs + .Designer.cs (yeni)
+- KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs + .Designer.cs (yeni)
+- KoruMsSqlYedek.Win/TrayApplicationContext.cs (Planlar menüsü entegrasyonu)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (SDK-style dönüşümü)
 
 ---
 
@@ -631,19 +650,19 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 
 ### Eklenenler
 - **TrayApplicationContext:** System Tray tabanlı ApplicationContext — NotifyIcon ile tray'de çalışma, ContextMenuStrip menü (Dashboard Aç, Planlar, Manuel Yedekleme, Log Görüntüle, Ayarlar, Çıkış), çift tıkla Dashboard açma, balloon tip bildirimleri, durum bazlı ikon güncelleme
-- **Program.cs yeniden yapılandırma:** Global Mutex ile tek instance (WM_SHOWFIRSTINSTANCE broadcast ile mevcut instance aktivasyonu), Serilog file sink (rolling daily, 30 gün retention, %APPDATA%\MikroSqlDbYedek\Logs\), Application.ThreadException + AppDomain.UnhandledException global exception handler'ları
+- **Program.cs yeniden yapılandırma:** Global Mutex ile tek instance (WM_SHOWFIRSTINSTANCE broadcast ile mevcut instance aktivasyonu), Serilog file sink (rolling daily, 30 gün retention, %APPDATA%\KoruMsSqlYedek\Logs\), Application.ThreadException + AppDomain.UnhandledException global exception handler'ları
 - **MainDashboardForm:** Dashboard iskeleti — TLP layout (başlık, 3x2 durum özeti paneli, "Son Yedeklemeler" GroupBox + ListView 6 kolon), StatusStrip (durum + versiyon), UserClosing → Hide (tray'de kalır)
 - **SymbolIconHelper:** Segoe MDL2 Assets / Segoe UI Symbol fontundan Icon ve Bitmap render etme, TrayIconStatus enum (Idle/Running/Success/Warning/Error) ile durum bazlı tray ikonu
 - **NativeMethods:** Win32 P/Invoke tanımları — DestroyIcon, SetForegroundWindow, ShowWindow, RegisterWindowMessage, SendMessage
 - **Win.csproj güncellemeleri:** Serilog 3.1.1 + Serilog.Sinks.File 5.0.0 PackageReference, RestoreProjectStyle, RuntimeIdentifier=win
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Win/TrayApplicationContext.cs (yeni)
-- MikroSqlDbYedek.Win/MainDashboardForm.cs + MainDashboardForm.Designer.cs (yeni)
-- MikroSqlDbYedek.Win/Helpers/SymbolIconHelper.cs (yeni)
-- MikroSqlDbYedek.Win/NativeMethods.cs (yeni)
-- MikroSqlDbYedek.Win/Program.cs (yeniden yazıldı — Mutex, Serilog, TrayApplicationContext)
-- MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj (NuGet, RuntimeIdentifier)
+- KoruMsSqlYedek.Win/TrayApplicationContext.cs (yeni)
+- KoruMsSqlYedek.Win/MainDashboardForm.cs + MainDashboardForm.Designer.cs (yeni)
+- KoruMsSqlYedek.Win/Helpers/SymbolIconHelper.cs (yeni)
+- KoruMsSqlYedek.Win/NativeMethods.cs (yeni)
+- KoruMsSqlYedek.Win/Program.cs (yeniden yazıldı — Mutex, Serilog, TrayApplicationContext)
+- KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj (NuGet, RuntimeIdentifier)
 
 ---
 
@@ -664,12 +683,12 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - **CloudUploadOrchestratorTests genişletildi:** 21 test (7 mevcut + 14 yeni — factory constructor, null factory, cache doğrulama, DeleteFromAllAsync success/error/disabled/not-found, TestAllConnectionsAsync success/error/disabled/not-found/multiple)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Core/Interfaces/ICloudProviderFactory.cs (yeni)
-- MikroSqlDbYedek.Core/Interfaces/ICloudUploadOrchestrator.cs (DeleteFromAllAsync, TestAllConnectionsAsync, CloudDeleteResult, CloudConnectionTestResult eklendi)
-- MikroSqlDbYedek.Engine/Cloud/CloudProviderFactory.cs (yeni)
-- MikroSqlDbYedek.Engine/Cloud/CloudUploadOrchestrator.cs (factory constructor, GetProvider, DeleteFromAllAsync, TestAllConnectionsAsync)
-- MikroSqlDbYedek.Tests/CloudProviderFactoryTests.cs (yeni — 13 test)
-- MikroSqlDbYedek.Tests/CloudUploadOrchestratorTests.cs (14 yeni test)
+- KoruMsSqlYedek.Core/Interfaces/ICloudProviderFactory.cs (yeni)
+- KoruMsSqlYedek.Core/Interfaces/ICloudUploadOrchestrator.cs (DeleteFromAllAsync, TestAllConnectionsAsync, CloudDeleteResult, CloudConnectionTestResult eklendi)
+- KoruMsSqlYedek.Engine/Cloud/CloudProviderFactory.cs (yeni)
+- KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.cs (factory constructor, GetProvider, DeleteFromAllAsync, TestAllConnectionsAsync)
+- KoruMsSqlYedek.Tests/CloudProviderFactoryTests.cs (yeni — 13 test)
+- KoruMsSqlYedek.Tests/CloudUploadOrchestratorTests.cs (14 yeni test)
 
 ---
 
@@ -684,10 +703,10 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - **OneDriveProviderTests:** 21 test — constructor (4), upload validation (5), delete (1), testConnection (3), AuthHelper IsTokenValid (4), ValidateConfig (4)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/Cloud/OneDriveProvider.cs (tam implementasyon)
-- MikroSqlDbYedek.Engine/Cloud/OneDriveAuthHelper.cs (yeni)
-- MikroSqlDbYedek.Engine/MikroSqlDbYedek.Engine.csproj (Microsoft.Identity.Client eklendi)
-- MikroSqlDbYedek.Tests/OneDriveProviderTests.cs (yeni — 21 test)
+- KoruMsSqlYedek.Engine/Cloud/OneDriveProvider.cs (tam implementasyon)
+- KoruMsSqlYedek.Engine/Cloud/OneDriveAuthHelper.cs (yeni)
+- KoruMsSqlYedek.Engine/KoruMsSqlYedek.Engine.csproj (Microsoft.Identity.Client eklendi)
+- KoruMsSqlYedek.Tests/OneDriveProviderTests.cs (yeni — 21 test)
 
 ---
 
@@ -702,10 +721,10 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - **GoogleDriveProviderTests:** 17 test — constructor (4), upload validation (5), delete (1), testConnection (3), AuthHelper IsTokenValid (4)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/Cloud/GoogleDriveProvider.cs (tam implementasyon)
-- MikroSqlDbYedek.Engine/Cloud/GoogleDriveAuthHelper.cs (yeni)
-- MikroSqlDbYedek.Core/Models/ConfigModels.cs (OAuthClientId, OAuthClientSecret eklendi)
-- MikroSqlDbYedek.Tests/GoogleDriveProviderTests.cs (yeni — 17 test)
+- KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs (tam implementasyon)
+- KoruMsSqlYedek.Engine/Cloud/GoogleDriveAuthHelper.cs (yeni)
+- KoruMsSqlYedek.Core/Models/ConfigModels.cs (OAuthClientId, OAuthClientSecret eklendi)
+- KoruMsSqlYedek.Tests/GoogleDriveProviderTests.cs (yeni — 17 test)
 
 ---
 
@@ -729,11 +748,11 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - TestConnectionAsync_InvalidPath: UNC timeout (13+ dk) sorunu düzeltildi (yerel geçersiz yol kullanıldı)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/Cloud/LocalNetworkProvider.cs (tam implementasyon)
-- MikroSqlDbYedek.Engine/Cloud/UncNetworkConnection.cs (yeni)
-- MikroSqlDbYedek.Engine/BackupHistoryManager.cs (custom directory desteği)
-- MikroSqlDbYedek.Tests/LocalNetworkProviderTests.cs (yeni)
-- MikroSqlDbYedek.Tests/BackupHistoryManagerTests.cs (temp dizin izolasyonu)
+- KoruMsSqlYedek.Engine/Cloud/LocalNetworkProvider.cs (tam implementasyon)
+- KoruMsSqlYedek.Engine/Cloud/UncNetworkConnection.cs (yeni)
+- KoruMsSqlYedek.Engine/BackupHistoryManager.cs (custom directory desteği)
+- KoruMsSqlYedek.Tests/LocalNetworkProviderTests.cs (yeni)
+- KoruMsSqlYedek.Tests/BackupHistoryManagerTests.cs (temp dizin izolasyonu)
 
 ---
 
@@ -753,8 +772,8 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - FluentFTP 51.0.0 IProgress<FtpProgress> uyumsuzluğu düzeltildi (Action → IProgress wrapper)
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Engine/Cloud/FtpSftpProvider.cs (tam implementasyon — önceki placeholder yerine)
-- MikroSqlDbYedek.Tests/FtpSftpProviderTests.cs (yeni)
+- KoruMsSqlYedek.Engine/Cloud/FtpSftpProvider.cs (tam implementasyon — önceki placeholder yerine)
+- KoruMsSqlYedek.Tests/FtpSftpProviderTests.cs (yeni)
 - FEATURES.md (Faz 4 tamamlandı)
 
 ---
@@ -778,14 +797,14 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - Integration testler (temp dizin): PlanManager, BackupChainValidator, BackupHistoryManager, RetentionCleanupService, PasswordProtector
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Tests/MikroSqlDbYedek.Tests.csproj (Moq, FluentAssertions eklendi)
-- MikroSqlDbYedek.Tests/Helpers/TestDataFactory.cs (yeni)
-- MikroSqlDbYedek.Tests/BackupJobExecutorTests.cs (yeni)
-- MikroSqlDbYedek.Tests/CloudUploadOrchestratorTests.cs (yeni)
-- MikroSqlDbYedek.Tests/PlanManagerTests.cs (genişletildi)
-- MikroSqlDbYedek.Tests/BackupChainValidatorTests.cs (yeni)
-- MikroSqlDbYedek.Tests/BackupHistoryManagerTests.cs (yeni)
-- MikroSqlDbYedek.Tests/RetentionCleanupServiceTests.cs (yeni)
+- KoruMsSqlYedek.Tests/KoruMsSqlYedek.Tests.csproj (Moq, FluentAssertions eklendi)
+- KoruMsSqlYedek.Tests/Helpers/TestDataFactory.cs (yeni)
+- KoruMsSqlYedek.Tests/BackupJobExecutorTests.cs (yeni)
+- KoruMsSqlYedek.Tests/CloudUploadOrchestratorTests.cs (yeni)
+- KoruMsSqlYedek.Tests/PlanManagerTests.cs (genişletildi)
+- KoruMsSqlYedek.Tests/BackupChainValidatorTests.cs (yeni)
+- KoruMsSqlYedek.Tests/BackupHistoryManagerTests.cs (yeni)
+- KoruMsSqlYedek.Tests/RetentionCleanupServiceTests.cs (yeni)
 - FEATURES.md (Faz 3.5 + Faz 14 güncellemesi)
 - .github/copilot-instructions.md (FEATURES.md zorunlu güncelleme kuralı)
 
@@ -808,15 +827,15 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 - **Copilot direktifi:** FEATURES.md zorunlu güncelleme kuralı eklendi
 
 ### Etkilenen Dosyalar
-- MikroSqlDbYedek.Core/Interfaces/ICloudUploadOrchestrator.cs (yeni)
-- MikroSqlDbYedek.Core/Interfaces/IBackupHistoryManager.cs (yeni)
-- MikroSqlDbYedek.Engine/PlanManager.cs (yeniden yazıldı)
-- MikroSqlDbYedek.Engine/Backup/BackupChainValidator.cs (genişletildi)
-- MikroSqlDbYedek.Engine/Compression/SevenZipCompressionService.cs (genişletildi)
-- MikroSqlDbYedek.Engine/Scheduling/BackupJobExecutor.cs (yeniden yazıldı)
-- MikroSqlDbYedek.Engine/BackupHistoryManager.cs (yeni)
-- MikroSqlDbYedek.Engine/Notification/EmailNotificationService.cs (genişletildi)
-- MikroSqlDbYedek.Engine/Cloud/CloudUploadOrchestrator.cs (değiştirildi)
+- KoruMsSqlYedek.Core/Interfaces/ICloudUploadOrchestrator.cs (yeni)
+- KoruMsSqlYedek.Core/Interfaces/IBackupHistoryManager.cs (yeni)
+- KoruMsSqlYedek.Engine/PlanManager.cs (yeniden yazıldı)
+- KoruMsSqlYedek.Engine/Backup/BackupChainValidator.cs (genişletildi)
+- KoruMsSqlYedek.Engine/Compression/SevenZipCompressionService.cs (genişletildi)
+- KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs (yeniden yazıldı)
+- KoruMsSqlYedek.Engine/BackupHistoryManager.cs (yeni)
+- KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs (genişletildi)
+- KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.cs (değiştirildi)
 - .github/copilot-instructions.md (FEATURES.md zorunlu güncelleme kuralı)
 - FEATURES.md (Faz 2+3 tamamlandı olarak güncellendi)
 
@@ -842,7 +861,7 @@ Format: [Semantic Versioning](https://semver.org/lang/tr/) — breaking=MAJOR, y
 
 ### Etkilenen Dosyalar
 - Tüm .csproj dosyaları (5 proje)
-- MikroSqlDbYedek.Core/* (tüm dosyalar)
-- MikroSqlDbYedek.Engine/* (tüm dosyalar)
-- MikroSqlDbYedek.Service/* (tüm dosyalar)
-- MikroSqlDbYedek.Tests/* (tüm dosyalar)
+- KoruMsSqlYedek.Core/* (tüm dosyalar)
+- KoruMsSqlYedek.Engine/* (tüm dosyalar)
+- KoruMsSqlYedek.Service/* (tüm dosyalar)
+- KoruMsSqlYedek.Tests/* (tüm dosyalar)

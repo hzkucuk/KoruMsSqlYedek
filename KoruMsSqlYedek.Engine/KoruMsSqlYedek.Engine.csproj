@@ -1,0 +1,66 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>KoruMsSqlYedek.Engine</RootNamespace>
+    <AssemblyName>KoruMsSqlYedek.Engine</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Logging -->
+    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+
+    <!-- JSON -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
+    <!-- Windows Service API -->
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.0" />
+
+    <!-- SQL Client -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
+
+    <!-- Scheduling -->
+    <PackageReference Include="Quartz" Version="3.8.1" />
+
+    <!-- SQL Server Backup (SMO) -->
+    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="171.30.0" />
+
+    <!-- Compression -->
+    <PackageReference Include="Squid-Box.SevenZipSharp" Version="1.6.2.24" />
+
+    <!-- E-posta -->
+    <PackageReference Include="MailKit" Version="4.15.1" />
+
+    <!-- IoC -->
+    <PackageReference Include="Autofac" Version="8.1.1" />
+
+    <!-- VSS - Açık/kilitli dosya desteği -->
+    <PackageReference Include="AlphaVSS" Version="1.4.0" />
+
+    <!-- Cloud: Google Drive -->
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3568" />
+
+    <!-- Cloud: OneDrive (Microsoft Graph) -->
+    <PackageReference Include="Microsoft.Graph" Version="5.62.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.67.2" />
+
+    <!-- Cloud: FTP/SFTP -->
+    <PackageReference Include="FluentFTP" Version="51.0.0" />
+    <PackageReference Include="SSH.NET" Version="2025.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KoruMsSqlYedek.Core\KoruMsSqlYedek.Core.csproj" />
+  </ItemGroup>
+
+  <!-- 7z.dll native library — SevenZipSharp runtime dependency -->
+  <ItemGroup>
+    <Content Include="Native\x64\7z.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>x64\7z.dll</Link>
+    </Content>
+  </ItemGroup>
+</Project>

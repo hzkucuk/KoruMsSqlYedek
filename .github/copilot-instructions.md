@@ -1,4 +1,4 @@
-# Copilot Direktifi — .NET 10
+﻿# Copilot Direktifi — .NET 10
 
 **Rol:** .NET WinForms ve MSSQL uzmanı. Windows Forms uygulamaları, ADO.NET, Entity Framework, SQL Server sorguları, stored procedure'ler ve WinForms UI tasarımı konularında derin bilgiye sahiptir.
 
@@ -83,14 +83,14 @@ Versiyon **3 dosyada** senkron tutulmalı:
 
 ---
 
-# Proje: MikroSqlDbYedek — SQL Server Yedekleme & Bulut Senkronizasyon Sistemi
+# Proje: KoruMsSqlYedek — SQL Server Yedekleme & Bulut Senkronizasyon Sistemi
 
 ## Proje Mimarisi
-- **MikroSqlDbYedek.Core** — Paylaşılan modeller, arayüzler, yardımcı sınıflar (Class Library)
-- **MikroSqlDbYedek.Engine** — İş mantığı motoru: yedekleme, sıkıştırma, bulut upload, zamanlama, bildirim (Class Library)
-- **MikroSqlDbYedek.Win** — System Tray WinForms UI uygulaması
-- **MikroSqlDbYedek.Service** — Windows Service (Topshelf ile host edilen arka plan motoru)
-- **MikroSqlDbYedek.Tests** — Unit test projesi
+- **KoruMsSqlYedek.Core** — Paylaşılan modeller, arayüzler, yardımcı sınıflar (Class Library)
+- **KoruMsSqlYedek.Engine** — İş mantığı motoru: yedekleme, sıkıştırma, bulut upload, zamanlama, bildirim (Class Library)
+- **KoruMsSqlYedek.Win** — System Tray WinForms UI uygulaması
+- **KoruMsSqlYedek.Service** — Windows Service (Topshelf ile host edilen arka plan motoru)
+- **KoruMsSqlYedek.Tests** — Unit test projesi
 - TFM: .NET Framework 4.8 (tüm projeler)
 
 ## Teknoloji Stack Kuralları
@@ -130,7 +130,7 @@ Versiyon **3 dosyada** senkron tutulmalı:
 - Her plan hem SQL hem dosya yedekleme veya sadece birini içerebilir.
 
 ## JSON Plan Şablonu Kuralları
-- Planlar `%APPDATA%\MikroSqlDbYedek\Plans\` altında `{planId}.json` olarak saklanır.
+- Planlar `%APPDATA%\KoruMsSqlYedek\Plans\` altında `{planId}.json` olarak saklanır.
 - `planId` → GUID, otomatik atanır.
 - `compression.archivePassword` → DPAPI + Base64 ile geri dönüşümlü encode. Düz metin ASLA saklanmaz.
 - Plan şeması değişikliğinde geriye uyumluluk sağlanmalı (yeni alan ekleme → varsayılan değer ile).
@@ -165,13 +165,13 @@ Versiyon **3 dosyada** senkron tutulmalı:
 - Plan ekleme/düzenleme/silme UI'den yapılır, JSON dosyasına serialize edilir
 
 ## Windows Service Kuralları
-- Service adı: `MikroSqlDbYedekService`
+- Service adı: `KoruMsSqlYedekService`
 - Topshelf ile host edilir (debug modda konsol, production'da service)
 - Quartz.NET scheduler service start'ta başlatılır, stop'ta graceful shutdown
 - Service ↔ Tray UI iletişimi: Named Pipes veya dosya sistemi sinyalleri
 
 ## Log Kuralları
-- Log dosyaları: `%APPDATA%\MikroSqlDbYedek\Logs\`
+- Log dosyaları: `%APPDATA%\KoruMsSqlYedek\Logs\`
 - Rolling file: günlük dosya, 30 gün retention
 - Log seviyeleri: Information (normal), Warning (yeniden deneme), Error (başarısızlık)
 - Her yedek operasyonu bir `correlationId` ile izlenir
@@ -183,30 +183,30 @@ Versiyon **3 dosyada** senkron tutulmalı:
 - Bildirim başarısızlığı backup başarısını etkilemez (fire-and-forget değil ama hata yutulmaz, log'a yazılır)
 
 ## Inno Setup Dağıtım Kuralları
-- Setup dosyası: `Deployment\InnoSetup\MikroSqlDbYedek.iss`
+- Setup dosyası: `Deployment\InnoSetup\KoruMsSqlYedek.iss`
 - Kurulum sırasında: Tray uygulaması + Windows Service birlikte kurulur
 - Service otomatik start olarak kaydedilir
 - Güncelleme sırasında mevcut planlar ve loglar korunur
 - Minimum gereksinim: Windows 10+, .NET Framework 4.8, SQL Server 2016+
 
 ## Dosya & Klasör Konvansiyonları
-- Uygulama verileri: `%APPDATA%\MikroSqlDbYedek\`
+- Uygulama verileri: `%APPDATA%\KoruMsSqlYedek\`
   - `Plans\` — JSON plan dosyaları
   - `Logs\` — Serilog log dosyaları
   - `Config\` — Genel ayarlar (appsettings.json)
-- Yedek dosyaları: Plan'daki `localPath` ile belirlenir (varsayılan: `D:\Backups\MikroSqlDbYedek\`)
+- Yedek dosyaları: Plan'daki `localPath` ile belirlenir (varsayılan: `D:\Backups\KoruMsSqlYedek\`)
 
 ## Namespace Konvansiyonu
-- `MikroSqlDbYedek.Core.Models` — Veri modelleri
-- `MikroSqlDbYedek.Core.Interfaces` — Servis arayüzleri
-- `MikroSqlDbYedek.Core.Helpers` — Yardımcı sınıflar
-- `MikroSqlDbYedek.Engine.Backup` — Yedekleme servisleri
-- `MikroSqlDbYedek.Engine.Cloud` — Bulut provider'ları
-- `MikroSqlDbYedek.Engine.Compression` — Sıkıştırma servisleri
-- `MikroSqlDbYedek.Engine.Scheduling` — Zamanlama servisleri
-- `MikroSqlDbYedek.Engine.Notification` — Bildirim servisleri
-- `MikroSqlDbYedek.Engine.Retention` — Saklama politikası servisleri
-- `MikroSqlDbYedek.Engine.FileBackup` — Dosya yedekleme ve VSS servisleri
+- `KoruMsSqlYedek.Core.Models` — Veri modelleri
+- `KoruMsSqlYedek.Core.Interfaces` — Servis arayüzleri
+- `KoruMsSqlYedek.Core.Helpers` — Yardımcı sınıflar
+- `KoruMsSqlYedek.Engine.Backup` — Yedekleme servisleri
+- `KoruMsSqlYedek.Engine.Cloud` — Bulut provider'ları
+- `KoruMsSqlYedek.Engine.Compression` — Sıkıştırma servisleri
+- `KoruMsSqlYedek.Engine.Scheduling` — Zamanlama servisleri
+- `KoruMsSqlYedek.Engine.Notification` — Bildirim servisleri
+- `KoruMsSqlYedek.Engine.Retention` — Saklama politikası servisleri
+- `KoruMsSqlYedek.Engine.FileBackup` — Dosya yedekleme ve VSS servisleri
 
 ## SQL Server Kimlik Doğrulama
 - Hem Windows Authentication hem SQL Authentication desteklenir.

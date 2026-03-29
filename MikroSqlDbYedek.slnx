@@ -1,7 +1,0 @@
-<Solution>
-  <Project Path="MikroSqlDbYedek.Core/MikroSqlDbYedek.Core.csproj" />
-  <Project Path="MikroSqlDbYedek.Engine/MikroSqlDbYedek.Engine.csproj" />
-  <Project Path="MikroSqlDbYedek.Service/MikroSqlDbYedek.Service.csproj" />
-  <Project Path="MikroSqlDbYedek.Tests/MikroSqlDbYedek.Tests.csproj" />
-  <Project Path="MikroSqlDbYedek.Win/MikroSqlDbYedek.Win.csproj" />
-</Solution>

@@ -1,6 +1,6 @@
-# Özellikler & Geliştirme Yol Haritası
+﻿# Özellikler & Geliştirme Yol Haritası
 
-Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
+Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
 ---
 
@@ -36,6 +36,7 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 | **Faz 25** | Manuel Yedekleme Pipeline Tamamlama | ✅ Tamamlandı |
 | **Faz 26** | Bulut Yedek Koruma: Gönderilmemiş Dosya Silme Engeli | ✅ Tamamlandı |
 | **Faz 26.2** | Güvenlik Sertleştirme: TLS/SSH Doğrulama, Hata Sanitizasyonu | ✅ Tamamlandı |
+| **Faz 27** | Proje Yeniden Adlandırma + Depolama Sütunu | ✅ Tamamlandı |
 
 ---
 
@@ -205,7 +206,7 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
   - Genel: Dil, başlangıç, tray, varsayılan yedek dizini, log/geçmiş saklama
   - SMTP: Sunucu, port, SSL, kimlik, gönderici, alıcı, test e-postası
   - AppSettings modeli (Core), IAppSettingsManager arayüzü (Core), AppSettingsManager (Engine)
-  - JSON dosya kalıcılığı: %APPDATA%\MikroSqlDbYedek\Config\appsettings.json
+  - JSON dosya kalıcılığı: %APPDATA%\KoruMsSqlYedek\Config\appsettings.json
 - [x] ManualBackupDialog: Anlık yedekleme diyalogu
   - Plan ve veritabanı seçimi (CheckedListBox)
   - Yedek türü (Full/Differential/Incremental)
@@ -258,7 +259,7 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 
 ## Faz 15 — Inno Setup Dağıtım ✅
 
-- [x] MikroSqlDbYedek.iss script
+- [x] KoruMsSqlYedek.iss script
 - [x] Tray + Service birlikte kurulum
 - [x] Service otomatik start kaydı
 - [x] Güncelleme sırasında plan/log koruma
@@ -527,3 +528,15 @@ Bu dosya, MikroSqlDbYedek projesinin mevcut ve planlanan özelliklerini fazlar h
 - [x] ManualBackupDialog -- BackColor, Font, buton paneli, ProgressBar
 - [x] CloudTargetEditDialog -- BackColor, Font, Form tema
 - [x] FileBackupSourceEditDialog -- BackColor, Font, ipucu rengi
+
+## Faz 27 — Proje Yeniden Adlandırma + Depolama Sütunu ✅
+
+- [x] Tüm proje/namespace/assembly adları `MikroSqlDbYedek` → `KoruMsSqlYedek` olarak yeniden adlandırıldı (124 dosya)
+- [x] 5 proje klasörü yeniden adlandırıldı (Core/Engine/Win/Service/Tests)
+- [x] 5 `.csproj` dosyası yeniden adlandırıldı
+- [x] `MikroSqlDbYedek.slnx` → `KoruMsSqlYedek.slnx` yeniden adlandırıldı
+- [x] Inno Setup: `AppName = "Koru MsSql Yedek"`, `.iss` dosyası yeniden adlandırıldı
+- [x] Git remote URL güncellendi: `https://github.com/hzkucuk/KoruMsSqlYedek`
+- [x] Eski stub klasörler (`MikroSqlDbYedek.*`) temizlendi
+- [x] `dotnet restore` + `dotnet build` — 0 hata ile tamamlandı
+- [x] Görev listesi: "Depolama" sütunu eklendi — `☁ Bulut (N)` / `💾 Yerel` gösterimi
