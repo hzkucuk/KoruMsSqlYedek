@@ -51,7 +51,7 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
   <!-- ===== Common ===== -->
-  <data name="AppName" xml:space="preserve"><value>KoruMsSqlYedek</value></data>
+  <data name="AppName" xml:space="preserve"><value>Koru MsSql Yedek</value></data>
   <data name="Error" xml:space="preserve"><value>Hata</value></data>
   <data name="Warning" xml:space="preserve"><value>Uyarı</value></data>
   <data name="Info" xml:space="preserve"><value>Bilgi</value></data>
