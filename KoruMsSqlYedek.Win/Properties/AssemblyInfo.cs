@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Yapı Numarası
 //      Düzeltme
 //
-[assembly: AssemblyVersion("0.42.4.0")]
-[assembly: AssemblyFileVersion("0.42.4.0")]
+[assembly: AssemblyVersion("0.42.5.0")]
+[assembly: AssemblyFileVersion("0.42.5.0")]

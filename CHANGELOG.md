@@ -1,4 +1,11 @@
-﻿## [0.42.4] - 2026-04-05 — Global Yedekleme Kilidi
+﻿## [0.42.5] - 2026-04-05 — CopyOnly Backup Zinciri Düzeltmesi
+
+### Hata Düzeltmesi
+- **Full backup CopyOnly=true hatası**: `SqlBackupService` satır 86 — `CopyOnly = backupType != SqlBackupType.Incremental` yanlış bir ifadeydi; Full ve Differential yedekler `CopyOnly=true` ile alınıyordu. Full backup `CopyOnly=true` olduğunda SQL Server'ın differential baseline'ı güncellenmez → Differential yedekler son Full yedeği base alamaz, boyutları gereksiz büyür veya hata verir. `CopyOnly = false` olarak düzeltildi. (etkilenen: `SqlBackupService.cs`)
+
+---
+
+## [0.42.4] - 2026-04-05 — Global Yedekleme Kilidi
 
 ### Yeni Özellik
 - **Eşzamanlı yedekleme engeli**: Bir plan yedeklenirken başka bir plan (otomatik veya manuel) artık başlatılamaz. `BackupJobExecutor`'a `static SemaphoreSlim(1,1)` eklendi; kilit alınamazsa job atlanır ve uyarı loglanır. `ServicePipeServer` `ManualBackup` handler'ında da `IsAnyRunning()` kontrolü ile manuel tetikleme önceden reddedilir. (etkilenen: `BackupJobExecutor.cs`, `ServicePipeServer.cs`, `BackupCancellationRegistry.cs`)
