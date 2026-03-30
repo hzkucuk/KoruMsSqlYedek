@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Serilog;
 using KoruMsSqlYedek.Core.Interfaces;
 
@@ -92,7 +93,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             }
         }
 
-        public Guid CreateSnapshot(string volumePath)
+        public Guid CreateSnapshot(string volumePath, CancellationToken ct = default)
         {
             if (string.IsNullOrEmpty(volumePath))
                 throw new ArgumentNullException(nameof(volumePath));
@@ -105,23 +106,30 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             Log.Information("VSS snapshot oluşturuluyor: {Volume}", normalizedVolume);
 
             EnsureAlphaVssResolver();
+            ct.ThrowIfCancellationRequested();
 
+            Alphaleonis.Win32.Vss.IVssBackupComponents backupComponents = null;
             try
             {
                 // AlphaVSS ile snapshot oluştur
                 var implementation = Alphaleonis.Win32.Vss.VssUtils.LoadImplementation();
-                var backupComponents = implementation.CreateVssBackupComponents();
+                backupComponents = implementation.CreateVssBackupComponents();
 
                 backupComponents.InitializeForBackup(null);
                 backupComponents.SetBackupState(false, true,
                     Alphaleonis.Win32.Vss.VssBackupType.Full, false);
 
+                // GatherWriterMetadata bloke edici çağrı — tamamlandıktan sonra ct kontrolü
                 backupComponents.GatherWriterMetadata();
+                ct.ThrowIfCancellationRequested();
 
                 var snapshotSetId = backupComponents.StartSnapshotSet();
                 var snapshotId = backupComponents.AddToSnapshotSet(normalizedVolume);
 
+                ct.ThrowIfCancellationRequested();
                 backupComponents.PrepareForBackup();
+
+                ct.ThrowIfCancellationRequested();
                 backupComponents.DoSnapshotSet();
 
                 // Snapshot cihaz yolunu al
@@ -143,6 +151,11 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     normalizedVolume, devicePath, id);
 
                 return id;
+            }
+            catch (OperationCanceledException)
+            {
+                try { backupComponents?.Dispose(); } catch { }
+                throw;
             }
             catch (Exception ex)
             {

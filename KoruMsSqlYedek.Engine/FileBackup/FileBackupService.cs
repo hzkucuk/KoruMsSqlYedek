@@ -95,11 +95,15 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     try
                     {
                         // Kaynak dizinin volume'unu al ve snapshot oluştur
+                        // CreateSnapshot bloke edici VSS çağrıları içerir — Task.Run ile offload et
                         string volumeRoot = Path.GetPathRoot(source.SourcePath);
-                        snapshotId = _vssService.CreateSnapshot(volumeRoot);
+                        snapshotId = await Task.Run(
+                            () => _vssService.CreateSnapshot(volumeRoot, cancellationToken),
+                            CancellationToken.None);
                         result.UsedVss = true;
                         Log.Information("VSS snapshot aktif: {Volume}", volumeRoot);
                     }
+                    catch (OperationCanceledException) { throw; }
                     catch (Exception ex)
                     {
                         Log.Warning(ex,

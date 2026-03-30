@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace KoruMsSqlYedek.Core.Interfaces
 {
@@ -14,8 +15,9 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// Belirtilen volume için VSS snapshot oluşturur.
         /// </summary>
         /// <param name="volumePath">Volume yolu (ör. "C:\").</param>
+        /// <param name="ct">İptal belirteci. Her VSS adımı arasında kontrol edilir.</param>
         /// <returns>Snapshot ID.</returns>
-        Guid CreateSnapshot(string volumePath);
+        Guid CreateSnapshot(string volumePath, CancellationToken ct = default);
 
         /// <summary>
         /// Snapshot üzerinden dosyanın shadow copy yolunu döndürür.
