@@ -1,4 +1,13 @@
-﻿## [0.42.7] - 2026-04-05 — Express Edition VSS Dosya Kopyası
+﻿## [0.42.8] - 2026-04-05 — Express VSS Backup Robustlaştırma
+
+### Hata Düzeltmesi
+- **VSS başarısız → COPY_ONLY fallback**: VSS snapshot admin yetkisi gerektirdiğinden başarısız olduğunda artık `COPY_ONLY` SQL backup ile fallback yapılır. SQL Server MDF/LDF dosyaları kilitli olduğundan direct file copy kaldırıldı; snapshot yoksa direkt kopyalama yerine hemen COPY_ONLY'e geçilir.
+- **SMO lazy-load düzeltmesi**: `FileGroups.Refresh()` ve `LogFiles.Refresh()` çağrıları eklendi; dosya listesi artık doğru doldurulur.
+- **Metot ayrımı**: `TryExpressVssBackupAsync` → `TryVssFileCopyAsync` (bool) + `TrySqlCopyOnlyFallbackAsync` olarak ikiye bölündü. `Server` parametresi fallback için eklendi. (etkilenen: `SqlBackupService.cs`)
+
+---
+
+## [0.42.7] - 2026-04-05 — Express Edition VSS Dosya Kopyası
 
 ### Yeni Özellik
 - **Express Edition ek güvenlik yedeği**: `SqlBackupService` artık SQL Server Express tespit edildiğinde, başarılı SMO backup'ın ardından ek olarak VSS (Volume Shadow Copy) üzerinden MDF/LDF/NDF dosyalarını kopyalar ve `.7z` arşivine sıkıştırır. Sonuç `BackupResult.VssFileCopyPath` / `VssFileCopySizeBytes` alanlarında raporlanır. VSS hatası ana yedeği etkilemez; fallback olarak doğrudan kopyalama denenir. (etkilenen: `SqlBackupService.cs`, `BackupResult.cs`)
