@@ -118,6 +118,8 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 [Run]
 ; Kurulum sonrası service kur ve başlat
 Filename: "{app}\Service\{#MyServiceExeName}"; Parameters: "install"; StatusMsg: "{cm:ServiceInstall}"; Components: service; Flags: runhidden waituntilterminated
+; Service hesabını LocalSystem yap — VSS (Volume Shadow Copy) yetkisi için zorunlu
+Filename: "sc.exe"; Parameters: "config {#MyServiceName} obj= ""LocalSystem"""; Components: service; Flags: runhidden waituntilterminated
 Filename: "{app}\Service\{#MyServiceExeName}"; Parameters: "start"; StatusMsg: "{cm:ServiceStart}"; Components: service; Flags: runhidden waituntilterminated
 ; İsteğe bağlı: Kurulum sonrası Tray uygulamasını başlat
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: nowait postinstall skipifsilent
