@@ -1,4 +1,28 @@
-﻿## [0.42.0] - 2026-04-05 — UI Geliştirmeleri: Log Görev Filtresi, Dashboard Sıralama, Tray Animasyonu, Upload ETA
+﻿## [0.42.3] - 2026-04-05 — Hata Düzeltmeleri: Buton Sırası, Dosya Yedek Upload, NextRun Yarış Koşulu
+
+### Hata Düzeltmeleri
+- **PlanEditForm buton sırası**: `Controls.Add` sırası düzeltildi; sol→sağ görsel sıra artık `[İptal]` `[◄ Geri]` `[İleri ►]` `[💾 Kaydet & Çık]` (etkilenen: `PlanEditForm.Designer.cs`)
+- **Dosya yedekleme bulut upload atlanıyordu**: `BackupJobExecutor.ExecuteFileBackupAsync` satır 326 — sadece `Success` kontrol ediliyordu; `PartialSuccess` (kilitli dosya gibi) durumunda sıkıştırma ve bulut upload atlanıyordu; artık `PartialSuccess` ve `FilesCopied > 0` da kabul edilir (etkilenen: `BackupJobExecutor.cs`)
+- **Sonraki çalışma zamanı "—" gösteriyordu**: `ServicePipeServer` — yeni bağlantıda iki eş zamanlı `SendStatusToClientAsync` çağrısı (ilk broadcast + `RequestStatus` yanıtı) aynı pipe'a aynı anda yazarak JSON satırlarını bozuyordu; bağlantı anındaki redundant broadcast kaldırıldı; her istemci için `SemaphoreSlim(1,1)` yazma kilidi eklendi; `BroadcastAsync` ve `SendStatusToClientAsync` artık kilit kullanıyor (etkilenen: `ServicePipeServer.cs`)
+
+---
+
+## [0.42.2] - 2026-04-05 — Uygulama Adı Düzeltmesi
+
+### Hata Düzeltmeleri
+- **Uygulama adı** balon bildiriminde "KoruMsSqlYedek" yerine "Koru MsSql Yedek" gösteriliyordu; `Resources.resx` + `Resources.tr-TR.resx` `AppName` key düzeltildi
+
+---
+
+## [0.42.1] - 2026-04-05 — SMO Hata Düzeltmesi + Dosya Yedek Upload
+
+### Hata Düzeltmeleri
+- **`PropertyCannotBeRetrievedException`**: `SqlBackupService.ListDatabasesAsync` — `db.Size`, `Status`, `RecoveryModel`, `LastBackupDate`, `IsSystemObject` her biri ayrı `try/catch` ile sarıldı; offline/restoring/snapshot DB'lerde çökme engellendi
+- **Dosya yedekleme bulut upload**: `ExecuteFileBackupAsync` — cloud upload yalnızca `Compression != null` bloğu içinde çalışıyordu; sıkıştırma ve upload bağımsız `try/catch` bloklarına ayrıldı; `as` cast → `is` pattern değiştirildi
+
+---
+
+## [0.42.0] - 2026-04-05 — UI Geliştirmeleri: Log Görev Filtresi, Dashboard Sıralama, Tray Animasyonu, Upload ETA
 
 ### Yeni Özellikler
 - **Log ekranı görev adı filtresi** (`_cmbLogPlan`): Log toolbar'a "Görev:" etiketi ve ComboBox eklendi; seçili plan adına göre log satırları filtrelenir; `PopulateLogPlanFilter()` plan listesinden otomatik doldurulur; Temizle butonu sıfırlar; `LogViewer_AllPlans` resource key eklendi

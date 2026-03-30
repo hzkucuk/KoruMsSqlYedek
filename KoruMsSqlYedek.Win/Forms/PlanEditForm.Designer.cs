@@ -755,9 +755,9 @@
             _btnBack.Click += OnBackClick;
 
             _pnlNavigation.Controls.Add(_btnCancel);
+            _pnlNavigation.Controls.Add(_btnBack);
             _pnlNavigation.Controls.Add(_btnNext);
             _pnlNavigation.Controls.Add(_btnSave);
-            _pnlNavigation.Controls.Add(_btnBack);
 
             // ===================================================================
             // CONTENT PANEL (holds step panels)

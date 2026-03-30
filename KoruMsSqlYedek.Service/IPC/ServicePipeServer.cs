@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -31,6 +31,10 @@ namespace KoruMsSqlYedek.Service.IPC
 
         private readonly ConcurrentDictionary<Guid, NamedPipeServerStream> _clients
             = new ConcurrentDictionary<Guid, NamedPipeServerStream>();
+
+        // Her istemci için ayrı yazma kilidi — eş zamanlı yazmaların JSON'u bozmasını önler
+        private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _writeLocks
+            = new ConcurrentDictionary<Guid, SemaphoreSlim>();
 
         private CancellationTokenSource _cts;
         private bool _disposed;
@@ -94,15 +98,9 @@ namespace KoruMsSqlYedek.Service.IPC
 
                     var clientId = Guid.NewGuid();
                     _clients[clientId] = pipe;
+                    _writeLocks[clientId] = new SemaphoreSlim(1, 1);
 
                     Log.Debug("Yeni pipe istemcisi bağlandı: {ClientId}", clientId);
-
-                    // Bağlanan istemciye servis durumunu gönder
-                    _ = Task.Run(async () =>
-                    {
-                        try { await SendStatusToClientAsync(pipe, ct); }
-                        catch { /* bağlantı hemen kopmuş */ }
-                    }, ct);
 
                     // İstemci okuma döngüsünü arka planda başlat
                     _ = Task.Run(() => ClientReadLoopAsync(clientId, pipe, ct), ct);
@@ -139,7 +137,7 @@ namespace KoruMsSqlYedek.Service.IPC
                     var message = PipeSerializer.Deserialize(line);
                     if (message == null) continue;
 
-                    await HandleCommandAsync(message, pipe, ct);
+                    await HandleCommandAsync(clientId, message, pipe, ct);
                 }
             }
             catch (IOException) { /* normal bağlantı kopuşu */ }
@@ -150,6 +148,7 @@ namespace KoruMsSqlYedek.Service.IPC
             finally
             {
                 _clients.TryRemove(clientId, out _);
+                if (_writeLocks.TryRemove(clientId, out var wl)) wl.Dispose();
                 try { pipe.Dispose(); }
                 catch { /* ignore */ }
                 Log.Debug("Pipe istemcisi bağlantısı kesildi: {ClientId}", clientId);
@@ -159,7 +158,7 @@ namespace KoruMsSqlYedek.Service.IPC
         // ── Komut işleyici ───────────────────────────────────────────────────
 
         private async Task HandleCommandAsync(
-            PipeMessage message, NamedPipeServerStream pipe, CancellationToken ct)
+            Guid clientId, PipeMessage message, NamedPipeServerStream pipe, CancellationToken ct)
         {
             switch (message.Type)
             {
@@ -189,7 +188,7 @@ namespace KoruMsSqlYedek.Service.IPC
                 }
 
                 case PipeMessageType.RequestStatus:
-                    await SendStatusToClientAsync(pipe, ct);
+                    await SendStatusToClientAsync(clientId, pipe, ct);
                     break;
 
                 default:
@@ -229,6 +228,9 @@ namespace KoruMsSqlYedek.Service.IPC
 
             foreach (var pair in _clients.ToArray())
             {
+                if (!_writeLocks.TryGetValue(pair.Key, out var writeLock)) continue;
+                bool acquired = await writeLock.WaitAsync(2000);
+                if (!acquired) continue;
                 try
                 {
                     if (pair.Value.IsConnected)
@@ -237,8 +239,11 @@ namespace KoruMsSqlYedek.Service.IPC
                 catch
                 {
                     _clients.TryRemove(pair.Key, out _);
-                    try { pair.Value.Dispose(); }
-                    catch { /* ignore */ }
+                    try { pair.Value.Dispose(); } catch { }
+                }
+                finally
+                {
+                    writeLock.Release();
                 }
             }
         }
@@ -270,7 +275,7 @@ namespace KoruMsSqlYedek.Service.IPC
             }
         }
 
-        private async Task SendStatusToClientAsync(NamedPipeServerStream pipe, CancellationToken ct)
+        private async Task SendStatusToClientAsync(Guid clientId, NamedPipeServerStream pipe, CancellationToken ct)
         {
             var status = new ServiceStatusMessage { IsRunning = _schedulerService.IsRunning };
 
@@ -296,6 +301,9 @@ namespace KoruMsSqlYedek.Service.IPC
             string json = PipeSerializer.Serialize(status) + "\n";
             byte[] data = Encoding.UTF8.GetBytes(json);
 
+            if (!_writeLocks.TryGetValue(clientId, out var writeLock)) return;
+            bool acquired = await writeLock.WaitAsync(2000, ct);
+            if (!acquired) return;
             try
             {
                 if (pipe.IsConnected)
@@ -304,6 +312,10 @@ namespace KoruMsSqlYedek.Service.IPC
             catch (Exception ex)
             {
                 Log.Debug(ex, "Durum mesajı gönderilemedi.");
+            }
+            finally
+            {
+                writeLock.Release();
             }
         }
 

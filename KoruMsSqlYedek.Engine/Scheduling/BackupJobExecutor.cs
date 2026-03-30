@@ -323,7 +323,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     fileResult.SourceName, fileResult.FilesCopied, fileResult.Status);
             }
 
-            if (!results.Any(r => r.Status == BackupResultStatus.Success))
+            if (!results.Any(r => r.Status == BackupResultStatus.Success ||
+                                   r.Status == BackupResultStatus.PartialSuccess ||
+                                   r.FilesCopied > 0))
                 return;
 
             string filesDir = Path.Combine(plan.LocalPath, "Files");
