@@ -1,4 +1,12 @@
-﻿## [0.42.5] - 2026-04-05 — CopyOnly Backup Zinciri Düzeltmesi
+﻿## [0.42.6] - 2026-04-05 — SQL Server Edition & Recovery Model Uyumluluğu
+
+### Yeni Özellik / Hata Düzeltmesi
+- **Edition tespiti**: `SqlBackupService` artık her backup operasyonunda SQL Server edition'ını tespit eder ve Debug log'a yazar. Express/Standard/Enterprise ayrımı yapılır. `ISqlBackupService.GetServerEditionAsync()` metodu eklendi — UI ve plan doğrulamasında kullanılabilir. (yeni model: `SqlServerEditionInfo`)
+- **Recovery Model kontrolü**: `BackupDatabaseAsync` içinde, transaction log (Incremental) yedeği talep edildiğinde veritabanının recovery model'i kontrol edilir. `Simple recovery model` → log yedeği yerine **Full yedeğe otomatik yükseltilir**, kullanıcıya Warning loglanır. Express instance ise note olarak eklenir. Düzeltme komutu da loga yazılır: `ALTER DATABASE [x] SET RECOVERY FULL`. (etkilenen: `SqlBackupService.cs`, `ISqlBackupService.cs`, `SqlServerEditionInfo.cs`)
+
+---
+
+## [0.42.5] - 2026-04-05 — CopyOnly Backup Zinciri Düzeltmesi
 
 ### Hata Düzeltmesi
 - **Full backup CopyOnly=true hatası**: `SqlBackupService` satır 86 — `CopyOnly = backupType != SqlBackupType.Incremental` yanlış bir ifadeydi; Full ve Differential yedekler `CopyOnly=true` ile alınıyordu. Full backup `CopyOnly=true` olduğunda SQL Server'ın differential baseline'ı güncellenmez → Differential yedekler son Full yedeği base alamaz, boyutları gereksiz büyür veya hata verir. `CopyOnly = false` olarak düzeltildi. (etkilenen: `SqlBackupService.cs`)

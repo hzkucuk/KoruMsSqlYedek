@@ -55,5 +55,14 @@ namespace KoruMsSqlYedek.Core.Interfaces
         Task<bool> TestConnectionAsync(
             SqlConnectionInfo connection,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// SQL Server instance edition ve sürüm bilgisini döndürür.
+        /// Plan doğrulaması ve bağlantı testinde kullanılır:
+        /// Express ise log backup stratejisinin çalışmayacağını önceden uyarır.
+        /// </summary>
+        Task<SqlServerEditionInfo> GetServerEditionAsync(
+            SqlConnectionInfo connection,
+            CancellationToken cancellationToken);
     }
 }
