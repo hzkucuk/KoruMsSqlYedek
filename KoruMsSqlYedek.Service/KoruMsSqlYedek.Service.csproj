@@ -5,6 +5,7 @@
     <RootNamespace>KoruMsSqlYedek.Service</RootNamespace>
     <AssemblyName>KoruMsSqlYedek.Service</AssemblyName>
     <LangVersion>latest</LangVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
