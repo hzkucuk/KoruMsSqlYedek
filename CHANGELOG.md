@@ -1,4 +1,12 @@
-﻿## [0.42.6] - 2026-04-05 — SQL Server Edition & Recovery Model Uyumluluğu
+﻿## [0.42.7] - 2026-04-05 — Express Edition VSS Dosya Kopyası
+
+### Yeni Özellik
+- **Express Edition ek güvenlik yedeği**: `SqlBackupService` artık SQL Server Express tespit edildiğinde, başarılı SMO backup'ın ardından ek olarak VSS (Volume Shadow Copy) üzerinden MDF/LDF/NDF dosyalarını kopyalar ve `.7z` arşivine sıkıştırır. Sonuç `BackupResult.VssFileCopyPath` / `VssFileCopySizeBytes` alanlarında raporlanır. VSS hatası ana yedeği etkilemez; fallback olarak doğrudan kopyalama denenir. (etkilenen: `SqlBackupService.cs`, `BackupResult.cs`)
+- **Constructor injection**: `SqlBackupService`'e `IVssService` ve `SevenZipCompressionService` Autofac üzerinden enjekte edilir (opsiyonel; null ise VSS adımı atlanır).
+
+---
+
+## [0.42.6] - 2026-04-05 — SQL Server Edition & Recovery Model Uyumluluğu
 
 ### Yeni Özellik / Hata Düzeltmesi
 - **Edition tespiti**: `SqlBackupService` artık her backup operasyonunda SQL Server edition'ını tespit eder ve Debug log'a yazar. Express/Standard/Enterprise ayrımı yapılır. `ISqlBackupService.GetServerEditionAsync()` metodu eklendi — UI ve plan doğrulamasında kullanılabilir. (yeni model: `SqlServerEditionInfo`)

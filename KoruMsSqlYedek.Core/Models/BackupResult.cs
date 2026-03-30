@@ -44,6 +44,17 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("compressedFilePath")]
         public string CompressedFilePath { get; set; }
 
+        /// <summary>
+        /// Express Edition için VSS üzerinden alınan dosya kopyası arşivi (.7z).
+        /// Yalnızca SQL Server Express'te doldurulur; diğer sürümlerde null.
+        /// </summary>
+        [JsonProperty("vssFileCopyPath")]
+        public string VssFileCopyPath { get; set; }
+
+        /// <summary>Express VSS dosya kopyası arşiv boyutu (byte).</summary>
+        [JsonProperty("vssFileCopySizeBytes")]
+        public long VssFileCopySizeBytes { get; set; }
+
         /// <summary>Dosya boyutu (byte).</summary>
         [JsonProperty("fileSizeBytes")]
         public long FileSizeBytes { get; set; }
