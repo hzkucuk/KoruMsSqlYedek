@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -264,7 +265,8 @@ namespace KoruMsSqlYedek.Tests
             _mockCloudOrchestrator.Setup(c => c.UploadToAllAsync(
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<List<CloudTargetConfig>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>()))
                 .ReturnsAsync(TestDataFactory.CreateCloudUploadResults());
 
             // Act
@@ -274,7 +276,8 @@ namespace KoruMsSqlYedek.Tests
             _mockCloudOrchestrator.Verify(c => c.UploadToAllAsync(
                 It.IsAny<string>(), It.IsAny<string>(),
                 plan.CloudTargets,
-                It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()), Times.Once);
+                It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                It.IsAny<string>()), Times.Once);
         }
 
         [TestMethod]
@@ -318,6 +321,766 @@ namespace KoruMsSqlYedek.Tests
             await _executor.Execute(_mockJobContext.Object);
 
             // Assert
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        // ── Dosya Yedekleme Tetikleme Testleri ─────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_SqlJob_FileBackupEnabledNoSchedule_TriggersFileBackupAfterSql()
+        {
+            // Arrange — ayrı zamanlama yok; SQL job bittikten sonra dosya yedekleme çalışmalı
+            var plan = TestDataFactory.CreatePlanWithFileBackup();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.FileBackup.Schedule = null;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            _mockFileBackup.Setup(f => f.BackupFilesAsync(
+                    plan, It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<FileBackupResult> { TestDataFactory.CreateSuccessFileBackupResult() });
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — FileBackupService kesinlikle çağrılmalı
+            _mockFileBackup.Verify(
+                f => f.BackupFilesAsync(plan, It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_SqlJob_FileBackupEnabledWithDedicatedSchedule_SkipsFileBackup()
+        {
+            // Arrange — ayrı zamanlama var; FileBackup kendi Quartz job'u ile çalışır, SQL job'undan tetiklenmemeli
+            var plan = TestDataFactory.CreatePlanWithFileBackup();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.FileBackup.Schedule = "0 0 4 ? * *";
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — kendi zamanlaması olduğu için SQL job'dan çağrılMAMALI
+            _mockFileBackup.Verify(
+                f => f.BackupFilesAsync(It.IsAny<BackupPlan>(), It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [TestMethod]
+        public async Task Execute_SqlJob_FileBackupDisabled_SkipsFileBackup()
+        {
+            // Arrange — FileBackup.IsEnabled = false; çalışmamalı
+            var plan = TestDataFactory.CreatePlanWithFileBackup();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.FileBackup.IsEnabled = false;
+            plan.FileBackup.Schedule = null;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert
+            _mockFileBackup.Verify(
+                f => f.BackupFilesAsync(It.IsAny<BackupPlan>(), It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [TestMethod]
+        public async Task Execute_SqlJob_FileBackupConfigNull_SkipsFileBackup()
+        {
+            // Arrange — plan.FileBackup hiç yapılandırılmamış (null); çalışmamalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.FileBackup = null;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert
+            _mockFileBackup.Verify(
+                f => f.BackupFilesAsync(It.IsAny<BackupPlan>(), It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [TestMethod]
+        public async Task Execute_FileBackupType_OnlyCallsFileBackupService()
+        {
+            // Arrange — Quartz "FileBackup" tipi job; sadece FileBackupService çalışmalı
+            var plan = TestDataFactory.CreatePlanWithFileBackup();
+
+            SetJobData(plan.PlanId, "FileBackup");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockFileBackup.Setup(f => f.BackupFilesAsync(
+                    plan, It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<FileBackupResult> { TestDataFactory.CreateSuccessFileBackupResult() });
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — FileBackup çalışmalı
+            _mockFileBackup.Verify(
+                f => f.BackupFilesAsync(plan, It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_FileBackupType_NeverCallsSqlBackupService()
+        {
+            // Arrange — Quartz "FileBackup" tipi job; SQL backup asla çalışmamalı
+            var plan = TestDataFactory.CreatePlanWithFileBackup();
+
+            SetJobData(plan.PlanId, "FileBackup");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockFileBackup.Setup(f => f.BackupFilesAsync(
+                    plan, It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<FileBackupResult>());
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — SQL backup çağrılMAMALI
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        // ── Plan Ayar Testleri ──────────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_EmptyDatabaseList_NeverCallsSqlBackup()
+        {
+            // Arrange — plan.Databases boş; SQL backup çağrılmamalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string>();
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [TestMethod]
+        public async Task Execute_DifferentialType_PassesDifferentialTypeToService()
+        {
+            // Arrange
+            var plan = TestDataFactory.CreateValidPlan(strategyType: BackupStrategyType.FullPlusDifferential);
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Differential");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Differential, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId, backupType: SqlBackupType.Differential));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — Differential tipi servisine iletilmeli
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Differential, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_IncrementalType_PassesIncrementalTypeToService()
+        {
+            // Arrange
+            var plan = TestDataFactory.CreateValidPlan(strategyType: BackupStrategyType.FullPlusDifferentialPlusIncremental);
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Incremental");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Incremental, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId, backupType: SqlBackupType.Incremental));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — Incremental tipi servisine iletilmeli
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Incremental, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_NoEnabledCloudTargets_SkipsCloudUpload()
+        {
+            // Arrange — tüm cloud hedefleri devre dışı; CloudOrchestrator çağrılmamalı
+            var plan = TestDataFactory.CreatePlanWithCloudTargets();
+            plan.Databases = new List<string> { "TestDB" };
+            foreach (var target in plan.CloudTargets)
+                target.IsEnabled = false;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — devre dışı hedefler için upload yapılmamalı
+            _mockCloudOrchestrator.Verify(
+                c => c.UploadToAllAsync(
+                    It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<List<CloudTargetConfig>>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>()),
+                Times.Never);
+        }
+
+        // ── ChainValidator Testleri ───────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_ChainValidator_NoFullBackup_DifferentialPromotedToFull()
+        {
+            // Arrange — Full yedek dosyası yok; Differential → Full yükseltilmeli
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+
+            var plan = TestDataFactory.CreateValidPlan(strategyType: BackupStrategyType.FullPlusDifferential);
+            plan.Databases = new List<string> { "TestDB" };
+            plan.LocalPath = tempDir;
+
+            _executor.ChainValidator = new BackupChainValidator();
+            SetJobData(plan.PlanId, "Differential");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId, backupType: SqlBackupType.Full));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — Full yedek dosyası olmadığı için Differential → Full yükseltilmeli
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Differential, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [TestMethod]
+        public async Task Execute_ChainValidator_AutoPromoteThreshold_DifferentialPromotedToFull()
+        {
+            // Arrange — Full yedek var, diff eşiği aşıldı; Differential → Full yükseltilmeli
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+
+            // Full yedek dosyasını eski tarihle oluştur
+            string fullBakPath = Path.Combine(tempDir, "TestDB_Full_20250101_020000.bak");
+            File.WriteAllText(fullBakPath, string.Empty);
+            File.SetCreationTime(fullBakPath, DateTime.Now.AddDays(-10));
+
+            // AutoPromoteToFullAfter = 1; 1 adet diff dosyası eşiği aşar
+            string diffBakPath = Path.Combine(tempDir, "TestDB_Differential_20250102_020000.bak");
+            File.WriteAllText(diffBakPath, string.Empty);
+
+            var plan = TestDataFactory.CreateValidPlan(strategyType: BackupStrategyType.FullPlusDifferential);
+            plan.Databases = new List<string> { "TestDB" };
+            plan.LocalPath = tempDir;
+            plan.Strategy.AutoPromoteToFullAfter = 1;
+
+            _executor.ChainValidator = new BackupChainValidator();
+            SetJobData(plan.PlanId, "Differential");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId, backupType: SqlBackupType.Full));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — AutoPromote eşiği aşıldı; Full çalışmalı
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_ChainValidator_HasValidFull_BelowAutoPromote_DifferentialRunsAsDifferential()
+        {
+            // Arrange — Full yedek var, diff sayısı eşiğin altında; Differential olarak çalışmalı
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+
+            // Geçerli Full yedek dosyası — diff dosyası yok; eşik = 7
+            string fullBakPath = Path.Combine(tempDir, "TestDB_Full_20250101_020000.bak");
+            File.WriteAllText(fullBakPath, string.Empty);
+            File.SetCreationTime(fullBakPath, DateTime.Now.AddDays(-3));
+
+            var plan = TestDataFactory.CreateValidPlan(strategyType: BackupStrategyType.FullPlusDifferential);
+            plan.Databases = new List<string> { "TestDB" };
+            plan.LocalPath = tempDir;
+            // Strategy.AutoPromoteToFullAfter = 7 (varsayılan), diff sayısı = 0 → yükseltme yok
+
+            _executor.ChainValidator = new BackupChainValidator();
+            SetJobData(plan.PlanId, "Differential");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Differential, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId, backupType: SqlBackupType.Differential));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — Full yedek var, eşik aşılmadı; Differential olarak çalışmalı
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Differential, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "TestDB",
+                    SqlBackupType.Full, It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        // ── Doğrulama Testleri ────────────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_VerifyAfterBackup_SqlVerifyFails_PipelineContinues()
+        {
+            // Arrange — SQL Verify başarısız; pipeline durmadan devam etmeli
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.VerifyAfterBackup = true;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            // Doğrulama başarısız
+            _mockSqlBackup.Setup(s => s.VerifyBackupAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — VerifyResult=false kaydedilmeli, pipeline devam etmeli
+            _mockHistoryManager.Verify(
+                h => h.SaveResult(It.Is<BackupResult>(r => r.VerifyResult == false)),
+                Times.Once);
+            _mockRetention.Verify(r => r.CleanupAsync(plan, It.IsAny<CancellationToken>()), Times.Once);
+            _mockNotification.Verify(n => n.NotifyAsync(
+                It.IsAny<BackupResult>(), plan.Notifications, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_VerifyAfterBackup_ArchiveVerifyFails_CompressionVerifiedSetToFalse()
+        {
+            // Arrange — Arşiv bütünlük doğrulaması başarısız; CompressionVerified=false, pipeline devam etmeli
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.VerifyAfterBackup = true;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockSqlBackup.Setup(s => s.VerifyBackupAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            // Arşiv bütünlük doğrulaması başarısız
+            _mockCompression.Setup(c => c.VerifyArchiveAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — CompressionVerified=false kaydedilmeli, pipeline devam etmeli
+            _mockHistoryManager.Verify(
+                h => h.SaveResult(It.Is<BackupResult>(r => r.CompressionVerified == false)),
+                Times.Once);
+            _mockRetention.Verify(r => r.CleanupAsync(plan, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        // ── Sıkıştırma Testleri ───────────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_CompressionConfigNull_SkipsCompression()
+        {
+            // Arrange — plan.Compression null; CompressAsync çağrılmamalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.Compression = null;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — sıkıştırma çağrılmamalı; pipeline sonuna ulaşılmalı
+            _mockCompression.Verify(c => c.CompressAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+            _mockHistoryManager.Verify(h => h.SaveResult(It.IsAny<BackupResult>()), Times.Once);
+        }
+
+        // ── Bulut Upload Testleri ─────────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_CloudUploadThrows_PipelineContinues()
+        {
+            // Arrange — CloudOrchestrator hata fırlatır; Retention/History/Notify yine de çalışmalı
+            var plan = TestDataFactory.CreatePlanWithCloudTargets();
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            _mockCloudOrchestrator.Setup(c => c.UploadToAllAsync(
+                    It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<List<CloudTargetConfig>>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>()))
+                .ThrowsAsync(new Exception("Ağ hatası — upload başarısız"));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — bulut upload hatası pipeline'ı durdurmaz
+            _mockRetention.Verify(r => r.CleanupAsync(plan, It.IsAny<CancellationToken>()), Times.Once);
+            _mockHistoryManager.Verify(h => h.SaveResult(It.IsAny<BackupResult>()), Times.Once);
+            _mockNotification.Verify(n => n.NotifyAsync(
+                It.IsAny<BackupResult>(), plan.Notifications, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_NoCompressionConfig_WithCloudTargets_UploadsRawBakFile()
+        {
+            // Arrange — Sıkıştırma yok; bulut upload ham .bak dosyasını kullanmalı
+            var plan = TestDataFactory.CreatePlanWithCloudTargets();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.Compression = null;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            var successResult = TestDataFactory.CreateSuccessResult(plan.PlanId);
+            // Executor sıkıştırma yapmadığından CompressedFilePath boş olmalı
+            successResult.CompressedFilePath = null;
+            successResult.CompressedSizeBytes = 0;
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(successResult);
+
+            _mockCloudOrchestrator.Setup(c => c.UploadToAllAsync(
+                    It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<List<CloudTargetConfig>>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>()))
+                .ReturnsAsync(TestDataFactory.CreateCloudUploadResults());
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — sıkıştırma çağrılmamalı; upload ham .bak yoluyla yapılmalı
+            _mockCompression.Verify(c => c.CompressAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+
+            _mockCloudOrchestrator.Verify(
+                c => c.UploadToAllAsync(
+                    successResult.BackupFilePath,
+                    It.IsAny<string>(),
+                    It.IsAny<List<CloudTargetConfig>>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>()),
+                Times.Once);
+        }
+
+        // ── Hata Dayanıklılığı Testleri ───────────────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_RetentionThrows_HistoryAndNotifyStillCalled()
+        {
+            // Arrange — Retention hatası; History ve Notify yine de çalışmalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            _mockRetention.Setup(r => r.CleanupAsync(plan, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Retention I/O hatası"));
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — Retention hatası History ve Notify'ı durdurmaz
+            _mockHistoryManager.Verify(h => h.SaveResult(It.IsAny<BackupResult>()), Times.Once);
+            _mockNotification.Verify(n => n.NotifyAsync(
+                It.IsAny<BackupResult>(), plan.Notifications, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_NotificationsNull_DoesNotThrow()
+        {
+            // Arrange — plan.Notifications null; NotifyAsync çağrılmamalı, exception fırlatılmamalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+            plan.Notifications = null;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            // Act
+            Func<Task> act = async () => await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — exception fırlatılmamalı
+            await act.Should().NotThrowAsync();
+
+            // Bildirim servisi çağrılmamalı (Notifications null)
+            _mockNotification.Verify(n => n.NotifyAsync(
+                It.IsAny<BackupResult>(), It.IsAny<NotificationConfig>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        // ── Çoklu Veritabanı Testleri ─────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_MultipleDBs_FirstFails_SecondStillExecuted()
+        {
+            // Arrange — İlk DB başarısız; döngü durmadan ikinci DB çalışmalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "DB1", "DB2" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "DB1",
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateFailedResult(plan.PlanId));
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "DB2",
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId, databaseName: "DB2"));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — her iki DB için backup ve history çağrılmalı
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Exactly(2));
+
+            _mockHistoryManager.Verify(h => h.SaveResult(It.IsAny<BackupResult>()), Times.Exactly(2));
+        }
+
+        // ── İptal Testleri ────────────────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task Execute_CancellationRequested_HandlesGracefully()
+        {
+            // Arrange — CancellationToken önceden iptal edilmiş; exception dışarıya iletilmemeli
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+            _mockJobContext.Setup(c => c.CancellationToken).Returns(cts.Token);
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            // Act — OperationCanceledException içeride yutulmalı
+            Func<Task> act = async () => await _executor.Execute(_mockJobContext.Object);
+
+            // Assert
+            await act.Should().NotThrowAsync();
+
+            // İptal sonrası SQL backup çağrılmamalı
             _mockSqlBackup.Verify(
                 s => s.BackupDatabaseAsync(
                     It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),

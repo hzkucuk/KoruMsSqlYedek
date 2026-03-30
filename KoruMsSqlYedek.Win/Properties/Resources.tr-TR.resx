@@ -64,6 +64,12 @@
 
   <!-- ===== Tray ===== -->
   <data name="Tray_Tooltip" xml:space="preserve"><value>KoruMsSqlYedek — SQL Yedekleme &amp; Bulut Senkronizasyon</value></data>
+  <data name="Tray_TooltipDisconnected" xml:space="preserve"><value>KoruMsSqlYedek — Servis bağlı değil ⚠</value></data>
+  <data name="Tray_ServiceConnected" xml:space="preserve"><value>Servis bağlantısı kuruldu.</value></data>
+  <data name="Tray_ServiceDisconnected" xml:space="preserve"><value>Servis bağlantısı kesildi.</value></data>
+  <data name="Tray_ServiceConnectionTitle" xml:space="preserve"><value>Servis Bağlantısı</value></data>
+  <data name="StatusBar_ServiceConnected" xml:space="preserve"><value>● Servis bağlı</value></data>
+  <data name="StatusBar_ServiceDisconnected" xml:space="preserve"><value>⚠ Servis bağlı değil</value></data>
   <data name="Tray_BalloonRunning" xml:space="preserve"><value>Uygulama sistem tepsisinde çalışıyor.</value></data>
   <data name="Tray_MenuDashboard" xml:space="preserve"><value>Dashboard Aç</value></data>
   <data name="Tray_MenuPlans" xml:space="preserve"><value>Planlar</value></data>
@@ -204,6 +210,10 @@ Bu işlem geri alınamaz.</value></data>
   <data name="ManualBackup_PleaseSelectPlan" xml:space="preserve"><value>Lütfen bir plan seçin.</value></data>
   <data name="ManualBackup_PleaseSelectDb" xml:space="preserve"><value>Lütfen en az bir veritabanı seçin.</value></data>
   <data name="ManualBackup_Starting" xml:space="preserve"><value>Yedekleme başlatılıyor...</value></data>
+  <data name="Backup_ServiceNotConnected" xml:space="preserve"><value>Servis bağlı değil. Lütfen servisi başlatın.</value></data>
+  <data name="Backup_ServiceDisconnected" xml:space="preserve"><value>Servis bağlı değil.</value></data>
+  <data name="Backup_ReadyForPlan" xml:space="preserve"><value>Hazır: {0}</value></data>
+  <data name="Backup_SendError" xml:space="preserve"><value>Komut gönderilemedi: {0}</value></data>
   <data name="ManualBackup_ProgressFormat" xml:space="preserve"><value>[{0}/{1}] {2} yedekleniyor...</value></data>
   <data name="ManualBackup_BackingUpFormat" xml:space="preserve"><value>▶ {0} ({1}) yedekleniyor...</value></data>
   <data name="ManualBackup_SuccessFormat" xml:space="preserve"><value>  ✓ Başarılı — {0} MB → {1}</value></data>
@@ -326,5 +336,29 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Tray_BackupRunning" xml:space="preserve"><value>Yedekleme: {0}</value></data>
   <data name="Tray_BackupCompleted" xml:space="preserve"><value>Yedekleme tamamlandı: {0}</value></data>
   <data name="Tray_BackupFailed" xml:space="preserve"><value>Yedekleme başarısız: {0}</value></data>
+
+  <!-- ===== Restore Dialog ===== -->
+  <data name="Restore_Title" xml:space="preserve"><value>Veritabanını Geri Yükle</value></data>
+  <data name="Restore_ColDate" xml:space="preserve"><value>Tarih</value></data>
+  <data name="Restore_ColDatabase" xml:space="preserve"><value>Veritabanı</value></data>
+  <data name="Restore_ColType" xml:space="preserve"><value>Tür</value></data>
+  <data name="Restore_ColFile" xml:space="preserve"><value>Dosya</value></data>
+  <data name="Restore_ColSize" xml:space="preserve"><value>Boyut</value></data>
+  <data name="Restore_ColStatus" xml:space="preserve"><value>Durum</value></data>
+  <data name="Restore_LblTargetDb" xml:space="preserve"><value>Hedef veritabanı adı:</value></data>
+  <data name="Restore_ChkPreBackup" xml:space="preserve"><value>Restore öncesi güvenlik yedeği al</value></data>
+  <data name="Restore_BtnVerify" xml:space="preserve"><value>Doğrula</value></data>
+  <data name="Restore_BtnRestore" xml:space="preserve"><value>Geri Yükle</value></data>
+  <data name="Restore_BtnClose" xml:space="preserve"><value>Kapat</value></data>
+  <data name="Restore_NoSelection" xml:space="preserve"><value>Lütfen listeden bir yedek kaydı seçin.</value></data>
+  <data name="Restore_NoFile" xml:space="preserve"><value>Yedek dosyası bulunamadı: {0}</value></data>
+  <data name="Restore_VerifyOk" xml:space="preserve"><value>Doğrulama başarılı. Yedek dosyası geçerli.</value></data>
+  <data name="Restore_VerifyFail" xml:space="preserve"><value>Doğrulama başarısız. Yedek dosyası bozuk olabilir.</value></data>
+  <data name="Restore_Confirm" xml:space="preserve"><value>'{0}' veritabanı geri yüklensin mi? Bu işlem mevcut veritabanının üzerine yazacaktır.</value></data>
+  <data name="Restore_ConfirmTitle" xml:space="preserve"><value>Geri Yüklemeyi Onayla</value></data>
+  <data name="Restore_Success" xml:space="preserve"><value>Geri yükleme başarıyla tamamlandı.</value></data>
+  <data name="Restore_Failed" xml:space="preserve"><value>Geri yükleme başarısız. Ayrıntılar için logu kontrol edin.</value></data>
+  <data name="Restore_NoHistory" xml:space="preserve"><value>Bu plan için yedek kaydı bulunamadı.</value></data>
+  <data name="CtxMenu_Restore" xml:space="preserve"><value>Geri Yükle...</value></data>
 
 </root>

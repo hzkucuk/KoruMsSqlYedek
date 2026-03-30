@@ -49,27 +49,27 @@ try {
     Write-Host "========================================" -ForegroundColor Cyan
 
     # --- 1. NuGet Restore ---
-    Write-Host "`n[1/6] NuGet paketleri geri yukleniyor..." -ForegroundColor Yellow
+    Write-Host "`n[1/7] NuGet paketleri geri yukleniyor..." -ForegroundColor Yellow
     dotnet restore KoruMsSqlYedek.slnx --verbosity minimal
     if ($LASTEXITCODE -ne 0) { Write-Error "NuGet restore basarisiz."; exit 1 }
 
     # --- 2. Build ---
-    Write-Host "`n[2/6] Cozum derleniyor ($Configuration)..." -ForegroundColor Yellow
+    Write-Host "`n[2/7] Cozum derleniyor ($Configuration)..." -ForegroundColor Yellow
     dotnet build KoruMsSqlYedek.slnx -c $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { Write-Error "Build basarisiz."; exit 1 }
 
     # --- 3. Test ---
     if (-not $SkipTests) {
-        Write-Host "`n[3/6] Testler calistiriliyor..." -ForegroundColor Yellow
+        Write-Host "`n[3/7] Testler calistiriliyor..." -ForegroundColor Yellow
         dotnet test KoruMsSqlYedek.slnx -c $Configuration --no-build --verbosity minimal
         if ($LASTEXITCODE -ne 0) { Write-Error "Testler basarisiz."; exit 1 }
     }
     else {
-        Write-Host "`n[3/6] Testler atlandi (-SkipTests)." -ForegroundColor DarkGray
+        Write-Host "`n[3/7] Testler atlandi (-SkipTests)." -ForegroundColor DarkGray
     }
 
     # --- 4. Publish ---
-    Write-Host "`n[4/6] Projeler publish ediliyor..." -ForegroundColor Yellow
+    Write-Host "`n[4/7] Projeler publish ediliyor..." -ForegroundColor Yellow
 
     $publishBase = Join-Path $rootDir "publish"
     $winPublish = Join-Path $publishBase "Win"
@@ -79,15 +79,15 @@ try {
     if (Test-Path $publishBase) { Remove-Item $publishBase -Recurse -Force }
 
     # Win (Tray App)
-    dotnet publish KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj -c $Configuration -o $winPublish --no-build
+    dotnet publish KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj -c $Configuration -o $winPublish --no-build -r win-x64 --self-contained false
     if ($LASTEXITCODE -ne 0) { Write-Error "Win publish basarisiz."; exit 1 }
 
     # Service
-    dotnet publish KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj -c $Configuration -o $servicePublish --no-build
+    dotnet publish KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj -c $Configuration -o $servicePublish --no-build -r win-x64 --self-contained false
     if ($LASTEXITCODE -ne 0) { Write-Error "Service publish basarisiz."; exit 1 }
 
     # --- 5. 7z.dll kopyalama (SevenZipSharp icin gerekli) ---
-    Write-Host "`n[5/6] 7z.dll dosyalari kontrol ediliyor..." -ForegroundColor Yellow
+    Write-Host "`n[5/7] 7z.dll dosyalari kontrol ediliyor..." -ForegroundColor Yellow
 
     # NuGet paketinden 7z.dll bul
     $sevenZipPkgDir = Get-ChildItem -Path (Join-Path $env:USERPROFILE ".nuget\packages\squid-box.sevenzipsharp") -Directory | Sort-Object Name -Descending | Select-Object -First 1
@@ -110,7 +110,7 @@ try {
     Write-Host "  Kaynak: https://www.7-zip.org/download.html (7z Extra)" -ForegroundColor DarkGray
 
     # --- 6. ZIP Arsiv ---
-    Write-Host "`n[6/6] ZIP arsivi olusturuluyor..." -ForegroundColor Yellow
+    Write-Host "`n[6/7] ZIP arsivi olusturuluyor..." -ForegroundColor Yellow
 
     $releasesDir = Join-Path $rootDir "releases"
     if (-not (Test-Path $releasesDir)) { New-Item -Path $releasesDir -ItemType Directory -Force | Out-Null }
@@ -145,6 +145,31 @@ try {
     # ZIP olustur
     Compress-Archive -Path "$stageDir\KoruMsSqlYedek" -DestinationPath $zipPath -CompressionLevel Optimal
     $zipSize = (Get-Item $zipPath).Length / 1MB
+
+    # --- 7. Inno Setup Installer (opsiyonel — ISCC.exe PATH'de olmalı) ---
+    Write-Host "`n[7/7] Inno Setup installer derleniyor (opsiyonel)..." -ForegroundColor Yellow
+    $issPath = Join-Path $rootDir "Deployment\InnoSetup\KoruMsSqlYedek.iss"
+    $isccExe = (Get-Command "ISCC.exe" -ErrorAction SilentlyContinue)?.Source
+    if (-not $isccExe) {
+        # Inno Setup varsayilan kurulum yolu
+        $defaultIscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+        if (Test-Path $defaultIscc) { $isccExe = $defaultIscc }
+    }
+    if ($isccExe -and (Test-Path $issPath)) {
+        Write-Host "  ISCC.exe bulundu: $isccExe" -ForegroundColor DarkGray
+        & $isccExe $issPath
+        if ($LASTEXITCODE -eq 0) {
+            $setupFile = Join-Path $rootDir "releases\KoruMsSqlYedek_v$version`_Setup.exe"
+            if (Test-Path $setupFile) {
+                $setupSize = (Get-Item $setupFile).Length / 1MB
+                Write-Host "  Setup: $setupFile ($([math]::Round($setupSize, 1)) MB)" -ForegroundColor DarkGray
+            }
+        } else {
+            Write-Warning "Inno Setup derleme basarisiz oldu (LASTEXITCODE=$LASTEXITCODE). Devam ediliyor."
+        }
+    } else {
+        Write-Host "  ISCC.exe bulunamadi — installer derlenmedi. (Inno Setup 6 yukleyin veya PATH'e ekleyin)" -ForegroundColor DarkYellow
+    }
 
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green

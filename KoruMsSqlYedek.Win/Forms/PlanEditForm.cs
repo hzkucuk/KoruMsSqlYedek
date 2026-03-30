@@ -39,28 +39,31 @@ namespace KoruMsSqlYedek.Win.Forms
         private static readonly ILogger Log = Serilog.Log.ForContext<PlanEditForm>();
         private readonly IPlanManager _planManager;
         private readonly ISqlBackupService _sqlBackupService;
+        private readonly IAppSettingsManager _settingsManager;
         private readonly BackupPlan _plan;
         private readonly bool _isNew;
         private int _currentStep;
         private bool _connectionTested;
 
         /// <summary>Yeni plan oluşturma.</summary>
-        public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService)
-            : this(planManager, sqlBackupService, null) { }
+        public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, IAppSettingsManager settingsManager)
+            : this(planManager, sqlBackupService, settingsManager, null) { }
 
         /// <summary>Kaydedilen planı döndürür (DialogResult.OK sonrası geçerlidir).</summary>
         public BackupPlan SavedPlan => _plan;
 
         /// <summary>Mevcut planı düzenleme. null ise yeni plan.</summary>
-        public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, BackupPlan existingPlan)
+        public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, IAppSettingsManager settingsManager, BackupPlan existingPlan)
         {
-            if (planManager == null) throw new ArgumentNullException(nameof(planManager));
-            if (sqlBackupService == null) throw new ArgumentNullException(nameof(sqlBackupService));
+            ArgumentNullException.ThrowIfNull(planManager);
+            ArgumentNullException.ThrowIfNull(sqlBackupService);
+            ArgumentNullException.ThrowIfNull(settingsManager);
 
             InitializeComponent();
             ApplyIcons();
             _planManager = planManager;
             _sqlBackupService = sqlBackupService;
+            _settingsManager = settingsManager;
 
             if (existingPlan != null)
             {
@@ -361,6 +364,13 @@ namespace KoruMsSqlYedek.Win.Forms
             _cmbReportFreq.Items.Add("Günlük");
             _cmbReportFreq.Items.Add("Haftalık");
             _cmbReportFreq.Items.Add("Aylık");
+
+            // SMTP Profilleri
+            var settings = _settingsManager.Load();
+            _cmbSmtpProfile.Items.Clear();
+            _cmbSmtpProfile.Items.Add(new SmtpProfile { Id = string.Empty, DisplayName = Res.Get("PlanEdit_SmtpNoProfile") ?? "(Profil seçin)" });
+            foreach (var profile in settings.SmtpProfiles)
+                _cmbSmtpProfile.Items.Add(profile);
         }
 
         #endregion
@@ -421,12 +431,16 @@ namespace KoruMsSqlYedek.Win.Forms
 
             // Adım 6: Bildirim + Rapor
             _chkEmailEnabled.Checked = _plan.Notifications?.EmailEnabled ?? false;
-            _txtEmailTo.Text = _plan.Notifications?.EmailTo ?? "";
-            _txtSmtpServer.Text = _plan.Notifications?.SmtpServer ?? "";
-            _nudSmtpPort.Value = _plan.Notifications?.SmtpPort ?? 587;
-            _chkSmtpSsl.Checked = _plan.Notifications?.SmtpUseSsl ?? true;
-            _txtSmtpUser.Text = _plan.Notifications?.SmtpUsername ?? "";
-            _txtSmtpPassword.Text = "";
+            string profileId = _plan.Notifications?.SmtpProfileId ?? string.Empty;
+            _cmbSmtpProfile.SelectedIndex = 0;
+            for (int i = 0; i < _cmbSmtpProfile.Items.Count; i++)
+            {
+                if (_cmbSmtpProfile.Items[i] is SmtpProfile p && p.Id == profileId)
+                {
+                    _cmbSmtpProfile.SelectedIndex = i;
+                    break;
+                }
+            }
             _chkNotifySuccess.Checked = _plan.Notifications?.OnSuccess ?? true;
             _chkNotifyFailure.Checked = _plan.Notifications?.OnFailure ?? true;
             _chkToast.Checked = _plan.Notifications?.ToastEnabled ?? true;
@@ -511,18 +525,10 @@ namespace KoruMsSqlYedek.Win.Forms
 
             // Adım 6: Bildirim + Rapor
             _plan.Notifications.EmailEnabled = _chkEmailEnabled.Checked;
-            _plan.Notifications.EmailTo = _txtEmailTo.Text.Trim();
-            _plan.Notifications.SmtpServer = _txtSmtpServer.Text.Trim();
-            _plan.Notifications.SmtpPort = (int)_nudSmtpPort.Value;
-            _plan.Notifications.SmtpUseSsl = _chkSmtpSsl.Checked;
-            _plan.Notifications.SmtpUsername = _txtSmtpUser.Text.Trim();
+            _plan.Notifications.SmtpProfileId = (_cmbSmtpProfile.SelectedItem as SmtpProfile)?.Id;
             _plan.Notifications.OnSuccess = _chkNotifySuccess.Checked;
             _plan.Notifications.OnFailure = _chkNotifyFailure.Checked;
             _plan.Notifications.ToastEnabled = _chkToast.Checked;
-            if (!string.IsNullOrEmpty(_txtSmtpPassword.Text))
-            {
-                _plan.Notifications.SmtpPassword = PasswordProtector.Protect(_txtSmtpPassword.Text);
-            }
             if (_plan.Reporting == null)
                 _plan.Reporting = new ReportingConfig();
             _plan.Reporting.IsEnabled = _chkReportEnabled.Checked;
@@ -795,6 +801,13 @@ namespace KoruMsSqlYedek.Win.Forms
         private void OnStrategyChanged(object sender, EventArgs e) => UpdateStrategyFieldsVisibility();
         private void OnRetentionChanged(object sender, EventArgs e) => UpdateRetentionFieldsVisibility();
         private void OnEmailEnabledChanged(object sender, EventArgs e) => UpdateEmailFieldsVisibility();
+
+        private void OnOpenSmtpSettingsClick(object? sender, System.Windows.Forms.LinkLabelLinkClickedEventArgs e)
+        {
+            MessageBox.Show(
+                Res.Get("PlanEdit_SmtpGoToSettings") ?? "SMTP profillerini yönetmek için ana pencereden\nAyarlar \u003e E-posta (SMTP) sekmesini açın.",
+                Res.Get("Info") ?? "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
         private void OnReportEnabledChanged(object sender, EventArgs e) => UpdateReportFieldsVisibility();
         private void OnFileBackupEnabledChanged(object sender, EventArgs e)
         {
@@ -843,7 +856,11 @@ namespace KoruMsSqlYedek.Win.Forms
         private void UpdateEmailFieldsVisibility()
         {
             bool enabled = _chkEmailEnabled.Checked;
-            _pnlSmtp.Enabled = enabled;
+            _lblSmtpProfile.Enabled = enabled;
+            _cmbSmtpProfile.Enabled = enabled;
+            _lnkOpenSmtpSettings.Enabled = enabled;
+            _chkNotifySuccess.Enabled = enabled;
+            _chkNotifyFailure.Enabled = enabled;
         }
 
         private void UpdateReportFieldsVisibility()

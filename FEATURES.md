@@ -37,6 +37,79 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 | **Faz 26** | Bulut Yedek Koruma: Gönderilmemiş Dosya Silme Engeli | ✅ Tamamlandı |
 | **Faz 26.2** | Güvenlik Sertleştirme: TLS/SSH Doğrulama, Hata Sanitizasyonu | ✅ Tamamlandı |
 | **Faz 27** | Proje Yeniden Adlandırma + Depolama Sütunu | ✅ Tamamlandı |
+| **Faz 27.1** | İsim Değişikliği Sonrası Temizlik | ✅ Tamamlandı |
+| **Faz 27.2** | AppData Otomatik Migrasyon (MikroSqlDbYedek → KoruMsSqlYedek) | ✅ Tamamlandı |
+| **Faz 28** | Bulut Upload İlerleme + Otomatik Klasör Yapısı | ✅ Tamamlandı |
+| **Faz 29** | Resumable Upload + Bulut SHA-256 Bütünlük Kontrolü | ✅ Tamamlandı |
+| **Faz 30** | Yerel Yedek Bütünlük Sistemi (SQL + 7z + Dosya Kopyası SHA-256) | ✅ Tamamlandı |
+| **Faz 31** | Named Pipe IPC — Servis ↔ Tray Ayrışması (Option A) | ✅ Tamamlandı |
+| **Faz 32** | Pipe Bağlantı Durum Göstergesi (Tray + MainWindow) | ✅ Tamamlandı |
+| **Faz 33** | Scheduler Durum Sorgusu — Next Fire Times (Pipe üzerinden) | ✅ Tamamlandı |
+| **Faz 34** | Bildirim Sistemi — E-posta (MailKit) + Tray Balloon (ToastEnabled) | ✅ Tamamlandı |
+| **Faz 35** | Restore UI — Yedek geçmişinden veritabanı geri yükleme diyaloğu | ✅ Tamamlandı |
+| **Faz 36** | Inno Setup & Build Script — .NET 10 uyumlu dağıtım paketi | ✅ Tamamlandı |
+| **Faz 37** | Grid Progress Bar + Per-Plan Log + Upload Bytes + Varsayılan Klasör | ✅ Tamamlandı |
+| **Faz 38** | Dosya Yedekleme Tetikleme Hatası Düzeltme | ✅ Tamamlandı |
+| **Faz 39** | Merkezi SMTP Profil Yönetimi + Kapsam test | ✅ Tamamlandı |
+| **Faz 39.1** | UI Görünen Ad Düzeltmesi ("Koru MsSql Yedek") | ✅ Tamamlandı |
+| **Faz 39.2** | BackupJobExecutor Kapsamlı Test Genişletmesi (+12 test, 223 toplam) | ✅ Tamamlandı |
+| **Faz 40** | Periyodik Raporlama Motoru (Günlük/Haftalık/Aylık HTML rapor) | ✅ Tamamlandı |
+| **Faz 41** | Görev Listesi Kolon Sıralama + Arama (ToolStrip) | ✅ Tamamlandı |
+
+---
+
+## Faz 40 — Periyodik Raporlama Motoru ✅
+
+### Yeni Özellikler
+- [x] **`IReportingService`** — `Core\Interfaces\IReportingService.cs`: `SendReportAsync(BackupPlan, CancellationToken)` arayüzü
+- [x] **`ReportingService`** — `Engine\Notification\ReportingService.cs`
+  - Günlük / Haftalık / Aylık dönem hesabı (`GetReportingPeriod`)
+  - `BackupHistoryManager` üzerinden dönem kayıtları sorgulanır
+  - Özet: toplam/başarılı/başarısız/oran, boyut, sıkıştırma kazancı
+  - Detay: son 50 kayıt tablo (tarih, DB, tür, durum, boyut, süre)
+  - SMTP profil çözümü: `SmtpProfileId` → eski per-plan alanlar (geriye uyumluluk)
+  - Rapor hatası yedek işlemini etkilemez
+- [x] **`ReportingJob`** — `Engine\Scheduling\ReportingJob.cs`: Quartz.NET `IJob`, `DisallowConcurrentExecution`, property injection
+- [x] **`QuartzSchedulerService`** güncellemesi
+  - `SchedulePlanAsync`: `plan.Reporting.IsEnabled` ise `ScheduleReportingJobAsync` çağrılır
+  - `BuildReportingCron()`: Daily `0 0 H * * ?`, Weekly `0 0 H ? * MON`, Monthly `0 0 H 1 * ?`; `SendHour` 0–23 sınırlanır
+  - `UnschedulePlanAsync`: "Reporting" job da silinir
+  - `GetNextFireTimeAsync`: "Reporting" tipi de kontrol edilir
+- [x] **`EngineModule`**: `IReportingService`/`ReportingService` + `ReportingJob` kayıtları
+
+### Test
+- [x] **`ReportingServiceTests`** — 17 test (240 toplam)
+  - Constructor null guard'ları (historyManager, settingsManager)
+  - `SendReportAsync`: plan null → ArgumentNullException; Reporting null/disabled → history sorgulanmaz; SMTP profil yok → exception fırlatılmaz; profil ID bulunamadı → exception fırlatılmaz; profil öncesi erken çıkış doğrulaması
+  - `GetReportingPeriod`: Daily dün, Weekly 7 günlük Pzt başlangıç, Monthly tam önceki ay
+  - `BuildReportingCron`: null/disabled → null; Daily/Weekly/Monthly cron doğrulaması; SendHour sınırlama
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Core\Interfaces\IReportingService.cs` (YENİ)
+- [x] `KoruMsSqlYedek.Engine\Notification\ReportingService.cs` (YENİ)
+- [x] `KoruMsSqlYedek.Engine\Scheduling\ReportingJob.cs` (YENİ)
+- [x] `KoruMsSqlYedek.Engine\Scheduling\QuartzSchedulerService.cs`
+- [x] `KoruMsSqlYedek.Engine\IoC\EngineModule.cs`
+- [x] `KoruMsSqlYedek.Tests\ReportingServiceTests.cs` (YENİ)
+- [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.40.0.0
+- [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.40.0.0
+
+---
+
+## Faz 41 — Görev Listesi Sıralama + Arama ✅
+
+### Yeni Özellikler
+- [x] **Kolon başlığı tıklama ile sıralama**: Her kolon başlığına tıklayınca artan/azalan sıralama; `SortGlyphDirection` (▲/▼) ile görsel geri bildirim; İlerleme kolonu sıralamadan çıkarıldı
+- [x] **ToolStrip arama kutusu** (`_tstSearch`, 200 px): Görev adı, veritabanı listesi, strateji ve depolama alanı üzerinde büyük/küçük harf duyarsız canlı filtreleme
+- [x] **Durum çubuğu**: Filtre aktifken "X / Y görev", değilken mevcut format
+- [x] **`PlanRowData` iç sınıfı**: Plan görüntüleme verisi (history dahil) `RefreshPlanList()`'te tek seferinde hesaplanır; `ApplyPlanFilter()` her filtre/sıralama değişikliğinde history yeniden sorgulamaz
+- [x] **`ApplyPlanFilter()`**: LINQ ile filtreleme + sıralama + grid doldurma tek metodda
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Win\MainWindow.Designer.cs` — `_tsSep3`, `_tslSearchLabel`, `_tstSearch` + `ColumnHeaderMouseClick`
+- [x] `KoruMsSqlYedek.Win\MainWindow.cs` — `PlanRowData`, `_allPlanRows`, `ApplyPlanFilter()`, `OnPlanGridColumnHeaderClick()`, `OnPlanSearchTextChanged()`, `RefreshPlanList()` refactor
+- [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.41.0.0
+- [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.41.0.0
 
 ---
 
@@ -540,3 +613,182 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 - [x] Eski stub klasörler (`MikroSqlDbYedek.*`) temizlendi
 - [x] `dotnet restore` + `dotnet build` — 0 hata ile tamamlandı
 - [x] Görev listesi: "Depolama" sütunu eklendi — `☁ Bulut (N)` / `💾 Yerel` gösterimi
+
+## Faz 28 — Bulut Upload İlerleme + Otomatik Klasör Yapısı ✅
+
+- [x] Her bulut hedefi için anlık ilerleme etiketi + progress bar (`CloudUploadStarted / Progress / Completed`)
+- [x] `RemoteFolderPath` boş bırakılırsa otomatik `KoruMsSqlYedek/{PlanAdı}/` klasörü oluşturulur
+- [x] Per-target log satırları (✓/✗)
+
+## Faz 29 — Resumable Upload + Bulut SHA-256 Bütünlük Kontrolü ✅
+
+- [x] `UploadStateRecord` + `UploadStateManager`: kesilen upload'lar JSON ile persist edilir
+- [x] `PathHelper.UploadStateDirectory`: state dosyaları `%APPDATA%\KoruMsSqlYedek\UploadState\`
+- [x] **Google Drive**: `InitiateSessionAsync()` → `Task<Uri>` ile session URI yakalanır; `ResumeAsync(uri)` ile devam
+- [x] **OneDrive**: `UploadSession.UploadUrl` persist; `LargeFileUploadTask` ile resume
+- [x] **FTP/FTPS**: `FtpRemoteExists.Resume` — sunucu-taraflı kaldığı yerden devam
+- [x] **SFTP**: `GetAttributes.Size` offset ile `client.Open(ReadWrite)` + seek ile append
+- [x] `CloudUploadOrchestrator`: SHA-256 tek hesaplanır; per-target state oluştur/yükle; upload sonrası remote boyut karşılaştırması
+- [x] `RecoverPendingUploadsAsync`: uygulama başlangıcında bekleyen upload'lar otomatik yeniden başlatılır
+- [x] Hem `TrayApplicationContext` hem `BackupWindowsService`'te startup recovery
+
+## Faz 30 — Yerel Yedek Bütünlük Sistemi (SQL + 7z + Dosya Kopyası SHA-256) ✅
+
+### SQL Server Yedek Doğrulama
+- [x] `SqlBackupService.VerifyBackupAsync()`: SMO `Restore.SqlVerify(server)` → `RESTORE VERIFYONLY`
+- [x] `BackupJobExecutor` Step 2: `plan.VerifyAfterBackup = true` ise otomatik çalışır
+- [x] `BackupResult.VerifyResult: bool?` — sonuç takibi
+
+### 7z Arşiv Bütünlük Doğrulama
+- [x] `ICompressionService.VerifyArchiveAsync(archivePath, password, ct) → Task<bool>`
+- [x] `SevenZipCompressionService.VerifyArchiveAsync()`: `SevenZipExtractor.Check()` — tüm girdiler CRC kontrolü
+- [x] Şifreli arşiv desteği: doğru parola ile açılır, CRC karşılaştırılır
+- [x] `BackupJobExecutor` Step 3b: compress sonrası otomatik doğrulama
+- [x] `BackupResult.CompressionVerified: bool?` — sonuç takibi
+
+### Dosya Kopyası SHA-256 Doğrulama
+- [x] `FileBackupService.VerifyFileCopyIntegrityAsync()`: boyut karşılaştırması + SHA-256
+- [x] `ComputeFileSha256Async()`: async stream hash, `FileShare.ReadWrite` ile kilitli dosya desteği
+- [x] Kaynak kilitli ise (IOException): boyut eşleşmesi yeterli kabul edilir
+- [x] `FileBackupResult.FilesVerified` + `FilesVerificationFailed` alanları
+- [x] `IFileBackupService.BackupSourceAsync()`: `verifyAfterCopy = false` opsiyonel parametre
+- [x] `BackupFilesAsync()`: `plan.VerifyAfterBackup` ile doğrulama aktif edilir
+
+---
+
+## Faz 31 — Named Pipe IPC: Servis ↔ Tray Ayrışması (Option A) ✅
+
+### Mimari Değişiklik
+- [x] Tray uygulaması artık yedekleme motorunu **doğrudan çalıştırmıyor**; yalnızca Named Pipe üzerinden Windows Service ile iletişim kuruyor
+- [x] `KoruMsSqlYedekPipe` — JSON + newline protokolü; çok-istemci desteği
+
+### Yeni Dosyalar
+- [x] `Core\IPC\PipeProtocol.cs` — `PipeMessage`, `ManualBackupCommand`, `CancelBackupCommand`, `BackupActivityMessage`, `ServiceStatusMessage`, `PipeSerializer`
+- [x] `Core\IPC\BackupCancellationRegistry.cs` — `IBackupCancellationRegistry`; planId → CTS eşlemesi; pipe üzerinden iptal desteği
+- [x] `Service\IPC\ServicePipeServer.cs` — çok-istemci AcceptLoop, komut yönetimi, `BackupActivityHub` yayını
+- [x] `Win\IPC\ServicePipeClient.cs` — otomatik yeniden bağlantı (5 sn), `BackupActivityHub.Raise`, `SendManualBackupCommandAsync`, `SendCancelCommandAsync`
+- [x] `Win\IoC\WinModule.cs` — Tray için hafif Autofac modülü (Quartz/sıkıştırma/bulut YOK)
+
+### Değiştirilen Dosyalar
+- [x] `BackupJobExecutor.cs` — `IBackupCancellationRegistry` property injection; CTS kayıt/sil
+- [x] `BackupWindowsService.cs` — `ServicePipeServer` inject; Start/Stop entegrasyonu
+- [x] `ServiceContainerBootstrap.cs` — `BackupCancellationRegistry` + `ServicePipeServer` singleton
+- [x] `WinContainerBootstrap.cs` — `EngineModule` → `WinModule`
+- [x] `TrayApplicationContext.cs` — Scheduler bağımlılıkları kaldırıldı; `ServicePipeClient` ile çalışır
+- [x] `MainWindow.cs` — pipe-tabanlı manuel yedekleme; `OnBackupActivityChanged`; `UpdatePlanRowStatus`
+
+---
+
+## Faz 32 — Pipe Bağlantı Durum Göstergesi (Tray + MainWindow) ✅
+
+### Yeni Özellikler
+- [x] `TrayIconStatus.Disconnected` — gri uyarı ikonu; servis bağlantısı kesilince tray ikonu griye döner
+- [x] Tray ballon tip bildirimleri: bağlandığında "Servis bağlandı", kesildiğinde "Servis bağlantısı kesildi"
+- [x] MainWindow status bar: bağlı → yeşil "Servis bağlı", bağlı değil → kırmızı "Servis bağlı değil"
+- [x] `ConnectionChanged` event'i `TrayApplicationContext` ve `MainWindow`'da subscribe edildi
+
+### Değiştirilen Dosyalar
+- [x] `Win\Helpers\SymbolIconHelper.cs` — `TrayIconStatus.Disconnected` + gri `SymbolWarning` ikonu
+- [x] `Win\TrayApplicationContext.cs` — `OnPipeConnectionChanged` handler; başlangıçta Disconnected
+- [x] `Win\MainWindow.cs` — `OnPipeConnectionChanged` + `UpdateStatusBarConnection`
+- [x] `Win\Properties\Resources.resx` + `Resources.tr-TR.resx` — 7 yeni kaynak anahtarı
+
+---
+
+## Faz 33 — Scheduler Durum Sorgusu — Next Fire Times ✅
+
+### Yeni Özellikler
+- [x] `ServiceStatusMessage.NextFireTimes` — `Dictionary<string, string>` (planId → "dd.MM.yyyy HH:mm")
+- [x] Servis her bağlantı isteğinde + yedek tamamlandığında/başarısız/iptal sonrası tüm istemcilere `ServiceStatusMessage` yayınlar
+- [x] Dashboard zamanlayıcısı her 30 saniyede `RequestStatusAsync()` çağırır
+- [x] Plan grid'indeki `_colNextRun` sütunu canlı güncellenir
+- [x] `ServiceStatusHub` statik event hub — pipe'dan gelen status mesajlarını UI bileşenlerine iletir
+
+### Yeni Dosyalar
+- [x] `Core\IPC\ServiceStatusHub.cs` — `StatusReceived` event; `Raise(ServiceStatusMessage)` metodu
+
+### Değiştirilen Dosyalar
+- [x] `Service\IPC\ServicePipeServer.cs` — `IPlanManager` inject; `NextFireTimes` doldurma; `BroadcastStatusAsync()` yeni metod
+- [x] `Win\IPC\ServicePipeClient.cs` — `ServiceStatus` mesajı → `ServiceStatusHub.Raise()`
+- [x] `Win\MainWindow.cs` — `ServiceStatusHub.StatusReceived` subscribe; `OnServiceStatusReceived` handler; grid güncelleme
+
+---
+
+## Faz 34 — Bildirim Sistemi (MailKit + ToastEnabled) ✅
+
+### Yeni Özellikler
+- [x] **E-posta bildirimi**: MailKit SMTP — HTML formatlı yedek sonuç maili; her plan için bağımsız SMTP ayarı
+- [x] **Tray balloon kontrolü**: `ToastEnabled` plan ayarı — `false` yapıldığında balloon tip gösterilmez
+- [x] **Bildirim güvenliği**: Bildirim hatası yedek sonucunu etkilemez; hata log'a yazılır
+
+### Değiştirilen Dosyalar
+- [x] `Core\Events\BackupActivityEvent.cs` — `BackupActivityEventArgs.ToastEnabled` eklendi (varsayılan `true`)
+- [x] `Core\IPC\PipeProtocol.cs` — `BackupActivityMessage.toastEnabled` JSON alanı; `FromArgs` + `ToArgs` güncellendi
+- [x] `Service\IPC\ServicePipeServer.cs` — `OnActivityChanged`: plan config'den `ToastEnabled` okunup mesaja yazılır
+- [x] `Win\TrayApplicationContext.cs` — tüm balloon case'lerine `if (e.ToastEnabled)` koruma eklendi
+
+---
+
+## Faz 35 — Restore UI (Yedekten Geri Yükleme Diyaloğu) ✅
+
+### Yeni Özellikler
+- [x] **RestoreDialog**: Plan sağ tık → "Geri Yükle..." — başarılı yedekler listelenir
+- [x] **RESTORE VERIFYONLY**: "Doğrula" butonu ile yedek dosyası bütünlük kontrolü
+- [x] **RESTORE DATABASE**: Hedef DB adı düzenlenebilir; restore öncesi güvenlik yedeği seçeneği (varsayılan açık)
+- [x] **İlerleme + canlı log**: Yüzde progress bar + zaman damgalı log TextBox
+- [x] **Güvenlik**: Onay diyaloğu; 2 saatlik timeout + form kapatılınca iptal
+
+### Yeni Dosyalar
+- [x] `Win\Forms\RestoreDialog.cs` — history yükleme, verify, restore, progress, log
+- [x] `Win\Forms\RestoreDialog.Designer.cs` — DataGridView (6 sütun) + options TLP + progress + log + butonlar
+
+### Değiştirilen Dosyalar
+- [x] `Win\MainWindow.Designer.cs` — `_ctxSep4` + `_ctxRestore` context menu öğesi eklendi
+- [x] `Win\MainWindow.cs` — `OnCtxRestoreClick` handler
+- [x] `Win\Properties\Resources.resx` + `Resources.tr-TR.resx` — 20 yeni kaynak anahtarı (EN + TR)
+
+---
+
+## Faz 36 — Inno Setup & Build Script (.NET 10 Uyumlu Dağıtım) ✅
+
+### Güncellemeler
+- [x] **KoruMsSqlYedek.iss**: Versiyon 0.36.0, .NET 10 Desktop Runtime kontrolü (`IsDotNet10DesktopInstalled`)
+- [x] **Inno Setup .NET kontrolü**: `FindFirst` ile `{commonpf64}\dotnet\shared\Microsoft.WindowsDesktop.App\10.*` varlığı kontrol edilir
+- [x] **CustomMessages**: DotNetRequired mesajı .NET 10 Desktop Runtime için TR + EN güncellendi
+- [x] **Build-Release.ps1**: Her iki `dotnet publish` komutuna `-r win-x64 --self-contained false` eklendi
+- [x] **Build-Release.ps1**: Adım sayacı `[1/6]–[6/6]` → `[1/7]–[7/7]` güncellendi
+- [x] **Build-Release.ps1**: Yeni 7. adım — `ISCC.exe` ile Inno Setup installer otomatik derleme (PATH veya varsayılan `%ProgramFiles(x86)%\Inno Setup 6\` konumunda aranır; bulunamazsa uyarı ile devam eder)
+
+### Değiştirilen Dosyalar
+- [x] `Deployment\InnoSetup\KoruMsSqlYedek.iss` — versiyon, .NET 10 kontrolü, mesajlar
+- [x] `Deployment\Build-Release.ps1` — publish RID parametreleri + ISCC adımı
+
+---
+
+## Faz 37 — Grid Progress Bar + Per-Plan Log + Upload Bytes + Varsayılan Klasör ✅
+
+### Yeni Özellikler
+- [x] **Grid İlerleme Sütunu**: `DataGridViewProgressBarColumn` — aktif yedekleme sırasında satır bazlı % progress bar
+- [x] **Per-Plan Log Yalıtımı**: Her plana ait log ayrı buffer'da saklanır; görevler arası geçişte `_txtBackupLog` seçili plana göre güncellenir
+- [x] **Upload Byte/Hız Bilgisi**: Log satırı `%XX | Gönderilen: Y/Z | Hız: W/s` formatında; progress bar `CustomText` modunda göstergede aynı bilgiler
+- [x] **Varsayılan Uzak Klasör**: Yeni bulut hedef oluştururken boş `RemoteFolderPath` → OAuth için `KoruMsSqlYedek`, FTP/SFTP için `/KoruMsSqlYedek`
+
+### Teknik Değişiklikler
+- [x] `BackupActivityEventArgs`: `BytesSent`, `BytesTotal`, `SpeedBytesPerSecond` eklendi
+- [x] `BackupActivityMessage`: yeni alanlar JSON serialization ile pipe üzerinden taşınır
+- [x] `CloudUploadOrchestrator.hubProgress`: `uploadStartTime` ile byte/hız hesabı
+- [x] `DataGridViewProgressBarCell` + `DataGridViewProgressBarColumn`: custom WinForms hücre tipi
+- [x] `MainWindow._planLogs` / `_planProgress`: plan bazlı log ve ilerleme sözlükleri
+- [x] `RefreshPlanList`: `_colProgress` için `0` başlangıç değeri
+- [x] `BuildActivityLogLine`: `static` → instance; `CloudUploadProgress` için bytes formatı
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Core\Events\BackupActivityEvent.cs`
+- [x] `KoruMsSqlYedek.Core\IPC\PipeProtocol.cs`
+- [x] `KoruMsSqlYedek.Engine\Cloud\CloudUploadOrchestrator.cs`
+- [x] `KoruMsSqlYedek.Win\Forms\CloudTargetEditDialog.cs`
+- [x] `KoruMsSqlYedek.Win\Theme\DataGridViewProgressBarCell.cs` (YENİ)
+- [x] `KoruMsSqlYedek.Win\MainWindow.Designer.cs`
+- [x] `KoruMsSqlYedek.Win\MainWindow.cs`
+- [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.37.0.0
+- [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.37.0.0

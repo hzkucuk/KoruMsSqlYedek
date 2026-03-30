@@ -13,13 +13,20 @@ using KoruMsSqlYedek.Core.Models;
 
 namespace KoruMsSqlYedek.Engine.Notification
 {
-    /// <summary>
     /// MailKit tabanlı e-posta bildirim servisi.
     /// </summary>
     public class EmailNotificationService : INotificationService
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<EmailNotificationService>();
         private const double BytesPerMb = 1048576.0;
+
+        private readonly IAppSettingsManager _settingsManager;
+
+        public EmailNotificationService(IAppSettingsManager settingsManager)
+        {
+            ArgumentNullException.ThrowIfNull(settingsManager);
+            _settingsManager = settingsManager;
+        }
 
         public async Task NotifyAsync(
             BackupResult result,
@@ -35,16 +42,45 @@ namespace KoruMsSqlYedek.Engine.Notification
             if (!shouldNotify)
                 return;
 
+            // Profil çözümleme: önce SmtpProfileId, yoksa eski per-plan alanlardan oluşturulan geçici profil
+            SmtpProfile profile = ResolveProfile(config);
+            if (profile == null || string.IsNullOrWhiteSpace(profile.Host))
+            {
+                Log.Warning("E-posta bildirimi atlandı: SMTP profili bulunamadı veya sunucu adresi boş.");
+                return;
+            }
+
             try
             {
+                string recipients = !string.IsNullOrWhiteSpace(config.EmailTo)
+                    ? config.EmailTo
+                    : profile.RecipientEmails;
+
+                if (string.IsNullOrWhiteSpace(recipients))
+                {
+                    Log.Warning("E-posta bildirimi atlandı: Alıcı adresi tanımlanmamış.");
+                    return;
+                }
+
+                string senderEmail = !string.IsNullOrWhiteSpace(profile.SenderEmail)
+                    ? profile.SenderEmail
+                    : profile.Username;
+                string senderName = profile.SenderDisplayName ?? "Koru MsSql Yedek";
+
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("KoruMsSqlYedek", config.SmtpUsername));
-                message.To.Add(MailboxAddress.Parse(config.EmailTo));
+                message.From.Add(new MailboxAddress(senderName, senderEmail));
+
+                foreach (string addr in recipients.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string trimmed = addr.Trim();
+                    if (!string.IsNullOrEmpty(trimmed))
+                        message.To.Add(MailboxAddress.Parse(trimmed));
+                }
 
                 bool isSuccess = result.Status == BackupResultStatus.Success;
                 string statusText = isSuccess ? "Başarılı ✓" : "Başarısız ✗";
 
-                message.Subject = $"[KoruMsSqlYedek] {result.DatabaseName} — Yedekleme {statusText}";
+                message.Subject = $"[Koru MsSql Yedek] {result.DatabaseName} — Yedekleme {statusText}";
 
                 var bodyBuilder = new BodyBuilder
                 {
@@ -55,16 +91,16 @@ namespace KoruMsSqlYedek.Engine.Notification
                 using (var client = new SmtpClient())
                 {
                     await client.ConnectAsync(
-                        config.SmtpServer,
-                        config.SmtpPort,
-                        config.SmtpUseSsl ? MailKit.Security.SecureSocketOptions.StartTls
-                                          : MailKit.Security.SecureSocketOptions.None,
+                        profile.Host,
+                        profile.Port,
+                        profile.UseSsl ? MailKit.Security.SecureSocketOptions.StartTls
+                                       : MailKit.Security.SecureSocketOptions.None,
                         cancellationToken);
 
-                    if (!string.IsNullOrEmpty(config.SmtpUsername))
+                    if (!string.IsNullOrEmpty(profile.Username))
                     {
-                        string password = PasswordProtector.Unprotect(config.SmtpPassword);
-                        await client.AuthenticateAsync(config.SmtpUsername, password, cancellationToken);
+                        string password = PasswordProtector.Unprotect(profile.Password);
+                        await client.AuthenticateAsync(profile.Username, password, cancellationToken);
                     }
 
                     await client.SendAsync(message, cancellationToken);
@@ -72,14 +108,48 @@ namespace KoruMsSqlYedek.Engine.Notification
                 }
 
                 Log.Information(
-                    "Bildirim e-postası gönderildi: {Database} → {Email}",
-                    result.DatabaseName, config.EmailTo);
+                    "Bildirim e-postası gönderildi: {Database} → {Recipients} (Profil: {Profile})",
+                    result.DatabaseName, recipients, profile.DisplayName);
             }
             catch (Exception ex)
             {
                 // Bildirim başarısızlığı yedek başarısını ETKİLEMEZ
                 Log.Error(ex, "Bildirim e-postası gönderilemedi: {Database}", result.DatabaseName);
             }
+        }
+
+        /// <summary>
+        /// SmtpProfileId üzerinden profil arar; bulamazsa eski per-plan alanlarından geçici profil oluşturur.
+        /// </summary>
+        private SmtpProfile ResolveProfile(NotificationConfig config)
+        {
+            if (!string.IsNullOrWhiteSpace(config.SmtpProfileId))
+            {
+                var appSettings = _settingsManager.Load();
+                var profile = appSettings.SmtpProfiles?.Find(p => p.Id == config.SmtpProfileId);
+                if (profile != null)
+                    return profile;
+
+                Log.Warning("SmtpProfileId '{Id}' bulunamadı; eski SMTP alanları deneniyor.", config.SmtpProfileId);
+            }
+
+            // Geriye uyumluluk: eski planlarda per-plan SMTP alanları dolu olabilir
+            if (!string.IsNullOrWhiteSpace(config.SmtpServer))
+            {
+                return new SmtpProfile
+                {
+                    DisplayName = "(eski plan ayarı)",
+                    Host = config.SmtpServer,
+                    Port = config.SmtpPort ?? 587,
+                    UseSsl = config.SmtpUseSsl ?? true,
+                    Username = config.SmtpUsername,
+                    Password = config.SmtpPassword,
+                    SenderEmail = config.SmtpUsername,
+                    RecipientEmails = config.EmailTo
+                };
+            }
+
+            return null;
         }
 
         private string BuildEmailBody(BackupResult result, bool isSuccess)
@@ -150,7 +220,7 @@ namespace KoruMsSqlYedek.Engine.Notification
             <td style='padding: 8px; border-bottom: 1px solid #ddd;'><code>{result.CorrelationId}</code></td></tr>
     </table>
     {(isSuccess ? "" : $"<p style='color: red;'><b>Hata:</b> {SanitizeForEmail(result.ErrorMessage)}</p>")}
-    <p style='color: #666; font-size: 12px;'>Bu e-posta KoruMsSqlYedek tarafından otomatik gönderilmiştir.</p>
+    <p style='color: #666; font-size: 12px;'>Bu e-posta Koru MsSql Yedek tarafından otomatik gönderilmiştir.</p>
 </div>");
 
             return sb.ToString();
@@ -177,11 +247,11 @@ namespace KoruMsSqlYedek.Engine.Notification
             try
             {
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("KoruMsSqlYedek", plan.Notifications.SmtpUsername));
+                message.From.Add(new MailboxAddress("Koru MsSql Yedek", plan.Notifications.SmtpUsername));
                 message.To.Add(MailboxAddress.Parse(plan.Notifications.EmailTo));
 
                 string statusText = allSuccess ? "Başarılı ✓" : "Kısmi Başarı ⚠";
-                message.Subject = $"[KoruMsSqlYedek] Dosya Yedekleme — {statusText}";
+                message.Subject = $"[Koru MsSql Yedek] Dosya Yedekleme — {statusText}";
 
                 var bodyBuilder = new BodyBuilder
                 {
@@ -193,8 +263,8 @@ namespace KoruMsSqlYedek.Engine.Notification
                 {
                     await client.ConnectAsync(
                         plan.Notifications.SmtpServer,
-                        plan.Notifications.SmtpPort,
-                        plan.Notifications.SmtpUseSsl
+                        plan.Notifications.SmtpPort ?? 587,
+                        plan.Notifications.SmtpUseSsl == true
                             ? MailKit.Security.SecureSocketOptions.StartTls
                             : MailKit.Security.SecureSocketOptions.None,
                         cancellationToken);
@@ -248,14 +318,14 @@ namespace KoruMsSqlYedek.Engine.Notification
 
             sb.AppendLine(@"
     </table>
-    <p style='color: #666; font-size: 12px;'>Bu e-posta KoruMsSqlYedek tarafından otomatik gönderilmiştir.</p>
+    <p style='color: #666; font-size: 12px;'>Bu e-posta Koru MsSql Yedek tarafından otomatik gönderilmiştir.</p>
 </div>");
 
             return sb.ToString();
         }
 
         /// <summary>
-        /// E-posta gövdesine eklenmeden önce hata mesajından hassas bilgileri temizler.
+        /// E-posta gövdesine eklenmeden önce
         /// Dosya yolları, sunucu adresleri ve stack trace bilgilerini gizler; HTML encode uygular.
         /// </summary>
         private static string SanitizeForEmail(string message)

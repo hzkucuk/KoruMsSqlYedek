@@ -65,6 +65,10 @@ namespace KoruMsSqlYedek.Engine.IoC
                 .As<INotificationService>()
                 .InstancePerDependency();
 
+            builder.RegisterType<ReportingService>()
+                .As<IReportingService>()
+                .InstancePerDependency();
+
             // Bulut provider fabrikası & orkestratör
             builder.RegisterType<CloudProviderFactory>()
                 .As<ICloudProviderFactory>()
@@ -87,6 +91,11 @@ namespace KoruMsSqlYedek.Engine.IoC
 
             // Quartz IJob — property injection ile bağımlılıkları enjekte et
             builder.RegisterType<BackupJobExecutor>()
+                .AsSelf()
+                .PropertiesAutowired()
+                .InstancePerDependency();
+
+            builder.RegisterType<ReportingJob>()
                 .AsSelf()
                 .PropertiesAutowired()
                 .InstancePerDependency();

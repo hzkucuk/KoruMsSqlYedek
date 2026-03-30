@@ -12,6 +12,11 @@ namespace KoruMsSqlYedek.Core.Helpers
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "KoruMsSqlYedek");
 
+        // Yeniden adlandırma öncesi kullanılan eski AppData klasörü
+        private static readonly string LegacyAppDataRoot = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "MikroSqlDbYedek");
+
         /// <summary>Plan JSON dosyaları dizini: %APPDATA%\KoruMsSqlYedek\Plans\</summary>
         public static string PlansDirectory => Path.Combine(AppDataRoot, "Plans");
 
@@ -20,6 +25,9 @@ namespace KoruMsSqlYedek.Core.Helpers
 
         /// <summary>Genel ayarlar dizini: %APPDATA%\KoruMsSqlYedek\Config\</summary>
         public static string ConfigDirectory => Path.Combine(AppDataRoot, "Config");
+
+        /// <summary>Yarıda kalan upload durumları: %APPDATA%\KoruMsSqlYedek\UploadState\</summary>
+        public static string UploadStateDirectory => Path.Combine(AppDataRoot, "UploadState");
 
         /// <summary>Uygulama verileri kök dizini: %APPDATA%\KoruMsSqlYedek\</summary>
         public static string AppDataDirectory => AppDataRoot;
@@ -32,6 +40,32 @@ namespace KoruMsSqlYedek.Core.Helpers
             Directory.CreateDirectory(PlansDirectory);
             Directory.CreateDirectory(LogsDirectory);
             Directory.CreateDirectory(ConfigDirectory);
+            Directory.CreateDirectory(UploadStateDirectory);
+        }
+
+        /// <summary>
+        /// Eski uygulama adından (MikroSqlDbYedek) kalan AppData verilerini
+        /// yeni klasöre (KoruMsSqlYedek) taşır. Yalnızca eski klasör mevcutsa çalışır.
+        /// </summary>
+        public static void MigrateLegacyAppData()
+        {
+            if (!Directory.Exists(LegacyAppDataRoot))
+                return;
+
+            foreach (string sourceDir in Directory.GetDirectories(LegacyAppDataRoot, "*", SearchOption.AllDirectories))
+            {
+                string targetDir = sourceDir.Replace(LegacyAppDataRoot, AppDataRoot);
+                Directory.CreateDirectory(targetDir);
+            }
+
+            foreach (string sourceFile in Directory.GetFiles(LegacyAppDataRoot, "*", SearchOption.AllDirectories))
+            {
+                string targetFile = sourceFile.Replace(LegacyAppDataRoot, AppDataRoot);
+                if (!File.Exists(targetFile))
+                    File.Copy(sourceFile, targetFile);
+            }
+
+            Directory.Delete(LegacyAppDataRoot, recursive: true);
         }
 
         /// <summary>

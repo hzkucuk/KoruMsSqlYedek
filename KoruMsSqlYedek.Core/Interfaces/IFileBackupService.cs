@@ -23,10 +23,12 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// <summary>
         /// Tek bir dosya kaynağını yedekler.
         /// </summary>
+        /// <param name="verifyAfterCopy">Her dosya kopyalandıktan sonra SHA-256 bütünlük doğrulaması yapılsın mı.</param>
         Task<FileBackupResult> BackupSourceAsync(
             FileBackupSource source,
             string destinationBasePath,
             IProgress<int> progress,
-            CancellationToken cancellationToken);
+            CancellationToken cancellationToken,
+            bool verifyAfterCopy = false);
     }
 }

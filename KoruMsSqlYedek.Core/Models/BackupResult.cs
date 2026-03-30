@@ -55,6 +55,10 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("verifyResult")]
         public bool? VerifyResult { get; set; }
 
+        /// <summary>Sıkıştırma sonrası 7z arşiv bütünlük doğrulaması.</summary>
+        [JsonProperty("compressionVerified")]
+        public bool? CompressionVerified { get; set; }
+
         [JsonProperty("cloudUploadResults")]
         public List<CloudUploadResult> CloudUploadResults { get; set; } = new List<CloudUploadResult>();
 
@@ -87,5 +91,12 @@ namespace KoruMsSqlYedek.Core.Models
 
         [JsonProperty("retryCount")]
         public int RetryCount { get; set; }
+
+        /// <summary>
+        /// Upload sonrası uzak sistemdeki dosya boyutu (byte). Bütünlük doğrulaması için kullanılır.
+        /// 0 ise provider boyutu raporlamamıştır.
+        /// </summary>
+        [JsonProperty("remoteFileSizeBytes")]
+        public long RemoteFileSizeBytes { get; set; }
     }
 }

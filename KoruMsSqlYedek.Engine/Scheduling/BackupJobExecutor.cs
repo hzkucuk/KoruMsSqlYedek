@@ -8,6 +8,7 @@ using Serilog;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Core.IPC;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Engine.Backup;
 
@@ -33,6 +34,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
         public ICloudUploadOrchestrator CloudOrchestrator { get; set; }
         public IBackupHistoryManager HistoryManager { get; set; }
         public BackupChainValidator ChainValidator { get; set; }
+        public IBackupCancellationRegistry CancellationRegistry { get; set; }
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -71,30 +73,46 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 var cts = CancellationTokenSource.CreateLinkedTokenSource(
                     context.CancellationToken);
 
-                // Dosya yedekleme tipi
-                if (backupType == "FileBackup")
+                CancellationRegistry?.Register(planId, cts);
+                try
                 {
-                    await ExecuteFileBackupAsync(plan, correlationId, cts.Token);
-                    BackupActivityHub.Raise(new BackupActivityEventArgs
+
+                        // Dosya yedekleme tipi
+                        if (backupType == "FileBackup")
+                        {
+                            await ExecuteFileBackupAsync(plan, correlationId, cts.Token);
+                            BackupActivityHub.Raise(new BackupActivityEventArgs
+                            {
+                                PlanId = plan.PlanId,
+                                PlanName = plan.PlanName,
+                                ActivityType = BackupActivityType.Completed
+                            });
+                            return;
+                        }
+
+                        // SQL yedekleme tipi
+                        await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token);
+
+                        // Dosya yedekleme — ayrı zamanlama yoksa SQL yedek ile birlikte çalıştır
+                        if (plan.FileBackup != null && plan.FileBackup.IsEnabled &&
+                            string.IsNullOrEmpty(plan.FileBackup.Schedule))
+                        {
+                            await ExecuteFileBackupAsync(plan, correlationId, cts.Token);
+                        }
+
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            ActivityType = BackupActivityType.Completed
+                        });
+                    }
+                    finally
                     {
-                        PlanId = plan.PlanId,
-                        PlanName = plan.PlanName,
-                        ActivityType = BackupActivityType.Completed
-                    });
-                    return;
+                        CancellationRegistry?.Unregister(planId);
+                    }
                 }
-
-                // SQL yedekleme tipi
-                await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token);
-
-                BackupActivityHub.Raise(new BackupActivityEventArgs
-                {
-                    PlanId = plan.PlanId,
-                    PlanName = plan.PlanName,
-                    ActivityType = BackupActivityType.Completed
-                });
-            }
-            catch (OperationCanceledException)
+                catch (OperationCanceledException)
             {
                 Log.Warning("Job iptal edildi: Plan={PlanId}, CorrelationId={CorrelationId}", planId, correlationId);
                 if (plan != null)
@@ -218,6 +236,20 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         result.CompressedSizeBytes = await CompressionService.CompressAsync(
                             result.BackupFilePath, archivePath, password, null, ct);
                         result.CompressedFilePath = archivePath;
+
+                        // 3b. Arşiv bütünlük doğrulaması
+                        if (plan.VerifyAfterBackup)
+                        {
+                            result.CompressionVerified = await CompressionService.VerifyArchiveAsync(
+                                archivePath, password, ct);
+
+                            if (result.CompressionVerified == false)
+                            {
+                                Log.Error(
+                                    "Arşiv bütünlük doğrulaması başarısız: {Database} — {Archive}",
+                                    dbName, archivePath);
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -238,7 +270,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         string remoteFileName = Path.GetFileName(fileToUpload);
 
                         result.CloudUploadResults = await CloudOrchestrator.UploadToAllAsync(
-                            fileToUpload, remoteFileName, plan.CloudTargets, null, ct);
+                            fileToUpload, remoteFileName, plan.CloudTargets, null, ct,
+                            plan.PlanName);
 
                         int successCount = result.CloudUploadResults.Count(r => r.IsSuccess);
                         int totalCount = result.CloudUploadResults.Count;

@@ -275,6 +275,50 @@ namespace KoruMsSqlYedek.Engine.Compression
             Log.Information("Açma tamamlandı: {Archive}", archivePath);
         }
 
+        /// <summary>
+        /// 7z arşivinin bütünlüğünü doğrular.
+        /// SevenZipExtractor.Check() tüm girdileri okur ve CRC değerlerini karşılaştırır.
+        /// </summary>
+        public async Task<bool> VerifyArchiveAsync(
+            string archivePath,
+            string password,
+            CancellationToken cancellationToken)
+        {
+            if (!File.Exists(archivePath))
+            {
+                Log.Warning("Arşiv doğrulama: dosya bulunamadı — {Archive}", archivePath);
+                return false;
+            }
+
+            EnsureInitialized();
+
+            Log.Information("Arşiv bütünlük doğrulaması başlıyor: {Archive}", archivePath);
+
+            bool result = await Task.Run(() =>
+            {
+                try
+                {
+                    using var extractor = string.IsNullOrEmpty(password)
+                        ? new SevenZipExtractor(archivePath)
+                        : new SevenZipExtractor(archivePath, password);
+
+                    return extractor.Check();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Arşiv doğrulama hatası: {Archive}", archivePath);
+                    return false;
+                }
+            }, cancellationToken);
+
+            Log.Information(
+                "Arşiv bütünlük doğrulaması {Result}: {Archive}",
+                result ? "başarılı ✓" : "BAŞARISIZ ✗",
+                archivePath);
+
+            return result;
+        }
+
         #region Helpers
 
         private SevenZipCompressor CreateCompressor(Core.Models.CompressionLevel level)

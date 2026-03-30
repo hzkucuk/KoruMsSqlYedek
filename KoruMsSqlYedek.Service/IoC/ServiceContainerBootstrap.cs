@@ -1,6 +1,8 @@
 ﻿using Autofac;
 using Microsoft.Extensions.Hosting;
+using KoruMsSqlYedek.Core.IPC;
 using KoruMsSqlYedek.Engine.IoC;
+using KoruMsSqlYedek.Service.IPC;
 
 namespace KoruMsSqlYedek.Service.IoC
 {
@@ -18,6 +20,15 @@ namespace KoruMsSqlYedek.Service.IoC
         {
             // Engine katmanı modülü (tüm servisler)
             builder.RegisterModule<EngineModule>();
+
+            // Named Pipe IPC
+            builder.RegisterType<BackupCancellationRegistry>()
+                .As<IBackupCancellationRegistry>()
+                .SingleInstance();
+
+            builder.RegisterType<ServicePipeServer>()
+                .AsSelf()
+                .SingleInstance();
 
             // Windows Service (IHostedService olarak kayıtlı)
             builder.RegisterType<BackupWindowsService>()

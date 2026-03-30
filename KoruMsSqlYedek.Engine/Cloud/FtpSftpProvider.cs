@@ -51,7 +51,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
             string remoteFileName,
             CloudTargetConfig config,
             IProgress<int> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string resumeSessionUri = null,
+            Action<string> sessionUriObtained = null)
         {
             var result = new CloudUploadResult
             {
@@ -67,23 +69,25 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     throw new FileNotFoundException("Kaynak dosya bulunamadı.", localFilePath);
 
                 string remotePath = BuildRemotePath(config.RemoteFolderPath, remoteFileName);
+                long remoteSize;
 
                 if (_type == CloudProviderType.Sftp)
                 {
-                    await UploadViaSftpAsync(localFilePath, remotePath, config, progress, cancellationToken);
+                    remoteSize = await UploadViaSftpAsync(localFilePath, remotePath, config, progress, cancellationToken);
                 }
                 else
                 {
-                    await UploadViaFtpAsync(localFilePath, remotePath, config, progress, cancellationToken);
+                    remoteSize = await UploadViaFtpAsync(localFilePath, remotePath, config, progress, cancellationToken);
                 }
 
                 result.IsSuccess = true;
                 result.RemoteFilePath = remotePath;
+                result.RemoteFileSizeBytes = remoteSize;
                 result.UploadedAt = DateTime.UtcNow;
 
                 Log.Information(
-                    "Upload başarılı: {Provider} — {RemotePath}",
-                    DisplayName, remotePath);
+                    "Upload başarılı: {Provider} — {RemotePath} ({RemoteSize:N0} bytes)",
+                    DisplayName, remotePath, remoteSize);
             }
             catch (OperationCanceledException)
             {
@@ -151,7 +155,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         #region FTP/FTPS (FluentFTP)
 
-        private async Task UploadViaFtpAsync(
+        private async Task<long> UploadViaFtpAsync(
             string localFilePath, string remotePath, CloudTargetConfig config,
             IProgress<int> progress, CancellationToken cancellationToken)
         {
@@ -172,7 +176,6 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     await client.CreateDirectory(remoteDir, true, cancellationToken);
                 }
 
-                // Upload with progress
                 IProgress<FtpProgress> ftpProgress = null;
                 if (progress != null)
                 {
@@ -183,10 +186,11 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     });
                 }
 
+                // Resume: yarıda kalan dosyayı kaldığı yerden devam ettirir
                 var status = await client.UploadFile(
                     localFilePath,
                     remotePath,
-                    FtpRemoteExists.Overwrite,
+                    FtpRemoteExists.Resume,
                     createRemoteDir: true,
                     progress: ftpProgress,
                     token: cancellationToken);
@@ -196,10 +200,14 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     throw new IOException($"FTP upload başarısız: status={status}");
                 }
 
-                // Checksum doğrulama (sunucu destekliyorsa)
+                // Bütünlük: MD5 checksum doğrulama (sunucu destekliyorsa)
                 await VerifyChecksumFtpAsync(client, localFilePath, remotePath, cancellationToken);
 
+                // Uzak dosya boyutunu al
+                long remoteSize = await client.GetFileSize(remotePath, -1, cancellationToken);
+
                 await client.Disconnect(cancellationToken);
+                return remoteSize;
             }
         }
 
@@ -284,11 +292,11 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         #region SFTP (SSH.NET)
 
-        private async Task UploadViaSftpAsync(
+        private async Task<long> UploadViaSftpAsync(
             string localFilePath, string remotePath, CloudTargetConfig config,
             IProgress<int> progress, CancellationToken cancellationToken)
         {
-            await Task.Run(() =>
+            long remoteSize = await Task.Run(() =>
             {
                 using (var client = CreateSftpClient(config))
                 {
@@ -298,43 +306,87 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                     Log.Debug("SFTP bağlantısı kuruldu: {Host}:{Port}", config.Host, config.Port ?? 22);
 
-                    // Uzak klasör yoksa oluştur
                     string remoteDir = GetRemoteDirectory(remotePath);
                     if (!string.IsNullOrEmpty(remoteDir))
-                    {
                         EnsureSftpDirectoryExists(client, remoteDir);
-                    }
 
-                    // Upload with progress
-                    using (var fileStream = File.OpenRead(localFilePath))
+                    long localFileSize = new FileInfo(localFilePath).Length;
+                    long remoteOffset = 0;
+
+                    // Yarıda kalan dosya var mı kontrol et
+                    if (client.Exists(remotePath))
                     {
-                        long totalBytes = fileStream.Length;
-
-                        Action<ulong> uploadCallback = null;
-                        if (progress != null)
+                        remoteOffset = client.GetAttributes(remotePath).Size;
+                        if (remoteOffset >= localFileSize)
                         {
-                            uploadCallback = uploaded =>
-                            {
-                                cancellationToken.ThrowIfCancellationRequested();
-                                int percent = totalBytes > 0
-                                    ? (int)((double)uploaded / totalBytes * 100)
-                                    : 0;
-                                progress.Report(percent);
-                            };
+                            Log.Information(
+                                "SFTP dosyası zaten tam mevcut, upload atlanıyor: {Path}",
+                                remotePath);
+                            client.Disconnect();
+                            return remoteOffset;
                         }
-
-                        client.UploadFile(fileStream, remotePath, canOverride: true, uploadCallback);
+                        Log.Information(
+                            "SFTP upload kaldığı yerden devam ediyor: {Offset:N0}/{Total:N0} bytes — {Path}",
+                            remoteOffset, localFileSize, remotePath);
                     }
 
-                    // Checksum doğrulama
+                    using (var fileStream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        if (remoteOffset > 0)
+                        {
+                            // Kaldığı yerden devam: yerel stream konumlandır, uzak dosyayı aynı noktadan yaz
+                            fileStream.Seek(remoteOffset, SeekOrigin.Begin);
+
+                            using (var sftp = client.Open(remotePath, FileMode.Open, FileAccess.ReadWrite))
+                            {
+                                sftp.Seek(remoteOffset, SeekOrigin.Begin);
+                                byte[] buffer = new byte[32 * 1024];
+                                int read;
+                                long uploaded = remoteOffset;
+
+                                while ((read = fileStream.Read(buffer, 0, buffer.Length)) > 0)
+                                {
+                                    cancellationToken.ThrowIfCancellationRequested();
+                                    sftp.Write(buffer, 0, read);
+                                    uploaded += read;
+                                    if (localFileSize > 0)
+                                        progress?.Report((int)(uploaded * 100 / localFileSize));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Action<ulong> uploadCallback = null;
+                            if (progress != null)
+                            {
+                                uploadCallback = uploaded =>
+                                {
+                                    cancellationToken.ThrowIfCancellationRequested();
+                                    int percent = localFileSize > 0
+                                        ? (int)((double)uploaded / localFileSize * 100)
+                                        : 0;
+                                    progress.Report(percent);
+                                };
+                            }
+
+                            client.UploadFile(fileStream, remotePath, canOverride: true, uploadCallback);
+                        }
+                    }
+
+                    // Bütünlük: checksum doğrulama
                     VerifyChecksumSftp(client, localFilePath, remotePath);
 
-                    client.Disconnect();
-                }
+                    // Uzak dosya boyutunu al
+                    long finalSize = client.GetAttributes(remotePath).Size;
 
-                // TOFU: Yeni parmak izi kaydedildiyse persist et
-                HostFingerprintUpdated?.Invoke(config);
+                    client.Disconnect();
+
+                    HostFingerprintUpdated?.Invoke(config);
+                    return finalSize;
+                }
             }, cancellationToken);
+
+            return remoteSize;
         }
 
         private async Task DeleteViaSftpAsync(

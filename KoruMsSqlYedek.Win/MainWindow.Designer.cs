@@ -62,6 +62,9 @@
             _tsbImport = new System.Windows.Forms.ToolStripButton();
             _tsSep2 = new System.Windows.Forms.ToolStripSeparator();
             _tsbRefreshPlans = new System.Windows.Forms.ToolStripButton();
+            _tsSep3 = new System.Windows.Forms.ToolStripSeparator();
+            _tslSearchLabel = new System.Windows.Forms.ToolStripLabel();
+            _tstSearch = new System.Windows.Forms.ToolStripTextBox();
             _dgvPlans = new System.Windows.Forms.DataGridView();
             _ctxPlan = new System.Windows.Forms.ContextMenuStrip(components);
             _ctxBackupNow = new System.Windows.Forms.ToolStripMenuItem();
@@ -73,6 +76,8 @@
             _ctxExportPlan = new System.Windows.Forms.ToolStripMenuItem();
             _ctxSep3 = new System.Windows.Forms.ToolStripSeparator();
             _ctxViewPlanLogs = new System.Windows.Forms.ToolStripMenuItem();
+            _ctxSep4 = new System.Windows.Forms.ToolStripSeparator();
+            _ctxRestore = new System.Windows.Forms.ToolStripMenuItem();
             _colEnabled = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             _colPlanName = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _colStrategy = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -81,6 +86,7 @@
             _colCloudTargets = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _colCreatedAt = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _colStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            _colProgress = new Theme.DataGridViewProgressBarColumn();
             _colNextRun = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _statusStripPlans = new System.Windows.Forms.StatusStrip();
             _tslPlanCount = new System.Windows.Forms.ToolStripStatusLabel();
@@ -139,22 +145,12 @@
             _nudHistoryRetention = new Theme.ModernNumericUpDown();
             _lblHistoryRetentionSuffix = new System.Windows.Forms.Label();
             _tlpSmtp = new System.Windows.Forms.TableLayoutPanel();
-            _lblSmtpHost = new System.Windows.Forms.Label();
-            _txtSmtpHost = new System.Windows.Forms.TextBox();
-            _lblSmtpPort = new System.Windows.Forms.Label();
-            _pnlPortSsl = new System.Windows.Forms.FlowLayoutPanel();
-            _nudSmtpPort = new Theme.ModernNumericUpDown();
-            _chkSmtpSsl = new Theme.ModernCheckBox();
-            _lblSmtpUsername = new System.Windows.Forms.Label();
-            _txtSmtpUsername = new System.Windows.Forms.TextBox();
-            _lblSmtpPassword = new System.Windows.Forms.Label();
-            _txtSmtpPassword = new System.Windows.Forms.TextBox();
-            _lblSmtpSenderEmail = new System.Windows.Forms.Label();
-            _txtSmtpSenderEmail = new System.Windows.Forms.TextBox();
-            _lblSmtpSenderName = new System.Windows.Forms.Label();
-            _txtSmtpSenderName = new System.Windows.Forms.TextBox();
-            _lblSmtpRecipients = new System.Windows.Forms.Label();
-            _txtSmtpRecipients = new System.Windows.Forms.TextBox();
+            _lblSmtpProfilesTitle = new System.Windows.Forms.Label();
+            _dgvSmtpProfiles = new System.Windows.Forms.DataGridView();
+            _flpSmtpToolbar = new System.Windows.Forms.FlowLayoutPanel();
+            _btnSmtpAdd = new Theme.ModernButton();
+            _btnSmtpEdit = new Theme.ModernButton();
+            _btnSmtpDelete = new Theme.ModernButton();
             _btnSmtpTest = new Theme.ModernButton();
             _flpSettingsButtons = new System.Windows.Forms.FlowLayoutPanel();
             _btnSaveSettings = new Theme.ModernButton();
@@ -190,6 +186,7 @@
             _tabSettings2.SuspendLayout();
             _tabGeneral.SuspendLayout();
             _tabSmtp.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)_dgvSmtpProfiles).BeginInit();
             _tlpGeneral.SuspendLayout();
             _tlpSmtp.SuspendLayout();
             _flpSettingsButtons.SuspendLayout();
@@ -337,7 +334,7 @@
             _tabPlans.Controls.Add(_toolStrip);
 
             _toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                _tsbNew, _tsbEdit, _tsbDelete, _tsSep1, _tsbExport, _tsbImport, _tsSep2, _tsbRefreshPlans });
+                _tsbNew, _tsbEdit, _tsbDelete, _tsSep1, _tsbExport, _tsbImport, _tsSep2, _tsbRefreshPlans, _tsSep3, _tslSearchLabel, _tstSearch });
             _toolStrip.BackColor = Theme.ModernTheme.SurfaceColor;
             _toolStrip.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
             _toolStrip.Padding = new System.Windows.Forms.Padding(12, 6, 12, 6);
@@ -350,6 +347,16 @@
             _tsbExport.Text = "Dışa Aktar"; _tsbExport.Click += OnExportPlanClick;
             _tsbImport.Text = "İçe Aktar"; _tsbImport.Click += OnImportPlanClick;
             _tsbRefreshPlans.Text = "Yenile"; _tsbRefreshPlans.Click += OnRefreshPlansClick;
+
+            _tslSearchLabel.Text = "Ara:";
+            _tslSearchLabel.ForeColor = Theme.ModernTheme.TextSecondary;
+            _tslSearchLabel.Margin = new System.Windows.Forms.Padding(12, 0, 4, 0);
+            _tstSearch.Name = "_tstSearch";
+            _tstSearch.Width = 200;
+            _tstSearch.Font = Theme.ModernTheme.FontBody;
+            _tstSearch.BackColor = Theme.ModernTheme.SurfaceColor;
+            _tstSearch.ForeColor = Theme.ModernTheme.TextPrimary;
+            _tstSearch.TextChanged += OnPlanSearchTextChanged;
 
             // SplitContainer
             _splitPlans.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -390,7 +397,7 @@
             _dgvPlans.RowTemplate.Height = 36;
             _dgvPlans.AlternatingRowsDefaultCellStyle.BackColor = Theme.ModernTheme.GridAlternateRow;
             _dgvPlans.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-                _colEnabled, _colPlanName, _colStrategy, _colDatabases, _colSchedule, _colCloudTargets, _colCreatedAt, _colStatus, _colNextRun });
+                _colEnabled, _colPlanName, _colStrategy, _colDatabases, _colSchedule, _colCloudTargets, _colCreatedAt, _colStatus, _colProgress, _colNextRun });
             _dgvPlans.Dock = System.Windows.Forms.DockStyle.Fill;
             _dgvPlans.MultiSelect = false;
             _dgvPlans.ReadOnly = true;
@@ -399,6 +406,7 @@
             _dgvPlans.CellDoubleClick += OnPlanGridDoubleClick;
             _dgvPlans.ContextMenuStrip = _ctxPlan;
             _dgvPlans.SelectionChanged += OnPlanGridSelectionChanged;
+            _dgvPlans.ColumnHeaderMouseClick += OnPlanGridColumnHeaderClick;
 
             _colEnabled.HeaderText = "Aktif"; _colEnabled.ReadOnly = true; _colEnabled.FillWeight = 30;
             _colPlanName.HeaderText = "Görev Adı"; _colPlanName.ReadOnly = true; _colPlanName.FillWeight = 100;
@@ -408,6 +416,7 @@
             _colCloudTargets.HeaderText = "Depolama"; _colCloudTargets.ReadOnly = true; _colCloudTargets.FillWeight = 60;
             _colCreatedAt.HeaderText = "Oluşturulma"; _colCreatedAt.ReadOnly = true; _colCreatedAt.FillWeight = 60;
             _colStatus.HeaderText = "Son Çalışma"; _colStatus.ReadOnly = true; _colStatus.FillWeight = 90;
+            _colProgress.HeaderText = "İlerleme"; _colProgress.ReadOnly = true; _colProgress.FillWeight = 65;
             _colNextRun.HeaderText = "Sonraki Çalışma"; _colNextRun.ReadOnly = true; _colNextRun.FillWeight = 90;
 
             _statusStripPlans.Dock = System.Windows.Forms.DockStyle.Bottom;
@@ -421,7 +430,7 @@
 
             // ContextMenuStrip — plan sağ tık menüsü
             _ctxPlan.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                _ctxBackupNow, _ctxStopBackup, _ctxSep1, _ctxEditPlan, _ctxDeletePlan, _ctxSep2, _ctxExportPlan, _ctxSep3, _ctxViewPlanLogs });
+                _ctxBackupNow, _ctxStopBackup, _ctxSep1, _ctxEditPlan, _ctxDeletePlan, _ctxSep2, _ctxExportPlan, _ctxSep3, _ctxViewPlanLogs, _ctxSep4, _ctxRestore });
             _ctxPlan.Renderer = new Theme.ModernToolStripRenderer();
             _ctxPlan.Opening += OnContextMenuOpening;
 
@@ -438,6 +447,9 @@
             _ctxExportPlan.Click += OnExportPlanClick;
             _ctxViewPlanLogs.Text = "Görev Logları";
             _ctxViewPlanLogs.Click += OnCtxViewPlanLogsClick;
+
+            _ctxRestore.Text = "Geri Yükle...";
+            _ctxRestore.Click += OnCtxRestoreClick;
 
             // Panel2: Manuel yedekleme kontrolleri
             _splitPlans.Panel2.Controls.Add(_tlpBackup);
@@ -766,51 +778,81 @@
             _tabSmtp.Text = "E-posta (SMTP)"; _tabSmtp.BackColor = Theme.ModernTheme.SurfaceColor;
             _tabSmtp.Padding = new System.Windows.Forms.Padding(8);
 
-            _tlpSmtp.ColumnCount = 2;
-            _tlpSmtp.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpSmtp.ColumnCount = 1;
             _tlpSmtp.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             _tlpSmtp.Dock = System.Windows.Forms.DockStyle.Fill;
-            _tlpSmtp.RowCount = 9;
-            for (int i = 0; i < 8; i++)
-                _tlpSmtp.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpSmtp.RowCount = 3;
+            _tlpSmtp.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpSmtp.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            _tlpSmtp.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
 
-            void AddSmtpRow(int row, System.Windows.Forms.Label lbl, System.Windows.Forms.Control ctrl)
-            {
-                _tlpSmtp.Controls.Add(lbl, 0, row);
-                _tlpSmtp.Controls.Add(ctrl, 1, row);
-                lbl.AutoSize = true; lbl.Anchor = System.Windows.Forms.AnchorStyles.Left;
-                lbl.ForeColor = Theme.ModernTheme.TextPrimary;
-                lbl.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
-                if (ctrl is System.Windows.Forms.TextBox tb)
-                { tb.Dock = System.Windows.Forms.DockStyle.Fill; tb.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3); }
-            }
+            _tlpSmtp.Controls.Add(_lblSmtpProfilesTitle, 0, 0);
+            _lblSmtpProfilesTitle.Text = "Kayıtlı SMTP Profilleri — birden fazla profil ekleyip görevlerde kullanabilirsiniz:";
+            _lblSmtpProfilesTitle.AutoSize = true;
+            _lblSmtpProfilesTitle.ForeColor = Theme.ModernTheme.TextSecondary;
+            _lblSmtpProfilesTitle.Font = Theme.ModernTheme.FontCaption;
+            _lblSmtpProfilesTitle.Margin = new System.Windows.Forms.Padding(3, 4, 3, 6);
 
-            _lblSmtpHost.Text = "SMTP Sunucu:"; AddSmtpRow(0, _lblSmtpHost, _txtSmtpHost);
-            _lblSmtpPort.Text = "Port:";
-            _lblSmtpPort.AutoSize = true; _lblSmtpPort.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            _lblSmtpPort.ForeColor = Theme.ModernTheme.TextPrimary;
-            _lblSmtpPort.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
-            _tlpSmtp.Controls.Add(_lblSmtpPort, 0, 1);
-            _pnlPortSsl.AutoSize = true; _pnlPortSsl.WrapContents = false;
-            _pnlPortSsl.Margin = new System.Windows.Forms.Padding(3, 4, 3, 3);
-            _pnlPortSsl.Controls.Add(_nudSmtpPort); _pnlPortSsl.Controls.Add(_chkSmtpSsl);
-            _tlpSmtp.Controls.Add(_pnlPortSsl, 1, 1);
-            _nudSmtpPort.Minimum = 1; _nudSmtpPort.Maximum = 65535; _nudSmtpPort.Value = 587;
-            _nudSmtpPort.Width = 80; _nudSmtpPort.Margin = new System.Windows.Forms.Padding(0, 2, 12, 0);
-            _chkSmtpSsl.Text = "SSL/TLS kullan"; _chkSmtpSsl.AutoSize = true; _chkSmtpSsl.Checked = true;
-            _chkSmtpSsl.ForeColor = Theme.ModernTheme.TextPrimary;
-            _chkSmtpSsl.Margin = new System.Windows.Forms.Padding(0, 4, 0, 0);
-            _lblSmtpUsername.Text = "Kullanıcı Adı:"; AddSmtpRow(2, _lblSmtpUsername, _txtSmtpUsername);
-            _lblSmtpPassword.Text = "Şifre:"; AddSmtpRow(3, _lblSmtpPassword, _txtSmtpPassword);
-            _txtSmtpPassword.UseSystemPasswordChar = true;
-            _lblSmtpSenderEmail.Text = "Gönderici E-posta:"; AddSmtpRow(4, _lblSmtpSenderEmail, _txtSmtpSenderEmail);
-            _lblSmtpSenderName.Text = "Gönderici Adı:"; AddSmtpRow(5, _lblSmtpSenderName, _txtSmtpSenderName);
-            _lblSmtpRecipients.Text = "Alıcılar:"; AddSmtpRow(6, _lblSmtpRecipients, _txtSmtpRecipients);
-            _tlpSmtp.Controls.Add(_btnSmtpTest, 1, 7);
-            _btnSmtpTest.Text = "✉ Test E-postası Gönder"; _btnSmtpTest.AutoSize = true;
-            _btnSmtpTest.ButtonStyle = Theme.ModernButtonStyle.Primary;
-            _btnSmtpTest.Margin = new System.Windows.Forms.Padding(3, 8, 3, 3);
+            _tlpSmtp.Controls.Add(_dgvSmtpProfiles, 0, 1);
+            _dgvSmtpProfiles.AllowUserToAddRows = false;
+            _dgvSmtpProfiles.AllowUserToDeleteRows = false;
+            _dgvSmtpProfiles.AllowUserToResizeRows = false;
+            _dgvSmtpProfiles.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            _dgvSmtpProfiles.BackgroundColor = Theme.ModernTheme.SurfaceColor;
+            _dgvSmtpProfiles.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
+            _dgvSmtpProfiles.GridColor = Theme.ModernTheme.DividerColor;
+            _dgvSmtpProfiles.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            _dgvSmtpProfiles.EnableHeadersVisualStyles = false;
+            _dgvSmtpProfiles.ColumnHeadersDefaultCellStyle.BackColor = Theme.ModernTheme.GridHeaderBack;
+            _dgvSmtpProfiles.ColumnHeadersDefaultCellStyle.ForeColor = Theme.ModernTheme.GridHeaderText;
+            _dgvSmtpProfiles.ColumnHeadersDefaultCellStyle.Font = Theme.ModernTheme.FontCaptionBold;
+            _dgvSmtpProfiles.ColumnHeadersDefaultCellStyle.SelectionBackColor = Theme.ModernTheme.GridHeaderBack;
+            _dgvSmtpProfiles.ColumnHeadersDefaultCellStyle.SelectionForeColor = Theme.ModernTheme.GridHeaderText;
+            _dgvSmtpProfiles.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
+            _dgvSmtpProfiles.ColumnHeadersHeight = 36;
+            _dgvSmtpProfiles.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            _dgvSmtpProfiles.DefaultCellStyle.BackColor = Theme.ModernTheme.SurfaceColor;
+            _dgvSmtpProfiles.DefaultCellStyle.ForeColor = Theme.ModernTheme.TextPrimary;
+            _dgvSmtpProfiles.DefaultCellStyle.SelectionBackColor = Theme.ModernTheme.GridSelection;
+            _dgvSmtpProfiles.DefaultCellStyle.SelectionForeColor = Theme.ModernTheme.TextOnAccent;
+            _dgvSmtpProfiles.DefaultCellStyle.Padding = new System.Windows.Forms.Padding(8, 4, 8, 4);
+            _dgvSmtpProfiles.AlternatingRowsDefaultCellStyle.BackColor = Theme.ModernTheme.GridAlternateRow;
+            _dgvSmtpProfiles.RowTemplate.Height = 34;
+            _dgvSmtpProfiles.Dock = System.Windows.Forms.DockStyle.Fill;
+            _dgvSmtpProfiles.MultiSelect = false;
+            _dgvSmtpProfiles.ReadOnly = true;
+            _dgvSmtpProfiles.RowHeadersVisible = false;
+            _dgvSmtpProfiles.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            _dgvSmtpProfiles.CellDoubleClick += OnSmtpEditClick;
+
+            _tlpSmtp.Controls.Add(_flpSmtpToolbar, 0, 2);
+            _flpSmtpToolbar.FlowDirection = System.Windows.Forms.FlowDirection.LeftToRight;
+            _flpSmtpToolbar.AutoSize = true;
+            _flpSmtpToolbar.WrapContents = false;
+            _flpSmtpToolbar.Padding = new System.Windows.Forms.Padding(0, 4, 0, 0);
+            _flpSmtpToolbar.Controls.Add(_btnSmtpAdd);
+            _flpSmtpToolbar.Controls.Add(_btnSmtpEdit);
+            _flpSmtpToolbar.Controls.Add(_btnSmtpDelete);
+            _flpSmtpToolbar.Controls.Add(_btnSmtpTest);
+
+            _btnSmtpAdd.Text = "➕ Ekle"; _btnSmtpAdd.AutoSize = true;
+            _btnSmtpAdd.ButtonStyle = Theme.ModernButtonStyle.Primary;
+            _btnSmtpAdd.Margin = new System.Windows.Forms.Padding(0, 4, 6, 4);
+            _btnSmtpAdd.Click += OnSmtpAddClick;
+
+            _btnSmtpEdit.Text = "✏ Düzenle"; _btnSmtpEdit.AutoSize = true;
+            _btnSmtpEdit.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnSmtpEdit.Margin = new System.Windows.Forms.Padding(0, 4, 6, 4);
+            _btnSmtpEdit.Click += OnSmtpEditClick;
+
+            _btnSmtpDelete.Text = "🗑 Sil"; _btnSmtpDelete.AutoSize = true;
+            _btnSmtpDelete.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnSmtpDelete.Margin = new System.Windows.Forms.Padding(0, 4, 6, 4);
+            _btnSmtpDelete.Click += OnSmtpDeleteClick;
+
+            _btnSmtpTest.Text = "✉ Test"; _btnSmtpTest.AutoSize = true;
+            _btnSmtpTest.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnSmtpTest.Margin = new System.Windows.Forms.Padding(0, 4, 3, 4);
             _btnSmtpTest.Click += OnSmtpTestClick;
 
             // Settings bottom buttons
@@ -862,7 +904,7 @@
             Name = "MainWindow";
             ShowInTaskbar = true;
             StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            Text = "KoruMsSqlYedek";
+            Text = "Koru MsSql Yedek";
 
             // ─────────────────────────────────────────────────────────────
             // Resume
@@ -912,6 +954,7 @@
             _tlpGeneral.PerformLayout();
             _tlpSmtp.ResumeLayout(false);
             _tlpSmtp.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)_dgvSmtpProfiles).EndInit();
             _flpSettingsButtons.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
@@ -964,6 +1007,9 @@
         private System.Windows.Forms.ToolStripButton _tsbImport;
         private System.Windows.Forms.ToolStripSeparator _tsSep2;
         private System.Windows.Forms.ToolStripButton _tsbRefreshPlans;
+        private System.Windows.Forms.ToolStripSeparator _tsSep3;
+        private System.Windows.Forms.ToolStripLabel _tslSearchLabel;
+        private System.Windows.Forms.ToolStripTextBox _tstSearch;
         private System.Windows.Forms.DataGridView _dgvPlans;
         private System.Windows.Forms.ContextMenuStrip _ctxPlan;
         private System.Windows.Forms.ToolStripMenuItem _ctxBackupNow;
@@ -975,6 +1021,8 @@
         private System.Windows.Forms.ToolStripMenuItem _ctxExportPlan;
         private System.Windows.Forms.ToolStripSeparator _ctxSep3;
         private System.Windows.Forms.ToolStripMenuItem _ctxViewPlanLogs;
+        private System.Windows.Forms.ToolStripSeparator _ctxSep4;
+        private System.Windows.Forms.ToolStripMenuItem _ctxRestore;
         private System.Windows.Forms.DataGridViewCheckBoxColumn _colEnabled;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colPlanName;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colStrategy;
@@ -983,6 +1031,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn _colCloudTargets;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colCreatedAt;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colStatus;
+        private Theme.DataGridViewProgressBarColumn _colProgress;
         private System.Windows.Forms.DataGridViewTextBoxColumn _colNextRun;
         private System.Windows.Forms.StatusStrip _statusStripPlans;
         private System.Windows.Forms.ToolStripStatusLabel _tslPlanCount;
@@ -1041,22 +1090,12 @@
         private Theme.ModernNumericUpDown _nudHistoryRetention;
         private System.Windows.Forms.Label _lblHistoryRetentionSuffix;
         private System.Windows.Forms.TableLayoutPanel _tlpSmtp;
-        private System.Windows.Forms.Label _lblSmtpHost;
-        private System.Windows.Forms.TextBox _txtSmtpHost;
-        private System.Windows.Forms.Label _lblSmtpPort;
-        private System.Windows.Forms.FlowLayoutPanel _pnlPortSsl;
-        private Theme.ModernNumericUpDown _nudSmtpPort;
-        private Theme.ModernCheckBox _chkSmtpSsl;
-        private System.Windows.Forms.Label _lblSmtpUsername;
-        private System.Windows.Forms.TextBox _txtSmtpUsername;
-        private System.Windows.Forms.Label _lblSmtpPassword;
-        private System.Windows.Forms.TextBox _txtSmtpPassword;
-        private System.Windows.Forms.Label _lblSmtpSenderEmail;
-        private System.Windows.Forms.TextBox _txtSmtpSenderEmail;
-        private System.Windows.Forms.Label _lblSmtpSenderName;
-        private System.Windows.Forms.TextBox _txtSmtpSenderName;
-        private System.Windows.Forms.Label _lblSmtpRecipients;
-        private System.Windows.Forms.TextBox _txtSmtpRecipients;
+        private System.Windows.Forms.Label _lblSmtpProfilesTitle;
+        private System.Windows.Forms.DataGridView _dgvSmtpProfiles;
+        private System.Windows.Forms.FlowLayoutPanel _flpSmtpToolbar;
+        private Theme.ModernButton _btnSmtpAdd;
+        private Theme.ModernButton _btnSmtpEdit;
+        private Theme.ModernButton _btnSmtpDelete;
         private Theme.ModernButton _btnSmtpTest;
         private System.Windows.Forms.FlowLayoutPanel _flpSettingsButtons;
         private Theme.ModernButton _btnSaveSettings;

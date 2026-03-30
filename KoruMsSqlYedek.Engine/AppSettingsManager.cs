@@ -53,6 +53,7 @@ namespace KoruMsSqlYedek.Engine
                     return new AppSettings();
                 }
 
+                MigrateSmtpLegacy(settings);
                 return settings;
             }
             catch (Exception ex)
@@ -60,6 +61,45 @@ namespace KoruMsSqlYedek.Engine
                 Log.Error(ex, "Ayar dosyası okunamadı: {Path}", SettingsFilePath);
                 return new AppSettings();
             }
+        }
+
+        /// <summary>
+        /// Eski tekil <c>smtp</c> alanını SmtpProfiles listesine "Varsayılan" adlı profil olarak taşır.
+        /// Bu işlem bir kez gerçekleşir; sonrasında <c>Smtp</c> alanı null bırakılır ve dosyaya yazılmaz.
+        /// </summary>
+        private static void MigrateSmtpLegacy(AppSettings settings)
+        {
+            if (settings.Smtp == null || string.IsNullOrWhiteSpace(settings.Smtp.Host))
+                return;
+
+            if (settings.SmtpProfiles == null)
+                settings.SmtpProfiles = new System.Collections.Generic.List<SmtpProfile>();
+
+            if (settings.SmtpProfiles.Count > 0)
+            {
+                // Zaten profil var — sadece eski alanı temizle
+                settings.Smtp = null;
+                return;
+            }
+
+            Log.Information("Eski SMTP ayarı 'Varsayılan' profili olarak taşınıyor.");
+
+            settings.SmtpProfiles.Add(new SmtpProfile
+            {
+                Id = Guid.NewGuid().ToString(),
+                DisplayName = "Varsayılan",
+                Host = settings.Smtp.Host,
+                Port = settings.Smtp.Port,
+                UseSsl = settings.Smtp.UseSsl,
+                Username = settings.Smtp.Username,
+                Password = settings.Smtp.Password,
+                SenderEmail = settings.Smtp.SenderEmail,
+                SenderDisplayName = settings.Smtp.SenderDisplayName ?? "Koru MsSql Yedek",
+                RecipientEmails = settings.Smtp.RecipientEmails
+            });
+
+            // Migrasyon tamamlandı — eski alan temizlendi, bir sonraki kayıtta dosyaya yazılmaz
+            settings.Smtp = null;
         }
 
         /// <inheritdoc/>

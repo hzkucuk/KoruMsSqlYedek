@@ -1,5 +1,4 @@
-﻿using Autofac;
-using KoruMsSqlYedek.Engine.IoC;
+using Autofac;
 
 namespace KoruMsSqlYedek.Win.IoC
 {
@@ -16,8 +15,8 @@ namespace KoruMsSqlYedek.Win.IoC
         {
             var builder = new ContainerBuilder();
 
-            // Engine katmanı modülü (tüm servisler)
-            builder.RegisterModule<EngineModule>();
+            // Hafif Win modülü (Quartz/engine YOK)
+            builder.RegisterModule<WinModule>();
 
             // TrayApplicationContext — tek instance
             builder.RegisterType<TrayApplicationContext>()
@@ -46,3 +45,4 @@ namespace KoruMsSqlYedek.Win.IoC
         }
     }
 }
+

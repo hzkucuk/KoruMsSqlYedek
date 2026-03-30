@@ -107,6 +107,14 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("filesSkipped")]
         public int FilesSkipped { get; set; }
 
+        /// <summary>SHA-256 doğrulaması geçen dosya sayısı.</summary>
+        [JsonProperty("filesVerified")]
+        public int FilesVerified { get; set; }
+
+        /// <summary>SHA-256 doğrulaması başarısız olan dosya sayısı.</summary>
+        [JsonProperty("filesVerificationFailed")]
+        public int FilesVerificationFailed { get; set; }
+
         /// <summary>VSS snapshot kullanıldı mı?</summary>
         [JsonProperty("usedVss")]
         public bool UsedVss { get; set; }

@@ -6,6 +6,10 @@ namespace KoruMsSqlYedek.Core.Events
     {
         Started,
         DatabaseProgress,
+        StepChanged,          // Adım adı değişti (SQL, Verify, Compress, Cloud...)
+        CloudUploadStarted,   // Bir bulut hedefine upload başladı
+        CloudUploadProgress,  // Upload yüzdesi güncellendi
+        CloudUploadCompleted, // Bir bulut hedefine upload bitti
         Completed,
         Failed,
         Cancelled
@@ -20,6 +24,26 @@ namespace KoruMsSqlYedek.Core.Events
         public int CurrentIndex { get; set; }
         public int TotalCount { get; set; }
         public string Message { get; set; }
+
+        // Bulut upload detayları
+        public string StepName { get; set; }          // "SQL Backup", "Sıkıştırma", "Bulut Upload" vb.
+        public string CloudTargetName { get; set; }   // Provider görünen adı
+        public int CloudTargetIndex { get; set; }     // Kaçıncı hedef (1 tabanlı)
+        public int CloudTargetTotal { get; set; }     // Toplam hedef sayısı
+        public int ProgressPercent { get; set; }      // Upload yüzdesi (0-100)
+        public bool IsSuccess { get; set; }           // Upload sonucu
+
+        // Upload hız/boyut bilgisi (CloudUploadProgress olaylarında doldurulur)
+        public long BytesSent { get; set; }
+        public long BytesTotal { get; set; }
+        public long SpeedBytesPerSecond { get; set; }
+
+        /// <summary>
+        /// Plan konfigürasyonundan gelen ToastEnabled değeri.
+        /// Tray uygulaması bu değere göre balloon tip gösterir.
+        /// Varsayılan true — plan bilgisi yoksa her zaman göster.
+        /// </summary>
+        public bool ToastEnabled { get; set; } = true;
     }
 
     /// <summary>

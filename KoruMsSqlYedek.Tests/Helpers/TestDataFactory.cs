@@ -289,5 +289,57 @@ namespace KoruMsSqlYedek.Tests.Helpers
                 }
             };
         }
+
+        /// <summary>
+        /// Test için SmtpProfile oluşturur.
+        /// </summary>
+        public static SmtpProfile CreateSmtpProfile(
+            string id = null,
+            string host = "smtp.test.com",
+            int port = 587,
+            string displayName = "Test Profil",
+            string recipientEmails = "admin@test.com",
+            string senderEmail = "noreply@test.com")
+        {
+            return new SmtpProfile
+            {
+                Id = id ?? Guid.NewGuid().ToString(),
+                DisplayName = displayName,
+                Host = host,
+                Port = port,
+                UseSsl = true,
+                Username = "user@test.com",
+                SenderEmail = senderEmail,
+                SenderDisplayName = "KoruMsSqlYedek Test",
+                RecipientEmails = recipientEmails
+            };
+        }
+
+        /// <summary>
+        /// SmtpProfiles listesi içeren AppSettings oluşturur.
+        /// </summary>
+        public static AppSettings CreateAppSettingsWithProfile(SmtpProfile profile = null)
+        {
+            var settings = new AppSettings();
+            settings.SmtpProfiles.Add(profile ?? CreateSmtpProfile());
+            return settings;
+        }
+
+        /// <summary>
+        /// SmtpProfileId içeren NotificationConfig oluşturur.
+        /// </summary>
+        public static NotificationConfig CreateNotificationConfigWithProfile(
+            string profileId,
+            bool onSuccess = true,
+            bool onFailure = true)
+        {
+            return new NotificationConfig
+            {
+                OnSuccess = onSuccess,
+                OnFailure = onFailure,
+                EmailEnabled = true,
+                SmtpProfileId = profileId
+            };
+        }
     }
 }

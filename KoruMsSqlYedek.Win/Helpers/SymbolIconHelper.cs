@@ -135,6 +135,8 @@ namespace KoruMsSqlYedek.Win.Helpers
                     return RenderIcon(SymbolWarning, 16, Color.FromArgb(255, 193, 7));
                 case TrayIconStatus.Error:
                     return RenderIcon(SymbolError, 16, Color.FromArgb(244, 67, 54));
+                case TrayIconStatus.Disconnected:
+                    return RenderIcon(SymbolWarning, 16, Color.FromArgb(158, 158, 158));
                 default:
                     return CreateTrayIcon();
             }
@@ -158,6 +160,7 @@ namespace KoruMsSqlYedek.Win.Helpers
         Running,
         Success,
         Warning,
-        Error
+        Error,
+        Disconnected
     }
 }

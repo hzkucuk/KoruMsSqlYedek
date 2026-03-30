@@ -10,9 +10,11 @@ using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Core.IPC;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Forms;
 using KoruMsSqlYedek.Win.Helpers;
+using KoruMsSqlYedek.Win.IPC;
 using Serilog;
 
 namespace KoruMsSqlYedek.Win
@@ -30,10 +32,7 @@ namespace KoruMsSqlYedek.Win
         private readonly IBackupHistoryManager _historyManager;
         private readonly ISqlBackupService _sqlBackupService;
         private readonly IAppSettingsManager _settingsManager;
-        private readonly ICompressionService _compressionService;
-        private readonly ICloudUploadOrchestrator _cloudOrchestrator;
-        private readonly IFileBackupService _fileBackupService;
-        private readonly ISchedulerService _schedulerService;
+        private readonly ServicePipeClient _pipeClient;
 
         // Timers
         private readonly System.Windows.Forms.Timer _dashboardTimer;
@@ -50,35 +49,38 @@ namespace KoruMsSqlYedek.Win
         private AppSettings _settings;
 
         // Backup state
-        private CancellationTokenSource _cts;
         private bool _isBackupRunning;
+        private string _activePlanId;
+
+        // Per-plan log buffer (planId → satır listesi)
+        private readonly Dictionary<string, List<string>> _planLogs = new Dictionary<string, List<string>>();
+
+        // Per-plan grid progress (planId → yüzde 0-100)
+        private readonly Dictionary<string, int> _planProgress = new Dictionary<string, int>();
+
+        // Plan listesi sıralama/filtreleme durumu
+        private List<PlanRowData> _allPlanRows = new List<PlanRowData>();
+        private int _planSortColumn = -1;
+        private bool _planSortAscending = true;
 
         public MainWindow(
             IPlanManager planManager,
             IBackupHistoryManager historyManager,
             ISqlBackupService sqlBackupService,
             IAppSettingsManager settingsManager,
-            ICompressionService compressionService,
-            ICloudUploadOrchestrator cloudOrchestrator,
-            IFileBackupService fileBackupService,
-            ISchedulerService schedulerService)
+            ServicePipeClient pipeClient)
         {
             if (planManager == null) throw new ArgumentNullException(nameof(planManager));
             if (historyManager == null) throw new ArgumentNullException(nameof(historyManager));
             if (sqlBackupService == null) throw new ArgumentNullException(nameof(sqlBackupService));
             if (settingsManager == null) throw new ArgumentNullException(nameof(settingsManager));
-            if (compressionService == null) throw new ArgumentNullException(nameof(compressionService));
-            if (fileBackupService == null) throw new ArgumentNullException(nameof(fileBackupService));
-            if (schedulerService == null) throw new ArgumentNullException(nameof(schedulerService));
+            if (pipeClient == null) throw new ArgumentNullException(nameof(pipeClient));
 
             _planManager = planManager;
             _historyManager = historyManager;
             _sqlBackupService = sqlBackupService;
             _settingsManager = settingsManager;
-            _compressionService = compressionService;
-            _cloudOrchestrator = cloudOrchestrator;
-            _fileBackupService = fileBackupService;
-            _schedulerService = schedulerService;
+            _pipeClient = pipeClient;
 
             _logDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -88,7 +90,12 @@ namespace KoruMsSqlYedek.Win
             ApplyIcons();
 
             _dashboardTimer = new System.Windows.Forms.Timer { Interval = 30000 };
-            _dashboardTimer.Tick += (s, e) => LoadDashboardData();
+            _dashboardTimer.Tick += (s, e) =>
+            {
+                LoadDashboardData();
+                if (_pipeClient.IsConnected)
+                    _pipeClient.RequestStatusAsync().ConfigureAwait(false);
+            };
 
             _logTimer = new System.Windows.Forms.Timer { Interval = 5000 };
             _logTimer.Tick += OnLogAutoRefreshTick;
@@ -96,7 +103,12 @@ namespace KoruMsSqlYedek.Win
             _tabControl.SelectedIndexChanged += OnTabChanged;
             _splitPlans.Resize += OnSplitPlansResize;
 
-            BackupActivityHub.ActivityChanged += OnBackupActivityChanged;
+            BackupActivityHub.ActivityChanged   += OnBackupActivityChanged;
+            _pipeClient.ConnectionChanged       += OnPipeConnectionChanged;
+            ServiceStatusHub.StatusReceived     += OnServiceStatusReceived;
+
+            // Başlangıçta bağlı değil — durum çubuğunu ayarla
+            UpdateStatusBarConnection(false);
         }
 
         private void ApplyIcons()
@@ -256,7 +268,9 @@ namespace KoruMsSqlYedek.Win
             _dashboardTimer.Dispose();
             _logTimer.Stop();
             _logTimer.Dispose();
-            _cts?.Dispose();
+            BackupActivityHub.ActivityChanged -= OnBackupActivityChanged;
+            _pipeClient.ConnectionChanged    -= OnPipeConnectionChanged;
+            ServiceStatusHub.StatusReceived  -= OnServiceStatusReceived;
             base.OnFormClosing(e);
         }
 
@@ -469,7 +483,7 @@ namespace KoruMsSqlYedek.Win
             try
             {
                 var plans = _planManager.GetAllPlans();
-                _dgvPlans.Rows.Clear();
+                _allPlanRows = new List<PlanRowData>(plans.Count);
 
                 foreach (var plan in plans)
                 {
@@ -484,14 +498,16 @@ namespace KoruMsSqlYedek.Win
                         ? $"\u2601 Bulut ({cloudCount})"
                         : "\U0001f4be Yerel";
 
-                    // Son yedekleme durumunu belirle
                     string statusText = Res.Get("PlanStatus_Ready");
                     Color statusColor = Theme.ModernTheme.TextSecondary;
+                    DateTime? lastRunAt = null;
+
                     try
                     {
                         var lastResult = _historyManager.GetHistoryByPlan(plan.PlanId, 1).FirstOrDefault();
                         if (lastResult != null)
                         {
+                            lastRunAt = lastResult.StartedAt;
                             string icon;
                             switch (lastResult.Status)
                             {
@@ -520,24 +536,20 @@ namespace KoruMsSqlYedek.Win
                     }
                     catch { /* history okunamazsa varsayılan "Hazır" kalır */ }
 
-                    var rowIndex = _dgvPlans.Rows.Add(
-                        plan.IsEnabled,
-                        plan.PlanName ?? Res.Get("PlanList_Unnamed"),
-                        strategy,
-                        dbList,
-                        schedule,
-                        storageLabel,
-                        plan.CreatedAt.ToString("dd.MM.yyyy"),
-                        statusText,
-                        "...");
-
-                    _dgvPlans.Rows[rowIndex].Tag = plan;
-                    _dgvPlans.Rows[rowIndex].Cells[_colStatus.Index].Style.ForeColor = statusColor;
+                    _allPlanRows.Add(new PlanRowData
+                    {
+                        Plan = plan,
+                        DbList = dbList,
+                        Strategy = strategy,
+                        Schedule = schedule,
+                        Storage = storageLabel,
+                        StatusText = statusText,
+                        StatusColor = statusColor,
+                        LastRunAt = lastRunAt
+                    });
                 }
 
-                _tslPlanCount.Text = Res.Format("PlanList_TotalFormat", plans.Count);
-                UpdateBackupButtonStates();
-                _ = PopulateNextFireTimesAsync();
+                ApplyPlanFilter();
             }
             catch (Exception ex)
             {
@@ -558,21 +570,121 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
+        /// <summary>Mevcut arama metni ve sıralama durumuna göre grid satırlarını filtreler ve yeniden doldurur.</summary>
+        private void ApplyPlanFilter()
+        {
+            string search = _tstSearch?.Text?.Trim() ?? string.Empty;
+
+            IEnumerable<PlanRowData> rows = _allPlanRows;
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                rows = rows.Where(r =>
+                    (r.Plan.PlanName ?? string.Empty).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    r.DbList.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    r.Strategy.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    r.Storage.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+
+            if (_planSortColumn >= 0)
+            {
+                Func<PlanRowData, IComparable> key;
+                switch (_planSortColumn)
+                {
+                    case 0:  key = r => (IComparable)(r.Plan.IsEnabled ? 0 : 1); break;
+                    case 1:  key = r => (IComparable)(r.Plan.PlanName ?? string.Empty); break;
+                    case 2:  key = r => (IComparable)r.Strategy; break;
+                    case 3:  key = r => (IComparable)r.DbList; break;
+                    case 4:  key = r => (IComparable)r.Schedule; break;
+                    case 5:  key = r => (IComparable)r.Storage; break;
+                    case 6:  key = r => (IComparable)r.Plan.CreatedAt; break;
+                    case 7:  key = r => (IComparable)(r.LastRunAt ?? DateTime.MinValue); break;
+                    default: key = null; break;
+                }
+
+                if (key != null)
+                    rows = _planSortAscending ? rows.OrderBy(key) : rows.OrderByDescending(key);
+            }
+
+            var sorted = rows.ToList();
+            _dgvPlans.SuspendLayout();
+            _dgvPlans.Rows.Clear();
+
+            foreach (var row in sorted)
+            {
+                var plan = row.Plan;
+                var rowIndex = _dgvPlans.Rows.Add(
+                    plan.IsEnabled,
+                    plan.PlanName ?? Res.Get("PlanList_Unnamed"),
+                    row.Strategy,
+                    row.DbList,
+                    row.Schedule,
+                    row.Storage,
+                    plan.CreatedAt.ToString("dd.MM.yyyy"),
+                    row.StatusText,
+                    _planProgress.TryGetValue(plan.PlanId, out int pct) ? pct : 0,
+                    "...");
+
+                _dgvPlans.Rows[rowIndex].Tag = plan;
+                _dgvPlans.Rows[rowIndex].Cells[_colStatus.Index].Style.ForeColor = row.StatusColor;
+            }
+
+            _dgvPlans.ResumeLayout(false);
+
+            _tslPlanCount.Text = search.Length > 0
+                ? $"{sorted.Count} / {_allPlanRows.Count} görev"
+                : Res.Format("PlanList_TotalFormat", _allPlanRows.Count);
+
+            UpdateBackupButtonStates();
+        }
+
+        private void OnPlanGridColumnHeaderClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.ColumnIndex < 0 || e.ColumnIndex == _colProgress.Index)
+                return;
+
+            if (_planSortColumn == e.ColumnIndex)
+                _planSortAscending = !_planSortAscending;
+            else
+            {
+                _planSortColumn = e.ColumnIndex;
+                _planSortAscending = true;
+            }
+
+            foreach (DataGridViewColumn col in _dgvPlans.Columns)
+                col.HeaderCell.SortGlyphDirection = SortOrder.None;
+
+            _dgvPlans.Columns[_planSortColumn].HeaderCell.SortGlyphDirection =
+                _planSortAscending ? SortOrder.Ascending : SortOrder.Descending;
+
+            ApplyPlanFilter();
+        }
+
+        private void OnPlanSearchTextChanged(object sender, EventArgs e)
+        {
+            ApplyPlanFilter();
+        }
+
+        /// <summary>Plan listesi görüntüleme için önceden hesaplanmış satır verisi.</summary>
+        private sealed class PlanRowData
+        {
+            public BackupPlan Plan;
+            public string DbList;
+            public string Strategy;
+            public string Schedule;
+            public string Storage;
+            public string StatusText;
+            public Color StatusColor;
+            public DateTime? LastRunAt;
+        }
+
         private async void OnNewPlanClick(object sender, EventArgs e)
         {
-            using (var form = new PlanEditForm(_planManager, _sqlBackupService))
+            using (var form = new PlanEditForm(_planManager, _sqlBackupService, _settingsManager))
             {
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     RefreshPlanList();
-                    try
-                    {
-                        await _schedulerService.SchedulePlanAsync(form.SavedPlan, System.Threading.CancellationToken.None);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Yeni plan zamanlanamadı: {PlanId}", form.SavedPlan?.PlanId);
-                    }
                 }
             }
         }
@@ -582,19 +694,11 @@ namespace KoruMsSqlYedek.Win
             var plan = GetSelectedPlan();
             if (plan == null) return;
 
-            using (var form = new PlanEditForm(_planManager, _sqlBackupService, plan))
+            using (var form = new PlanEditForm(_planManager, _sqlBackupService, _settingsManager, plan))
             {
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     RefreshPlanList();
-                    try
-                    {
-                        await _schedulerService.SchedulePlanAsync(form.SavedPlan, System.Threading.CancellationToken.None);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Plan güncellemesi zamanlanamadı: {PlanId}", form.SavedPlan?.PlanId);
-                    }
                 }
             }
         }
@@ -616,14 +720,6 @@ namespace KoruMsSqlYedek.Win
                     _planManager.DeletePlan(plan.PlanId);
                     Log.Information("Plan silindi: {PlanName} ({PlanId})", plan.PlanName, plan.PlanId);
                     RefreshPlanList();
-                    try
-                    {
-                        await _schedulerService.UnschedulePlanAsync(plan.PlanId, System.Threading.CancellationToken.None);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Plan zamanlaması kaldırılamadı: {PlanId}", plan.PlanId);
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -679,17 +775,6 @@ namespace KoruMsSqlYedek.Win
                         RefreshPlanList();
                         MessageBox.Show(Res.Format("PlanList_ImportSuccess", plan.PlanName), Res.Get("Info"),
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        if (plan.IsEnabled)
-                        {
-                            try
-                            {
-                                await _schedulerService.SchedulePlanAsync(plan, System.Threading.CancellationToken.None);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "İçe aktarılan plan zamanlanamadı: {PlanId}", plan.PlanId);
-                            }
-                        }
                     }
                     catch (Exception ex)
                     {
@@ -706,53 +791,53 @@ namespace KoruMsSqlYedek.Win
             RefreshPlanList();
         }
 
-        private async Task PopulateNextFireTimesAsync()
+        private BackupPlan GetSelectedPlan()
         {
-            if (!_schedulerService.IsRunning) return;
-
-            foreach (DataGridViewRow row in _dgvPlans.Rows)
-            {
-                var plan = row.Tag as BackupPlan;
-                if (plan == null) continue;
-
-                try
-                {
-                    DateTimeOffset? next = await _schedulerService.GetNextFireTimeAsync(
-                        plan.PlanId, CancellationToken.None);
-
-                    string display = next.HasValue
-                        ? next.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
-                        : "—";
-
-                    if (row.Index >= 0 && row.Index < _dgvPlans.Rows.Count)
-                    {
-                        row.Cells[_colNextRun.Index].Value = display;
-                        row.Cells[_colNextRun.Index].Style.ForeColor =
-                            next.HasValue ? Theme.ModernTheme.AccentPrimary : Theme.ModernTheme.TextSecondary;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Sonraki çalışma zamanı alınamadı: {PlanId}", plan.PlanId);
-                }
-            }
+            var plan = GetSelectedPlanSilent();
+            if (plan == null)
+                MessageBox.Show(Res.Get("ManualBackup_PleaseSelectPlan"), Res.Get("Warning"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return plan;
         }
+
+        private BackupPlan GetSelectedPlanSilent()
+        {
+            if (_dgvPlans.SelectedRows.Count == 0)
+                return null;
+            return _dgvPlans.SelectedRows[0].Tag as BackupPlan;
+        }
+
+        private void OnContextMenuOpening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var plan = GetSelectedPlanSilent();
+            bool hasPlan = plan != null;
+            bool running = _isBackupRunning && _activePlanId == plan?.PlanId;
+
+            _ctxBackupNow.Enabled = hasPlan && !_isBackupRunning && _pipeClient.IsConnected;
+            _ctxStopBackup.Enabled = running && _pipeClient.IsConnected;
+            _ctxEditPlan.Enabled = hasPlan && !running;
+            _ctxDeletePlan.Enabled = hasPlan && !running;
+            _ctxExportPlan.Enabled = hasPlan;
+            _ctxViewPlanLogs.Enabled = hasPlan;
+        }
+
+        private void OnCtxBackupNowClick(object sender, EventArgs e) => OnStartBackupClick(sender, e);
+
+        private void OnCtxStopBackupClick(object sender, EventArgs e) => OnCancelBackupClick(sender, e);
 
         private void OnCtxViewPlanLogsClick(object sender, EventArgs e)
         {
-            var plan = GetSelectedPlanSilent();
+            if (GetSelectedPlanSilent() == null) return;
+            _tabControl.SelectedIndex = 2;
+        }
+
+        private void OnCtxRestoreClick(object sender, EventArgs e)
+        {
+            BackupPlan plan = GetSelectedPlanSilent();
             if (plan == null) return;
 
-            _txtLogSearch.Text = plan.PlanId;
-            SelectTab(2);
-
-            // Log dosyaları ilk kez yükleniyor veya güncellenmesi gerekiyor
-            if (_cmbLogFile.Items.Count == 0)
-            {
-                PopulateLogFiles();
-                PopulateLevelFilter();
-            }
-            LoadSelectedLogFile();
+            using RestoreDialog dlg = new RestoreDialog(plan, _historyManager, _sqlBackupService);
+            dlg.ShowDialog(this);
         }
 
         private void OnPlanGridDoubleClick(object sender, DataGridViewCellEventArgs e)
@@ -764,493 +849,308 @@ namespace KoruMsSqlYedek.Win
         private void OnPlanGridSelectionChanged(object sender, EventArgs e)
         {
             UpdateBackupButtonStates();
-            var plan = GetSelectedPlanSilent();
-            if (plan != null)
+
+            var selected = GetSelectedPlanSilent();
+            if (selected == null) return;
+
+            // Seçilen plana ait log buffer'ını göster
+            _txtBackupLog.Clear();
+            if (_planLogs.TryGetValue(selected.PlanId, out var logs) && logs.Count > 0)
             {
-                _lblBackupStatus.Text = Res.Format("ManualBackup_PlanSelected", plan.PlanName);
-                _lblBackupStatus.ForeColor = Theme.ModernTheme.TextSecondary;
+                _txtBackupLog.Text = string.Join(Environment.NewLine, logs) + Environment.NewLine;
+                _txtBackupLog.SelectionStart = _txtBackupLog.Text.Length;
+                _txtBackupLog.ScrollToCaret();
             }
-        }
-
-        private BackupPlan GetSelectedPlan()
-        {
-            if (_dgvPlans.CurrentRow == null || _dgvPlans.CurrentRow.Tag == null)
-            {
-                MessageBox.Show(Res.Get("PlanList_SelectPlan"), Res.Get("Info"),
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return null;
-            }
-            return _dgvPlans.CurrentRow.Tag as BackupPlan;
-        }
-
-        /// <summary>Mesaj göstermeden seçili planı döndürür.</summary>
-        private BackupPlan GetSelectedPlanSilent()
-        {
-            if (_dgvPlans.CurrentRow == null || _dgvPlans.CurrentRow.Tag == null)
-                return null;
-            return _dgvPlans.CurrentRow.Tag as BackupPlan;
-        }
-
-        // ── Context menu ──
-
-        private void OnContextMenuOpening(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            var plan = GetSelectedPlanSilent();
-            if (plan == null)
-            {
-                e.Cancel = true;
-                return;
-            }
-
-            _ctxBackupNow.Enabled = !_isBackupRunning;
-            _ctxStopBackup.Enabled = _isBackupRunning;
-            _ctxEditPlan.Enabled = !_isBackupRunning;
-            _ctxDeletePlan.Enabled = !_isBackupRunning;
-            _ctxExportPlan.Enabled = !_isBackupRunning;
-            _ctxViewPlanLogs.Enabled = true;
-        }
-
-        private void OnCtxBackupNowClick(object sender, EventArgs e)
-        {
-            OnStartBackupClick(sender, e);
-        }
-
-        private void OnCtxStopBackupClick(object sender, EventArgs e)
-        {
-            OnCancelBackupClick(sender, e);
         }
 
         #endregion
 
-        #region ── Manuel Yedekleme ─────────────────────────────────────────
+        #region ── Manuel Yedekleme ────────────────────────────────────────────
 
         private async void OnStartBackupClick(object sender, EventArgs e)
         {
-            var plan = GetSelectedPlanSilent();
-            if (plan == null)
+            var plan = GetSelectedPlan();
+            if (plan == null) return;
+
+            if (!_pipeClient.IsConnected)
             {
-                MessageBox.Show(Res.Get("ManualBackup_PleaseSelectPlan"), Res.Get("Warning"),
+                MessageBox.Show(Res.Get("Backup_ServiceNotConnected"), Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var selectedDatabases = plan.Databases?.ToList() ?? new List<string>();
-            if (selectedDatabases.Count == 0)
-            {
-                MessageBox.Show(Res.Get("ManualBackup_PleaseSelectDb"), Res.Get("Warning"),
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            SqlBackupType backupType;
-            switch (_cmbBackupType.SelectedIndex)
-            {
-                case 1: backupType = SqlBackupType.Differential; break;
-                case 2: backupType = SqlBackupType.Incremental; break;
-                default: backupType = SqlBackupType.Full; break;
-            }
-
+            _activePlanId = plan.PlanId;
             _isBackupRunning = true;
-            _cts = new CancellationTokenSource();
             UpdateBackupButtonStates();
-            _progressBar.Value = 0;
-            _progressBar.Maximum = selectedDatabases.Count * 100;
-            _lblBackupStatus.Text = Res.Get("ManualBackup_Starting");
-            _lblBackupStatus.ForeColor = Theme.ModernTheme.TextSecondary;
+
+            // Bu plan için önceki log buffer'ını temizle
+            _planLogs.Remove(plan.PlanId);
+            _planProgress.Remove(plan.PlanId);
             _txtBackupLog.Clear();
-
-            BackupActivityHub.Raise(new BackupActivityEventArgs
-            {
-                PlanId = plan.PlanId,
-                PlanName = plan.PlanName,
-                ActivityType = BackupActivityType.Started,
-                TotalCount = selectedDatabases.Count
-            });
-
-            int successCount = 0;
-            int failCount = 0;
-            int totalProgress = 0;
-            string correlationId = Guid.NewGuid().ToString("N");
+            AppendBackupLog(string.Format("[{0}] {1}", plan.PlanName, Res.Get("ManualBackup_Starting")));
 
             try
             {
-                for (int i = 0; i < selectedDatabases.Count; i++)
-                {
-                    _cts.Token.ThrowIfCancellationRequested();
-
-                    string dbName = selectedDatabases[i];
-                    _lblBackupStatus.Text = Res.Format("ManualBackup_ProgressFormat", i + 1, selectedDatabases.Count, dbName);
-
-                    BackupActivityHub.Raise(new BackupActivityEventArgs
-                    {
-                        PlanId = plan.PlanId,
-                        PlanName = plan.PlanName,
-                        DatabaseName = dbName,
-                        ActivityType = BackupActivityType.DatabaseProgress,
-                        CurrentIndex = i + 1,
-                        TotalCount = selectedDatabases.Count
-                    });
-                    AppendBackupLog(Res.Format("ManualBackup_BackingUpFormat", dbName, backupType));
-
-                    var progress = new Progress<int>(pct =>
-                    {
-                        int current = totalProgress + pct;
-                        if (current <= _progressBar.Maximum)
-                            _progressBar.Value = current;
-                    });
-
-                    try
-                    {
-                        // 1. SQL Backup
-                        var result = await _sqlBackupService.BackupDatabaseAsync(
-                            plan.SqlConnection, dbName, backupType, plan.LocalPath,
-                            progress, _cts.Token);
-
-                        if (result.Status != BackupResultStatus.Success)
-                        {
-                            failCount++;
-                            AppendBackupLog(Res.Format("ManualBackup_FailedFormat", result.ErrorMessage));
-                            SaveBackupHistory(result, plan, correlationId);
-                            continue;
-                        }
-
-                        string sizeMb = (result.FileSizeBytes / BytesPerMb).ToString("F1");
-                        AppendBackupLog(Res.Format("ManualBackup_SuccessFormat", sizeMb, result.BackupFilePath));
-
-                        // 2. Verify (isteğe bağlı)
-                        if (plan.VerifyAfterBackup)
-                        {
-                            AppendBackupLog($"  ↳ Doğrulanıyor (RESTORE VERIFYONLY)...");
-                            result.VerifyResult = await _sqlBackupService.VerifyBackupAsync(
-                                plan.SqlConnection, result.BackupFilePath, _cts.Token);
-                            AppendBackupLog(result.VerifyResult == true
-                                ? "  ✓ Doğrulama başarılı."
-                                : "  ✗ Doğrulama başarısız!");
-                        }
-
-                        // 3. Compress
-                        if (plan.Compression != null)
-                        {
-                            try
-                            {
-                                string archivePath = Path.ChangeExtension(result.BackupFilePath, ".7z");
-                                string password = !string.IsNullOrEmpty(plan.Compression.ArchivePassword)
-                                    ? PasswordProtector.Unprotect(plan.Compression.ArchivePassword)
-                                    : null;
-
-                                AppendBackupLog($"  ↳ Sıkıştırılıyor → {Path.GetFileName(archivePath)}");
-                                result.CompressedSizeBytes = await _compressionService.CompressAsync(
-                                    result.BackupFilePath, archivePath, password, null, _cts.Token);
-                                result.CompressedFilePath = archivePath;
-
-                                string compMb = (result.CompressedSizeBytes / BytesPerMb).ToString("F1");
-                                AppendBackupLog($"  ✓ Sıkıştırma tamamlandı: {compMb} MB");
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Manuel yedekleme sıkıştırma hatası: {Database}", dbName);
-                                AppendBackupLog($"  ✗ Sıkıştırma hatası: {ex.Message}");
-                            }
-                        }
-
-                        // 4. Cloud Upload (bulut modundaysa)
-                        if (_cloudOrchestrator != null && plan.CloudTargets != null
-                            && plan.CloudTargets.Any(t => t.IsEnabled)
-                            && plan.Mode == BackupMode.Cloud)
-                        {
-                            try
-                            {
-                                string fileToUpload = !string.IsNullOrEmpty(result.CompressedFilePath)
-                                    ? result.CompressedFilePath
-                                    : result.BackupFilePath;
-                                string remoteFileName = Path.GetFileName(fileToUpload);
-
-                                AppendBackupLog($"  ↳ Bulut hedeflere yükleniyor...");
-                                result.CloudUploadResults = await _cloudOrchestrator.UploadToAllAsync(
-                                    fileToUpload, remoteFileName, plan.CloudTargets, null, _cts.Token);
-
-                                int upSuccess = result.CloudUploadResults.Count(r => r.IsSuccess);
-                                int upTotal = result.CloudUploadResults.Count;
-                                AppendBackupLog($"  ✓ Bulut upload: {upSuccess}/{upTotal} başarılı");
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Manuel yedekleme bulut upload hatası: {Database}", dbName);
-                                AppendBackupLog($"  ✗ Bulut upload hatası: {ex.Message}");
-                            }
-                        }
-
-                        // 5. History
-                        SaveBackupHistory(result, plan, correlationId);
-                        successCount++;
-                    }
-                    catch (Exception ex)
-                    {
-                        failCount++;
-                        AppendBackupLog(Res.Format("ManualBackup_ErrorFormat", ex.Message));
-                        Log.Error(ex, "Manuel yedekleme hatası: {Database}", dbName);
-                    }
-
-                    totalProgress += 100;
-                    _progressBar.Value = Math.Min(totalProgress, _progressBar.Maximum);
-                }
-
-                // ── Dosya Yedekleme ──
-                if (plan.FileBackup != null && plan.FileBackup.IsEnabled
-                    && plan.FileBackup.Sources.Any(s => s.IsEnabled))
-                {
-                    try
-                    {
-                        AppendBackupLog("");
-                        AppendBackupLog("── Dosya Yedekleme ──");
-                        _lblBackupStatus.Text = "Dosya yedekleme çalışıyor...";
-
-                        var fileResults = await _fileBackupService.BackupFilesAsync(plan, null, _cts.Token);
-
-                        foreach (var fr in fileResults)
-                        {
-                            if (fr.Status == BackupResultStatus.Success)
-                            {
-                                string sizeMb = (fr.TotalSizeBytes / BytesPerMb).ToString("F1");
-                                AppendBackupLog($"  ✓ {fr.SourceName}: {fr.FilesCopied} dosya, {sizeMb} MB");
-                            }
-                            else
-                            {
-                                AppendBackupLog($"  ✗ {fr.SourceName}: başarısız");
-                            }
-                        }
-
-                        // Dosya yedekleri sıkıştırma
-                        if (plan.Compression != null && fileResults.Any(r => r.Status == BackupResultStatus.Success))
-                        {
-                            string filesDir = Path.Combine(plan.LocalPath, "Files");
-                            if (Directory.Exists(filesDir))
-                            {
-                                try
-                                {
-                                    string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                                    string archivePath = Path.Combine(plan.LocalPath, $"Files_{timestamp}.7z");
-                                    string password = !string.IsNullOrEmpty(plan.Compression.ArchivePassword)
-                                        ? PasswordProtector.Unprotect(plan.Compression.ArchivePassword)
-                                        : null;
-
-                                    AppendBackupLog($"  ↳ Dosya yedekleri sıkıştırılıyor → {Path.GetFileName(archivePath)}");
-
-                                    var sevenZip = _compressionService as Engine.Compression.SevenZipCompressionService;
-                                    if (sevenZip != null)
-                                    {
-                                        long archiveSize = await sevenZip.CompressDirectoryAsync(
-                                            filesDir, archivePath, password,
-                                            plan.Compression.Level, null, _cts.Token);
-
-                                        string compMb = (archiveSize / BytesPerMb).ToString("F1");
-                                        AppendBackupLog($"  ✓ Dosya arşivi tamamlandı: {compMb} MB");
-
-                                        // Bulut upload
-                                        if (_cloudOrchestrator != null && plan.CloudTargets != null
-                                            && plan.CloudTargets.Any(t => t.IsEnabled)
-                                            && plan.Mode == BackupMode.Cloud)
-                                        {
-                                            AppendBackupLog($"  ↳ Dosya arşivi buluta yükleniyor...");
-                                            var uploadResults = await _cloudOrchestrator.UploadToAllAsync(
-                                                archivePath, Path.GetFileName(archivePath),
-                                                plan.CloudTargets, null, _cts.Token);
-
-                                            int upOk = uploadResults.Count(r => r.IsSuccess);
-                                            AppendBackupLog($"  ✓ Dosya arşiv upload: {upOk}/{uploadResults.Count} başarılı");
-                                        }
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Log.Error(ex, "Dosya yedek sıkıştırma/upload hatası");
-                                    AppendBackupLog($"  ✗ Dosya sıkıştırma hatası: {ex.Message}");
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Dosya yedekleme hatası");
-                        AppendBackupLog($"  ✗ Dosya yedekleme hatası: {ex.Message}");
-                    }
-                }
-
-                _lblBackupStatus.Text = Res.Format("ManualBackup_CompletedFormat", successCount, failCount);
-                _lblBackupStatus.ForeColor = failCount == 0 ? Color.LimeGreen : Color.OrangeRed;
-                AppendBackupLog(Res.Format("ManualBackup_ResultFormat", successCount, failCount));
-
-                BackupActivityHub.Raise(new BackupActivityEventArgs
-                {
-                    PlanId = plan.PlanId,
-                    PlanName = plan.PlanName,
-                    ActivityType = failCount == 0 ? BackupActivityType.Completed : BackupActivityType.Failed,
-                    Message = Res.Format("ManualBackup_CompletedFormat", successCount, failCount)
-                });
-            }
-            catch (OperationCanceledException)
-            {
-                _lblBackupStatus.Text = Res.Get("ManualBackup_Cancelled");
-                _lblBackupStatus.ForeColor = Color.Gray;
-                AppendBackupLog(Res.Get("ManualBackup_CancelledLog"));
-
-                BackupActivityHub.Raise(new BackupActivityEventArgs
-                {
-                    PlanId = plan.PlanId,
-                    PlanName = plan.PlanName,
-                    ActivityType = BackupActivityType.Cancelled
-                });
+                await _pipeClient.SendManualBackupCommandAsync(plan.PlanId, "Full");
             }
             catch (Exception ex)
             {
-                _lblBackupStatus.Text = Res.Get("ManualBackup_UnexpectedError");
-                _lblBackupStatus.ForeColor = Color.Red;
-                AppendBackupLog(Res.Format("ManualBackup_UnexpectedErrorLog", ex.Message));
-                Log.Error(ex, "Manuel yedekleme genel hatası.");
-
-                BackupActivityHub.Raise(new BackupActivityEventArgs
-                {
-                    PlanId = plan.PlanId,
-                    PlanName = plan.PlanName,
-                    ActivityType = BackupActivityType.Failed,
-                    Message = ex.Message
-                });
-            }
-            finally
-            {
+                Log.Error(ex, "Manuel yedekleme komutu gönderilemedi: {PlanId}", plan.PlanId);
+                AppendBackupLog(Res.Format("Backup_SendError", ex.Message));
                 _isBackupRunning = false;
-                _cts?.Dispose();
-                _cts = null;
+                _activePlanId = null;
                 UpdateBackupButtonStates();
             }
         }
 
-        private void OnCancelBackupClick(object sender, EventArgs e)
+        private async void OnCancelBackupClick(object sender, EventArgs e)
         {
-            if (_cts != null && !_cts.IsCancellationRequested)
+            if (string.IsNullOrEmpty(_activePlanId)) return;
+            try
             {
-                _cts.Cancel();
-                _lblBackupStatus.Text = Res.Get("ManualBackup_Cancelling");
-                _btnCancelBackup.Enabled = false;
+                await _pipeClient.SendCancelCommandAsync(_activePlanId);
+                AppendBackupLog(Res.Get("ManualBackup_Cancelling"));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "İptal komutu gönderilemedi: {PlanId}", _activePlanId);
             }
         }
 
         private void UpdateBackupButtonStates()
         {
-            bool hasPlan = GetSelectedPlanSilent() != null;
+            var plan = GetSelectedPlanSilent();
+            bool hasPlan = plan != null;
+            bool connected = _pipeClient.IsConnected;
 
-            _btnStart.Enabled = !_isBackupRunning && hasPlan;
+            _btnStart.Enabled = hasPlan && !_isBackupRunning && connected;
             _btnCancelBackup.Enabled = _isBackupRunning;
-            _cmbBackupType.Enabled = !_isBackupRunning;
 
-            // Yedekleme sürerken plan yönetim butonlarını kilitle
-            _tsbEdit.Enabled = !_isBackupRunning;
-            _tsbDelete.Enabled = !_isBackupRunning;
-            _tsbExport.Enabled = !_isBackupRunning;
-            _tsbImport.Enabled = !_isBackupRunning;
+            if (!connected)
+                _lblBackupStatus.Text = Res.Get("Backup_ServiceDisconnected");
+            else if (_isBackupRunning)
+                _lblBackupStatus.Text = Res.Format("Backup_ReadyForPlan", plan?.PlanName ?? _activePlanId);
+            else if (hasPlan)
+                _lblBackupStatus.Text = Res.Format("Backup_ReadyForPlan", plan.PlanName);
+            else
+                _lblBackupStatus.Text = Res.Get("ManualBackup_PleaseSelectPlan");
+        }
+
+        private void OnPipeConnectionChanged(object sender, bool connected)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => OnPipeConnectionChanged(sender, connected)));
+                return;
+            }
+
+            UpdateStatusBarConnection(connected);
+            UpdateBackupButtonStates();
+        }
+
+        private void UpdateStatusBarConnection(bool connected)
+        {
+            if (connected)
+            {
+                _tslStatus.Text      = Res.Get("StatusBar_ServiceConnected");
+                _tslStatus.ForeColor = Theme.ModernTheme.StatusSuccess;
+            }
+            else
+            {
+                _tslStatus.Text      = Res.Get("StatusBar_ServiceDisconnected");
+                _tslStatus.ForeColor = Theme.ModernTheme.StatusError;
+            }
+        }
+
+        private void OnServiceStatusReceived(object sender, ServiceStatusMessage e)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => OnServiceStatusReceived(sender, e)));
+                return;
+            }
+
+            if (e.NextFireTimes == null || e.NextFireTimes.Count == 0) return;
+
+            foreach (DataGridViewRow row in _dgvPlans.Rows)
+            {
+                var plan = row.Tag as BackupPlan;
+                if (plan == null) continue;
+
+                if (e.NextFireTimes.TryGetValue(plan.PlanId, out var nextFire))
+                    row.Cells[_colNextRun.Index].Value = nextFire;
+            }
         }
 
         private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new Action(() => OnBackupActivityChanged(sender, e)));
+                Invoke(new Action(() => OnBackupActivityChanged(sender, e)));
                 return;
             }
 
-            // Plan DataGridView'de ilgili satırın durumunu güncelle
-            UpdatePlanRowStatus(e);
-
-            // Toast bildirimleri
             switch (e.ActivityType)
             {
                 case BackupActivityType.Started:
-                    Theme.ModernToast.Show(
-                        Res.Get("Toast_BackupStartedTitle"),
-                        Res.Format("Toast_BackupStartedMessage", e.PlanName),
-                        Theme.ToastType.Info);
+                    _isBackupRunning = true;
+                    _activePlanId = e.PlanId;
+                    _progressBar.Value = 0;
+                    _progressBar.ShowPercentage = true;
+                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                    UpdatePlanRowProgress(e.PlanId, 0);
+                    break;
+
+                case BackupActivityType.DatabaseProgress:
+                    if (e.TotalCount > 0)
+                    {
+                        int pct = (int)((double)e.CurrentIndex / e.TotalCount * 50);
+                        _progressBar.Value = pct;
+                        UpdatePlanRowProgress(e.PlanId ?? _activePlanId, pct);
+                    }
+                    break;
+
+                case BackupActivityType.CloudUploadProgress:
+                    _progressBar.Value = e.ProgressPercent;
+                    if (e.BytesTotal > 0)
+                    {
+                        _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.CustomText;
+                        _progressBar.Text = string.Format("{0}%  {1}/{2}  {3}/s",
+                            e.ProgressPercent,
+                            FormatFileSize(e.BytesSent),
+                            FormatFileSize(e.BytesTotal),
+                            FormatFileSize(e.SpeedBytesPerSecond));
+                    }
+                    UpdatePlanRowProgress(_activePlanId, e.ProgressPercent);
                     break;
 
                 case BackupActivityType.Completed:
-                    Theme.ModernToast.Success(
-                        Res.Get("Toast_BackupCompletedTitle"),
-                        Res.Format("Toast_BackupCompletedMessage", e.PlanName));
-                    break;
-
                 case BackupActivityType.Failed:
-                    Theme.ModernToast.Error(
-                        Res.Get("Toast_BackupFailedTitle"),
-                        Res.Format("Toast_BackupFailedMessage", e.PlanName));
-                    break;
-
                 case BackupActivityType.Cancelled:
-                    Theme.ModernToast.Warning(
-                        Res.Get("Toast_BackupCancelledTitle"),
-                        Res.Format("Toast_BackupCancelledMessage", e.PlanName));
+                    _isBackupRunning = false;
+                    _activePlanId = null;
+                    _progressBar.ShowPercentage = false;
+                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                    _progressBar.Value = 0;
+                    UpdatePlanRowProgress(e.PlanId, 0);
+                    UpdatePlanRowStatus(e.PlanId, e.ActivityType);
                     break;
             }
+
+            UpdateBackupButtonStates();
+            AppendBackupLog(BuildActivityLogLine(e));
         }
 
-        private void UpdatePlanRowStatus(BackupActivityEventArgs e)
+        private void UpdatePlanRowStatus(string planId, BackupActivityType activityType)
         {
             foreach (DataGridViewRow row in _dgvPlans.Rows)
             {
                 var plan = row.Tag as BackupPlan;
-                if (plan == null || plan.PlanId != e.PlanId) continue;
+                if (plan == null || plan.PlanId != planId) continue;
 
-                string statusText;
-                Color statusColor;
-
-                switch (e.ActivityType)
+                string icon;
+                Color color;
+                switch (activityType)
                 {
-                    case BackupActivityType.Started:
-                        statusText = Res.Get("PlanStatus_BackingUp");
-                        statusColor = Theme.ModernTheme.StatusWarning;
-                        break;
-                    case BackupActivityType.DatabaseProgress:
-                        statusText = Res.Format("PlanStatus_BackingUpDb", e.DatabaseName);
-                        statusColor = Theme.ModernTheme.StatusWarning;
-                        break;
                     case BackupActivityType.Completed:
-                        statusText = DateTime.Now.ToString("dd.MM.yyyy HH:mm") + " ✓";
-                        statusColor = Theme.ModernTheme.StatusSuccess;
+                        icon = "✓ " + DateTime.Now.ToString("HH:mm");
+                        color = Theme.ModernTheme.StatusSuccess;
                         break;
                     case BackupActivityType.Failed:
-                        statusText = DateTime.Now.ToString("dd.MM.yyyy HH:mm") + " ✕";
-                        statusColor = Theme.ModernTheme.StatusError;
+                        icon = "✕ " + DateTime.Now.ToString("HH:mm");
+                        color = Theme.ModernTheme.StatusError;
                         break;
                     case BackupActivityType.Cancelled:
-                        statusText = DateTime.Now.ToString("dd.MM.yyyy HH:mm") + " ■";
-                        statusColor = Color.Gray;
+                        icon = "■ " + DateTime.Now.ToString("HH:mm");
+                        color = Color.Gray;
                         break;
                     default:
-                        return;
+                        icon = "⟳ " + DateTime.Now.ToString("HH:mm");
+                        color = Theme.ModernTheme.AccentPrimary;
+                        break;
                 }
 
-                row.Cells[_colStatus.Index].Value = statusText;
-                row.Cells[_colStatus.Index].Style.ForeColor = statusColor;
+                if (row.Cells[_colStatus.Index] != null)
+                {
+                    row.Cells[_colStatus.Index].Value = icon;
+                    row.Cells[_colStatus.Index].Style.ForeColor = color;
+                }
                 break;
             }
         }
 
-        private void AppendBackupLog(string text)
+        private void UpdatePlanRowProgress(string planId, int percent)
         {
-            _txtBackupLog.AppendText(text + Environment.NewLine);
+            if (string.IsNullOrEmpty(planId)) return;
+            foreach (DataGridViewRow row in _dgvPlans.Rows)
+            {
+                var p = row.Tag as BackupPlan;
+                if (p == null || p.PlanId != planId) continue;
+
+                if (_colProgress != null && _colProgress.Index >= 0 && _colProgress.Index < row.Cells.Count)
+                    row.Cells[_colProgress.Index].Value = percent;
+                break;
+            }
         }
 
-        private void SaveBackupHistory(BackupResult result, BackupPlan plan, string correlationId)
+        private void AppendBackupLog(string line)
         {
-            result.PlanId = plan.PlanId;
-            result.PlanName = plan.PlanName;
-            result.CorrelationId = correlationId;
-
-            try
+            if (InvokeRequired)
             {
-                _historyManager.SaveResult(result);
+                Invoke(new Action(() => AppendBackupLog(line)));
+                return;
             }
-            catch (Exception ex)
+
+            string effectivePlanId = _activePlanId;
+            string formatted = "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line;
+
+            // Plan'a ait buffer'a ekle
+            if (!string.IsNullOrEmpty(effectivePlanId))
             {
-                Log.Warning(ex, "Yedek geçmişi kaydedilemedi: {CorrelationId}", correlationId);
+                if (!_planLogs.ContainsKey(effectivePlanId))
+                    _planLogs[effectivePlanId] = new List<string>();
+                _planLogs[effectivePlanId].Add(formatted);
+            }
+
+            // Sadece seçili plan aktif planla eşleşiyorsa UI'yi güncelle
+            var selected = GetSelectedPlanSilent();
+            if (selected?.PlanId == effectivePlanId || string.IsNullOrEmpty(effectivePlanId))
+            {
+                _txtBackupLog.AppendText(formatted + Environment.NewLine);
+            }
+        }
+
+        private string BuildActivityLogLine(BackupActivityEventArgs e)
+        {
+            switch (e.ActivityType)
+            {
+                case BackupActivityType.Started:
+                    return string.Format("[{0}] Yedekleme başladı.", e.PlanName ?? e.PlanId);
+                case BackupActivityType.DatabaseProgress:
+                    return string.Format("{0} ({1}/{2}) işleniyor.", e.DatabaseName, e.CurrentIndex, e.TotalCount);
+                case BackupActivityType.StepChanged:
+                    return string.Format("Adım: {0}", e.StepName ?? e.Message);
+                case BackupActivityType.CloudUploadStarted:
+                    return string.Format("Bulut yükleme başladı: {0}", e.CloudTargetName);
+                case BackupActivityType.CloudUploadProgress:
+                    if (e.BytesTotal > 0)
+                        return string.Format("Yükleniyor {0}: %{1} | Gönderilen: {2}/{3} | Hız: {4}/s",
+                            e.CloudTargetName,
+                            e.ProgressPercent,
+                            FormatFileSize(e.BytesSent),
+                            FormatFileSize(e.BytesTotal),
+                            FormatFileSize(e.SpeedBytesPerSecond));
+                    return string.Format("Yükleniyor {0}: %{1}", e.CloudTargetName, e.ProgressPercent);
+                case BackupActivityType.CloudUploadCompleted:
+                    return string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕");
+                case BackupActivityType.Completed:
+                    return string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId);
+                case BackupActivityType.Failed:
+                    return string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message);
+                case BackupActivityType.Cancelled:
+                    return string.Format("[{0}] Yedekleme iptal edildi.", e.PlanName ?? e.PlanId);
+                default:
+                    return e.Message ?? string.Empty;
             }
         }
 
@@ -1513,19 +1413,7 @@ namespace KoruMsSqlYedek.Win
             _nudLogRetention.Value = Math.Min(Math.Max(s.LogRetentionDays, 1), 365);
             _nudHistoryRetention.Value = Math.Min(Math.Max(s.HistoryRetentionDays, 1), 365);
 
-            _txtSmtpHost.Text = s.Smtp.Host;
-            _nudSmtpPort.Value = Math.Min(Math.Max(s.Smtp.Port, 1), 65535);
-            _chkSmtpSsl.Checked = s.Smtp.UseSsl;
-            _txtSmtpUsername.Text = s.Smtp.Username;
-            _txtSmtpSenderEmail.Text = s.Smtp.SenderEmail;
-            _txtSmtpSenderName.Text = s.Smtp.SenderDisplayName;
-            _txtSmtpRecipients.Text = s.Smtp.RecipientEmails;
-
-            if (!string.IsNullOrEmpty(s.Smtp.Password))
-            {
-                try { _txtSmtpPassword.Text = PasswordProtector.Unprotect(s.Smtp.Password); }
-                catch { _txtSmtpPassword.Text = string.Empty; }
-            }
+            LoadProfileList(s);
         }
 
         private AppSettings ControlsToSettings()
@@ -1540,18 +1428,7 @@ namespace KoruMsSqlYedek.Win
             s.LogRetentionDays = (int)_nudLogRetention.Value;
             s.HistoryRetentionDays = (int)_nudHistoryRetention.Value;
 
-            s.Smtp.Host = _txtSmtpHost.Text.Trim();
-            s.Smtp.Port = (int)_nudSmtpPort.Value;
-            s.Smtp.UseSsl = _chkSmtpSsl.Checked;
-            s.Smtp.Username = _txtSmtpUsername.Text.Trim();
-            s.Smtp.SenderEmail = _txtSmtpSenderEmail.Text.Trim();
-            s.Smtp.SenderDisplayName = _txtSmtpSenderName.Text.Trim();
-            s.Smtp.RecipientEmails = _txtSmtpRecipients.Text.Trim();
-
-            string rawPassword = _txtSmtpPassword.Text;
-            s.Smtp.Password = !string.IsNullOrEmpty(rawPassword)
-                ? PasswordProtector.Protect(rawPassword)
-                : null;
+            // SMTP profiller Add/Edit/Delete dialoglarında bağımsız kaydedilir; burada dokunulmaz.
 
             return s;
         }
@@ -1564,25 +1441,6 @@ namespace KoruMsSqlYedek.Win
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtDefaultBackupPath.Focus();
                 return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(_txtSmtpHost.Text))
-            {
-                if (string.IsNullOrWhiteSpace(_txtSmtpSenderEmail.Text))
-                {
-                    MessageBox.Show(Res.Get("Settings_SmtpSenderRequired"), Res.Get("ValidationError"),
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    _txtSmtpSenderEmail.Focus();
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(_txtSmtpRecipients.Text))
-                {
-                    MessageBox.Show(Res.Get("Settings_SmtpRecipientRequired"), Res.Get("ValidationError"),
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    _txtSmtpRecipients.Focus();
-                    return false;
-                }
             }
 
             return true;
@@ -1627,16 +1485,91 @@ namespace KoruMsSqlYedek.Win
             LoadSettings();
         }
 
-        private void OnSmtpTestClick(object sender, EventArgs e)
+        private void LoadProfileList(AppSettings s)
         {
-            if (string.IsNullOrWhiteSpace(_txtSmtpHost.Text))
+            _dgvSmtpProfiles.Rows.Clear();
+            _dgvSmtpProfiles.Columns.Clear();
+            _dgvSmtpProfiles.Columns.Add(new System.Windows.Forms.DataGridViewTextBoxColumn { Name = "colId", Visible = false });
+            _dgvSmtpProfiles.Columns.Add(new System.Windows.Forms.DataGridViewTextBoxColumn { Name = "colName", HeaderText = "Profil Adı", FillWeight = 25 });
+            _dgvSmtpProfiles.Columns.Add(new System.Windows.Forms.DataGridViewTextBoxColumn { Name = "colHost", HeaderText = "Sunucu", FillWeight = 30 });
+            _dgvSmtpProfiles.Columns.Add(new System.Windows.Forms.DataGridViewTextBoxColumn { Name = "colUser", HeaderText = "Kullanıcı", FillWeight = 25 });
+            _dgvSmtpProfiles.Columns.Add(new System.Windows.Forms.DataGridViewTextBoxColumn { Name = "colRecipients", HeaderText = "Alıcılar", FillWeight = 20 });
+
+            foreach (var p in s.SmtpProfiles)
+            {
+                _dgvSmtpProfiles.Rows.Add(
+                    p.Id,
+                    p.DisplayName,
+                    string.IsNullOrEmpty(p.Host) ? "—" : $"{p.Host}:{p.Port}",
+                    p.Username,
+                    p.RecipientEmails);
+            }
+        }
+
+        private void OnSmtpAddClick(object? sender, EventArgs e)
+        {
+            using var dlg = new Forms.SmtpProfileEditDialog();
+            if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+            _settings.SmtpProfiles.Add(dlg.ResultProfile);
+            _settingsManager.Save(_settings);
+            LoadProfileList(_settings);
+        }
+
+        private void OnSmtpEditClick(object? sender, EventArgs e)
+        {
+            if (_dgvSmtpProfiles.SelectedRows.Count == 0) return;
+
+            string profileId = _dgvSmtpProfiles.SelectedRows[0].Cells["colId"].Value?.ToString() ?? string.Empty;
+            var existing = _settings.SmtpProfiles.Find(p => p.Id == profileId);
+            if (existing == null) return;
+
+            using var dlg = new Forms.SmtpProfileEditDialog(existing);
+            if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+            int idx = _settings.SmtpProfiles.IndexOf(existing);
+            _settings.SmtpProfiles[idx] = dlg.ResultProfile;
+            _settingsManager.Save(_settings);
+            LoadProfileList(_settings);
+        }
+
+        private void OnSmtpDeleteClick(object? sender, EventArgs e)
+        {
+            if (_dgvSmtpProfiles.SelectedRows.Count == 0) return;
+
+            string profileId = _dgvSmtpProfiles.SelectedRows[0].Cells["colId"].Value?.ToString() ?? string.Empty;
+            string profileName = _dgvSmtpProfiles.SelectedRows[0].Cells["colName"].Value?.ToString() ?? profileId;
+
+            if (MessageBox.Show(Res.Format("Settings_SmtpDeleteConfirm", profileName),
+                    Res.Get("Confirm"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            _settings.SmtpProfiles.RemoveAll(p => p.Id == profileId);
+            _settingsManager.Save(_settings);
+            LoadProfileList(_settings);
+        }
+
+        private void OnSmtpTestClick(object? sender, EventArgs e)
+        {
+            if (_dgvSmtpProfiles.SelectedRows.Count == 0)
+            {
+                MessageBox.Show(Res.Get("Settings_SmtpSelectProfileFirst"), Res.Get("Warning"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string profileId = _dgvSmtpProfiles.SelectedRows[0].Cells["colId"].Value?.ToString() ?? string.Empty;
+            var profile = _settings.SmtpProfiles.Find(p => p.Id == profileId);
+            if (profile == null) return;
+
+            if (string.IsNullOrWhiteSpace(profile.Host))
             {
                 MessageBox.Show(Res.Get("Settings_SmtpServerRequired"), Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(_txtSmtpRecipients.Text))
+            if (string.IsNullOrWhiteSpace(profile.RecipientEmails))
             {
                 MessageBox.Show(Res.Get("Settings_SmtpRecipientTestRequired"), Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1647,33 +1580,39 @@ namespace KoruMsSqlYedek.Win
             {
                 Cursor = Cursors.WaitCursor;
 
-                using (var client = new MailKit.Net.Smtp.SmtpClient())
+                using var client = new MailKit.Net.Smtp.SmtpClient();
+                var options = profile.UseSsl
+                    ? MailKit.Security.SecureSocketOptions.StartTls
+                    : MailKit.Security.SecureSocketOptions.None;
+
+                client.Connect(profile.Host, profile.Port, options);
+
+                if (!string.IsNullOrEmpty(profile.Username))
                 {
-                    int port = (int)_nudSmtpPort.Value;
-                    var options = _chkSmtpSsl.Checked
-                        ? MailKit.Security.SecureSocketOptions.StartTls
-                        : MailKit.Security.SecureSocketOptions.None;
-
-                    client.Connect(_txtSmtpHost.Text.Trim(), port, options);
-
-                    string username = _txtSmtpUsername.Text.Trim();
-                    if (!string.IsNullOrEmpty(username))
-                        client.Authenticate(username, _txtSmtpPassword.Text);
-
-                    string senderEmail = !string.IsNullOrWhiteSpace(_txtSmtpSenderEmail.Text)
-                        ? _txtSmtpSenderEmail.Text.Trim() : username;
-                    string senderName = !string.IsNullOrWhiteSpace(_txtSmtpSenderName.Text)
-                        ? _txtSmtpSenderName.Text.Trim() : "KoruMsSqlYedek";
-
-                    var message = new MimeKit.MimeMessage();
-                    message.From.Add(new MimeKit.MailboxAddress(senderName, senderEmail));
-                    message.To.Add(MimeKit.MailboxAddress.Parse(_txtSmtpRecipients.Text.Trim().Split(';')[0]));
-                    message.Subject = Res.Format("Settings_SmtpTestSubject", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    message.Body = new MimeKit.TextPart("plain") { Text = Res.Get("Settings_SmtpTestBody") };
-
-                    client.Send(message);
-                    client.Disconnect(true);
+                    string plainPwd = string.Empty;
+                    if (!string.IsNullOrEmpty(profile.Password))
+                    {
+                        try { plainPwd = PasswordProtector.Unprotect(profile.Password); }
+                        catch { /* şifreli değilse olduğu gibi kullan */ plainPwd = profile.Password; }
+                    }
+                    client.Authenticate(profile.Username, plainPwd);
                 }
+
+                string senderEmail = !string.IsNullOrWhiteSpace(profile.SenderEmail)
+                    ? profile.SenderEmail : profile.Username;
+                string senderName = !string.IsNullOrWhiteSpace(profile.SenderDisplayName)
+                    ? profile.SenderDisplayName : "Koru MsSql Yedek";
+
+                var message = new MimeKit.MimeMessage();
+                message.From.Add(new MimeKit.MailboxAddress(senderName, senderEmail));
+                string firstRecipient = profile.RecipientEmails.Split(new[] { ';', ',' },
+                    System.StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+                message.To.Add(MimeKit.MailboxAddress.Parse(firstRecipient));
+                message.Subject = Res.Format("Settings_SmtpTestSubject", DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+                message.Body = new MimeKit.TextPart("plain") { Text = Res.Get("Settings_SmtpTestBody") };
+
+                client.Send(message);
+                client.Disconnect(true);
 
                 MessageBox.Show(Res.Get("Settings_SmtpTestSuccess"), Res.Get("Success"),
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1681,9 +1620,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
-                // Güvenlik: Tam exception mesajı yerine sanitize edilmiş mesaj göster
-                string safeMessage = SanitizeErrorMessage(ex.Message);
-                MessageBox.Show(Res.Format("Settings_SmtpTestError", safeMessage),
+                MessageBox.Show(Res.Format("Settings_SmtpTestError", SanitizeErrorMessage(ex.Message)),
                     Res.Get("Settings_SmtpTestErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -1698,7 +1635,7 @@ namespace KoruMsSqlYedek.Win
 
         private void ApplyLocalization()
         {
-            Text = "KoruMsSqlYedek";
+            Text = "Koru MsSql Yedek";
 
             // Tab headers
             _tabDashboard.Text = Res.Get("Tab_Dashboard");

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Bir bütünleştirilmiş koda ilişkin Genel Bilgiler aşağıdaki öznitelikler kümesiyle
 // denetlenir. Bütünleştirilmiş kod ile ilişkili bilgileri değiştirmek için
 // bu öznitelik değerlerini değiştirin.
-[assembly: AssemblyTitle("KoruMsSqlYedek.Win")]
+[assembly: AssemblyTitle("Koru MsSql Yedek")]
 [assembly: AssemblyDescription("SQL Server Yedekleme & Bulut Senkronizasyon Sistemi")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("HZK")]
-[assembly: AssemblyProduct("KoruMsSqlYedek")]
+[assembly: AssemblyProduct("Koru MsSql Yedek")]
 [assembly: AssemblyCopyright("Copyright © HZK 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Yapı Numarası
 //      Düzeltme
 //
-[assembly: AssemblyVersion("0.27.0.0")]
-[assembly: AssemblyFileVersion("0.27.0.0")]
+[assembly: AssemblyVersion("0.41.0.0")]
+[assembly: AssemblyFileVersion("0.41.0.0")]

@@ -180,23 +180,33 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("emailEnabled")]
         public bool EmailEnabled { get; set; }
 
-        [JsonProperty("emailTo")]
+        /// <summary>
+        /// Kullanılacak SMTP profilinin Id'si (AppSettings.SmtpProfiles içindeki SmtpProfile.Id).
+        /// Null ise eski per-plan SMTP alanları kullanılır (geriye uyumluluk).
+        /// </summary>
+        [JsonProperty("smtpProfileId", NullValueHandling = NullValueHandling.Ignore)]
+        public string SmtpProfileId { get; set; }
+
+        // ── Eski per-plan SMTP alanları — geriye uyumluluk için korunmaktadır ──
+        // Yeni planlarda SmtpProfileId kullanılır; bu alanlar boş bırakılır.
+
+        [JsonProperty("emailTo", NullValueHandling = NullValueHandling.Ignore)]
         public string EmailTo { get; set; }
 
-        [JsonProperty("smtpServer")]
+        [JsonProperty("smtpServer", NullValueHandling = NullValueHandling.Ignore)]
         public string SmtpServer { get; set; }
 
-        [JsonProperty("smtpPort")]
-        public int SmtpPort { get; set; } = 587;
+        [JsonProperty("smtpPort", NullValueHandling = NullValueHandling.Ignore)]
+        public int? SmtpPort { get; set; }
 
-        [JsonProperty("smtpUseSsl")]
-        public bool SmtpUseSsl { get; set; } = true;
+        [JsonProperty("smtpUseSsl", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? SmtpUseSsl { get; set; }
 
-        [JsonProperty("smtpUsername")]
+        [JsonProperty("smtpUsername", NullValueHandling = NullValueHandling.Ignore)]
         public string SmtpUsername { get; set; }
 
         /// <summary>DPAPI + Base64 ile encode edilmiş SMTP şifresi.</summary>
-        [JsonProperty("smtpPassword")]
+        [JsonProperty("smtpPassword", NullValueHandling = NullValueHandling.Ignore)]
         public string SmtpPassword { get; set; }
 
         [JsonProperty("toastEnabled")]

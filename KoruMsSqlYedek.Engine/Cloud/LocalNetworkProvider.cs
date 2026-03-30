@@ -35,7 +35,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
             string remoteFileName,
             CloudTargetConfig config,
             IProgress<int> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string resumeSessionUri = null,
+            Action<string> sessionUriObtained = null)
         {
             var result = new CloudUploadResult
             {

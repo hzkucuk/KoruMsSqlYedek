@@ -47,7 +47,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
             string remoteFileName,
             CloudTargetConfig config,
             IProgress<int> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string resumeSessionUri = null,
+            Action<string> sessionUriObtained = null)
         {
             var result = new CloudUploadResult
             {
@@ -68,18 +70,21 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     string folderId = await EnsureFolderExistsAsync(
                         driveService, config.RemoteFolderPath, cancellationToken).ConfigureAwait(false);
 
-                    string fileId = await UploadFileAsync(
-                        driveService, localFilePath, remoteFileName, folderId, progress, cancellationToken)
+                    var (fileId, remoteSize) = await UploadFileAsync(
+                        driveService, localFilePath, remoteFileName, folderId,
+                        progress, cancellationToken,
+                        resumeSessionUri, sessionUriObtained)
                         .ConfigureAwait(false);
 
                     result.IsSuccess = true;
                     result.RemoteFilePath = fileId;
+                    result.RemoteFileSizeBytes = remoteSize;
                     result.UploadedAt = DateTime.UtcNow;
 
                     var fileInfo = new FileInfo(localFilePath);
                     Log.Information(
-                        "Google Drive upload başarılı: {FileName} → {FileId} ({Size:N0} bytes)",
-                        remoteFileName, fileId, fileInfo.Length);
+                        "Google Drive upload başarılı: {FileName} → {FileId} ({Size:N0} bytes, uzak={RemoteSize:N0} bytes)",
+                        remoteFileName, fileId, fileInfo.Length, remoteSize);
                 }
             }
             catch (OperationCanceledException)
@@ -198,14 +203,18 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>
         /// Dosyayı resumable upload ile Google Drive'a yükler.
+        /// Yeni upload: session başlatılır, URI callback aracılığıyla kaydedilir, ardından aktarılır.
+        /// Devam: kaydedilmiş URI ile Google sunucusuna kalan byte sayısı sorgulanır, stream konumlandırılır.
         /// </summary>
-        private static async Task<string> UploadFileAsync(
+        private static async Task<(string FileId, long RemoteSize)> UploadFileAsync(
             DriveService driveService,
             string localFilePath,
             string remoteFileName,
             string parentFolderId,
             IProgress<int> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string resumeSessionUri,
+            Action<string> sessionUriObtained)
         {
             var fileMetadata = new GoogleFile
             {
@@ -216,7 +225,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
             };
 
             long fileSize = new FileInfo(localFilePath).Length;
-            string mimeType = "application/octet-stream";
+            const string mimeType = "application/octet-stream";
 
             using (var stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
@@ -224,7 +233,6 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 uploadRequest.ChunkSize = ChunkSize;
                 uploadRequest.Fields = "id,name,size";
 
-                // İlerleme raporlama
                 uploadRequest.ProgressChanged += (uploadProgress) =>
                 {
                     if (fileSize > 0 && progress != null)
@@ -234,7 +242,31 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     }
                 };
 
-                var uploadResult = await uploadRequest.UploadAsync(cancellationToken).ConfigureAwait(false);
+                IUploadProgress uploadResult;
+
+                if (!string.IsNullOrEmpty(resumeSessionUri))
+                {
+                    // Kaldığı yerden devam et — Google sunucusu kalan byte aralıklarını belirler
+                    Log.Information(
+                        "Google Drive upload kaldığı yerden devam ediyor: {FileName}",
+                        remoteFileName);
+                    uploadResult = await uploadRequest
+                        .ResumeAsync(new Uri(resumeSessionUri), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    // Yeni session: InitiateSessionAsync Task<Uri> döndürür — UploadUri property yok
+                    var resumableBase = (Google.Apis.Upload.ResumableUpload)uploadRequest;
+                    Uri sessionUri = await resumableBase
+                        .InitiateSessionAsync(cancellationToken)
+                        .ConfigureAwait(false);
+                    sessionUriObtained?.Invoke(sessionUri?.ToString());
+
+                    uploadResult = await resumableBase
+                        .ResumeAsync(sessionUri, cancellationToken)
+                        .ConfigureAwait(false);
+                }
 
                 if (uploadResult.Status == UploadStatus.Failed)
                 {
@@ -249,7 +281,18 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 if (string.IsNullOrEmpty(fileId))
                     throw new IOException("Google Drive upload sonucunda dosya ID'si alınamadı.");
 
-                return fileId;
+                // Bütünlük: Google'dan alınan boyutu doğrula
+                long remoteSize = uploadRequest.ResponseBody?.Size ?? 0;
+                if (remoteSize == 0 && fileSize > 0)
+                {
+                    // ResponseBody.Size zaman zaman gelmiyor — ayrı API çağrısıyla al
+                    var getReq = driveService.Files.Get(fileId);
+                    getReq.Fields = "id,size";
+                    var meta = await getReq.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+                    remoteSize = meta.Size ?? 0;
+                }
+
+                return (fileId, remoteSize);
             }
         }
 

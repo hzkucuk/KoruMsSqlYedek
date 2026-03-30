@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Threading;
 using System.Windows.Forms;
 using Autofac;
+using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Engine;
 using KoruMsSqlYedek.Win.Helpers;
 using KoruMsSqlYedek.Win.IoC;
@@ -24,6 +25,10 @@ namespace KoruMsSqlYedek.Win
         {
             // Serilog yapılandırması
             ConfigureLogging();
+
+            // Eski AppData klasöründen (MikroSqlDbYedek) migrasyon
+            PathHelper.MigrateLegacyAppData();
+            PathHelper.EnsureDirectoriesExist();
 
             bool createdNew;
             using (var mutex = new Mutex(true, MutexName, out createdNew))

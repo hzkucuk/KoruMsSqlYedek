@@ -99,8 +99,9 @@ namespace KoruMsSqlYedek.Tests
             mockProvider.Setup(p => p.UploadAsync(
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<CloudTargetConfig>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .Returns((string local, string remote, CloudTargetConfig cfg, IProgress<int> prog, CancellationToken ct) =>
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>(), It.IsAny<Action<string>>()))
+                .Returns((string local, string remote, CloudTargetConfig cfg, IProgress<int> prog, CancellationToken ct, string resumeUri, Action<string> sessionCb) =>
                 {
                     callCount++;
                     if (callCount == 1)
@@ -144,7 +145,8 @@ namespace KoruMsSqlYedek.Tests
             mockProvider.Setup(p => p.UploadAsync(
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<CloudTargetConfig>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>(), It.IsAny<Action<string>>()))
                 .ThrowsAsync(new Exception("Sunucu yanıt vermiyor"));
 
             var orchestrator = new CloudUploadOrchestrator(
@@ -199,7 +201,8 @@ namespace KoruMsSqlYedek.Tests
             mockSftp.Setup(p => p.UploadAsync(
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<CloudTargetConfig>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>(), It.IsAny<Action<string>>()))
                 .ThrowsAsync(new Exception("SFTP hatası"));
 
             var orchestrator = new CloudUploadOrchestrator(
@@ -500,7 +503,8 @@ namespace KoruMsSqlYedek.Tests
             mock.Setup(p => p.UploadAsync(
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<CloudTargetConfig>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>(), It.IsAny<Action<string>>()))
                 .ReturnsAsync(new CloudUploadResult
                 {
                     ProviderType = type,

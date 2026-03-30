@@ -98,7 +98,12 @@ namespace KoruMsSqlYedek.Win.Forms
             _nudPort.Value = _target.Port ?? GetDefaultPort(_target.Type);
             _txtUsername.Text = _target.Username ?? "";
             _txtPassword.Text = ""; // Şifre gösterilmez
-            _txtRemotePath.Text = _target.RemoteFolderPath ?? "";
+
+            // Uzak klasör yolu — yeni hedefte varsayılan değer ata
+            if (_isNew && string.IsNullOrWhiteSpace(_target.RemoteFolderPath))
+                _txtRemotePath.Text = IsFtpType(_target.Type) ? "/Koru MsSql Yedek" : "Koru MsSql Yedek";
+            else
+                _txtRemotePath.Text = _target.RemoteFolderPath ?? "";
 
             // OAuth alanları
             _txtClientId.Text = _target.OAuthClientId ?? "";
@@ -313,6 +318,12 @@ namespace KoruMsSqlYedek.Win.Forms
             if (!_isNew || _nudPort.Value == 0)
             {
                 _nudPort.Value = GetDefaultPort(type);
+            }
+
+            // Yeni hedefte uzak klasör yolu görünür hale gelince varsayılan ata
+            if (_isNew && (_lblRemotePath.Visible) && string.IsNullOrWhiteSpace(_txtRemotePath.Text))
+            {
+                _txtRemotePath.Text = IsFtpType(type) ? "/Koru MsSql Yedek" : "Koru MsSql Yedek";
             }
         }
 

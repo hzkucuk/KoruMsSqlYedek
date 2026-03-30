@@ -34,5 +34,15 @@ namespace KoruMsSqlYedek.Core.Interfaces
             string password,
             IProgress<int> progress,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// 7z arşivinin bütünlüğünü doğrular (tüm girdileri okur, CRC karşılaştırır).
+        /// Şifreli arşivler için doğru parolanın verilmesi gerekir.
+        /// </summary>
+        /// <returns>Arşiv sağlam ise <c>true</c>; bozuk veya erişilemez ise <c>false</c>.</returns>
+        Task<bool> VerifyArchiveAsync(
+            string archivePath,
+            string password,
+            CancellationToken cancellationToken);
     }
 }

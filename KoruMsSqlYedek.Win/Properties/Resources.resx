@@ -64,6 +64,12 @@
 
   <!-- ===== Tray ===== -->
   <data name="Tray_Tooltip" xml:space="preserve"><value>KoruMsSqlYedek — SQL Backup &amp; Cloud Sync</value></data>
+  <data name="Tray_TooltipDisconnected" xml:space="preserve"><value>KoruMsSqlYedek — Service not connected ⚠</value></data>
+  <data name="Tray_ServiceConnected" xml:space="preserve"><value>Service connected.</value></data>
+  <data name="Tray_ServiceDisconnected" xml:space="preserve"><value>Service connection lost.</value></data>
+  <data name="Tray_ServiceConnectionTitle" xml:space="preserve"><value>Service Connection</value></data>
+  <data name="StatusBar_ServiceConnected" xml:space="preserve"><value>● Service connected</value></data>
+  <data name="StatusBar_ServiceDisconnected" xml:space="preserve"><value>⚠ Service not connected</value></data>
   <data name="Tray_BalloonRunning" xml:space="preserve"><value>Application is running in the system tray.</value></data>
   <data name="Tray_MenuDashboard" xml:space="preserve"><value>Open Dashboard</value></data>
   <data name="Tray_MenuPlans" xml:space="preserve"><value>Plans</value></data>
@@ -204,6 +210,10 @@ This action cannot be undone.</value></data>
   <data name="ManualBackup_PleaseSelectPlan" xml:space="preserve"><value>Please select a plan.</value></data>
   <data name="ManualBackup_PleaseSelectDb" xml:space="preserve"><value>Please select at least one database.</value></data>
   <data name="ManualBackup_Starting" xml:space="preserve"><value>Backup starting...</value></data>
+  <data name="Backup_ServiceNotConnected" xml:space="preserve"><value>Service is not connected. Please start the service.</value></data>
+  <data name="Backup_ServiceDisconnected" xml:space="preserve"><value>Service disconnected.</value></data>
+  <data name="Backup_ReadyForPlan" xml:space="preserve"><value>Ready: {0}</value></data>
+  <data name="Backup_SendError" xml:space="preserve"><value>Failed to send command: {0}</value></data>
   <data name="ManualBackup_ProgressFormat" xml:space="preserve"><value>[{0}/{1}] Backing up {2}...</value></data>
   <data name="ManualBackup_BackingUpFormat" xml:space="preserve"><value>▶ {0} ({1}) backing up...</value></data>
   <data name="ManualBackup_SuccessFormat" xml:space="preserve"><value>  ✓ Successful — {0} MB → {1}</value></data>
@@ -326,5 +336,29 @@ Language change requires application restart.</value></data>
   <data name="Tray_BackupRunning" xml:space="preserve"><value>Backup: {0}</value></data>
   <data name="Tray_BackupCompleted" xml:space="preserve"><value>Backup completed: {0}</value></data>
   <data name="Tray_BackupFailed" xml:space="preserve"><value>Backup failed: {0}</value></data>
+
+  <!-- ===== Restore Dialog ===== -->
+  <data name="Restore_Title" xml:space="preserve"><value>Restore Database</value></data>
+  <data name="Restore_ColDate" xml:space="preserve"><value>Date</value></data>
+  <data name="Restore_ColDatabase" xml:space="preserve"><value>Database</value></data>
+  <data name="Restore_ColType" xml:space="preserve"><value>Type</value></data>
+  <data name="Restore_ColFile" xml:space="preserve"><value>File</value></data>
+  <data name="Restore_ColSize" xml:space="preserve"><value>Size</value></data>
+  <data name="Restore_ColStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="Restore_LblTargetDb" xml:space="preserve"><value>Target database name:</value></data>
+  <data name="Restore_ChkPreBackup" xml:space="preserve"><value>Take safety backup before restore</value></data>
+  <data name="Restore_BtnVerify" xml:space="preserve"><value>Verify</value></data>
+  <data name="Restore_BtnRestore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Restore_BtnClose" xml:space="preserve"><value>Close</value></data>
+  <data name="Restore_NoSelection" xml:space="preserve"><value>Please select a backup record from the list.</value></data>
+  <data name="Restore_NoFile" xml:space="preserve"><value>Backup file not found: {0}</value></data>
+  <data name="Restore_VerifyOk" xml:space="preserve"><value>Verification successful. Backup file is valid.</value></data>
+  <data name="Restore_VerifyFail" xml:space="preserve"><value>Verification failed. Backup file may be corrupt.</value></data>
+  <data name="Restore_Confirm" xml:space="preserve"><value>Restore the database '{0}'? This operation will overwrite the existing database.</value></data>
+  <data name="Restore_ConfirmTitle" xml:space="preserve"><value>Confirm Restore</value></data>
+  <data name="Restore_Success" xml:space="preserve"><value>Restore completed successfully.</value></data>
+  <data name="Restore_Failed" xml:space="preserve"><value>Restore failed. Check the log for details.</value></data>
+  <data name="Restore_NoHistory" xml:space="preserve"><value>No backup records found for this plan.</value></data>
+  <data name="CtxMenu_Restore" xml:space="preserve"><value>Restore...</value></data>
 
 </root>

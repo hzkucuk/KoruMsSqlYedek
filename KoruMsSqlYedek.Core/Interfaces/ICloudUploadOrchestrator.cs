@@ -15,13 +15,15 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// <summary>
         /// Dosyayı tüm aktif bulut hedeflerine yükler.
         /// Retry: 3 deneme, exponential backoff (2s → 4s → 8s).
+        /// RemoteFolderPath boşsa otomatik olarak "KoruMsSqlYedek/{planName}" klasörü kullanılır.
         /// </summary>
         Task<List<CloudUploadResult>> UploadToAllAsync(
             string localFilePath,
             string remoteFileName,
             List<CloudTargetConfig> targets,
             IProgress<int> progress,
-            CancellationToken cancellationToken);
+            CancellationToken cancellationToken,
+            string planName = null);
 
         /// <summary>
         /// Tüm aktif bulut hedeflerinden uzak dosyayı siler.
@@ -38,6 +40,13 @@ namespace KoruMsSqlYedek.Core.Interfaces
         Task<List<CloudConnectionTestResult>> TestAllConnectionsAsync(
             List<CloudTargetConfig> targets,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Uygulama başlangıcında yarıda kalan upload işlemlerini kaldığı yerden sürdürür.
+        /// %APPDATA%\KoruMsSqlYedek\UploadState\ altındaki state dosyalarını okur.
+        /// </summary>
+        /// <returns>Başarıyla tamamlanan recovery sayısı.</returns>
+        Task<int> RecoverPendingUploadsAsync(CancellationToken cancellationToken);
     }
 
     /// <summary>

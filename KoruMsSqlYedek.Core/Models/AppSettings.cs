@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace KoruMsSqlYedek.Core.Models
 {
@@ -32,9 +34,17 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("historyRetentionDays")]
         public int HistoryRetentionDays { get; set; } = 90;
 
-        /// <summary>SMTP bildirim ayarları.</summary>
-        [JsonProperty("smtp")]
-        public SmtpSettings Smtp { get; set; } = new SmtpSettings();
+        /// <summary>
+        /// Birden fazla SMTP profili. Görevler bu profilleri Id ile referanslar.
+        /// </summary>
+        [JsonProperty("smtpProfiles")]
+        public List<SmtpProfile> SmtpProfiles { get; set; } = new List<SmtpProfile>();
+
+        /// <summary>
+        /// Eski tekil SMTP ayarı — yalnızca migrasyon için okunur, yeni kayıtlarda kullanılmaz.
+        /// </summary>
+        [JsonProperty("smtp", NullValueHandling = NullValueHandling.Ignore)]
+        public SmtpSettings Smtp { get; set; }
 
         /// <summary>Uygulama teması ("dark" veya "light").</summary>
         [JsonProperty("theme")]
@@ -46,7 +56,49 @@ namespace KoruMsSqlYedek.Core.Models
     }
 
     /// <summary>
-    /// SMTP e-posta bildirimi ayarları.
+    /// Adlandırılmış SMTP e-posta profili.
+    /// Birden fazla profil tanımlanabilir; görevler istediği profili SmtpProfileId ile seçer.
+    /// </summary>
+    public class SmtpProfile
+    {
+        /// <summary>Benzersiz tanımlayıcı (GUID).</summary>
+        [JsonProperty("id")]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+
+        /// <summary>Kullanıcı dostu görünen ad (ör. "Gmail", "Office 365 Kurumsal").</summary>
+        [JsonProperty("displayName")]
+        public string DisplayName { get; set; }
+
+        [JsonProperty("host")]
+        public string Host { get; set; }
+
+        [JsonProperty("port")]
+        public int Port { get; set; } = 587;
+
+        [JsonProperty("useSsl")]
+        public bool UseSsl { get; set; } = true;
+
+        [JsonProperty("username")]
+        public string Username { get; set; }
+
+        /// <summary>DPAPI + Base64 ile encode edilmiş şifre.</summary>
+        [JsonProperty("password")]
+        public string Password { get; set; }
+
+        [JsonProperty("senderEmail")]
+        public string SenderEmail { get; set; }
+
+        [JsonProperty("senderDisplayName")]
+        public string SenderDisplayName { get; set; } = "Koru MsSql Yedek";
+
+        /// <summary>Varsayılan alıcı adresleri (noktalı virgül veya virgülle ayrılmış).</summary>
+        [JsonProperty("recipientEmails")]
+        public string RecipientEmails { get; set; }
+    }
+
+    /// <summary>
+    /// Eski tekil SMTP yapılandırması
+    /// Yeni kodda SmtpProfile kullanılmalıdır.
     /// </summary>
     public class SmtpSettings
     {
@@ -70,7 +122,7 @@ namespace KoruMsSqlYedek.Core.Models
         public string SenderEmail { get; set; }
 
         [JsonProperty("senderDisplayName")]
-        public string SenderDisplayName { get; set; } = "KoruMsSqlYedek";
+        public string SenderDisplayName { get; set; } = "Koru MsSql Yedek";
 
         [JsonProperty("recipientEmails")]
         public string RecipientEmails { get; set; }

@@ -133,7 +133,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public void Save_WithSmtpSettings_PreservesSmtp()
         {
-            // Arrange
+            // Arrange — eski tekil smtp alanı; Load() sırasında SmtpProfiles'e migrate edilir
             var settings = new AppSettings
             {
                 Smtp = new SmtpSettings
@@ -150,12 +150,13 @@ namespace KoruMsSqlYedek.Tests
             _manager.Save(settings);
             var loaded = _manager.Load();
 
-            // Assert
-            loaded.Smtp.Should().NotBeNull();
-            loaded.Smtp.Host.Should().Be("smtp.gmail.com");
-            loaded.Smtp.Port.Should().Be(465);
-            loaded.Smtp.UseSsl.Should().BeTrue();
-            loaded.Smtp.Username.Should().Be("user@gmail.com");
+            // Assert — MigrateSmtpLegacy: Smtp null yapılır, ayarlar SmtpProfiles[0]'a taşınır
+            loaded.Smtp.Should().BeNull();
+            loaded.SmtpProfiles.Should().HaveCount(1);
+            loaded.SmtpProfiles[0].Host.Should().Be("smtp.gmail.com");
+            loaded.SmtpProfiles[0].Port.Should().Be(465);
+            loaded.SmtpProfiles[0].UseSsl.Should().BeTrue();
+            loaded.SmtpProfiles[0].Username.Should().Be("user@gmail.com");
         }
 
         [TestMethod]

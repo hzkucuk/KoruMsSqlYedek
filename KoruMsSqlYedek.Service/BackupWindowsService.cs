@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Service.IPC;
 
 namespace KoruMsSqlYedek.Service
 {
@@ -21,6 +22,8 @@ namespace KoruMsSqlYedek.Service
         private static readonly ILogger Log = Serilog.Log.ForContext<BackupWindowsService>();
         private readonly ISchedulerService _schedulerService;
         private readonly IPlanManager _planManager;
+        private readonly ICloudUploadOrchestrator _orchestrator;
+        private readonly ServicePipeServer _pipeServer;
         private CancellationTokenSource _cts;
         private FileSystemWatcher _planWatcher;
 
@@ -31,10 +34,14 @@ namespace KoruMsSqlYedek.Service
 
         public BackupWindowsService(
             ISchedulerService schedulerService,
-            IPlanManager planManager)
+            IPlanManager planManager,
+            ICloudUploadOrchestrator orchestrator,
+            ServicePipeServer pipeServer)
         {
             _schedulerService = schedulerService;
             _planManager = planManager;
+            _orchestrator = orchestrator;
+            _pipeServer = pipeServer;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -53,6 +60,22 @@ namespace KoruMsSqlYedek.Service
             }
 
             StartPlanWatcher();
+            _pipeServer.Start();
+
+            // Yarıda kalan upload işlemlerini arka planda devam ettir
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    int recovered = await _orchestrator.RecoverPendingUploadsAsync(_cts.Token);
+                    if (recovered > 0)
+                        Log.Information("Startup recovery: {Count} upload tamamlandı.", recovered);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Startup upload recovery başarısız.");
+                }
+            }, _cts.Token);
 
             Log.Information(
                 "Service başlatıldı: {PlanCount} plan zamanlandı.",
@@ -66,6 +89,7 @@ namespace KoruMsSqlYedek.Service
             _planWatcher?.Dispose();
             _planWatcher = null;
 
+            _pipeServer?.Stop();
             _cts?.Cancel();
             await _schedulerService.StopAsync(cancellationToken);
 

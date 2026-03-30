@@ -10,7 +10,7 @@
 
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
-#define MyAppVersion "0.27.0"
+#define MyAppVersion "0.36.0"
 #define MyAppPublisher "HZK"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"
@@ -40,7 +40,7 @@ OutputBaseFilename=KoruMsSqlYedek_v{#MyAppVersion}_Setup
 ; Sıkıştırma
 Compression=lzma2/ultra64
 SolidCompression=yes
-; Minimum OS: Windows 10
+; Minimum OS: Windows 10 (gerekli: .NET 10 Desktop Runtime)
 MinVersion=10.0
 ; Yönetici yetkisi gerekli (service kurulumu için)
 PrivilegesRequired=admin
@@ -65,8 +65,8 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-turkish.DotNetRequired=Bu uygulama .NET Framework 4.8 gerektirir. Lütfen önce yükleyin.
-english.DotNetRequired=This application requires .NET Framework 4.8. Please install it first.
+turkish.DotNetRequired=Bu uygulama .NET 10 Desktop Runtime gerektirir. Lütfen önce yükleyin.
+english.DotNetRequired=This application requires .NET 10 Desktop Runtime. Please install it first.
 turkish.ServiceInstall=Windows Service kuruluyor...
 english.ServiceInstall=Installing Windows Service...
 turkish.ServiceStart=Windows Service başlatılıyor...
@@ -132,26 +132,23 @@ Filename: "{app}\Service\{#MyServiceExeName}"; Parameters: "uninstall"; RunOnceI
 Type: filesandordirs; Name: "{app}\Service\logs"
 
 [Code]
-// .NET Framework 4.8 kurulu mu kontrol et
-function IsDotNet48Installed(): Boolean;
+// .NET 10 Desktop Runtime kurulu mu kontrol et
+// Konum: C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\10.*
+function IsDotNet10DesktopInstalled(): Boolean;
 var
-  Release: Cardinal;
+  RuntimeBase: String;
+  FindRec: TFindRec;
 begin
   Result := False;
-  if RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', Release) then
+  RuntimeBase := ExpandConstant('{commonpf64}\dotnet\shared\Microsoft.WindowsDesktop.App');
+  if DirExists(RuntimeBase) then
   begin
-    // .NET 4.8 = Release >= 528040
-    Result := (Release >= 528040);
+    if FindFirst(RuntimeBase + '\10.*', FindRec) then
+    begin
+      Result := True;
+      FindClose(FindRec);
+    end;
   end;
-end;
-
-// Windows 10+ kontrol
-function IsWindows10OrLater(): Boolean;
-var
-  Version: TWindowsVersion;
-begin
-  GetWindowsVersionEx(Version);
-  Result := (Version.Major >= 10);
 end;
 
 // Kurulum başlamadan önce kontroller
@@ -159,20 +156,12 @@ function InitializeSetup(): Boolean;
 begin
   Result := True;
 
-  // .NET Framework 4.8 kontrolü
-  if not IsDotNet48Installed() then
+  // .NET 10 Desktop Runtime kontrolü
+  if not IsDotNet10DesktopInstalled() then
   begin
     MsgBox(ExpandConstant('{cm:DotNetRequired}') + #13#10#13#10 +
-           'Download: https://dotnet.microsoft.com/download/dotnet-framework/net48',
+           'İndir / Download: https://dotnet.microsoft.com/download/dotnet/10.0',
            mbError, MB_OK);
-    Result := False;
-    Exit;
-  end;
-
-  // Windows 10 kontrolü
-  if not IsWindows10OrLater() then
-  begin
-    MsgBox('Bu uygulama Windows 10 veya üzeri gerektirir.', mbError, MB_OK);
     Result := False;
     Exit;
   end;

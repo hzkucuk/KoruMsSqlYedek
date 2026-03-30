@@ -2,7 +2,7 @@
 using System.Windows.Forms;
 using Autofac;
 using KoruMsSqlYedek.Core.Events;
-using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Win.IPC;
 using KoruMsSqlYedek.Win.Helpers;
 using Serilog;
 
@@ -11,7 +11,7 @@ namespace KoruMsSqlYedek.Win
     /// <summary>
     /// System Tray tabanlı uygulama bağlamı.
     /// NotifyIcon ile tray'de çalışır; menüden tek MainWindow açılır, sekme seçimi ile yönlendirilir.
-    /// Quartz scheduler'ı başlatır ve uygulama kapanırken durdurur.
+    /// Windows Service ile Named Pipe üzerinden iletişim kurar.
     /// </summary>
     internal class TrayApplicationContext : ApplicationContext
     {
@@ -20,22 +20,18 @@ namespace KoruMsSqlYedek.Win
         private readonly NotifyIcon _notifyIcon;
         private readonly ContextMenuStrip _contextMenu;
         private readonly ILifetimeScope _scope;
-        private readonly ISchedulerService _schedulerService;
-        private readonly IPlanManager _planManager;
+        private readonly ServicePipeClient _pipeClient;
         private MainWindow _mainWindow;
 
         public TrayApplicationContext(
             ILifetimeScope scope,
-            ISchedulerService schedulerService,
-            IPlanManager planManager)
+            ServicePipeClient pipeClient)
         {
             if (scope == null) throw new ArgumentNullException(nameof(scope));
-            if (schedulerService == null) throw new ArgumentNullException(nameof(schedulerService));
-            if (planManager == null) throw new ArgumentNullException(nameof(planManager));
+            if (pipeClient == null) throw new ArgumentNullException(nameof(pipeClient));
 
             _scope = scope;
-            _schedulerService = schedulerService;
-            _planManager = planManager;
+            _pipeClient = pipeClient;
 
             Log.Information("KoruMsSqlYedek Tray uygulaması başlatılıyor...");
 
@@ -45,38 +41,17 @@ namespace KoruMsSqlYedek.Win
             ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_BalloonRunning"), ToolTipIcon.Info, 2000);
 
             BackupActivityHub.ActivityChanged += OnBackupActivityChanged;
+            _pipeClient.ConnectionChanged    += OnPipeConnectionChanged;
 
-            // Scheduler'ı başlat ve tüm aktif planları zamanla
-            _ = StartSchedulerAsync();
+            // Başlangıçta bağlı değil — ikonu ayarla
+            UpdateTrayStatus(TrayIconStatus.Disconnected, Res.Get("Tray_TooltipDisconnected"));
+
+            // Servis pipe bağlantısını başlat (arka planda otomatik yeniden bağlanır)
+            _pipeClient.Start();
 
             Log.Information("Tray uygulaması başlatıldı.");
         }
 
-        private async System.Threading.Tasks.Task StartSchedulerAsync()
-        {
-            try
-            {
-                await _schedulerService.StartAsync(System.Threading.CancellationToken.None);
-
-                var plans = _planManager.GetAllPlans();
-                int scheduled = 0;
-                foreach (var plan in plans)
-                {
-                    if (plan.IsEnabled)
-                    {
-                        await _schedulerService.SchedulePlanAsync(plan, System.Threading.CancellationToken.None);
-                        scheduled++;
-                    }
-                }
-
-                Log.Information("Scheduler başlatıldı: {ScheduledCount}/{TotalCount} plan zamanlandı.",
-                    scheduled, plans.Count);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Scheduler başlatılamadı.");
-            }
-        }
 
         #region NotifyIcon & Menu
 
@@ -165,19 +140,7 @@ namespace KoruMsSqlYedek.Win
         {
             Log.Information("Tray uygulaması kapatılıyor...");
 
-            // Scheduler'ı durdur
-            if (_schedulerService.IsRunning)
-            {
-                try
-                {
-                    _schedulerService.StopAsync(System.Threading.CancellationToken.None)
-                        .GetAwaiter().GetResult();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Scheduler durdurulurken hata.");
-                }
-            }
+            _pipeClient?.Stop();
 
             _notifyIcon.Visible = false;
 
@@ -232,6 +195,35 @@ namespace KoruMsSqlYedek.Win
 
         #region Backup Activity
 
+        private void OnPipeConnectionChanged(object sender, bool connected)
+        {
+            // Arka plan thread'inden gelebilir — UI thread'e aktar
+            if (Application.OpenForms.Count > 0 && Application.OpenForms[0]?.InvokeRequired == true)
+            {
+                Application.OpenForms[0].BeginInvoke(new Action(() => OnPipeConnectionChanged(sender, connected)));
+                return;
+            }
+
+            if (connected)
+            {
+                UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
+                ShowBalloonTip(
+                    Res.Get("Tray_ServiceConnectionTitle"),
+                    Res.Get("Tray_ServiceConnected"),
+                    ToolTipIcon.Info, 2000);
+                Log.Information("Servis pipe bağlandı.");
+            }
+            else
+            {
+                UpdateTrayStatus(TrayIconStatus.Disconnected, Res.Get("Tray_TooltipDisconnected"));
+                ShowBalloonTip(
+                    Res.Get("Tray_ServiceConnectionTitle"),
+                    Res.Get("Tray_ServiceDisconnected"),
+                    ToolTipIcon.Warning, 3000);
+                Log.Warning("Servis pipe bağlantısı kesildi.");
+            }
+        }
+
         private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
         {
             switch (e.ActivityType)
@@ -239,37 +231,41 @@ namespace KoruMsSqlYedek.Win
                 case BackupActivityType.Started:
                     UpdateTrayStatus(TrayIconStatus.Running,
                         Res.Format("Tray_BackupRunning", e.PlanName));
-                    ShowBalloonTip(
-                        Res.Get("Toast_BackupStartedTitle"),
-                        Res.Format("Toast_BackupStartedMessage", e.PlanName),
-                        ToolTipIcon.Info);
+                    if (e.ToastEnabled)
+                        ShowBalloonTip(
+                            Res.Get("Toast_BackupStartedTitle"),
+                            Res.Format("Toast_BackupStartedMessage", e.PlanName),
+                            ToolTipIcon.Info);
                     break;
 
                 case BackupActivityType.Completed:
                     UpdateTrayStatus(TrayIconStatus.Success,
                         Res.Format("Tray_BackupCompleted", e.PlanName));
-                    ShowBalloonTip(
-                        Res.Get("Toast_BackupCompletedTitle"),
-                        Res.Format("Toast_BackupCompletedMessage", e.PlanName),
-                        ToolTipIcon.Info);
+                    if (e.ToastEnabled)
+                        ShowBalloonTip(
+                            Res.Get("Toast_BackupCompletedTitle"),
+                            Res.Format("Toast_BackupCompletedMessage", e.PlanName),
+                            ToolTipIcon.Info);
                     break;
 
                 case BackupActivityType.Failed:
                     UpdateTrayStatus(TrayIconStatus.Error,
                         Res.Format("Tray_BackupFailed", e.PlanName));
-                    ShowBalloonTip(
-                        Res.Get("Toast_BackupFailedTitle"),
-                        Res.Format("Toast_BackupFailedMessage", e.PlanName),
-                        ToolTipIcon.Error);
+                    if (e.ToastEnabled)
+                        ShowBalloonTip(
+                            Res.Get("Toast_BackupFailedTitle"),
+                            Res.Format("Toast_BackupFailedMessage", e.PlanName),
+                            ToolTipIcon.Error);
                     break;
 
                 case BackupActivityType.Cancelled:
                     UpdateTrayStatus(TrayIconStatus.Idle,
                         Res.Get("Tray_Tooltip"));
-                    ShowBalloonTip(
-                        Res.Get("Toast_BackupCancelledTitle"),
-                        Res.Format("Toast_BackupCancelledMessage", e.PlanName),
-                        ToolTipIcon.Warning);
+                    if (e.ToastEnabled)
+                        ShowBalloonTip(
+                            Res.Get("Toast_BackupCancelledTitle"),
+                            Res.Format("Toast_BackupCancelledMessage", e.PlanName),
+                            ToolTipIcon.Warning);
                     break;
             }
         }
@@ -283,6 +279,8 @@ namespace KoruMsSqlYedek.Win
             if (disposing)
             {
                 BackupActivityHub.ActivityChanged -= OnBackupActivityChanged;
+                _pipeClient.ConnectionChanged    -= OnPipeConnectionChanged;
+                _pipeClient?.Dispose();
                 _notifyIcon?.Dispose();
                 _contextMenu?.Dispose();
 

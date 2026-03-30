@@ -46,7 +46,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
             string remoteFileName,
             CloudTargetConfig config,
             IProgress<int> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string resumeSessionUri = null,
+            Action<string> sessionUriObtained = null)
         {
             var result = new CloudUploadResult { ProviderType = _type };
 
@@ -78,44 +80,60 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     return result;
                 }
 
-                // Hedef klasörün var olduğundan emin ol
-                await EnsureFolderExistsAsync(client, drive.Id, config.RemoteFolderPath, cancellationToken)
-                    .ConfigureAwait(false);
-
                 // Uzak dosya yolu
                 string remotePath = string.IsNullOrEmpty(config.RemoteFolderPath)
                     ? remoteFileName
                     : $"{config.RemoteFolderPath.TrimEnd('/')}/{remoteFileName}";
 
-                // Upload session oluştur
-                var uploadSessionBody = new DriveUpload.CreateUploadSessionPostRequestBody
-                {
-                    Item = new DriveItemUploadableProperties
-                    {
-                        AdditionalData = new Dictionary<string, object>
-                        {
-                            { "@microsoft.graph.conflictBehavior", "replace" }
-                        }
-                    }
-                };
-
-                var uploadSession = await client.Drives[drive.Id]
-                    .Items["root"]
-                    .ItemWithPath(remotePath)
-                    .CreateUploadSession
-                    .PostAsync(uploadSessionBody, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false);
-
-                if (uploadSession == null)
-                {
-                    result.ErrorMessage = "Upload session oluşturulamadı.";
-                    return result;
-                }
-
                 // Chunked upload
                 using (var fileStream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     long totalBytes = fileStream.Length;
+
+                    UploadSession uploadSession;
+
+                    if (!string.IsNullOrEmpty(resumeSessionUri))
+                    {
+                        // Kaldığı yerden devam et — Graph SDK kalan aralıkları sunucudan sorgular
+                        Log.Information(
+                            "OneDrive upload kaldığı yerden devam ediyor: {FileName}", remoteFileName);
+                        uploadSession = new UploadSession { UploadUrl = resumeSessionUri };
+                    }
+                    else
+                    {
+                        // Hedef klasörün var olduğundan emin ol
+                        await EnsureFolderExistsAsync(client, drive.Id, config.RemoteFolderPath, cancellationToken)
+                            .ConfigureAwait(false);
+
+                        // Yeni session oluştur
+                        var uploadSessionBody = new DriveUpload.CreateUploadSessionPostRequestBody
+                        {
+                            Item = new DriveItemUploadableProperties
+                            {
+                                AdditionalData = new Dictionary<string, object>
+                                {
+                                    { "@microsoft.graph.conflictBehavior", "replace" }
+                                }
+                            }
+                        };
+
+                        uploadSession = await client.Drives[drive.Id]
+                            .Items["root"]
+                            .ItemWithPath(remotePath)
+                            .CreateUploadSession
+                            .PostAsync(uploadSessionBody, cancellationToken: cancellationToken)
+                            .ConfigureAwait(false);
+
+                        if (uploadSession == null)
+                        {
+                            result.ErrorMessage = "Upload session oluşturulamadı.";
+                            return result;
+                        }
+
+                        // Session URL'ini kilitlenme güvenliği için hemen kaydet
+                        sessionUriObtained?.Invoke(uploadSession.UploadUrl);
+                    }
+
                     var fileUploadTask = new LargeFileUploadTask<DriveItem>(
                         uploadSession, fileStream, MaxChunkSize, client.RequestAdapter);
 
@@ -136,11 +154,12 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         var uploadedItem = uploadResult.ItemResponse;
                         result.IsSuccess = true;
                         result.RemoteFilePath = uploadedItem?.Id ?? remotePath;
+                        result.RemoteFileSizeBytes = uploadedItem?.Size ?? 0;
                         progress?.Report(100);
 
                         Log.Information(
-                            "OneDrive upload başarılı: {FileName} → {RemotePath} ({Size:N0} bytes)",
-                            remoteFileName, remotePath, totalBytes);
+                            "OneDrive upload başarılı: {FileName} → {RemotePath} ({Size:N0} bytes, uzak={RemoteSize:N0} bytes)",
+                            remoteFileName, remotePath, totalBytes, result.RemoteFileSizeBytes);
                     }
                     else
                     {
