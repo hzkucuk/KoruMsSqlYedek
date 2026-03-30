@@ -323,41 +323,53 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     fileResult.SourceName, fileResult.FilesCopied, fileResult.Status);
             }
 
-            // Dosya yedekleri sıkıştırma
-            if (plan.Compression != null && results.Any(r => r.Status == BackupResultStatus.Success))
+            if (!results.Any(r => r.Status == BackupResultStatus.Success))
+                return;
+
+            string filesDir = Path.Combine(plan.LocalPath, "Files");
+            if (!Directory.Exists(filesDir))
+                return;
+
+            // Sıkıştır — yapılandırılmışsa o ayarları kullan, yoksa varsayılan (Level 3, şifresiz)
+            string archivePath = null;
+            try
+            {
+                if (CompressionService is Engine.Compression.SevenZipCompressionService sevenZip)
+                {
+                    string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                    archivePath = Path.Combine(plan.LocalPath, $"Files_{timestamp}.7z");
+                    string password = plan.Compression != null && !string.IsNullOrEmpty(plan.Compression.ArchivePassword)
+                        ? PasswordProtector.Unprotect(plan.Compression.ArchivePassword)
+                        : null;
+                    CompressionLevel level = plan.Compression?.Level ?? CompressionLevel.Normal;
+
+                    await sevenZip.CompressDirectoryAsync(filesDir, archivePath, password, level, null, ct);
+                    Log.Information("Dosya yedek arşivi oluşturuldu: {ArchivePath}", archivePath);
+                }
+                else
+                {
+                    Log.Warning("SevenZipCompressionService bulunamadı, dosya yedekleri sıkıştırılamadı.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Dosya yedek sıkıştırma hatası: Plan={PlanName}", plan.PlanName);
+            }
+
+            // Buluta gönder
+            if (archivePath != null && File.Exists(archivePath) &&
+                CloudOrchestrator != null && plan.CloudTargets != null &&
+                plan.CloudTargets.Any(t => t.IsEnabled))
             {
                 try
                 {
-                    string filesDir = Path.Combine(plan.LocalPath, "Files");
-                    if (Directory.Exists(filesDir))
-                    {
-                        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                        string archivePath = Path.Combine(plan.LocalPath, $"Files_{timestamp}.7z");
-                        string password = !string.IsNullOrEmpty(plan.Compression.ArchivePassword)
-                            ? PasswordProtector.Unprotect(plan.Compression.ArchivePassword)
-                            : null;
-
-                        var compressionService = CompressionService as Engine.Compression.SevenZipCompressionService;
-                        if (compressionService != null)
-                        {
-                            await compressionService.CompressDirectoryAsync(
-                                filesDir, archivePath, password,
-                                plan.Compression.Level, null, ct);
-
-                            // Sıkıştırılmış dosya yedeklerini buluta gönder
-                            if (CloudOrchestrator != null && plan.CloudTargets != null &&
-                                plan.CloudTargets.Any(t => t.IsEnabled))
-                            {
-                                await CloudOrchestrator.UploadToAllAsync(
-                                    archivePath, Path.GetFileName(archivePath),
-                                    plan.CloudTargets, null, ct);
-                            }
-                        }
-                    }
+                    await CloudOrchestrator.UploadToAllAsync(
+                        archivePath, Path.GetFileName(archivePath),
+                        plan.CloudTargets, null, ct);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Dosya yedek sıkıştırma/upload hatası");
+                    Log.Error(ex, "Dosya yedek cloud upload hatası: Plan={PlanName}", plan.PlanName);
                 }
             }
         }
