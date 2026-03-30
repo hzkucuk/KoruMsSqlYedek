@@ -269,6 +269,7 @@ Language change requires application restart.</value></data>
   <data name="LogViewer_RecordCount" xml:space="preserve"><value>{0} record(s)</value></data>
   <data name="LogViewer_ReadError" xml:space="preserve"><value>Read error</value></data>
   <data name="LogViewer_FilteredCount" xml:space="preserve"><value>{0} showing</value></data>
+  <data name="LogViewer_AllPlans" xml:space="preserve"><value>(All Tasks)</value></data>
   <data name="LogViewer_ExportDialogTitle" xml:space="preserve"><value>Export Log</value></data>
   <data name="LogViewer_ExportFilter" xml:space="preserve"><value>Text File (*.txt)|*.txt|All Files (*.*)|*.*</value></data>
   <data name="LogViewer_ExportSuccessFormat" xml:space="preserve"><value>{0} record(s) exported.</value></data>

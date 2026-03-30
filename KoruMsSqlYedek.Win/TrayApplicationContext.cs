@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
 using Autofac;
 using KoruMsSqlYedek.Core.Events;
@@ -23,6 +24,12 @@ namespace KoruMsSqlYedek.Win
         private readonly ServicePipeClient _pipeClient;
         private MainWindow _mainWindow;
 
+        // Yedekleme animasyon durumu
+        private readonly System.Windows.Forms.Timer _animTimer;
+        private Icon[] _animFrames;
+        private int _animFrameIndex;
+        private bool _isAnimating;
+
         public TrayApplicationContext(
             ILifetimeScope scope,
             ServicePipeClient pipeClient)
@@ -34,6 +41,9 @@ namespace KoruMsSqlYedek.Win
             _pipeClient = pipeClient;
 
             Log.Information("KoruMsSqlYedek Tray uygulaması başlatılıyor...");
+
+            _animTimer = new System.Windows.Forms.Timer { Interval = 150 };
+            _animTimer.Tick += OnAnimTimerTick;
 
             _contextMenu = CreateContextMenu();
             _notifyIcon = CreateNotifyIcon();
@@ -226,11 +236,17 @@ namespace KoruMsSqlYedek.Win
 
         private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
         {
+            // Arka plan thread'inden gelebilir — UI thread'e aktar
+            if (Application.OpenForms.Count > 0 && Application.OpenForms[0]?.InvokeRequired == true)
+            {
+                Application.OpenForms[0].BeginInvoke(new Action(() => OnBackupActivityChanged(sender, e)));
+                return;
+            }
+
             switch (e.ActivityType)
             {
                 case BackupActivityType.Started:
-                    UpdateTrayStatus(TrayIconStatus.Running,
-                        Res.Format("Tray_BackupRunning", e.PlanName));
+                    StartTrayAnimation(Res.Format("Tray_BackupRunning", e.PlanName));
                     if (e.ToastEnabled)
                         ShowBalloonTip(
                             Res.Get("Toast_BackupStartedTitle"),
@@ -239,7 +255,7 @@ namespace KoruMsSqlYedek.Win
                     break;
 
                 case BackupActivityType.Completed:
-                    UpdateTrayStatus(TrayIconStatus.Success,
+                    StopTrayAnimation(TrayIconStatus.Success,
                         Res.Format("Tray_BackupCompleted", e.PlanName));
                     if (e.ToastEnabled)
                         ShowBalloonTip(
@@ -249,7 +265,7 @@ namespace KoruMsSqlYedek.Win
                     break;
 
                 case BackupActivityType.Failed:
-                    UpdateTrayStatus(TrayIconStatus.Error,
+                    StopTrayAnimation(TrayIconStatus.Error,
                         Res.Format("Tray_BackupFailed", e.PlanName));
                     if (e.ToastEnabled)
                         ShowBalloonTip(
@@ -259,14 +275,60 @@ namespace KoruMsSqlYedek.Win
                     break;
 
                 case BackupActivityType.Cancelled:
-                    UpdateTrayStatus(TrayIconStatus.Idle,
-                        Res.Get("Tray_Tooltip"));
+                    StopTrayAnimation(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
                     if (e.ToastEnabled)
                         ShowBalloonTip(
                             Res.Get("Toast_BackupCancelledTitle"),
                             Res.Format("Toast_BackupCancelledMessage", e.PlanName),
                             ToolTipIcon.Warning);
                     break;
+            }
+        }
+
+        private void OnAnimTimerTick(object sender, EventArgs e)
+        {
+            if (_animFrames == null) return;
+            _animFrameIndex = (_animFrameIndex + 1) % _animFrames.Length;
+            _notifyIcon.Icon = _animFrames[_animFrameIndex];
+        }
+
+        private void StartTrayAnimation(string tooltipText)
+        {
+            if (_isAnimating) return;
+            _animFrames = SymbolIconHelper.CreateAnimationFrames();
+            _animFrameIndex = 0;
+            _isAnimating = true;
+
+            if (tooltipText != null)
+                _notifyIcon.Text = tooltipText.Length > 63
+                    ? tooltipText.Substring(0, 63)
+                    : tooltipText;
+
+            _notifyIcon.Icon = _animFrames[0];
+            _animTimer.Start();
+        }
+
+        private void StopTrayAnimation(TrayIconStatus finalStatus, string tooltipText)
+        {
+            if (!_isAnimating) return;
+            _animTimer.Stop();
+            _isAnimating = false;
+
+            var localFrames = _animFrames;
+            int lastIndex = _animFrameIndex;
+            _animFrames = null;
+
+            // UpdateTrayStatus, _notifyIcon.Icon'u (= localFrames[lastIndex]) dispose eder
+            UpdateTrayStatus(finalStatus, tooltipText);
+
+            // Kalan kareleri temizle
+            if (localFrames != null)
+            {
+                for (int i = 0; i < localFrames.Length; i++)
+                {
+                    if (i == lastIndex) continue; // UpdateTrayStatus zaten yok etti
+                    try { NativeMethods.DestroyIcon(localFrames[i].Handle); } catch { }
+                }
             }
         }
 
@@ -280,6 +342,18 @@ namespace KoruMsSqlYedek.Win
             {
                 BackupActivityHub.ActivityChanged -= OnBackupActivityChanged;
                 _pipeClient.ConnectionChanged    -= OnPipeConnectionChanged;
+
+                if (_isAnimating)
+                {
+                    _animTimer.Stop();
+                    if (_animFrames != null)
+                        foreach (var f in _animFrames)
+                            try { NativeMethods.DestroyIcon(f.Handle); } catch { }
+                    _animFrames = null;
+                    _isAnimating = false;
+                }
+                _animTimer?.Dispose();
+
                 _pipeClient?.Dispose();
                 _notifyIcon?.Dispose();
                 _contextMenu?.Dispose();

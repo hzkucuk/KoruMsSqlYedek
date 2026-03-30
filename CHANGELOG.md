@@ -1,4 +1,27 @@
-﻿## [0.41.0] - 2026-04-04 — Görev Listesi Sıralama + Arama
+﻿## [0.42.0] - 2026-04-05 — UI Geliştirmeleri: Log Görev Filtresi, Dashboard Sıralama, Tray Animasyonu, Upload ETA
+
+### Yeni Özellikler
+- **Log ekranı görev adı filtresi** (`_cmbLogPlan`): Log toolbar'a "Görev:" etiketi ve ComboBox eklendi; seçili plan adına göre log satırları filtrelenir; `PopulateLogPlanFilter()` plan listesinden otomatik doldurulur; Temizle butonu sıfırlar; `LogViewer_AllPlans` resource key eklendi
+- **Dashboard ListView sıralama**: Kolon başlığına tıklayarak sıralama (`OnLastBackupsColumnClick`); tarih/boyut/durum kolonları tip-bilinçli karşılaştırma (`BackupResult.Tag` üzerinden); `_lvSortColumn/_lvSortAscending` alanları; sort ok çizimi `OnListViewDrawColumnHeader`'da `AccentPrimary` renginde üçgen
+- **Dashboard ListView AutoSize**: `AutoResizeListViewColumns()` yardımcısı `TextRenderer.MeasureText` ile header + içerik genişliklerini ölçer; her yükleme sonrası otomatik çağrılır; sağda boşluk kalmaz
+- **TrayIcon animasyonu**: Yedekleme başladığında 8-frame (45° adımlarla dönen) animasyon; `SymbolIconHelper.CreateAnimationFrames()` + `System.Windows.Forms.Timer` (150ms); `StartTrayAnimation/StopTrayAnimation` lifecycle
+- **Upload ilerleme ETA**: `CloudUploadProgress` log satırında "Kalan: X MB | Süre: X dk" gösterimi; `FormatEta(bytesRemaining, speedBps)` yardımcısı
+- **Grid NextRun sütunu düzeltmesi**: ISO 8601 → yerel saat `dd.MM.yyyy HH:mm`; `_nextFireTimes` sözlüğü filtre geçişlerinde kaybolmaz
+- **Başarısız görev satır rengi**: `ModernTheme.GridErrorRow` (Dark: `58,20,20` / Light: `255,232,232`); `PlanRowData.LastBackupFailed` alanı
+- **copilot-instructions.md güncellendi**: Proje-spesifik derin içerik; bileşenler arası haberleşme kanalları tablosu; UI mimarisi; log toolbar layout
+
+### Değişen Dosyalar
+- `KoruMsSqlYedek.Win\MainWindow.Designer.cs` — `_lblLogPlan`, `_cmbLogPlan`, `ColumnClick` olayı
+- `KoruMsSqlYedek.Win\MainWindow.cs` — `PopulateLogPlanFilter`, `ApplyLogFilter` plan filtresi, `OnLastBackupsColumnClick`, `AutoResizeListViewColumns`, `LastBackupsItemComparer`, `FormatEta`, `_lvSortColumn/_lvSortAscending`, `_nextFireTimes`, `GridErrorRow` kullanımı
+- `KoruMsSqlYedek.Win\TrayApplicationContext.cs` — `_animTimer`, `StartTrayAnimation`, `StopTrayAnimation`, `OnAnimTimerTick`
+- `KoruMsSqlYedek.Win\Helpers\SymbolIconHelper.cs` — `RenderRotatedIcon`, `CreateAnimationFrames`
+- `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — `GridErrorRow` (Dark + Light)
+- `KoruMsSqlYedek.Win\Properties\Resources.resx` + `Resources.tr-TR.resx` — `LogViewer_AllPlans`
+- `.github\copilot-instructions.md` — Tam proje-spesifik yeniden yazım
+
+---
+
+## [0.41.0] - 2026-04-04 — Görev Listesi Sıralama + Arama
 
 ### Yeni Özellikler
 - **Kolon başlığı tıklama ile sıralama** (`_dgvPlans`): Tüm kolon başlıklarına tıklanarak artan/azalan sıralama yapılabilir; İlerleme kolonu (Progress) sıralamadan çıkarıldı; aktif sıralama kolonu `SortGlyphDirection` ile görselleştirilir

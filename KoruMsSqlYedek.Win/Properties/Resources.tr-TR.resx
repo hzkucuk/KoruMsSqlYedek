@@ -269,6 +269,7 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="LogViewer_RecordCount" xml:space="preserve"><value>{0} kayıt</value></data>
   <data name="LogViewer_ReadError" xml:space="preserve"><value>Okuma hatası</value></data>
   <data name="LogViewer_FilteredCount" xml:space="preserve"><value>{0} gösteriliyor</value></data>
+  <data name="LogViewer_AllPlans" xml:space="preserve"><value>(Tüm Görevler)</value></data>
   <data name="LogViewer_ExportDialogTitle" xml:space="preserve"><value>Log Dışa Aktar</value></data>
   <data name="LogViewer_ExportFilter" xml:space="preserve"><value>Metin Dosyası (*.txt)|*.txt|Tüm Dosyalar (*.*)|*.*</value></data>
   <data name="LogViewer_ExportSuccessFormat" xml:space="preserve"><value>{0} kayıt dışa aktarıldı.</value></data>

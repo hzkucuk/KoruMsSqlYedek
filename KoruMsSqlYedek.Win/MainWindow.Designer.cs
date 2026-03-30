@@ -115,6 +115,8 @@
             _btnClearLogFilter = new Theme.ModernButton();
             _btnLogRefresh = new Theme.ModernButton();
             _btnLogExport = new Theme.ModernButton();
+            _lblLogPlan = new System.Windows.Forms.Label();
+            _cmbLogPlan = new Theme.ModernComboBox();
             _dgvLogs = new System.Windows.Forms.DataGridView();
             _colTimestamp = new System.Windows.Forms.DataGridViewTextBoxColumn();
             _colLevel = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -315,6 +317,7 @@
             _lvLastBackups.DrawColumnHeader += OnListViewDrawColumnHeader;
             _lvLastBackups.DrawItem += OnListViewDrawItem;
             _lvLastBackups.DrawSubItem += OnListViewDrawSubItem;
+            _lvLastBackups.ColumnClick += OnLastBackupsColumnClick;
             _lvLastBackups.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
                 _colDate, _colPlan, _colDatabase, _colType, _colResult, _colSize });
             _pnlGrid.Controls.Add(_lvLastBackups);
@@ -570,7 +573,9 @@
             _tlpLogToolbar.Controls.Add(_chkAutoTail, 4, 0);
             _tlpLogToolbar.Controls.Add(_lblLogSearch, 0, 1);
             _tlpLogToolbar.Controls.Add(_txtLogSearch, 1, 1);
-            _tlpLogToolbar.SetColumnSpan(_txtLogSearch, 3);
+            _tlpLogToolbar.SetColumnSpan(_txtLogSearch, 1);
+            _tlpLogToolbar.Controls.Add(_lblLogPlan, 2, 1);
+            _tlpLogToolbar.Controls.Add(_cmbLogPlan, 3, 1);
             _tlpLogToolbar.Controls.Add(_btnClearLogFilter, 4, 1);
             _tlpLogToolbar.Controls.Add(_btnLogRefresh, 6, 1);
             _tlpLogToolbar.Controls.Add(_btnLogExport, 7, 1);
@@ -607,7 +612,16 @@
             _txtLogSearch.Margin = new System.Windows.Forms.Padding(3, 4, 8, 6);
             _txtLogSearch.TextChanged += OnLogSearchTextChanged;
 
-            _btnClearLogFilter.Text = "Temizle"; _btnClearLogFilter.AutoSize = true;
+            _lblLogPlan.Text = "Görev:"; _lblLogPlan.AutoSize = true;
+            _lblLogPlan.ForeColor = Theme.ModernTheme.TextPrimary;
+            _lblLogPlan.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblLogPlan.Margin = new System.Windows.Forms.Padding(8, 6, 3, 6);
+            _cmbLogPlan.Dock = System.Windows.Forms.DockStyle.Fill;
+            _cmbLogPlan.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            _cmbLogPlan.Margin = new System.Windows.Forms.Padding(3, 4, 8, 6);
+            _cmbLogPlan.SelectedIndexChanged += OnLogPlanFilterChanged;
+
+            _btnClearLogFilter.Text = "Temizle";
             _btnClearLogFilter.ButtonStyle = Theme.ModernButtonStyle.Ghost;
             _btnClearLogFilter.Margin = new System.Windows.Forms.Padding(3, 3, 3, 6);
             _btnClearLogFilter.Click += OnClearLogFilterClick;
@@ -1058,6 +1072,8 @@
         private System.Windows.Forms.Label _lblLogSearch;
         private System.Windows.Forms.TextBox _txtLogSearch;
         private Theme.ModernButton _btnClearLogFilter;
+        private System.Windows.Forms.Label _lblLogPlan;
+        private Theme.ModernComboBox _cmbLogPlan;
         private Theme.ModernButton _btnLogRefresh;
         private Theme.ModernButton _btnLogExport;
         private System.Windows.Forms.DataGridView _dgvLogs;

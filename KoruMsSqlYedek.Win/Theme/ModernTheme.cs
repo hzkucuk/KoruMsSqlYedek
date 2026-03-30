@@ -49,6 +49,7 @@ namespace KoruMsSqlYedek.Win.Theme
         internal static Color GridSelection = Color.FromArgb(16, 185, 129);
         internal static Color GridHeaderBack = Color.FromArgb(36, 36, 42);
         internal static Color GridHeaderText = Color.FromArgb(160, 160, 170);
+        internal static Color GridErrorRow = Color.FromArgb(58, 20, 20);
 
         // ═══════════════ THEME APPLY ═══════════════
 
@@ -89,6 +90,7 @@ namespace KoruMsSqlYedek.Win.Theme
             GridSelection = Color.FromArgb(16, 185, 129);
             GridHeaderBack = Color.FromArgb(36, 36, 42);
             GridHeaderText = Color.FromArgb(160, 160, 170);
+            GridErrorRow = Color.FromArgb(58, 20, 20);
         }
 
         private static void ApplyLightColors()
@@ -119,6 +121,7 @@ namespace KoruMsSqlYedek.Win.Theme
             GridSelection = Color.FromArgb(0, 140, 70);
             GridHeaderBack = Color.FromArgb(240, 241, 244);
             GridHeaderText = Color.FromArgb(80, 80, 90);
+            GridErrorRow = Color.FromArgb(255, 232, 232);
         }
 
         // ═══════════════ FONTS ═══════════════

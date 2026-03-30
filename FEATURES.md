@@ -113,6 +113,31 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 
 ---
 
+## Faz 42 — UI Geliştirmeleri: Log Görev Filtresi + Dashboard Sıralama + Tray Animasyonu ✅
+
+### Yeni Özellikler
+- [x] **Log ekranı görev adı filtresi** (`_cmbLogPlan`): Log toolbar 8. kontrol; seçili plan adına göre mesaj filtreleme; `PopulateLogPlanFilter()` + `OnLogPlanFilterChanged`; Temizle butonu sıfırlar
+- [x] **Dashboard ListView sıralama**: `OnLastBackupsColumnClick` + `LastBackupsItemComparer`; Tarih/boyut/durum için tip-bilinçli karşılaştırma (`BackupResult.Tag` üzerinden); sort ok `OnListViewDrawColumnHeader`'da `AccentPrimary` üçgen
+- [x] **Dashboard ListView AutoSize**: `AutoResizeListViewColumns()` helper; `TextRenderer.MeasureText` ile header+içerik ölçümü; her yüklemede otomatik; sağda boşluk kalmaz
+- [x] **TrayIcon animasyonu**: `SymbolIconHelper.CreateAnimationFrames(8)` + 150ms Timer; `StartTrayAnimation/StopTrayAnimation`; `InvokeRequired` guard; yedek başladığında döner, bittiğinde durur
+- [x] **Upload ilerleme ETA**: `FormatEta(bytesRemaining, speedBps)` → "Kalan: X MB | Süre: X dk" log satırında
+- [x] **Grid NextRun sütunu**: ISO 8601 → yerel `dd.MM.yyyy HH:mm`; `_nextFireTimes` dict filtre geçişlerinde kalıcı
+- [x] **Başarısız görev satır rengi**: `ModernTheme.GridErrorRow`; `PlanRowData.LastBackupFailed`
+- [x] **copilot-instructions.md**: Proje-spesifik yeniden yazım; bileşenler arası haberleşme tablosu
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Win\MainWindow.Designer.cs` — `_lblLogPlan`, `_cmbLogPlan`, `ColumnClick`
+- [x] `KoruMsSqlYedek.Win\MainWindow.cs` — `PopulateLogPlanFilter`, `ApplyLogFilter`, `LastBackupsItemComparer`, `AutoResizeListViewColumns`, `FormatEta`, sort alanları
+- [x] `KoruMsSqlYedek.Win\TrayApplicationContext.cs` — animasyon lifecycle
+- [x] `KoruMsSqlYedek.Win\Helpers\SymbolIconHelper.cs` — `RenderRotatedIcon`, `CreateAnimationFrames`
+- [x] `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — `GridErrorRow`
+- [x] `KoruMsSqlYedek.Win\Properties\Resources.resx` + `Resources.tr-TR.resx` — `LogViewer_AllPlans`
+- [x] `.github\copilot-instructions.md` — Tam yeniden yazım
+- [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.42.0.0
+- [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.42.0.0
+
+---
+
 ## Faz 1 — Altyapı ✅
 
 - [x] 5 proje oluşturuldu (Core, Engine, Win, Service, Tests)

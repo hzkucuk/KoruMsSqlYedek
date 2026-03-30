@@ -58,10 +58,17 @@ namespace KoruMsSqlYedek.Win
         // Per-plan grid progress (planId → yüzde 0-100)
         private readonly Dictionary<string, int> _planProgress = new Dictionary<string, int>();
 
+        // Scheduler'dan gelen sonraki çalışma zamanları (planId → lokal saat metni)
+        private readonly Dictionary<string, string> _nextFireTimes = new Dictionary<string, string>();
+
         // Plan listesi sıralama/filtreleme durumu
         private List<PlanRowData> _allPlanRows = new List<PlanRowData>();
         private int _planSortColumn = -1;
         private bool _planSortAscending = true;
+
+        // Son yedekler ListView sıralama durumu
+        private int _lvSortColumn = 0;
+        private bool _lvSortAscending = false;
 
         public MainWindow(
             IPlanManager planManager,
@@ -295,6 +302,7 @@ namespace KoruMsSqlYedek.Win
                     {
                         PopulateLogFiles();
                         PopulateLevelFilter();
+                        PopulateLogPlanFilter();
                         LoadSelectedLogFile();
                     }
                     if (_chkAutoTail.Checked)
@@ -403,6 +411,9 @@ namespace KoruMsSqlYedek.Win
 
                 _lvLastBackups.Items.Add(item);
             }
+
+            _lvLastBackups.ListViewItemSorter = new LastBackupsItemComparer(_lvSortColumn, _lvSortAscending);
+            AutoResizeListViewColumns(_lvLastBackups);
         }
 
         private static string GetBackupTypeName(SqlBackupType type)
@@ -437,6 +448,15 @@ namespace KoruMsSqlYedek.Win
             return (bytes / (1024.0 * 1024 * 1024)).ToString("F2") + " GB";
         }
 
+        private static string FormatEta(long bytesRemaining, long speedBytesPerSecond)
+        {
+            if (speedBytesPerSecond <= 0 || bytesRemaining <= 0) return string.Empty;
+            var eta = TimeSpan.FromSeconds(bytesRemaining / (double)speedBytesPerSecond);
+            if (eta.TotalSeconds < 60) return $"{(int)eta.TotalSeconds} sn";
+            if (eta.TotalMinutes < 60) return $"{(int)eta.TotalMinutes} dk {eta.Seconds} sn";
+            return $"{(int)eta.TotalHours} sa {eta.Minutes} dk";
+        }
+
         private static string FormatTimeAgo(TimeSpan span)
         {
             if (span.TotalMinutes < 1) return Res.Get("Dashboard_TimeJustNow");
@@ -453,15 +473,28 @@ namespace KoruMsSqlYedek.Win
             using var borderPen = new Pen(Theme.ModernTheme.DividerColor);
             e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
 
-            using var textBrush = new SolidBrush(Theme.ModernTheme.GridHeaderText);
-            var textRect = new Rectangle(e.Bounds.X + 8, e.Bounds.Y, e.Bounds.Width - 16, e.Bounds.Height);
+            bool isSorted = e.ColumnIndex == _lvSortColumn;
+            int arrowAreaWidth = isSorted ? 18 : 0;
+            var textRect = new Rectangle(e.Bounds.X + 8, e.Bounds.Y, e.Bounds.Width - 16 - arrowAreaWidth, e.Bounds.Height);
             using var sf = new StringFormat
             {
                 LineAlignment = StringAlignment.Center,
                 Trimming = StringTrimming.EllipsisCharacter,
                 FormatFlags = StringFormatFlags.NoWrap
             };
+            using var textBrush = new SolidBrush(Theme.ModernTheme.GridHeaderText);
             e.Graphics.DrawString(e.Header.Text, Theme.ModernTheme.FontCaptionBold, textBrush, textRect, sf);
+
+            if (isSorted)
+            {
+                int ax = e.Bounds.Right - 14;
+                int ay = e.Bounds.Y + e.Bounds.Height / 2;
+                using var arrowBrush = new SolidBrush(Theme.ModernTheme.AccentPrimary);
+                Point[] arrow = _lvSortAscending
+                    ? new[] { new Point(ax, ay + 3), new Point(ax + 7, ay + 3), new Point(ax + 3, ay - 3) }
+                    : new[] { new Point(ax, ay - 3), new Point(ax + 7, ay - 3), new Point(ax + 3, ay + 3) };
+                e.Graphics.FillPolygon(arrowBrush, arrow);
+            }
         }
 
         private void OnListViewDrawItem(object sender, DrawListViewItemEventArgs e)
@@ -472,6 +505,85 @@ namespace KoruMsSqlYedek.Win
         private void OnListViewDrawSubItem(object sender, DrawListViewSubItemEventArgs e)
         {
             e.DrawDefault = true;
+        }
+
+        private void OnLastBackupsColumnClick(object sender, ColumnClickEventArgs e)
+        {
+            if (_lvSortColumn == e.Column)
+                _lvSortAscending = !_lvSortAscending;
+            else
+            {
+                _lvSortColumn = e.Column;
+                _lvSortAscending = true;
+            }
+
+            _lvLastBackups.ListViewItemSorter = new LastBackupsItemComparer(_lvSortColumn, _lvSortAscending);
+            _lvLastBackups.Invalidate();
+        }
+
+        private static void AutoResizeListViewColumns(ListView lv)
+        {
+            for (int i = 0; i < lv.Columns.Count; i++)
+            {
+                int maxWidth = TextRenderer.MeasureText(lv.Columns[i].Text, Theme.ModernTheme.FontCaptionBold).Width + 28;
+                foreach (ListViewItem item in lv.Items)
+                {
+                    if (i < item.SubItems.Count)
+                    {
+                        int w = TextRenderer.MeasureText(item.SubItems[i].Text, Theme.ModernTheme.FontBody).Width + 20;
+                        if (w > maxWidth) maxWidth = w;
+                    }
+                }
+                lv.Columns[i].Width = maxWidth;
+            }
+        }
+
+        private sealed class LastBackupsItemComparer : System.Collections.IComparer
+        {
+            private readonly int _col;
+            private readonly bool _asc;
+
+            public LastBackupsItemComparer(int column, bool ascending)
+            {
+                _col = column;
+                _asc = ascending;
+            }
+
+            public int Compare(object x, object y)
+            {
+                var ix = (ListViewItem)x;
+                var iy = (ListViewItem)y;
+                var rx = ix.Tag as BackupResult;
+                var ry = iy.Tag as BackupResult;
+                int result = CompareItems(ix, iy, rx, ry);
+                return _asc ? result : -result;
+            }
+
+            private int CompareItems(ListViewItem ix, ListViewItem iy, BackupResult rx, BackupResult ry)
+            {
+                switch (_col)
+                {
+                    case 0: // Tarih
+                        if (rx != null && ry != null)
+                            return DateTime.Compare(rx.StartedAt, ry.StartedAt);
+                        break;
+                    case 4: // Sonuç (enum sırası: Success < PartialSuccess < Failed < Cancelled)
+                        if (rx != null && ry != null)
+                            return rx.Status.CompareTo(ry.Status);
+                        break;
+                    case 5: // Boyut (bayt cinsinden)
+                        if (rx != null && ry != null)
+                        {
+                            long bx = rx.CompressedSizeBytes > 0 ? rx.CompressedSizeBytes : rx.FileSizeBytes;
+                            long by = ry.CompressedSizeBytes > 0 ? ry.CompressedSizeBytes : ry.FileSizeBytes;
+                            return bx.CompareTo(by);
+                        }
+                        break;
+                }
+                string tx = _col < ix.SubItems.Count ? ix.SubItems[_col].Text : string.Empty;
+                string ty = _col < iy.SubItems.Count ? iy.SubItems[_col].Text : string.Empty;
+                return string.Compare(tx, ty, StringComparison.CurrentCultureIgnoreCase);
+            }
         }
 
         #endregion
@@ -501,6 +613,7 @@ namespace KoruMsSqlYedek.Win
                     string statusText = Res.Get("PlanStatus_Ready");
                     Color statusColor = Theme.ModernTheme.TextSecondary;
                     DateTime? lastRunAt = null;
+                    bool lastBackupFailed = false;
 
                     try
                     {
@@ -522,6 +635,7 @@ namespace KoruMsSqlYedek.Win
                                 case BackupResultStatus.Failed:
                                     icon = "✕";
                                     statusColor = Theme.ModernTheme.StatusError;
+                                    lastBackupFailed = true;
                                     break;
                                 case BackupResultStatus.Cancelled:
                                     icon = "■";
@@ -545,7 +659,8 @@ namespace KoruMsSqlYedek.Win
                         Storage = storageLabel,
                         StatusText = statusText,
                         StatusColor = statusColor,
-                        LastRunAt = lastRunAt
+                        LastRunAt = lastRunAt,
+                        LastBackupFailed = lastBackupFailed
                     });
                 }
 
@@ -623,10 +738,16 @@ namespace KoruMsSqlYedek.Win
                     plan.CreatedAt.ToString("dd.MM.yyyy"),
                     row.StatusText,
                     _planProgress.TryGetValue(plan.PlanId, out int pct) ? pct : 0,
-                    "...");
+                    _nextFireTimes.TryGetValue(plan.PlanId, out string nft) ? nft : "—");
 
                 _dgvPlans.Rows[rowIndex].Tag = plan;
                 _dgvPlans.Rows[rowIndex].Cells[_colStatus.Index].Style.ForeColor = row.StatusColor;
+
+                if (row.LastBackupFailed)
+                {
+                    _dgvPlans.Rows[rowIndex].DefaultCellStyle.BackColor = Theme.ModernTheme.GridErrorRow;
+                    _dgvPlans.Rows[rowIndex].DefaultCellStyle.ForeColor = Theme.ModernTheme.TextPrimary;
+                }
             }
 
             _dgvPlans.ResumeLayout(false);
@@ -676,6 +797,7 @@ namespace KoruMsSqlYedek.Win
             public string StatusText;
             public Color StatusColor;
             public DateTime? LastRunAt;
+            public bool LastBackupFailed;
         }
 
         private async void OnNewPlanClick(object sender, EventArgs e)
@@ -972,13 +1094,35 @@ namespace KoruMsSqlYedek.Win
 
             if (e.NextFireTimes == null || e.NextFireTimes.Count == 0) return;
 
+            // Önce sözlüğü güncelle
+            foreach (var kv in e.NextFireTimes)
+            {
+                if (kv.Value == null)
+                {
+                    _nextFireTimes.Remove(kv.Key);
+                    continue;
+                }
+
+                string displayText;
+                if (DateTimeOffset.TryParse(kv.Value, null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out DateTimeOffset dto))
+                    displayText = dto.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
+                else
+                    displayText = kv.Value;
+
+                _nextFireTimes[kv.Key] = displayText;
+            }
+
+            // Mevcut grid satırlarını güncelle (ApplyPlanFilter'a gerek kalmadan)
             foreach (DataGridViewRow row in _dgvPlans.Rows)
             {
                 var plan = row.Tag as BackupPlan;
                 if (plan == null) continue;
 
-                if (e.NextFireTimes.TryGetValue(plan.PlanId, out var nextFire))
-                    row.Cells[_colNextRun.Index].Value = nextFire;
+                if (_nextFireTimes.TryGetValue(plan.PlanId, out string displayTime))
+                    row.Cells[_colNextRun.Index].Value = displayTime;
+                else
+                    row.Cells[_colNextRun.Index].Value = "—";
             }
         }
 
@@ -1134,12 +1278,21 @@ namespace KoruMsSqlYedek.Win
                     return string.Format("Bulut yükleme başladı: {0}", e.CloudTargetName);
                 case BackupActivityType.CloudUploadProgress:
                     if (e.BytesTotal > 0)
-                        return string.Format("Yükleniyor {0}: %{1} | Gönderilen: {2}/{3} | Hız: {4}/s",
+                    {
+                        long bytesRemaining = e.BytesTotal - e.BytesSent;
+                        string etaStr = e.SpeedBytesPerSecond > 0
+                            ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
+                            : "";
+                        string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
+                        return string.Format("Yükleniyor {0}: %{1} | Gönderilen: {2}/{3} | Kalan: {4} | Hız: {5}/s{6}",
                             e.CloudTargetName,
                             e.ProgressPercent,
                             FormatFileSize(e.BytesSent),
                             FormatFileSize(e.BytesTotal),
-                            FormatFileSize(e.SpeedBytesPerSecond));
+                            FormatFileSize(bytesRemaining),
+                            FormatFileSize(e.SpeedBytesPerSecond),
+                            etaPart);
+                    }
                     return string.Format("Yükleniyor {0}: %{1}", e.CloudTargetName, e.ProgressPercent);
                 case BackupActivityType.CloudUploadCompleted:
                     return string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕");
@@ -1198,6 +1351,15 @@ namespace KoruMsSqlYedek.Win
             _cmbLevel.Items.Add(Res.Get("LogViewer_LevelError"));
             _cmbLevel.Items.Add(Res.Get("LogViewer_LevelFatal"));
             _cmbLevel.SelectedIndex = 0;
+        }
+
+        private void PopulateLogPlanFilter()
+        {
+            _cmbLogPlan.Items.Clear();
+            _cmbLogPlan.Items.Add(Res.Get("LogViewer_AllPlans"));
+            foreach (var plan in _planManager.GetAllPlans())
+                _cmbLogPlan.Items.Add(plan.PlanName ?? plan.PlanId);
+            _cmbLogPlan.SelectedIndex = 0;
         }
 
         private void LoadSelectedLogFile()
@@ -1264,6 +1426,7 @@ namespace KoruMsSqlYedek.Win
 
             string levelFilter = GetSelectedLevelCode();
             string searchText = _txtLogSearch.Text.Trim();
+            string planFilter = _cmbLogPlan.SelectedIndex > 0 ? _cmbLogPlan.SelectedItem?.ToString() : null;
             bool hasSearch = !string.IsNullOrEmpty(searchText);
 
             foreach (var entry in _allLogEntries)
@@ -1272,6 +1435,9 @@ namespace KoruMsSqlYedek.Win
                     continue;
 
                 if (hasSearch && entry.Message.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+
+                if (planFilter != null && entry.Message.IndexOf(planFilter, StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
 
                 int idx = _dgvLogs.Rows.Add(entry.Timestamp, entry.Level, entry.Message);
@@ -1317,6 +1483,7 @@ namespace KoruMsSqlYedek.Win
         private void OnLogFileChanged(object sender, EventArgs e) => LoadSelectedLogFile();
         private void OnLevelFilterChanged(object sender, EventArgs e) => ApplyLogFilter();
         private void OnLogSearchTextChanged(object sender, EventArgs e) => ApplyLogFilter();
+        private void OnLogPlanFilterChanged(object sender, EventArgs e) => ApplyLogFilter();
 
         private void OnLogRefreshClick(object sender, EventArgs e) => LoadSelectedLogFile();
 
@@ -1374,6 +1541,7 @@ namespace KoruMsSqlYedek.Win
         {
             _txtLogSearch.Clear();
             _cmbLevel.SelectedIndex = 0;
+            _cmbLogPlan.SelectedIndex = 0;
             ApplyLogFilter();
         }
 

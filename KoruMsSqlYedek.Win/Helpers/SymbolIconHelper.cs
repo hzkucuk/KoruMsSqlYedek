@@ -142,6 +142,53 @@ namespace KoruMsSqlYedek.Win.Helpers
             }
         }
 
+        /// <summary>
+        /// Belirtilen sembolü belirtilen açıda döndürülerek Icon olarak render eder (animasyon için).
+        /// </summary>
+        internal static Icon RenderRotatedIcon(string symbol, int size, Color foreColor, float angleDegrees)
+        {
+            using (var bitmap = new Bitmap(size, size))
+            using (var g = Graphics.FromImage(bitmap))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                g.Clear(Color.Transparent);
+
+                g.TranslateTransform(size / 2f, size / 2f);
+                g.RotateTransform(angleDegrees);
+                g.TranslateTransform(-size / 2f, -size / 2f);
+
+                float fontSize = size * 0.7f;
+                string fontFamily = IsFontAvailable(PrimaryFontFamily) ? PrimaryFontFamily : FallbackFontFamily;
+                using (var font = new Font(fontFamily, fontSize, FontStyle.Regular, GraphicsUnit.Pixel))
+                using (var brush = new SolidBrush(foreColor))
+                {
+                    var sf = new StringFormat
+                    {
+                        Alignment = StringAlignment.Center,
+                        LineAlignment = StringAlignment.Center
+                    };
+                    g.DrawString(symbol, font, brush, new RectangleF(0, 0, size, size), sf);
+                }
+
+                var hIcon = bitmap.GetHicon();
+                return Icon.FromHandle(hIcon);
+            }
+        }
+
+        /// <summary>
+        /// Yedekleme animasyonu için dönen ikon karelerini oluşturur (8 kare, 45° adım).
+        /// </summary>
+        internal static Icon[] CreateAnimationFrames(int frameCount = 8)
+        {
+            var frames = new Icon[frameCount];
+            float step = 360f / frameCount;
+            var color = Color.FromArgb(33, 150, 243);
+            for (int i = 0; i < frameCount; i++)
+                frames[i] = RenderRotatedIcon(SymbolRefresh, 16, color, i * step);
+            return frames;
+        }
+
         private static bool IsFontAvailable(string familyName)
         {
             using (var testFont = new Font(familyName, 10f, FontStyle.Regular, GraphicsUnit.Pixel))
