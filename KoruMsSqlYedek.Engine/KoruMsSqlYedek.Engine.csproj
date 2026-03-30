@@ -63,4 +63,25 @@
       <Link>x64\7z.dll</Link>
     </Content>
   </ItemGroup>
+
+  <!--
+    AlphaVSS platform DLL'leri — .NET 10'da NuGet .targets tetiklenmiyor.
+    7z.dll ile aynı yöntem: Native klasöründen Content olarak eklenir,
+    proje referansı üzerinden Service ve Win çıktılarına otomatik kopyalanır.
+  -->
+  <ItemGroup>
+    <Content Include="Native\AlphaVSS.x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>AlphaVSS.x64.dll</Link>
+    </Content>
+    <Content Include="Native\AlphaVSS.x86.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>AlphaVSS.x86.dll</Link>
+    </Content>
+  </ItemGroup>
+
+  <!--
+    AlphaVSS MSBuild target artık gerekli değil — Content item'ları halleder.
+    Eski target kaldırıldı.
+  -->
 </Project>
