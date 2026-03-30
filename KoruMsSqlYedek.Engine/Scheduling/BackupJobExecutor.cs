@@ -24,6 +24,12 @@ namespace KoruMsSqlYedek.Engine.Scheduling
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<BackupJobExecutor>();
 
+        /// <summary>
+        /// Aynı anda yalnızca bir yedekleme çalışmasını garanti eden global kilit.
+        /// Farklı planlar için bile eşzamanlı çalışmayı engeller.
+        /// </summary>
+        private static readonly SemaphoreSlim _globalBackupLock = new SemaphoreSlim(1, 1);
+
         // Bu alanlar Autofac property injection veya JobFactory ile doldurulur
         public IPlanManager PlanManager { get; set; }
         public ISqlBackupService SqlBackupService { get; set; }
@@ -47,6 +53,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 planId, backupType, correlationId);
 
             BackupPlan plan = null;
+            bool lockAcquired = false;
             try
             {
                 plan = PlanManager.GetPlanById(planId);
@@ -62,6 +69,15 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     return;
                 }
 
+                if (!await _globalBackupLock.WaitAsync(0, context.CancellationToken))
+                {
+                    Log.Warning(
+                        "Başka bir yedekleme zaten çalışıyor, bu çalıştırma atlanıyor: Plan={PlanId}, Tür={BackupType}",
+                        planId, backupType);
+                    return;
+                }
+
+                lockAcquired = true;
                 BackupActivityHub.Raise(new BackupActivityEventArgs
                 {
                     PlanId = plan.PlanId,
@@ -134,6 +150,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         ActivityType = BackupActivityType.Failed,
                         Message = ex.Message
                     });
+            }
+            finally
+            {
+                if (lockAcquired)
+                    _globalBackupLock.Release();
             }
         }
 

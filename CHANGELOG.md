@@ -1,4 +1,11 @@
-﻿## [0.42.3] - 2026-04-05 — Hata Düzeltmeleri: Buton Sırası, Dosya Yedek Upload, NextRun Yarış Koşulu
+﻿## [0.42.4] - 2026-04-05 — Global Yedekleme Kilidi
+
+### Yeni Özellik
+- **Eşzamanlı yedekleme engeli**: Bir plan yedeklenirken başka bir plan (otomatik veya manuel) artık başlatılamaz. `BackupJobExecutor`'a `static SemaphoreSlim(1,1)` eklendi; kilit alınamazsa job atlanır ve uyarı loglanır. `ServicePipeServer` `ManualBackup` handler'ında da `IsAnyRunning()` kontrolü ile manuel tetikleme önceden reddedilir. (etkilenen: `BackupJobExecutor.cs`, `ServicePipeServer.cs`, `BackupCancellationRegistry.cs`)
+
+---
+
+## [0.42.3] - 2026-04-05 — Hata Düzeltmeleri: Buton Sırası, Dosya Yedek Upload, NextRun Yarış Koşulu
 
 ### Hata Düzeltmeleri
 - **PlanEditForm buton sırası**: `Controls.Add` sırası düzeltildi; sol→sağ görsel sıra artık `[İptal]` `[◄ Geri]` `[İleri ►]` `[💾 Kaydet & Çık]` (etkilenen: `PlanEditForm.Designer.cs`)

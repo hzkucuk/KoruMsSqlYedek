@@ -22,6 +22,9 @@ namespace KoruMsSqlYedek.Core.IPC
 
         /// <summary>Belirtilen plan şu an çalışıyor mu?</summary>
         bool IsRunning(string planId);
+
+        /// <summary>Herhangi bir plan şu an çalışıyor mu?</summary>
+        bool IsAnyRunning();
     }
 
     /// <summary>Thread-safe, ConcurrentDictionary tabanlı implementasyon.</summary>
@@ -66,5 +69,7 @@ namespace KoruMsSqlYedek.Core.IPC
 
             return _running.ContainsKey(planId);
         }
+
+        public bool IsAnyRunning() => !_running.IsEmpty;
     }
 }
