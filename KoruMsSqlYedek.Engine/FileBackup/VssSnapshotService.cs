@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Serilog;
 using KoruMsSqlYedek.Core.Interfaces;
@@ -29,8 +30,52 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             public object BackupComponents { get; set; }
         }
 
+        /// <summary>
+        /// .NET 5+'da Assembly.Load(name) deps.json'a kayıtlı olmayan DLL'leri bulamaz.
+        /// AlphaVSS.Win.x64 → AlphaVSS.x64.dll eşlemesini uygulama dizininden yükler.
+        /// Bu handler process başına bir kez kayıt edilir.
+        /// </summary>
+        private static readonly object _resolverLock = new();
+        private static bool _resolverRegistered;
+
+        private static void EnsureAlphaVssResolver()
+        {
+            lock (_resolverLock)
+            {
+                if (_resolverRegistered) return;
+                _resolverRegistered = true;
+
+                AppDomain.CurrentDomain.AssemblyResolve += (_, args) =>
+                {
+                    var requestedName = new AssemblyName(args.Name);
+                    if (!requestedName.Name.StartsWith("AlphaVSS", StringComparison.OrdinalIgnoreCase))
+                        return null;
+
+                    // AlphaVSS.Win.x64 → AlphaVSS.x64.dll
+                    // AlphaVSS.Win.x86 → AlphaVSS.x86.dll
+                    string fileName = requestedName.Name
+                        .Replace("AlphaVSS.Win.", "AlphaVSS.", StringComparison.OrdinalIgnoreCase)
+                        + ".dll";
+
+                    string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
+
+                    if (!File.Exists(filePath))
+                    {
+                        Serilog.Log.Warning(
+                            "AlphaVSS platform DLL bulunamadı: {FilePath}", filePath);
+                        return null;
+                    }
+
+                    Serilog.Log.Debug("AlphaVSS platform DLL yükleniyor: {FilePath}", filePath);
+                    return Assembly.LoadFrom(filePath);
+                };
+            }
+        }
+
         public bool IsAvailable()
         {
+            EnsureAlphaVssResolver();
+
             try
             {
                 // VSS servisinin çalışıp çalışmadığını kontrol et
@@ -58,6 +103,8 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                 normalizedVolume += "\\";
 
             Log.Information("VSS snapshot oluşturuluyor: {Volume}", normalizedVolume);
+
+            EnsureAlphaVssResolver();
 
             try
             {
