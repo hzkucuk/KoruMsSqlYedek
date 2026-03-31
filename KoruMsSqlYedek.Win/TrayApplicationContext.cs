@@ -96,7 +96,7 @@ namespace KoruMsSqlYedek.Win
 
             var version = System.Reflection.Assembly
                 .GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
-            menu.Renderer = new Theme.VersionSidebarRenderer($"v{version}");
+            menu.Renderer = new Theme.VersionSidebarRenderer(Res.Get("AppName"), $"v{version}");
 
             // Uygulama adı başlık öğesi
             var tsmAppName = new ToolStripMenuItem(Res.Get("AppName"))
@@ -181,11 +181,21 @@ namespace KoruMsSqlYedek.Win
             }
             catch (InvalidOperationException)
             {
-                // Servis yüklü değil
-                _tsmServiceStatus.Text     = Res.Get("Tray_ServiceNotInstalled");
-                _tsmServiceStart.Enabled   = false;
-                _tsmServiceStop.Enabled    = false;
-                _tsmServiceRestart.Enabled = false;
+                // Servis yüklü değil — pipe bağlıysa debug modunda çalışıyor demektir
+                if (_pipeClient.IsConnected)
+                {
+                    _tsmServiceStatus.Text     = Res.Get("Tray_ServiceDebugMode");
+                    _tsmServiceStart.Enabled   = false;
+                    _tsmServiceStop.Enabled    = false;
+                    _tsmServiceRestart.Enabled = false;
+                }
+                else
+                {
+                    _tsmServiceStatus.Text     = Res.Get("Tray_ServiceNotInstalled");
+                    _tsmServiceStart.Enabled   = false;
+                    _tsmServiceStop.Enabled    = false;
+                    _tsmServiceRestart.Enabled = false;
+                }
             }
             catch (System.ComponentModel.Win32Exception ex)
             {

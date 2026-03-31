@@ -1796,6 +1796,18 @@ namespace KoruMsSqlYedek.Win
             _nudLogRetention.Value = Math.Min(Math.Max(s.LogRetentionDays, 1), 365);
             _nudHistoryRetention.Value = Math.Min(Math.Max(s.HistoryRetentionDays, 1), 365);
 
+            // Log renk şeması
+            _cmbLogColorScheme.Items.Clear();
+            var schemes = Theme.TerminalColorScheme.GetAll();
+            int selectedIdx = 0;
+            for (int i = 0; i < schemes.Length; i++)
+            {
+                _cmbLogColorScheme.Items.Add(schemes[i].DisplayName);
+                if (string.Equals(schemes[i].Id, s.LogColorScheme, StringComparison.OrdinalIgnoreCase))
+                    selectedIdx = i;
+            }
+            _cmbLogColorScheme.SelectedIndex = selectedIdx;
+
             LoadProfileList(s);
         }
 
@@ -1810,6 +1822,13 @@ namespace KoruMsSqlYedek.Win
             s.DefaultBackupPath = _txtDefaultBackupPath.Text.Trim();
             s.LogRetentionDays = (int)_nudLogRetention.Value;
             s.HistoryRetentionDays = (int)_nudHistoryRetention.Value;
+
+            // Log renk şeması
+            var schemes = Theme.TerminalColorScheme.GetAll();
+            int schemeIdx = _cmbLogColorScheme.SelectedIndex;
+            s.LogColorScheme = (schemeIdx >= 0 && schemeIdx < schemes.Length)
+                ? schemes[schemeIdx].Id
+                : "koru";
 
             // SMTP profiller Add/Edit/Delete dialoglarında bağımsız kaydedilir; burada dokunulmaz.
 
@@ -1851,6 +1870,11 @@ namespace KoruMsSqlYedek.Win
                 _settingsManager.Save(settings);
                 Theme.ModernTheme.ApplyTheme(settings.Theme == "light"
                     ? Theme.ThemeMode.Light : Theme.ThemeMode.Dark);
+
+                // Log renk şemasını uygula
+                Theme.ModernTheme.ApplyLogColorScheme(settings.LogColorScheme);
+                _txtBackupLog.BackColor = Theme.ModernTheme.LogConsoleBg;
+
                 Log.Information("Ayarlar kaydedildi.");
                 MessageBox.Show(Res.Get("Settings_SavedMessage"),
                     Res.Get("Settings_SavedTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -2062,6 +2086,9 @@ namespace KoruMsSqlYedek.Win
             _cmbTheme.Items.Add(Res.Get("Theme_Light"));
             if (prevThemeIdx >= 0 && prevThemeIdx < _cmbTheme.Items.Count)
                 _cmbTheme.SelectedIndex = prevThemeIdx;
+
+            // Settings — log color scheme
+            _lblLogColorScheme.Text = Res.Get("Settings_LogColorScheme");
 
             // Status bar
             _tslStatus.Text = Res.Get("Dashboard_Ready");

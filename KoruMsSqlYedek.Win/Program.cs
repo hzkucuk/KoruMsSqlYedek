@@ -138,7 +138,9 @@ namespace KoruMsSqlYedek.Win
                     ? Theme.ThemeMode.Light
                     : Theme.ThemeMode.Dark;
                 Theme.ModernTheme.ApplyTheme(mode);
-                Log.Information("Tema ayarı uygulandı: {Theme}", settings.Theme);
+                Theme.ModernTheme.ApplyLogColorScheme(settings.LogColorScheme);
+                Log.Information("Tema ayarı uygulandı: {Theme}, Log şeması: {Scheme}",
+                    settings.Theme, settings.LogColorScheme);
             }
             catch (Exception ex)
             {

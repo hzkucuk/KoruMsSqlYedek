@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.51.0 — Tray Sidebar Program Adı + Servis Debug Modu + Log Renk Şeması Ayarları
+- Tray menü kenar çubuğu artık "Koru MsSql Yedek" program adı + versiyon gösteriyor
+- Windows Service yüklü değilken pipe bağlıysa "Servis: Bağlı (Debug) ✓" durumu gösteriliyor
+- Ayarlar panelinden 12 terminal renk şeması arasında geçiş yapılabiliyor (Koru, Solarized, Monokai, Dracula, Nord vb.)
+- Seçilen renk şeması uygulama başlangıcında otomatik uygulanıyor
+
 ### v0.50.0 — Kümülatif İlerleme Çubuğu
 - İlerleme çubuğu artık her adımda (DB → Cloud) sıfırlanmak yerine toplam işlem yüzdesini kümülatif olarak gösteriyor
 - Her veritabanı toplam ilerlemenin eşit dilimini alır; SQL yedekleme %30, bulut yükleme %70 ağırlıkla eşlenir

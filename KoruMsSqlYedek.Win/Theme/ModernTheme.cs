@@ -65,6 +65,9 @@ namespace KoruMsSqlYedek.Win.Theme
 
         // ═══════════════ THEME APPLY ═══════════════
 
+        /// <summary>Şu anda uygulanan log konsolu renk şablonu.</summary>
+        internal static TerminalColorScheme ActiveLogScheme { get; private set; } = TerminalColorScheme.Koru;
+
         internal static void ApplyTheme(ThemeMode mode)
         {
             CurrentTheme = mode;
@@ -72,6 +75,35 @@ namespace KoruMsSqlYedek.Win.Theme
                 ApplyDarkColors();
             else
                 ApplyLightColors();
+
+            // Log renkleri tema değişiminde de güncel kalsın
+            ApplyLogColorScheme(ActiveLogScheme);
+        }
+
+        /// <summary>
+        /// Terminal renk şablonunu log konsolu renklerine uygular.
+        /// </summary>
+        internal static void ApplyLogColorScheme(TerminalColorScheme scheme)
+        {
+            ActiveLogScheme = scheme ?? TerminalColorScheme.Koru;
+            LogDefault   = ActiveLogScheme.Default;
+            LogTimestamp  = ActiveLogScheme.Timestamp;
+            LogSuccess   = ActiveLogScheme.Success;
+            LogError     = ActiveLogScheme.Error;
+            LogWarning   = ActiveLogScheme.Warning;
+            LogInfo      = ActiveLogScheme.Info;
+            LogProgress  = ActiveLogScheme.Progress;
+            LogCloud     = ActiveLogScheme.Cloud;
+            LogStarted   = ActiveLogScheme.Started;
+            LogConsoleBg = ActiveLogScheme.Background;
+        }
+
+        /// <summary>
+        /// Id ile şablon bulup uygular; bulunamazsa Koru döner.
+        /// </summary>
+        internal static void ApplyLogColorScheme(string schemeId)
+        {
+            ApplyLogColorScheme(TerminalColorScheme.FindById(schemeId));
         }
 
         private static void ApplyDarkColors()
@@ -103,17 +135,6 @@ namespace KoruMsSqlYedek.Win.Theme
             GridHeaderBack = Color.FromArgb(36, 36, 42);
             GridHeaderText = Color.FromArgb(160, 160, 170);
             GridErrorRow = Color.FromArgb(58, 20, 20);
-
-            LogDefault = Color.FromArgb(190, 195, 200);
-            LogTimestamp = Color.FromArgb(90, 160, 120);
-            LogSuccess = Color.FromArgb(46, 204, 113);
-            LogError = Color.FromArgb(255, 107, 107);
-            LogWarning = Color.FromArgb(255, 193, 69);
-            LogInfo = Color.FromArgb(116, 185, 255);
-            LogProgress = Color.FromArgb(0, 210, 211);
-            LogCloud = Color.FromArgb(162, 155, 254);
-            LogStarted = Color.FromArgb(16, 185, 129);
-            LogConsoleBg = Color.FromArgb(22, 24, 28);
         }
 
         private static void ApplyLightColors()
@@ -145,17 +166,6 @@ namespace KoruMsSqlYedek.Win.Theme
             GridHeaderBack = Color.FromArgb(240, 241, 244);
             GridHeaderText = Color.FromArgb(80, 80, 90);
             GridErrorRow = Color.FromArgb(255, 232, 232);
-
-            LogDefault = Color.FromArgb(60, 65, 70);
-            LogTimestamp = Color.FromArgb(60, 120, 80);
-            LogSuccess = Color.FromArgb(0, 155, 80);
-            LogError = Color.FromArgb(195, 30, 30);
-            LogWarning = Color.FromArgb(180, 95, 0);
-            LogInfo = Color.FromArgb(0, 110, 200);
-            LogProgress = Color.FromArgb(0, 150, 150);
-            LogCloud = Color.FromArgb(100, 80, 200);
-            LogStarted = Color.FromArgb(0, 140, 70);
-            LogConsoleBg = Color.FromArgb(250, 251, 253);
         }
 
         // ═══════════════ FONTS ═══════════════

@@ -12,12 +12,14 @@ namespace KoruMsSqlYedek.Win.Theme
     /// </summary>
     internal sealed class VersionSidebarRenderer : ToolStripProfessionalRenderer
     {
+        private readonly string _appName;
         private readonly string _versionText;
         private int _sidebarWidth;
 
-        public VersionSidebarRenderer(string versionText)
+        public VersionSidebarRenderer(string appName, string versionText)
             : base(new ModernToolStripColorTable())
         {
+            _appName = appName;
             _versionText = versionText;
             RoundedEdges = false;
         }
@@ -44,19 +46,31 @@ namespace KoruMsSqlYedek.Win.Theme
                 e.Graphics.FillRectangle(grad, rc);
             }
 
-            // Dikey metin (aşağıdan yukarıya)
-            using (var font = new Font("Segoe UI", 9F, FontStyle.Bold))
-            using (var brush = new SolidBrush(Color.FromArgb(200, 255, 255, 255)))
+            // Dikey metin (aşağıdan yukarıya) — uygulama adı + versiyon
+            using (var nameFont = new Font("Segoe UI", 8.5F, FontStyle.Bold))
+            using (var versionFont = new Font("Segoe UI", 7.5F, FontStyle.Regular))
+            using (var nameBrush = new SolidBrush(Color.FromArgb(240, 255, 255, 255)))
+            using (var versionBrush = new SolidBrush(Color.FromArgb(180, 255, 255, 255)))
             {
                 var state = e.Graphics.Save();
                 e.Graphics.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
                 e.Graphics.TranslateTransform(rc.Left, rc.Bottom);
                 e.Graphics.RotateTransform(-90);
 
-                SizeF sz = e.Graphics.MeasureString(_versionText, font);
-                float x = (rc.Height - sz.Width) / 2;
-                float y = (rc.Width - sz.Height) / 2;
-                e.Graphics.DrawString(_versionText, font, brush, x, y);
+                // Rotated coordinate: X = sidebar height, Y = sidebar width
+                SizeF nameSz = e.Graphics.MeasureString(_appName, nameFont);
+                SizeF verSz = e.Graphics.MeasureString(_versionText, versionFont);
+
+                float totalWidth = nameSz.Width + 6 + verSz.Width;
+                float startX = (rc.Height - totalWidth) / 2;
+
+                // Versiyon (sidebar alt kısmı = rotated sol)
+                float yCenter = (rc.Width - verSz.Height) / 2;
+                e.Graphics.DrawString(_versionText, versionFont, versionBrush, startX, yCenter);
+
+                // Uygulama adı (sidebar üst kısmı = rotated sağ)
+                yCenter = (rc.Width - nameSz.Height) / 2;
+                e.Graphics.DrawString(_appName, nameFont, nameBrush, startX + verSz.Width + 6, yCenter);
 
                 e.Graphics.Restore(state);
             }

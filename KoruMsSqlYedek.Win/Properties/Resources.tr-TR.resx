@@ -374,5 +374,7 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Tray_ServiceStopped" xml:space="preserve"><value>Servis durduruldu.</value></data>
   <data name="Tray_ServiceRestarted" xml:space="preserve"><value>Servis yeniden başlatıldı.</value></data>
   <data name="Tray_ServiceNotInstalled" xml:space="preserve"><value>Servis: Yüklü Değil ⚠</value></data>
+  <data name="Tray_ServiceDebugMode" xml:space="preserve"><value>Servis: Bağlı (Debug) ✓</value></data>
+  <data name="Settings_LogColorScheme" xml:space="preserve"><value>Log Renk Şeması:</value></data>
 
 </root>

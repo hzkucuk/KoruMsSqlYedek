@@ -50,6 +50,10 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("theme")]
         public string Theme { get; set; } = "dark";
 
+        /// <summary>Log konsolu terminal renk şablonu (ör. "koru", "dracula", "monokai").</summary>
+        [JsonProperty("logColorScheme")]
+        public string LogColorScheme { get; set; } = "koru";
+
         /// <summary>Ayar şeması versiyonu (geriye uyumluluk).</summary>
         [JsonProperty("schemaVersion")]
         public int SchemaVersion { get; set; } = 1;

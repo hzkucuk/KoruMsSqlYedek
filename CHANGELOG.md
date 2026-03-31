@@ -1,4 +1,13 @@
-﻿## [0.50.0] - 2026-05-12 — Kümülatif İlerleme Çubuğu
+﻿## [0.51.0] - 2026-05-12 — Tray Sidebar Program Adı + Servis Debug Modu + Log Renk Şeması Ayarları
+
+### Yeni Özellik
+- **Tray sidebar'da program adı**: Tray menü kenar çubuğu artık versiyon yanında "Koru MsSql Yedek" uygulama adını da gösteriyor. (etkilenen: `VersionSidebarRenderer.cs`, `TrayApplicationContext.cs`)
+- **Servis debug modu algılama**: Windows Service yüklü olmadığında ancak pipe bağlantısı varsa menüde "Servis: Bağlı (Debug) ✓" gösteriyor. VS2026 multi-project debugging desteği iyileştirildi. (etkilenen: `TrayApplicationContext.cs`)
+- **Log renk şeması ayarları**: Ayarlar panelinden log konsolu renk şeması seçilebiliyor. 12 yerleşik şablon (Koru, Solarized Dark/Light, Monokai, Dracula, Nord, Gruvbox, One Dark, Tokyo Night, Catppuccin, Ubuntu, Matrix Green). Seçilen şema JSON ayarlarda saklanıyor ve uygulama başlangıcında otomatik uygulanıyor. (etkilenen: `MainWindow.cs`, `Program.cs`, `Resources.resx`, `Resources.tr-TR.resx`)
+
+---
+
+## [0.50.0] - 2026-05-12 — Kümülatif İlerleme Çubuğu
 
 ### Yeni Özellik
 - **Kümülatif progress bar**: Yedekleme ilerleme çubuğu artık her adımda sıfırlanmak yerine toplam işlem yüzdesini gösteriyor. Her veritabanı toplam ilerlemenin eşit bir dilimini alır (100/N%), veritabanı yedekleme %30'unu, bulut yükleme %70'ini kapsar. Çoklu bulut hedefleri de ağırlıklı olarak dahil edilir. `Math.Max` ile monoton artış garantisi sağlanır — ilerleme asla geriye gitmez. (etkilenen: `MainWindow.cs`)

@@ -135,6 +135,8 @@
             _cmbLanguage = new Theme.ModernComboBox();
             _lblTheme = new System.Windows.Forms.Label();
             _cmbTheme = new Theme.ModernComboBox();
+            _lblLogColorScheme = new System.Windows.Forms.Label();
+            _cmbLogColorScheme = new Theme.ModernComboBox();
             _chkStartWithWindows = new Theme.ModernCheckBox();
             _chkMinimizeToTray = new Theme.ModernCheckBox();
             _lblDefaultBackupPath = new System.Windows.Forms.Label();
@@ -711,8 +713,8 @@
             _tlpGeneral.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             _tlpGeneral.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
-            _tlpGeneral.RowCount = 8;
-            for (int i = 0; i < 7; i++)
+            _tlpGeneral.RowCount = 9;
+            for (int i = 0; i < 8; i++)
                 _tlpGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
 
@@ -785,6 +787,14 @@
             _cmbTheme.Items.AddRange(new object[] { "Koyu (Dark)", "Açık (Light)" });
             _cmbTheme.Width = 200;
             _cmbTheme.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
+
+            _tlpGeneral.Controls.Add(_lblLogColorScheme, 0, 7); _tlpGeneral.Controls.Add(_cmbLogColorScheme, 1, 7);
+            _lblLogColorScheme.Text = "Log Konsol Temas\u0131:"; _lblLogColorScheme.AutoSize = true;
+            _lblLogColorScheme.ForeColor = Theme.ModernTheme.TextPrimary;
+            _lblLogColorScheme.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            _lblLogColorScheme.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _cmbLogColorScheme.Width = 250;
+            _cmbLogColorScheme.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
 
             // Tab: SMTP
             _tabSmtp.Controls.Add(_tlpSmtp);
@@ -1093,6 +1103,8 @@
         private Theme.ModernComboBox _cmbLanguage;
         private System.Windows.Forms.Label _lblTheme;
         private Theme.ModernComboBox _cmbTheme;
+        private System.Windows.Forms.Label _lblLogColorScheme;
+        private Theme.ModernComboBox _cmbLogColorScheme;
         private Theme.ModernCheckBox _chkStartWithWindows;
         private Theme.ModernCheckBox _chkMinimizeToTray;
         private System.Windows.Forms.Label _lblDefaultBackupPath;
