@@ -151,7 +151,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
         // ── Doğrula ──────────────────────────────────────────────────────────
 
-        private async void OnVerifyClick(object? sender, EventArgs e)
+        private async void OnVerifyClick(object sender, EventArgs e)
         {
             if (_selectedResult == null)
             {
@@ -196,7 +196,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
         // ── Geri Yükle ───────────────────────────────────────────────────────
 
-        private async void OnRestoreClick(object? sender, EventArgs e)
+        private async void OnRestoreClick(object sender, EventArgs e)
         {
             if (_selectedResult == null)
             {
@@ -275,7 +275,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
         // ── Kapat ────────────────────────────────────────────────────────────
 
-        private void OnCloseClick(object? sender, EventArgs e)
+        private void OnCloseClick(object sender, EventArgs e)
         {
             _cts?.Cancel();
             Close();

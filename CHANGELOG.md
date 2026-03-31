@@ -1,4 +1,13 @@
-﻿## [0.53.0] - 2026-05-12 — Dosya Yedekleme İlerleme Çubuğu Entegrasyonu
+﻿## [0.53.1] - 2026-05-12 — Uyarı Temizliği & Paket Güncellemesi
+
+### Düzeltme
+- **NU1608 çözümü**: SMO 171.30.0 → 181.15.0, SqlClient 6.0.2 → 6.1.4, MSAL 4.67.2 → 4.83.3 — bağımlılık kısıtlaması uyarıları giderildi.
+- **CS8632 çözümü**: `#nullable enable` bağlamı olmayan 8 event handler’dan `object?` → `object` dönüştürüldü. (etkilenen: `MainWindow.cs`, `RestoreDialog.cs`, `PlanEditForm.cs`)
+- **CS0414 çözümü**: `SmtpProfileEditDialog._isNew` kullanılmayan alan kaldırıldı.
+
+---
+
+## [0.53.0] - 2026-05-12 — Dosya Yedekleme İlerleme Çubuğu Entegrasyonu
 
 ### Yeni Özellik
 - **Dosya yedekleme progress bar desteği**: Dosya yedekleme fazı artık ilerleme çubuğuna dahil ediliyor. SQL+Dosya planlarında SQL %80, dosya yedekleme %20 ağırlıklı; sadece dosya yedekleme planlarında dosya %100 ağırlıklı. (etkilenen: `MainWindow.cs`, `BackupJobExecutor.cs`, `BackupActivityEvent.cs`)

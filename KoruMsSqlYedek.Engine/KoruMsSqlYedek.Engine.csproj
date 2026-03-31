@@ -20,13 +20,13 @@
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.0" />
 
     <!-- SQL Client -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
 
     <!-- Scheduling -->
     <PackageReference Include="Quartz" Version="3.8.1" />
 
     <!-- SQL Server Backup (SMO) -->
-    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="171.30.0" />
+    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="181.15.0" />
 
     <!-- Compression -->
     <PackageReference Include="Squid-Box.SevenZipSharp" Version="1.6.2.24" />
@@ -45,7 +45,7 @@
 
     <!-- Cloud: OneDrive (Microsoft Graph) -->
     <PackageReference Include="Microsoft.Graph" Version="5.62.0" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.67.2" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.83.3" />
 
     <!-- Cloud: FTP/SFTP -->
     <PackageReference Include="FluentFTP" Version="51.0.0" />

@@ -802,7 +802,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void OnRetentionChanged(object sender, EventArgs e) => UpdateRetentionFieldsVisibility();
         private void OnEmailEnabledChanged(object sender, EventArgs e) => UpdateEmailFieldsVisibility();
 
-        private void OnOpenSmtpSettingsClick(object? sender, System.Windows.Forms.LinkLabelLinkClickedEventArgs e)
+        private void OnOpenSmtpSettingsClick(object sender, System.Windows.Forms.LinkLabelLinkClickedEventArgs e)
         {
             MessageBox.Show(
                 Res.Get("PlanEdit_SmtpGoToSettings") ?? "SMTP profillerini yönetmek için ana pencereden\nAyarlar \u003e E-posta (SMTP) sekmesini açın.",

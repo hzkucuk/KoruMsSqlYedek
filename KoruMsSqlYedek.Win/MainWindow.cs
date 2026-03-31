@@ -1999,7 +1999,7 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
-        private void OnSmtpAddClick(object? sender, EventArgs e)
+        private void OnSmtpAddClick(object sender, EventArgs e)
         {
             using var dlg = new Forms.SmtpProfileEditDialog();
             if (dlg.ShowDialog(this) != DialogResult.OK) return;
@@ -2009,7 +2009,7 @@ namespace KoruMsSqlYedek.Win
             LoadProfileList(_settings);
         }
 
-        private void OnSmtpEditClick(object? sender, EventArgs e)
+        private void OnSmtpEditClick(object sender, EventArgs e)
         {
             if (_dgvSmtpProfiles.SelectedRows.Count == 0) return;
 
@@ -2026,7 +2026,7 @@ namespace KoruMsSqlYedek.Win
             LoadProfileList(_settings);
         }
 
-        private void OnSmtpDeleteClick(object? sender, EventArgs e)
+        private void OnSmtpDeleteClick(object sender, EventArgs e)
         {
             if (_dgvSmtpProfiles.SelectedRows.Count == 0) return;
 
@@ -2042,7 +2042,7 @@ namespace KoruMsSqlYedek.Win
             LoadProfileList(_settings);
         }
 
-        private void OnSmtpTestClick(object? sender, EventArgs e)
+        private void OnSmtpTestClick(object sender, EventArgs e)
         {
             if (_dgvSmtpProfiles.SelectedRows.Count == 0)
             {

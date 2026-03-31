@@ -17,7 +17,6 @@ namespace KoruMsSqlYedek.Win.Forms
         private static readonly ILogger Log = Serilog.Log.ForContext<SmtpProfileEditDialog>();
 
         private readonly SmtpProfile _profile;
-        private readonly bool _isNew;
 
         /// <summary>Kaydedilen profil (DialogResult == OK ise geçerli).</summary>
         public SmtpProfile ResultProfile => _profile;
@@ -33,13 +32,11 @@ namespace KoruMsSqlYedek.Win.Forms
             if (existing != null)
             {
                 _profile = existing;
-                _isNew = false;
                 Text = "SMTP Profilini Düzenle";
             }
             else
             {
                 _profile = new SmtpProfile();
-                _isNew = true;
                 Text = "Yeni SMTP Profili";
             }
         }

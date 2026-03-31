@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.53.1 — Uyarı Temizliği & Paket Güncellemesi
+- SMO 181.15.0, SqlClient 6.1.4, MSAL 4.83.3’e yükseltildi (NU1608 çözüldü)
+- 8 event handler’da CS8632 nullable uyarısı düzeltildi
+- `SmtpProfileEditDialog._isNew` kullanılmayan alan kaldırıldı (CS0414)
+
 ### v0.53.0 — Dosya Yedekleme İlerleme Çubuğu Entegrasyonu
 - Dosya yedekleme fazı ilerleme çubuğuna entegre edildi (SQL+Dosya: %80/%20 ağırlık, Dosya-only: %100)
 - Dosya sıkıştırma ve bulut yükleme ayrı alt fazlar olarak izleniyor (%25 sıkıştırma, %75 bulut)
