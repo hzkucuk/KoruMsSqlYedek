@@ -98,6 +98,13 @@ namespace KoruMsSqlYedek.Win
                 .GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
             menu.Renderer = new Theme.VersionSidebarRenderer($"v{version}");
 
+            // Uygulama adı başlık öğesi
+            var tsmAppName = new ToolStripMenuItem(Res.Get("AppName"))
+            {
+                Enabled = false,
+                Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+            };
+
             var tsmDashboard = new ToolStripMenuItem(Res.Get("Tray_MenuDashboard"), null, (s, e) => OpenMainWindow(0));
             tsmDashboard.Font = new System.Drawing.Font(tsmDashboard.Font, System.Drawing.FontStyle.Bold);
 
@@ -112,6 +119,8 @@ namespace KoruMsSqlYedek.Win
             _tsmServiceStop    = new ToolStripMenuItem(Res.Get("Tray_ServiceStop"),    null, OnServiceStopClick);
             _tsmServiceRestart = new ToolStripMenuItem(Res.Get("Tray_ServiceRestart"), null, OnServiceRestartClick);
 
+            menu.Items.Add(tsmAppName);
+            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmDashboard);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmPlans);
@@ -170,12 +179,21 @@ namespace KoruMsSqlYedek.Win
                 _tsmServiceStop.Enabled    = running;
                 _tsmServiceRestart.Enabled = running;
             }
-            catch
+            catch (InvalidOperationException)
             {
-                _tsmServiceStatus.Text     = Res.Get("Tray_ServiceStatusUnknown");
+                // Servis yüklü değil
+                _tsmServiceStatus.Text     = Res.Get("Tray_ServiceNotInstalled");
                 _tsmServiceStart.Enabled   = false;
                 _tsmServiceStop.Enabled    = false;
                 _tsmServiceRestart.Enabled = false;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Servis durumu sorgulanamadı: {ServiceName}", ServiceName);
+                _tsmServiceStatus.Text     = Res.Get("Tray_ServiceStatusUnknown");
+                _tsmServiceStart.Enabled   = true;
+                _tsmServiceStop.Enabled    = true;
+                _tsmServiceRestart.Enabled = true;
             }
         }
 

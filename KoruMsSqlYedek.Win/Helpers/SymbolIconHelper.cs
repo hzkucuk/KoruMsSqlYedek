@@ -2,12 +2,14 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
+using System.Windows.Forms;
 
 namespace KoruMsSqlYedek.Win.Helpers
 {
     /// <summary>
     /// Segoe UI Symbol / Segoe MDL2 Assets fontundan ikon render eden yardımcı sınıf.
     /// İkon kütüphanesi yerine font tabanlı semboller kullanılır.
+    /// DPI-aware: SystemInformation.SmallIconSize ile doğru boyutta render eder.
     /// </summary>
     internal static class SymbolIconHelper
     {
@@ -44,16 +46,20 @@ namespace KoruMsSqlYedek.Win.Helpers
         /// <summary>Kalkan (güvenlik).</summary>
         internal const string SymbolShield = "\uE83D";
 
+        /// <summary>DPI uyumlu tray ikon boyutu.</summary>
+        private static int TrayIconSize => Math.Max(SystemInformation.SmallIconSize.Width, 20);
+
         /// <summary>
         /// Belirtilen sembolü Icon olarak render eder (NotifyIcon için).
         /// </summary>
         /// <param name="symbol">Unicode sembol karakteri.</param>
-        /// <param name="size">İkon boyutu (piksel).</param>
+        /// <param name="size">İkon boyutu (piksel). 0 verilirse DPI-aware boyut kullanılır.</param>
         /// <param name="foreColor">Sembol rengi.</param>
         /// <param name="backColor">Arka plan rengi (varsayılan: şeffaf).</param>
-        internal static Icon RenderIcon(string symbol, int size = 16, Color? foreColor = null, Color? backColor = null)
+        internal static Icon RenderIcon(string symbol, int size = 0, Color? foreColor = null, Color? backColor = null)
         {
-            using (var bitmap = RenderBitmap(symbol, size, size, foreColor, backColor))
+            int effectiveSize = size > 0 ? size : TrayIconSize;
+            using (var bitmap = RenderBitmap(symbol, effectiveSize, effectiveSize, foreColor, backColor))
             {
                 var hIcon = bitmap.GetHicon();
                 return Icon.FromHandle(hIcon);
@@ -78,23 +84,17 @@ namespace KoruMsSqlYedek.Win.Helpers
 
             using (var g = Graphics.FromImage(bitmap))
             {
-                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.SmoothingMode = SmoothingMode.HighQuality;
                 g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
-                if (bgColor != Color.Transparent)
-                {
-                    g.Clear(bgColor);
-                }
-                else
-                {
-                    g.Clear(Color.Transparent);
-                }
+                g.Clear(bgColor);
 
-                float fontSize = width * 0.7f;
+                float fontSize = width * 0.78f;
                 string fontFamily = IsFontAvailable(PrimaryFontFamily) ? PrimaryFontFamily : FallbackFontFamily;
 
                 using (var font = new Font(fontFamily, fontSize, FontStyle.Regular, GraphicsUnit.Pixel))
-                using (var brush = new SolidBrush(fgColor))
                 {
                     var sf = new StringFormat
                     {
@@ -103,7 +103,18 @@ namespace KoruMsSqlYedek.Win.Helpers
                     };
 
                     var rect = new RectangleF(0, 0, width, height);
-                    g.DrawString(symbol, font, brush, rect, sf);
+
+                    // Kontrast için yarı-şeffaf koyu gölge (özellikle açık taskbar'larda)
+                    using (var shadowBrush = new SolidBrush(Color.FromArgb(100, 0, 0, 0)))
+                    {
+                        var shadowRect = new RectangleF(0.5f, 0.5f, width, height);
+                        g.DrawString(symbol, font, shadowBrush, shadowRect, sf);
+                    }
+
+                    using (var brush = new SolidBrush(fgColor))
+                    {
+                        g.DrawString(symbol, font, brush, rect, sf);
+                    }
                 }
             }
 
@@ -111,32 +122,33 @@ namespace KoruMsSqlYedek.Win.Helpers
         }
 
         /// <summary>
-        /// Tray ikonu için varsayılan veritabanı/kalkan ikonunu oluşturur.
+        /// Tray ikonu için varsayılan veritabanı/kalkan ikonunu oluşturur (DPI-aware).
         /// </summary>
         internal static Icon CreateTrayIcon()
         {
-            return RenderIcon(SymbolShield, 16, Color.FromArgb(0, 200, 83));
+            return RenderIcon(SymbolShield, TrayIconSize, Color.FromArgb(0, 230, 118));
         }
 
         /// <summary>
-        /// Durum bazlı tray ikonu oluşturur.
+        /// Durum bazlı tray ikonu oluşturur (DPI-aware).
         /// </summary>
         internal static Icon CreateStatusIcon(TrayIconStatus status)
         {
+            int size = TrayIconSize;
             switch (status)
             {
                 case TrayIconStatus.Idle:
-                    return RenderIcon(SymbolShield, 16, Color.FromArgb(0, 200, 83));
+                    return RenderIcon(SymbolShield, size, Color.FromArgb(0, 230, 118));
                 case TrayIconStatus.Running:
-                    return RenderIcon(SymbolCloudUpload, 16, Color.FromArgb(33, 150, 243));
+                    return RenderIcon(SymbolCloudUpload, size, Color.FromArgb(66, 165, 245));
                 case TrayIconStatus.Success:
-                    return RenderIcon(SymbolCheckmark, 16, Color.FromArgb(76, 175, 80));
+                    return RenderIcon(SymbolCheckmark, size, Color.FromArgb(102, 187, 106));
                 case TrayIconStatus.Warning:
-                    return RenderIcon(SymbolWarning, 16, Color.FromArgb(255, 193, 7));
+                    return RenderIcon(SymbolWarning, size, Color.FromArgb(255, 213, 79));
                 case TrayIconStatus.Error:
-                    return RenderIcon(SymbolError, 16, Color.FromArgb(244, 67, 54));
+                    return RenderIcon(SymbolError, size, Color.FromArgb(255, 82, 82));
                 case TrayIconStatus.Disconnected:
-                    return RenderIcon(SymbolWarning, 16, Color.FromArgb(158, 158, 158));
+                    return RenderIcon(SymbolWarning, size, Color.FromArgb(176, 176, 176));
                 default:
                     return CreateTrayIcon();
             }
@@ -150,25 +162,35 @@ namespace KoruMsSqlYedek.Win.Helpers
             using (var bitmap = new Bitmap(size, size))
             using (var g = Graphics.FromImage(bitmap))
             {
-                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.SmoothingMode = SmoothingMode.HighQuality;
                 g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                 g.Clear(Color.Transparent);
 
                 g.TranslateTransform(size / 2f, size / 2f);
                 g.RotateTransform(angleDegrees);
                 g.TranslateTransform(-size / 2f, -size / 2f);
 
-                float fontSize = size * 0.7f;
+                float fontSize = size * 0.78f;
                 string fontFamily = IsFontAvailable(PrimaryFontFamily) ? PrimaryFontFamily : FallbackFontFamily;
                 using (var font = new Font(fontFamily, fontSize, FontStyle.Regular, GraphicsUnit.Pixel))
-                using (var brush = new SolidBrush(foreColor))
                 {
                     var sf = new StringFormat
                     {
                         Alignment = StringAlignment.Center,
                         LineAlignment = StringAlignment.Center
                     };
-                    g.DrawString(symbol, font, brush, new RectangleF(0, 0, size, size), sf);
+
+                    // Gölge
+                    using (var shadowBrush = new SolidBrush(Color.FromArgb(100, 0, 0, 0)))
+                    {
+                        g.DrawString(symbol, font, shadowBrush, new RectangleF(0.5f, 0.5f, size, size), sf);
+                    }
+
+                    using (var brush = new SolidBrush(foreColor))
+                    {
+                        g.DrawString(symbol, font, brush, new RectangleF(0, 0, size, size), sf);
+                    }
                 }
 
                 var hIcon = bitmap.GetHicon();
@@ -177,15 +199,26 @@ namespace KoruMsSqlYedek.Win.Helpers
         }
 
         /// <summary>
-        /// Yedekleme animasyonu için dönen ikon karelerini oluşturur (8 kare, 45° adım).
+        /// Yedekleme animasyonu için dönen ikon karelerini oluşturur.
+        /// DPI-aware boyut, parlak mavi tonlarıyla yüksek kontrast.
         /// </summary>
         internal static Icon[] CreateAnimationFrames(int frameCount = 8)
         {
+            int size = TrayIconSize;
             var frames = new Icon[frameCount];
             float step = 360f / frameCount;
-            var color = Color.FromArgb(33, 150, 243);
+
             for (int i = 0; i < frameCount; i++)
-                frames[i] = RenderRotatedIcon(SymbolRefresh, 16, color, i * step);
+            {
+                // Her kare için parlaklığı pulse et — daha görünür animasyon
+                int brightness = 180 + (int)(75 * Math.Sin(i * Math.PI * 2 / frameCount));
+                var color = Color.FromArgb(
+                    Math.Min(brightness - 120, 255),
+                    Math.Min(brightness, 255),
+                    255);
+                frames[i] = RenderRotatedIcon(SymbolRefresh, size, color, i * step);
+            }
+
             return frames;
         }
 

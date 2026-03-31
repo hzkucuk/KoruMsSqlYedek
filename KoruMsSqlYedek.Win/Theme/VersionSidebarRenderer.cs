@@ -85,9 +85,17 @@ namespace KoruMsSqlYedek.Win.Theme
 
         protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
         {
-            e.TextColor = e.Item.Enabled
-                ? Color.FromArgb(230, 230, 230)
-                : Color.FromArgb(120, 120, 120);
+            if (!e.Item.Enabled && e.Item.Font.Bold)
+            {
+                // Uygulama başlık öğesi — parlak yeşil accent rengi
+                e.TextColor = Color.FromArgb(0, 230, 118);
+            }
+            else
+            {
+                e.TextColor = e.Item.Enabled
+                    ? Color.FromArgb(230, 230, 230)
+                    : Color.FromArgb(120, 120, 120);
+            }
             base.OnRenderItemText(e);
         }
 

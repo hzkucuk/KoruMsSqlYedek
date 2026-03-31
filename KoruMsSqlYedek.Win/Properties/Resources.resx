@@ -373,5 +373,6 @@ Language change requires application restart.</value></data>
   <data name="Tray_ServiceStarted" xml:space="preserve"><value>Service started successfully.</value></data>
   <data name="Tray_ServiceStopped" xml:space="preserve"><value>Service stopped.</value></data>
   <data name="Tray_ServiceRestarted" xml:space="preserve"><value>Service restarted successfully.</value></data>
+  <data name="Tray_ServiceNotInstalled" xml:space="preserve"><value>Service: Not Installed ⚠</value></data>
 
 </root>

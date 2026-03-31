@@ -1,4 +1,18 @@
-﻿## [0.44.1] - 2026-05-09 — Upload Progress %100→%99 Glitch Düzeltmesi
+﻿## [0.45.0] - 2026-05-09 — Tray İkon & Menü İyileştirmeleri
+
+### Yeni Özellik
+- **DPI uyumlu tray ikonu**: Tüm tray ikonları artık `SystemInformation.SmallIconSize` ile doğru boyutta render ediliyor; yüksek DPI ekranlarda net ve parlak görünüyor. (etkilenen: `SymbolIconHelper.cs`)
+- **Daha parlak ikon renkleri**: Tüm durum ikonları (idle, running, success, warning, error, disconnected) daha yüksek parlaklıkla yeniden tasarlandı; koyu/açık taskbar'larda görünürlük artırıldı.
+- **Gölge efekti**: Her ikon ve animasyon karesine yarı-şeffaf koyu gölge eklendi — hem açık hem koyu taskbar'larda yüksek kontrast.
+- **Pulse animasyon**: Yedekleme animasyonu artık hem dönüyor hem parlaklık pulse ediyor (sin dalga) — çok daha belirgin.
+- **Uygulama adı menü başlığı**: Tray sağ-tık menüsünün en üstüne "Koru MsSql Yedek" başlığı eklendi (yeşil accent rengi). (etkilenen: `TrayApplicationContext.cs`, `VersionSidebarRenderer.cs`)
+
+### Hata Düzeltmesi
+- **Servis kontrol hataları**: `UpdateServiceMenuItems` artık sessiz catch yapmıyor. Servis yüklü değilse "Servis: Yüklü Değil ⚠" gösteriyor; diğer hatalarda butonlar etkin bırakılıp log yazılıyor. (etkilenen: `TrayApplicationContext.cs`, `Resources.resx`, `Resources.tr-TR.resx`)
+
+---
+
+## [0.44.1] - 2026-05-09 — Upload Progress %100→%99 Glitch Düzeltmesi
 
 ### Hata Düzeltmesi
 - **Bulut yükleme ilerlemesi %100→%99 sapması**: `Progress<T>` callback'leri ThreadPool üzerinden sırasız çalışabiliyordu. `CloudUploadOrchestrator`'a `lastReportedPct` koruması eklendi — geriye giden yüzde değerleri artık atlanıyor. (etkilenen: `CloudUploadOrchestrator.cs`)
