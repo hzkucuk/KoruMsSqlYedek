@@ -859,3 +859,22 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 - [x] `KoruMsSqlYedek.Win\Helpers\SymbolIconHelper.cs` — Math.Clamp fix
 - [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.46.0.0
 - [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.46.0.0
+
+---
+
+## Faz 39 — VSS Bulut Yükleme + Modern Tray İkon + Servis Kontrol (v0.47.0) ✅
+
+### Hata Düzeltmesi
+- [x] **VSS dosyası buluta yüklenmiyor**: Express VSS `*_VSS_*.7z` dosyaları artık SQL yedek dosyasından sonra otomatik bulut hedeflerine yükleniyor
+
+### Yeni Özellikler
+- [x] **Modern circular badge tray ikonu**: Gradient arka planlı yuvarlak badge stili, her durum için farklı renk, beyaz sembol
+- [x] **Spinning arc animasyon**: 12 karelı dönen beyaz ark (progress spinner), mavi gradient arka plan
+- [x] **Servis kontrol iyileştirmesi**: Win32Exception ayrı yakalama, "Yönetici olarak çalıştırın" uyarısı, gerçek SCM durumu gösterimi
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Engine\Scheduling\BackupJobExecutor.cs` — VSS cloud upload
+- [x] `KoruMsSqlYedek.Win\Helpers\SymbolIconHelper.cs` — modern circular badge icons + spinning arc animation
+- [x] `KoruMsSqlYedek.Win\TrayApplicationContext.cs` — improved service control error handling
+- [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.47.0.0
+- [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.47.0.0

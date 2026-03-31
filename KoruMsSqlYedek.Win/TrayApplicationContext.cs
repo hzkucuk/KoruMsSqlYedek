@@ -173,7 +173,7 @@ namespace KoruMsSqlYedek.Win
                     ? Res.Get("Tray_ServiceStatusRunning")
                     : stopped
                         ? Res.Get("Tray_ServiceStatusStopped")
-                        : Res.Get("Tray_ServiceStatusUnknown");
+                        : $"Servis: {status}";
 
                 _tsmServiceStart.Enabled   = stopped;
                 _tsmServiceStop.Enabled    = running;
@@ -186,6 +186,15 @@ namespace KoruMsSqlYedek.Win
                 _tsmServiceStart.Enabled   = false;
                 _tsmServiceStop.Enabled    = false;
                 _tsmServiceRestart.Enabled = false;
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                // SCM erişim hatası (yetki yetersiz olabilir)
+                Log.Warning(ex, "Servis durumu sorgulanamadı (Win32): {ServiceName}", ServiceName);
+                _tsmServiceStatus.Text     = "Servis: Erişim Reddedildi ⚠";
+                _tsmServiceStart.Enabled   = true;
+                _tsmServiceStop.Enabled    = true;
+                _tsmServiceRestart.Enabled = true;
             }
             catch (Exception ex)
             {
@@ -211,6 +220,13 @@ namespace KoruMsSqlYedek.Win
                 ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStarted"), ToolTipIcon.Info, 2500);
                 Log.Information("Servis kullanıcı tarafından başlatıldı.");
             }
+            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
+            {
+                Log.Warning(ex, "Servis başlatma yetki hatası.");
+                ShowBalloonTip(Res.Get("AppName"),
+                    "Servis başlatılamadı: Yönetici olarak çalıştırın.",
+                    ToolTipIcon.Warning, 5000);
+            }
             catch (Exception ex)
             {
                 Log.Error(ex, "Servis başlatılamadı.");
@@ -232,6 +248,13 @@ namespace KoruMsSqlYedek.Win
                 });
                 ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStopped"), ToolTipIcon.Info, 2500);
                 Log.Information("Servis kullanıcı tarafından durduruldu.");
+            }
+            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
+            {
+                Log.Warning(ex, "Servis durdurma yetki hatası.");
+                ShowBalloonTip(Res.Get("AppName"),
+                    "Servis durdurulamadı: Yönetici olarak çalıştırın.",
+                    ToolTipIcon.Warning, 5000);
             }
             catch (Exception ex)
             {
@@ -256,6 +279,13 @@ namespace KoruMsSqlYedek.Win
                 });
                 ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceRestarted"), ToolTipIcon.Info, 2500);
                 Log.Information("Servis kullanıcı tarafından yeniden başlatıldı.");
+            }
+            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
+            {
+                Log.Warning(ex, "Servis yeniden başlatma yetki hatası.");
+                ShowBalloonTip(Res.Get("AppName"),
+                    "Servis yeniden başlatılamadı: Yönetici olarak çalıştırın.",
+                    ToolTipIcon.Warning, 5000);
             }
             catch (Exception ex)
             {

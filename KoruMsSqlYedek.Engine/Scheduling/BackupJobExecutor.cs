@@ -378,6 +378,40 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             StepName = "Bulut Yükleme",
                             Message = $"Bulut yükleme tamamlandı: {dbName} — {successCount}/{totalCount} başarılı [{Fmt(new FileInfo(fileToUpload).Length)}]"
                         });
+
+                        // 4b. VSS dosyasını da buluta yükle
+                        if (!string.IsNullOrEmpty(result.VssFileCopyPath) && File.Exists(result.VssFileCopyPath))
+                        {
+                            string vssRemoteName = Path.GetFileName(result.VssFileCopyPath);
+                            Log.Information("VSS dosyası buluta yükleniyor: {VssFile}", vssRemoteName);
+
+                            BackupActivityHub.Raise(new BackupActivityEventArgs
+                            {
+                                PlanId = plan.PlanId,
+                                PlanName = plan.PlanName,
+                                DatabaseName = dbName,
+                                ActivityType = BackupActivityType.StepChanged,
+                                StepName = "VSS Bulut Yükleme",
+                                Message = $"VSS dosyası buluta yükleniyor: {vssRemoteName} [{Fmt(result.VssFileCopySizeBytes)}]"
+                            });
+
+                            var vssResults = await CloudOrchestrator.UploadToAllAsync(
+                                result.VssFileCopyPath, vssRemoteName, plan.CloudTargets, null, ct,
+                                plan.PlanName);
+
+                            int vssSuccess = vssResults.Count(r => r.IsSuccess);
+                            int vssTotal = vssResults.Count;
+
+                            BackupActivityHub.Raise(new BackupActivityEventArgs
+                            {
+                                PlanId = plan.PlanId,
+                                PlanName = plan.PlanName,
+                                DatabaseName = dbName,
+                                ActivityType = BackupActivityType.StepChanged,
+                                StepName = "VSS Bulut Yükleme",
+                                Message = $"VSS bulut yükleme tamamlandı: {dbName} — {vssSuccess}/{vssTotal} başarılı [{Fmt(result.VssFileCopySizeBytes)}]"
+                            });
+                        }
                     }
                     catch (Exception ex)
                     {

@@ -1,4 +1,16 @@
-﻿## [0.46.0] - 2026-05-09 — Eşzamanlı Yedekleme Desteği
+﻿## [0.47.0] - 2026-05-10 — VSS Bulut Yükleme + Modern Tray İkon + Servis Kontrol İyileştirmesi
+
+### Hata Düzeltmesi
+- **VSS dosyası buluta yüklenmiyor**: Express VSS ile oluşturulan `*_VSS_*.7z` dosyaları artık SQL yedek dosyasından sonra otomatik olarak bulut hedeflerine yükleniyor. (etkilenen: `BackupJobExecutor.cs`)
+
+### Yeni Özellik
+- **Modern circular badge tray ikonu**: Tray ikonları artık gradient arka planlı, yuvarlak badge stili ile render ediliyor. Her durum için farklı renk gradient'i (yeşil idle, mavi running, kırmızı error vb.) ve beyaz sembol. (etkilenen: `SymbolIconHelper.cs`)
+- **Spinning arc animasyon**: Yedekleme sırasında tray ikonu artık mavi daire üzerinde dönen beyaz ark (progress spinner) gösteriyor — 12 kare, daha akıcı animasyon. (etkilenen: `SymbolIconHelper.cs`)
+- **Servis kontrol iyileştirmesi**: Win32Exception (yetki hatası) ayrı yakalanıyor ve "Yönetici olarak çalıştırın" mesajı gösteriliyor. Gerçek SCM durumu artık "Bilinmiyor" yerine doğrudan gösteriliyor. (etkilenen: `TrayApplicationContext.cs`)
+
+---
+
+## [0.46.0] - 2026-05-09 — Eşzamanlı Yedekleme Desteği
 
 ### Yeni Özellik
 - **Farklı planlar paralel çalışabilir**: Bir yedekleme planı çalışırken artık diğer planların "Yedekle" butonu/sağ-tık menüsü pasif olmuyor. Her plan bağımsız olarak başlatılabilir ve iptal edilebilir. (etkilenen: `MainWindow.cs`, `BackupJobExecutor.cs`)
