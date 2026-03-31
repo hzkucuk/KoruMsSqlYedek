@@ -1,4 +1,13 @@
-﻿## [0.48.0] - 2026-05-11 — Plan Bazlı Log İzolasyonu + Tek Satır İlerleme + Sonraki Çalışma Zamanı Düzeltmesi
+﻿## [0.49.0] - 2026-05-11 — Renkli Log Konsolu ("Koru" Temalı)
+
+### Yeni Özellik
+- **Renkli log konsolu**: Yedekleme log paneli artık RichTextBox tabanlı, her olay türüne özel renk ile gösteriliyor. "Koru" (Koruma) temasına uygun güven veren renk paleti: yeşil=başarılı/başlangıç, kırmızı=hata, sarı=iptal/uyarı, mavi=bilgi/veritabanı, turkuaz=ilerleme, mor=bulut işlemi. (etkilenen: `MainWindow.cs`, `MainWindow.Designer.cs`, `ModernTheme.cs`)
+- **Tema renk genişletmesi**: ModernTheme'e 10 yeni log konsol rengi eklendi (LogSuccess, LogError, LogWarning, LogInfo, LogProgress, LogCloud, LogStarted, LogTimestamp, LogDefault, LogConsoleBg) — hem Dark hem Light tema için ayrı paletler. (etkilenen: `ModernTheme.cs`)
+- **Renkli buffer desteği**: Plan bazlı log buffer'ı artık `(Text, Color)` tuple'ları saklıyor, plan geçişlerinde renkli rebuild yapılıyor. (etkilenen: `MainWindow.cs`)
+
+---
+
+## [0.48.0] - 2026-05-11 — Plan Bazlı Log İzolasyonu + Tek Satır İlerleme + Sonraki Çalışma Zamanı Düzeltmesi
 
 ### Hata Düzeltmesi
 - **Log paneli plan karışması**: Bulut upload olayları (CloudUploadStarted/Progress/Completed) artık `PlanId` içeriyor. Farklı bir plan seçiliyken çalışan planın logları artık karışmıyor. `AppendBackupLog` null-planId catch-all kaldırıldı, `_viewingPlanId` fallback kullanılıyor. (etkilenen: `CloudUploadOrchestrator.cs`, `ICloudUploadOrchestrator.cs`, `BackupJobExecutor.cs`, `MainWindow.cs`)

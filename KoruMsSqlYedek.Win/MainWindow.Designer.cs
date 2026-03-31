@@ -97,7 +97,7 @@
             _cmbBackupType = new Theme.ModernComboBox();
             _lblBackupStatus = new System.Windows.Forms.Label();
             _progressBar = new Theme.ModernProgressBar();
-            _txtBackupLog = new System.Windows.Forms.TextBox();
+            _txtBackupLog = new System.Windows.Forms.RichTextBox();
             _flpBackupButtons = new System.Windows.Forms.FlowLayoutPanel();
             _btnStart = new Theme.ModernButton();
             _btnCancelBackup = new Theme.ModernButton();
@@ -500,12 +500,11 @@
             _tlpBackup.Controls.Add(_txtBackupLog, 0, 3);
             _tlpBackup.SetColumnSpan(_txtBackupLog, 2);
             _txtBackupLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            _txtBackupLog.Multiline = true;
             _txtBackupLog.ReadOnly = true;
-            _txtBackupLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            _txtBackupLog.Font = new System.Drawing.Font("Consolas", 9F);
-            _txtBackupLog.BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
-            _txtBackupLog.ForeColor = System.Drawing.Color.FromArgb(220, 220, 220);
+            _txtBackupLog.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            _txtBackupLog.Font = new System.Drawing.Font("Cascadia Mono", 9F);
+            _txtBackupLog.BackColor = Theme.ModernTheme.LogConsoleBg;
+            _txtBackupLog.ForeColor = Theme.ModernTheme.LogDefault;
             _txtBackupLog.Margin = new System.Windows.Forms.Padding(3, 4, 3, 3);
 
             _flpBackupButtons.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
@@ -1056,7 +1055,7 @@
         private Theme.ModernComboBox _cmbBackupType;
         private System.Windows.Forms.Label _lblBackupStatus;
         private Theme.ModernProgressBar _progressBar;
-        private System.Windows.Forms.TextBox _txtBackupLog;
+        private System.Windows.Forms.RichTextBox _txtBackupLog;
         private System.Windows.Forms.FlowLayoutPanel _flpBackupButtons;
         private Theme.ModernButton _btnStart;
         private Theme.ModernButton _btnCancelBackup;

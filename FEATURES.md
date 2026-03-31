@@ -58,6 +58,23 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 | **Faz 42** | UI Geliştirmeleri: Log Görev Filtresi + Dashboard Sıralama + Tray Animasyonu | ✅ Tamamlandı |
 | **Faz 42.1** | Bulut Hedef Tooltip + Pipe IOException Sessiz Yeniden Bağlanma | ✅ Tamamlandı |
 | **Faz 42.2** | Plan Bazlı Log İzolasyonu + Tek Satır İlerleme + Sonraki Çalışma Zamanı Düzeltmesi | ✅ Tamamlandı |
+| **Faz 42.3** | Renkli Log Konsolu — "Koru" Temalı Trust Palette | ✅ Tamamlandı |
+
+---
+
+## Faz 42.3 — Renkli Log Konsolu — "Koru" Temalı Trust Palette (v0.49.0) ✅
+
+### Yeni Özellikler
+- [x] **RichTextBox log konsolu**: `_txtBackupLog` TextBox → RichTextBox dönüşümü; Cascadia Mono 9F, kenarlıksız, koyu arka plan
+- [x] **Olay türüne göre renk**: Her `BackupActivityType` için ayrı renk — Başlangıç=zümrüt, Başarılı=yeşil, Hata=kırmızı, İptal=amber, Veritabanı/Adım=mavi, İlerleme=turkuaz, Bulut=mor
+- [x] **ModernTheme log renk paleti**: 10 yeni renk sabiti (LogSuccess, LogError, LogWarning, LogInfo, LogProgress, LogCloud, LogStarted, LogTimestamp, LogDefault, LogConsoleBg) — Dark ve Light tema destekli
+- [x] **Renkli buffer**: `_planLogs` artık `List<(string Text, Color Color)>` tuple saklar; plan geçişlerinde renkli rebuild yapılır
+- [x] **GetLogColor switch expression**: `BackupActivityType → Color` eşlemesi
+
+### Etkilenen Dosyalar
+- [x] `KoruMsSqlYedek.Win\MainWindow.cs` — `AppendBackupLog`, `AppendColoredLine`, `ReplaceLastProgressLine`, `OnPlanGridSelectionChanged`, `GetLogColor`
+- [x] `KoruMsSqlYedek.Win\MainWindow.Designer.cs` — RichTextBox dönüşümü (instantiation, properties, field)
+- [x] `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — Log color field + Dark/Light palette assignments
 
 ---
 

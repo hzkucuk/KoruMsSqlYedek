@@ -52,8 +52,8 @@ namespace KoruMsSqlYedek.Win
         private readonly HashSet<string> _runningPlanIds = new HashSet<string>();
         private string _viewingPlanId;
 
-        // Per-plan log buffer (planId → satır listesi)
-        private readonly Dictionary<string, List<string>> _planLogs = new Dictionary<string, List<string>>();
+        // Per-plan log buffer (planId → satır listesi + renk)
+        private readonly Dictionary<string, List<(string Text, Color Color)>> _planLogs = new Dictionary<string, List<(string Text, Color Color)>>();
 
         // Per-plan grid progress (planId → yüzde 0-100)
         private readonly Dictionary<string, int> _planProgress = new Dictionary<string, int>();
@@ -977,13 +977,22 @@ namespace KoruMsSqlYedek.Win
             var selected = GetSelectedPlanSilent();
             if (selected == null) return;
 
-            // Seçilen plana ait log buffer'ını göster
+            // Seçilen plana ait renkli log buffer'ını göster
             _txtBackupLog.Clear();
             if (_planLogs.TryGetValue(selected.PlanId, out var logs) && logs.Count > 0)
             {
-                _txtBackupLog.Text = string.Join(Environment.NewLine, logs) + Environment.NewLine;
-                _txtBackupLog.SelectionStart = _txtBackupLog.Text.Length;
+                _txtBackupLog.SuspendLayout();
+                foreach (var (text, color) in logs)
+                {
+                    _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
+                    _txtBackupLog.SelectionLength = 0;
+                    _txtBackupLog.SelectionColor = color;
+                    _txtBackupLog.AppendText(text + Environment.NewLine);
+                }
+                _txtBackupLog.SelectionColor = Theme.ModernTheme.LogDefault;
+                _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
                 _txtBackupLog.ScrollToCaret();
+                _txtBackupLog.ResumeLayout();
             }
         }
 
@@ -1014,7 +1023,7 @@ namespace KoruMsSqlYedek.Win
             _planLogs.Remove(plan.PlanId);
             _planProgress.Remove(plan.PlanId);
             _txtBackupLog.Clear();
-            AppendBackupLog(plan.PlanId, string.Format("[{0}] {1}", plan.PlanName, Res.Get("ManualBackup_Starting")));
+            AppendBackupLog(plan.PlanId, string.Format("[{0}] {1}", plan.PlanName, Res.Get("ManualBackup_Starting")), Theme.ModernTheme.LogStarted);
 
             try
             {
@@ -1023,7 +1032,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Error(ex, "Manuel yedekleme komutu gönderilemedi: {PlanId}", plan.PlanId);
-                AppendBackupLog(plan.PlanId, Res.Format("Backup_SendError", ex.Message));
+                AppendBackupLog(plan.PlanId, Res.Format("Backup_SendError", ex.Message), Theme.ModernTheme.LogError);
                 _runningPlanIds.Remove(plan.PlanId);
                 UpdateBackupButtonStates();
             }
@@ -1039,7 +1048,7 @@ namespace KoruMsSqlYedek.Win
             try
             {
                 await _pipeClient.SendCancelCommandAsync(targetPlanId);
-                AppendBackupLog(targetPlanId, Res.Get("ManualBackup_Cancelling"));
+                AppendBackupLog(targetPlanId, Res.Get("ManualBackup_Cancelling"), Theme.ModernTheme.LogWarning);
             }
             catch (Exception ex)
             {
@@ -1225,7 +1234,8 @@ namespace KoruMsSqlYedek.Win
 
             UpdateBackupButtonStates();
             bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress;
-            AppendBackupLog(e.PlanId, BuildActivityLogLine(e), isProgress);
+            Color logColor = GetLogColor(e.ActivityType);
+            AppendBackupLog(e.PlanId, BuildActivityLogLine(e), logColor, isProgress);
         }
 
         private void UpdatePlanRowStatus(string planId, BackupActivityType activityType)
@@ -1283,13 +1293,13 @@ namespace KoruMsSqlYedek.Win
         // İlerleme satırı tespiti için önek sabiti
         private const string ProgressLineMarker = "Yükleniyor ";
 
-        private void AppendBackupLog(string planId, string line, bool isProgressLine = false)
+        private void AppendBackupLog(string planId, string line, Color color, bool isProgressLine = false)
         {
             if (string.IsNullOrEmpty(line)) return;
 
             if (InvokeRequired)
             {
-                Invoke(new Action(() => AppendBackupLog(planId, line, isProgressLine)));
+                Invoke(new Action(() => AppendBackupLog(planId, line, color, isProgressLine)));
                 return;
             }
 
@@ -1302,13 +1312,13 @@ namespace KoruMsSqlYedek.Win
             if (!string.IsNullOrEmpty(effectivePlanId))
             {
                 if (!_planLogs.ContainsKey(effectivePlanId))
-                    _planLogs[effectivePlanId] = new List<string>();
+                    _planLogs[effectivePlanId] = new List<(string, Color)>();
 
                 var logList = _planLogs[effectivePlanId];
-                if (isProgressLine && logList.Count > 0 && logList[logList.Count - 1].Contains(ProgressLineMarker))
-                    logList[logList.Count - 1] = formatted;
+                if (isProgressLine && logList.Count > 0 && logList[logList.Count - 1].Text.Contains(ProgressLineMarker))
+                    logList[logList.Count - 1] = (formatted, color);
                 else
-                    logList.Add(formatted);
+                    logList.Add((formatted, color));
             }
 
             // Sadece seçili plan ile eşleşiyorsa UI'yi güncelle
@@ -1316,17 +1326,30 @@ namespace KoruMsSqlYedek.Win
             if (selected != null && selected.PlanId == effectivePlanId)
             {
                 if (isProgressLine)
-                    ReplaceLastProgressLine(formatted);
+                    ReplaceLastProgressLine(formatted, color);
                 else
-                    _txtBackupLog.AppendText(formatted + Environment.NewLine);
+                    AppendColoredLine(formatted, color);
             }
         }
 
         /// <summary>
-        /// TextBox'taki son ilerleme satırını yenisiyle değiştirir.
+        /// RichTextBox'a renkli satır ekler.
+        /// </summary>
+        private void AppendColoredLine(string text, Color color)
+        {
+            _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
+            _txtBackupLog.SelectionLength = 0;
+            _txtBackupLog.SelectionColor = color;
+            _txtBackupLog.AppendText(text + Environment.NewLine);
+            _txtBackupLog.SelectionColor = Theme.ModernTheme.LogDefault;
+            _txtBackupLog.ScrollToCaret();
+        }
+
+        /// <summary>
+        /// RichTextBox'taki son ilerleme satırını yenisiyle değiştirir (renkli).
         /// Eğer son satır ilerleme satırı değilse normal append yapar.
         /// </summary>
-        private void ReplaceLastProgressLine(string newLine)
+        private void ReplaceLastProgressLine(string newLine, Color color)
         {
             string text = _txtBackupLog.Text;
             if (text.Length > 0)
@@ -1339,15 +1362,16 @@ namespace KoruMsSqlYedek.Win
                 if (lastLine.Contains(ProgressLineMarker))
                 {
                     _txtBackupLog.Select(lineStart, text.Length - lineStart);
+                    _txtBackupLog.SelectionColor = color;
                     _txtBackupLog.SelectedText = newLine + Environment.NewLine;
-                    _txtBackupLog.SelectionStart = _txtBackupLog.Text.Length;
+                    _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
                     _txtBackupLog.ScrollToCaret();
                     return;
                 }
             }
 
             // Son satır ilerleme satırı değilse normal append
-            _txtBackupLog.AppendText(newLine + Environment.NewLine);
+            AppendColoredLine(newLine, color);
         }
 
         private string BuildActivityLogLine(BackupActivityEventArgs e)
@@ -1395,6 +1419,24 @@ namespace KoruMsSqlYedek.Win
                     return e.Message ?? string.Empty;
             }
         }
+
+        /// <summary>
+        /// BackupActivityType → "Koru" temalı konsol rengi.
+        /// Yeşil = güvenli/başarılı, Mavi = bilgi, Kırmızı = hata, Turkuaz = ilerleme.
+        /// </summary>
+        private static Color GetLogColor(BackupActivityType activityType) => activityType switch
+        {
+            BackupActivityType.Started => Theme.ModernTheme.LogStarted,
+            BackupActivityType.Completed => Theme.ModernTheme.LogSuccess,
+            BackupActivityType.Failed => Theme.ModernTheme.LogError,
+            BackupActivityType.Cancelled => Theme.ModernTheme.LogWarning,
+            BackupActivityType.DatabaseProgress => Theme.ModernTheme.LogInfo,
+            BackupActivityType.StepChanged => Theme.ModernTheme.LogInfo,
+            BackupActivityType.CloudUploadStarted => Theme.ModernTheme.LogCloud,
+            BackupActivityType.CloudUploadProgress => Theme.ModernTheme.LogProgress,
+            BackupActivityType.CloudUploadCompleted => Theme.ModernTheme.LogCloud,
+            _ => Theme.ModernTheme.LogDefault,
+        };
 
         #endregion
 

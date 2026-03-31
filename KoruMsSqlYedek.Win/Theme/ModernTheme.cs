@@ -51,6 +51,18 @@ namespace KoruMsSqlYedek.Win.Theme
         internal static Color GridHeaderText = Color.FromArgb(160, 160, 170);
         internal static Color GridErrorRow = Color.FromArgb(58, 20, 20);
 
+        // Backup Log Console — "Koru" (Protect) trust-inspired palette
+        internal static Color LogDefault = Color.FromArgb(190, 195, 200);
+        internal static Color LogTimestamp = Color.FromArgb(90, 160, 120);
+        internal static Color LogSuccess = Color.FromArgb(46, 204, 113);
+        internal static Color LogError = Color.FromArgb(255, 107, 107);
+        internal static Color LogWarning = Color.FromArgb(255, 193, 69);
+        internal static Color LogInfo = Color.FromArgb(116, 185, 255);
+        internal static Color LogProgress = Color.FromArgb(0, 210, 211);
+        internal static Color LogCloud = Color.FromArgb(162, 155, 254);
+        internal static Color LogStarted = Color.FromArgb(16, 185, 129);
+        internal static Color LogConsoleBg = Color.FromArgb(22, 24, 28);
+
         // ═══════════════ THEME APPLY ═══════════════
 
         internal static void ApplyTheme(ThemeMode mode)
@@ -91,6 +103,17 @@ namespace KoruMsSqlYedek.Win.Theme
             GridHeaderBack = Color.FromArgb(36, 36, 42);
             GridHeaderText = Color.FromArgb(160, 160, 170);
             GridErrorRow = Color.FromArgb(58, 20, 20);
+
+            LogDefault = Color.FromArgb(190, 195, 200);
+            LogTimestamp = Color.FromArgb(90, 160, 120);
+            LogSuccess = Color.FromArgb(46, 204, 113);
+            LogError = Color.FromArgb(255, 107, 107);
+            LogWarning = Color.FromArgb(255, 193, 69);
+            LogInfo = Color.FromArgb(116, 185, 255);
+            LogProgress = Color.FromArgb(0, 210, 211);
+            LogCloud = Color.FromArgb(162, 155, 254);
+            LogStarted = Color.FromArgb(16, 185, 129);
+            LogConsoleBg = Color.FromArgb(22, 24, 28);
         }
 
         private static void ApplyLightColors()
@@ -122,6 +145,17 @@ namespace KoruMsSqlYedek.Win.Theme
             GridHeaderBack = Color.FromArgb(240, 241, 244);
             GridHeaderText = Color.FromArgb(80, 80, 90);
             GridErrorRow = Color.FromArgb(255, 232, 232);
+
+            LogDefault = Color.FromArgb(60, 65, 70);
+            LogTimestamp = Color.FromArgb(60, 120, 80);
+            LogSuccess = Color.FromArgb(0, 155, 80);
+            LogError = Color.FromArgb(195, 30, 30);
+            LogWarning = Color.FromArgb(180, 95, 0);
+            LogInfo = Color.FromArgb(0, 110, 200);
+            LogProgress = Color.FromArgb(0, 150, 150);
+            LogCloud = Color.FromArgb(100, 80, 200);
+            LogStarted = Color.FromArgb(0, 140, 70);
+            LogConsoleBg = Color.FromArgb(250, 251, 253);
         }
 
         // ═══════════════ FONTS ═══════════════
