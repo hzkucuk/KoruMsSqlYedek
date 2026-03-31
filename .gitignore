@@ -264,6 +264,10 @@ UpgradeLog*.htm
 ServiceFabricBackup/
 *.rptproj.bak
 
+# Exception: uygulama kaynak kodu Backup klasörleri gitignore'dan muaf
+!KoruMsSqlYedek.Engine/Backup/
+!KoruMsSqlYedek.Engine/Backup/**
+
 # SQL Server files
 *.mdf
 *.ldf

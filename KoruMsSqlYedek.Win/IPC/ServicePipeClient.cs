@@ -127,15 +127,26 @@ namespace KoruMsSqlYedek.Win.IPC
             using var reader = new StreamReader(pipe, Encoding.UTF8,
                 detectEncodingFromByteOrderMarks: false, bufferSize: 4096, leaveOpen: true);
 
-            while (!ct.IsCancellationRequested && pipe.IsConnected)
+            try
             {
-                string line = await reader.ReadLineAsync();
-                if (line == null) break; // sunucu bağlantıyı kapattı
+                while (!ct.IsCancellationRequested && pipe.IsConnected)
+                {
+                    string line = await reader.ReadLineAsync();
+                    if (line == null) break; // sunucu bağlantıyı kapattı (EOF)
 
-                var message = PipeSerializer.Deserialize(line);
-                if (message == null) continue;
+                    var message = PipeSerializer.Deserialize(line);
+                    if (message == null) continue;
 
-                HandleServerMessage(message);
+                    HandleServerMessage(message);
+                }
+            }
+            catch (IOException)
+            {
+                // Sunucu tarafından bağlantı kapatıldı (pipe broken) veya yedek sonrası yeniden
+                // bağlanma döngüsü. SetConnected(false) çağrılmaz; yeniden bağlanma döngüsü
+                // sessizce devralır ve zaten bağlı olduğunuzda connected→true atlaması sayesinde
+                // "bağlantı kesildi" bildirimi gösterilmez.
+                Log.Debug("Pipe okuma döngüsü IOException ile sonlandı, yeniden bağlanılacak.");
             }
         }
 

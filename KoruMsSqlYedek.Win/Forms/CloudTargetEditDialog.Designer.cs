@@ -16,6 +16,7 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            _toolTipRemotePath = new System.Windows.Forms.ToolTip(components);
 
             _lblDisplayName = new System.Windows.Forms.Label();
             _txtDisplayName = new System.Windows.Forms.TextBox();
@@ -327,5 +328,8 @@
         // Butonlar
         private Theme.ModernButton _btnSave;
         private Theme.ModernButton _btnCancel;
+
+        // Tooltip
+        private System.Windows.Forms.ToolTip _toolTipRemotePath;
     }
 }

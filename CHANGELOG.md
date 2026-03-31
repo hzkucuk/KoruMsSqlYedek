@@ -1,4 +1,17 @@
-﻿## [0.42.8] - 2026-04-05 — Express VSS Backup Robustlaştırma
+﻿## [0.42.9] - 2026-04-06 — Uzak Klasör Yolu Tooltip + Pipe Bağlantı Kesilme Düzeltmesi
+
+### Yeni Özellik
+- **Uzak Klasör Yolu tooltip**: "Bulut Hedef Düzenle" formundaki `Uzak Klasör Yolu` alanına provider türüne göre dinamik tooltip eklendi.
+  - **Google Drive / OneDrive**: başına `/` konmaz, alt klasörler için `/` ayırıcısı kullanılır. Örnek: `Yedekler/Plan1`
+  - **FTP / FTPS / SFTP**: Unix yolu, başında `/` olmalıdır. Örnek: `/yedekler/plan1`
+  - Tooltip hem label hem de text box üzerinde gösterilir. (etkilenen: `CloudTargetEditDialog.cs`, `CloudTargetEditDialog.Designer.cs`)
+
+### Hata Düzeltmesi
+- **Yedek sonrası servis bağlantısı kesiliyor**: `ServicePipeClient.ReadLoopAsync` içinde pipe tarafından kapatılan bağlantı (`IOException`) artık yakalanarak `SetConnected(false)` tetiklenmemesi sağlandı. Yeniden bağlanma döngüsü sessizce devam eder; "Servis bağlantısı kesildi" balonu gereksiz yere gösterilmez. (etkilenen: `ServicePipeClient.cs`)
+
+---
+
+## [0.42.8] - 2026-04-05 — Express VSS Backup Robustlaştırma
 
 ### Hata Düzeltmesi
 - **VSS başarısız → COPY_ONLY fallback**: VSS snapshot admin yetkisi gerektirdiğinden başarısız olduğunda artık `COPY_ONLY` SQL backup ile fallback yapılır. SQL Server MDF/LDF dosyaları kilitli olduğundan direct file copy kaldırıldı; snapshot yoksa direkt kopyalama yerine hemen COPY_ONLY'e geçilir.

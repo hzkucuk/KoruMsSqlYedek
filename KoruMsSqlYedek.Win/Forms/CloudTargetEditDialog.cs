@@ -287,6 +287,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             if (_cmbProviderType.SelectedIndex < 0) return;
             var type = (CloudProviderType)_cmbProviderType.SelectedIndex;
+            UpdateRemotePathTooltip(type);
 
             bool isFtp = IsFtpType(type);
             bool isOAuth = IsOAuthType(type);
@@ -357,6 +358,40 @@ namespace KoruMsSqlYedek.Win.Forms
                 case CloudProviderType.Sftp: return 22;
                 default: return 0;
             }
+        }
+
+        /// <summary>
+        /// Provider türüne göre "Uzak Klasör Yolu" alanının tooltip metnini günceller.
+        /// Google Drive / OneDrive: slash (/) ayırıcı, başına slash konmaz.
+        /// FTP / FTPS / SFTP: Unix yolu, başında slash olmalı.
+        /// </summary>
+        private void UpdateRemotePathTooltip(CloudProviderType type)
+        {
+            string tip;
+
+            if (IsOAuthType(type))
+            {
+                tip = "Dosyaların yükleneceği klasör adını girin.\r\n"
+                    + "• Alt klasör eklemek için \"/\" ayırıcısını kullanın.\r\n"
+                    + "• Başına \"/\" veya \"\\\" koymayın.\r\n"
+                    + "Örnek:  Yedekler            → Drive'ın kökünde\r\n"
+                    + "Örnek:  Yedekler/Plan1      → Yedekler altında Plan1 klasörü";
+            }
+            else if (IsFtpType(type))
+            {
+                tip = "FTP sunucusundaki hedef klasörün Unix yolunu girin.\r\n"
+                    + "• Başında \"/\" olmalıdır.\r\n"
+                    + "• Alt klasörler için \"/\" ayırıcısını kullanın.\r\n"
+                    + "Örnek:  /yedekler           → Kök altında yedekler klasörü\r\n"
+                    + "Örnek:  /yedekler/plan1     → Yedekler altında plan1 alt klasörü";
+            }
+            else
+            {
+                tip = string.Empty;
+            }
+
+            _toolTipRemotePath.SetToolTip(_txtRemotePath, tip);
+            _toolTipRemotePath.SetToolTip(_lblRemotePath, tip);
         }
 
         #endregion
