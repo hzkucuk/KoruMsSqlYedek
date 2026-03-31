@@ -141,7 +141,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             if (_scheduler == null)
                 throw new InvalidOperationException("Scheduler henüz başlatılmamış.");
 
-            bool triggered = false;
+            bool sqlTriggered = false;
 
             // SQL yedek: Full > Differential > Incremental (en yüksek öncelikliyi tetikle)
             string[] sqlTypes = { "Full", "Differential", "Incremental" };
@@ -150,23 +150,29 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 var jobKey = new JobKey($"{planId}_{type}", "BackupJobs");
                 if (await _scheduler.CheckExists(jobKey, cancellationToken))
                 {
-                    await _scheduler.TriggerJob(jobKey, cancellationToken);
+                    // manualTrigger flag: SQL job bitince FileBackup'ı da çalıştır
+                    var data = new JobDataMap { { "manualTrigger", "true" } };
+                    await _scheduler.TriggerJob(jobKey, data, cancellationToken);
                     Log.Information("Plan manuel tetiklendi: {PlanId} ({BackupType})", planId, type);
-                    triggered = true;
+                    sqlTriggered = true;
                     break;
                 }
             }
 
-            // Dosya yedekleme — ayrı schedule'a sahip FileBackup job'u varsa ayrıca tetikle
-            var fileJobKey = new JobKey($"{planId}_FileBackup", "BackupJobs");
-            if (await _scheduler.CheckExists(fileJobKey, cancellationToken))
+            // Dosya yedekleme — SQL job yoksa FileBackup'ı ayrıca tetikle
+            // SQL job varsa global lock çakışması olur, SQL job içinde çalışacak
+            if (!sqlTriggered)
             {
-                await _scheduler.TriggerJob(fileJobKey, cancellationToken);
-                Log.Information("Dosya yedekleme manuel tetiklendi: {PlanId}", planId);
-                triggered = true;
+                var fileJobKey = new JobKey($"{planId}_FileBackup", "BackupJobs");
+                if (await _scheduler.CheckExists(fileJobKey, cancellationToken))
+                {
+                    await _scheduler.TriggerJob(fileJobKey, cancellationToken);
+                    Log.Information("Dosya yedekleme manuel tetiklendi: {PlanId}", planId);
+                    sqlTriggered = true;
+                }
             }
 
-            if (!triggered)
+            if (!sqlTriggered)
                 Log.Warning("Manuel tetikleme: Zamanlanmış job bulunamadı: {PlanId}", planId);
         }
 

@@ -109,9 +109,10 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         // SQL yedekleme tipi
                         await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token);
 
-                        // Dosya yedekleme — ayrı zamanlama yoksa SQL yedek ile birlikte çalıştır
+                        // Dosya yedekleme — ayrı zamanlama yoksa veya manuel tetikleme ise SQL yedek ile birlikte çalıştır
+                        bool isManualTrigger = context.MergedJobDataMap.GetString("manualTrigger") == "true";
                         if (plan.FileBackup != null && plan.FileBackup.IsEnabled &&
-                            string.IsNullOrEmpty(plan.FileBackup.Schedule))
+                            (string.IsNullOrEmpty(plan.FileBackup.Schedule) || isManualTrigger))
                         {
                             await ExecuteFileBackupAsync(plan, correlationId, cts.Token);
                         }

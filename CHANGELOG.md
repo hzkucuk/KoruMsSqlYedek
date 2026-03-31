@@ -1,4 +1,12 @@
-﻿## [0.42.12] - 2026-05-09 — Dosya Yedekleme Root Cause Düzeltmesi
+﻿## [0.43.0] - 2026-05-09 — Dosya Yedekleme Global Lock Çakışması Düzeltmesi
+
+### Hata Düzeltmesi
+- **Dosya yedekleme hiç çalışmıyordu (ROOT CAUSE)**: `TriggerPlanNowAsync` hem SQL hem FileBackup job'unu aynı anda tetikliyordu. FileBackup job'u `_globalBackupLock` semaforu yüzünden "Başka bir yedekleme zaten çalışıyor" uyarısıyla atlanıyordu. SQL job bittiğinde ise `plan.FileBackup.Schedule` dolu olduğu için dosya yedeklemeyi çalıştırmıyordu. **Sonuç: FileBackup hiçbir zaman çalışamıyordu.** (etkilenen: `QuartzSchedulerService.cs`, `BackupJobExecutor.cs`)
+- **Çözüm**: Manuel tetiklemede SQL job'a `manualTrigger` flag'i geçiliyor. SQL job bitince, FileBackup'ın ayrı schedule'ı olsa bile dosya yedeklemeyi çalıştırıyor. FileBackup job'u artık ayrıca tetiklenmiyor (lock çakışması önlendi). Sadece SQL job yoksa FileBackup doğrudan tetikleniyor.
+
+---
+
+## [0.42.12] - 2026-05-09 — Dosya Yedekleme Root Cause Düzeltmesi
 
 ### Hata Düzeltmesi
 - **FileBackupService null sessiz return**: `ExecuteFileBackupAsync` ilk guard'ı 3 ayrı koşula bölündü; her biri kendi log seviyesiyle (Error/Warning/Information) raporlanıyor. Eğer Autofac inject başarısız olursa log'da “FileBackupService null” görünür. (etkilenen: `BackupJobExecutor.cs`)
