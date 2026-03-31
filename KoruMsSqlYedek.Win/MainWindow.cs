@@ -1347,27 +1347,34 @@ namespace KoruMsSqlYedek.Win
 
         /// <summary>
         /// RichTextBox'taki son ilerleme satırını yenisiyle değiştirir (renkli).
-        /// Eğer son satır ilerleme satırı değilse normal append yapar.
+        /// RichTextBox dahili olarak \n kullanır; Select() ile Text indeksi uyumsuz olduğundan
+        /// Lines[] + GetFirstCharIndexFromLine() ile doğru pozisyon hesaplanır.
         /// </summary>
         private void ReplaceLastProgressLine(string newLine, Color color)
         {
-            string text = _txtBackupLog.Text;
-            if (text.Length > 0)
+            int lineCount = _txtBackupLog.Lines.Length;
+            if (lineCount == 0)
             {
-                // Son satırın başlangıç konumunu bul (son NewLine'dan önceki NewLine)
-                int lastNewLine = text.LastIndexOf(Environment.NewLine, text.Length - Environment.NewLine.Length - 1, StringComparison.Ordinal);
-                int lineStart = lastNewLine >= 0 ? lastNewLine + Environment.NewLine.Length : 0;
-                string lastLine = text.Substring(lineStart).TrimEnd('\r', '\n');
+                AppendColoredLine(newLine, color);
+                return;
+            }
 
-                if (lastLine.Contains(ProgressLineMarker))
-                {
-                    _txtBackupLog.Select(lineStart, text.Length - lineStart);
-                    _txtBackupLog.SelectionColor = color;
-                    _txtBackupLog.SelectedText = newLine + Environment.NewLine;
-                    _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
-                    _txtBackupLog.ScrollToCaret();
-                    return;
-                }
+            // Son boş olmayan satırı bul (RichTextBox.Lines sona boş eleman ekleyebilir)
+            int lastLineIdx = lineCount - 1;
+            if (lastLineIdx > 0 && string.IsNullOrEmpty(_txtBackupLog.Lines[lastLineIdx]))
+                lastLineIdx--;
+
+            string lastLine = _txtBackupLog.Lines[lastLineIdx];
+
+            if (lastLine.Contains(ProgressLineMarker))
+            {
+                int charIdx = _txtBackupLog.GetFirstCharIndexFromLine(lastLineIdx);
+                _txtBackupLog.Select(charIdx, _txtBackupLog.TextLength - charIdx);
+                _txtBackupLog.SelectionColor = color;
+                _txtBackupLog.SelectedText = newLine + Environment.NewLine;
+                _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
+                _txtBackupLog.ScrollToCaret();
+                return;
             }
 
             // Son satır ilerleme satırı değilse normal append

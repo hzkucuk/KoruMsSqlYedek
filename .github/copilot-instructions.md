@@ -134,8 +134,15 @@ Her yeni özellik veya değişiklik sonrası şu soruları cevapla:
 - [ ] Buffer ve UI senkron mu?
 - [ ] UI thread safety sağlandı mı?
 - [ ] Build başarılı mı? (uyarı dahil kontrol)
+- [ ] RichTextBox pozisyon hesaplaması `Text` yerine `Lines[]`/`GetFirstCharIndexFromLine()` kullanıyor mu?
 
-### 9. "Bozulma Riski Yüksek" Dosyalar
+### 9. RichTextBox Text vs Select İndeks Uyumsuzluğu (Kritik)
+- **Kural:** `RichTextBox.Text` `\r\n` döndürür ama `Select(start, length)` dahili indeks kullanır (`\n` tek karakter).
+- `Text` üzerinden `IndexOf`/`LastIndexOf` ile hesaplanan pozisyonları **asla** `Select()` ile kullanma.
+- Doğru yol: `Lines[]` + `GetFirstCharIndexFromLine(lineIndex)` veya `TextLength` (dahili uzunluk).
+- **Neden:** v0.49.0'da `ReplaceLastProgressLine` `Text.LastIndexOf` pozisyonu ile `Select()` çağrınca satır sayısı arttıkça offset kayıyordu ve tüm metin siliniyordu.
+
+### 10. "Bozulma Riski Yüksek" Dosyalar
 Bu dosyalarda değişiklik yaparken **ekstra dikkatli** ol:
 
 | Dosya | Risk | Neden |
