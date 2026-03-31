@@ -39,6 +39,12 @@ namespace KoruMsSqlYedek.Core.Events
         public long SpeedBytesPerSecond { get; set; }
 
         /// <summary>
+        /// Plan bu çalışmada dosya yedekleme fazı içeriyorsa true.
+        /// İlerleme çubuğu hesabında SQL ve dosya arasında ağırlık dağılımı yapar.
+        /// </summary>
+        public bool HasFileBackup { get; set; }
+
+        /// <summary>
         /// Plan konfigürasyonundan gelen ToastEnabled değeri.
         /// Tray uygulaması bu değere göre balloon tip gösterir.
         /// Varsayılan true — plan bilgisi yoksa her zaman göster.

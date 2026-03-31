@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.53.0 — Dosya Yedekleme İlerleme Çubuğu Entegrasyonu
+- Dosya yedekleme fazı ilerleme çubuğuna entegre edildi (SQL+Dosya: %80/%20 ağırlık, Dosya-only: %100)
+- Dosya sıkıştırma ve bulut yükleme ayrı alt fazlar olarak izleniyor (%25 sıkıştırma, %75 bulut)
+- `HasFileBackup` event property ile Started event dosya yedekleme koşulunu önceden bildiriyor
+- `PlanProgressTracker` genişletildi: `HasFileBackup`, `IsFileBackupPhase`, `SqlDbCount`
+
 ### v0.52.0 — Ara Dosya Otomatik Temizliği
 - Sıkıştırma başarılıysa ara `.bak` dosyası otomatik siliniyor (doğrulama başarısızsa korunur)
 - Dosya yedekleme arşivi oluşturulduktan sonra geçici `Files` klasörü otomatik temizleniyor

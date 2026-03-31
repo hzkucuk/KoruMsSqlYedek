@@ -79,12 +79,22 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 }
 
                 lockAcquired = true;
+
+                // Dosya yedekleme koşulunu Started event'inden ÖNCE hesapla (progress ağırlıkları için)
+                bool isManualTrigger = context.MergedJobDataMap.GetString("manualTrigger") == "true";
+                bool willRunFileBackup = backupType == "FileBackup"
+                    || (plan.FileBackup != null && plan.FileBackup.IsEnabled
+                        && (string.IsNullOrEmpty(plan.FileBackup.Schedule) || isManualTrigger));
+
+                int sqlDbCount = backupType == "FileBackup" ? 0 : (plan.Databases?.Count ?? 0);
+
                 BackupActivityHub.Raise(new BackupActivityEventArgs
                 {
                     PlanId = plan.PlanId,
                     PlanName = plan.PlanName,
                     ActivityType = BackupActivityType.Started,
-                    TotalCount = plan.Databases?.Count ?? 0
+                    TotalCount = sqlDbCount,
+                    HasFileBackup = willRunFileBackup
                 });
 
                 var cts = CancellationTokenSource.CreateLinkedTokenSource(
@@ -111,9 +121,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token);
 
                         // Dosya yedekleme — ayrı zamanlama yoksa veya manuel tetikleme ise SQL yedek ile birlikte çalıştır
-                        bool isManualTrigger = context.MergedJobDataMap.GetString("manualTrigger") == "true";
-                        if (plan.FileBackup != null && plan.FileBackup.IsEnabled &&
-                            (string.IsNullOrEmpty(plan.FileBackup.Schedule) || isManualTrigger))
+                        if (willRunFileBackup && backupType != "FileBackup")
                         {
                             await ExecuteFileBackupAsync(plan, correlationId, cts.Token);
                         }

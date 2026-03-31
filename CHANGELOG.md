@@ -1,4 +1,14 @@
-﻿## [0.52.0] - 2026-05-12 — Ara Dosya Otomatik Temizliği
+﻿## [0.53.0] - 2026-05-12 — Dosya Yedekleme İlerleme Çubuğu Entegrasyonu
+
+### Yeni Özellik
+- **Dosya yedekleme progress bar desteği**: Dosya yedekleme fazı artık ilerleme çubuğuna dahil ediliyor. SQL+Dosya planlarında SQL %80, dosya yedekleme %20 ağırlıklı; sadece dosya yedekleme planlarında dosya %100 ağırlıklı. (etkilenen: `MainWindow.cs`, `BackupJobExecutor.cs`, `BackupActivityEvent.cs`)
+- **Dinamik ağırlık modeli**: Dosya yedekleme içinde kopyalama+sıkıştırma %25, bulut yükleme %75 oranında dağılıyor.
+- **HasFileBackup event bilgisi**: `BackupActivityEventArgs`'a `HasFileBackup` property eklendi; Started event artık dosya yedekleme koşulunu önceden bildiriyor.
+- **StepChanged faz algılama**: "Dosya Yedekleme" ve "Dosya Sıkıştırma" adımları ilerleme çubuğu geçişlerini tetikliyor.
+
+---
+
+## [0.52.0] - 2026-05-12 — Ara Dosya Otomatik Temizliği
 
 ### Yeni Özellik
 - **Sıkıştırma sonrası .bak temizliği**: SQL yedekleme sonrası sıkıştırma başarılıysa (ve arşiv doğrulama geçtiyse) ara `.bak` dosyası otomatik olarak siliniyor. Disk alanı tasarrufu sağlanıyor. (etkilenen: `BackupJobExecutor.cs`)

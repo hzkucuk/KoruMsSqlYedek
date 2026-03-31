@@ -68,11 +68,14 @@ namespace KoruMsSqlYedek.Win
         /// </summary>
         private sealed class PlanProgressTracker
         {
-            public int DbIndex;       // 1 tabanlı, şu anki veritabanı sırası
-            public int DbTotal;       // toplam veritabanı sayısı
-            public int MaxPercent;    // monoton artış garantisi — asla geriye gitmez
-            public bool HasVssUpload; // "Express VSS" adımı algılandı — bu DB'de VSS dosyası var
-            public bool IsVssPhase;   // "VSS Bulut Yükleme" adımına girildi — şu an VSS upload aktif
+            public int DbIndex;           // 1 tabanlı, şu anki veritabanı sırası
+            public int DbTotal;           // toplam veritabanı sayısı (min 1)
+            public int SqlDbCount;        // Gerçek SQL veritabanı sayısı (0 = dosya-only plan)
+            public int MaxPercent;        // monoton artış garantisi — asla geriye gitmez
+            public bool HasVssUpload;     // "Express VSS" adımı algılandı — bu DB'de VSS dosyası var
+            public bool IsVssPhase;       // "VSS Bulut Yükleme" adımına girildi — şu an VSS upload aktif
+            public bool HasFileBackup;    // Plan dosya yedekleme fazı içeriyor
+            public bool IsFileBackupPhase; // Dosya yedekleme fazına girildi
         }
 
         // Scheduler'dan gelen sonraki çalışma zamanları (planId → lokal saat metni)
@@ -1199,7 +1202,9 @@ namespace KoruMsSqlYedek.Win
                         {
                             DbIndex = 0,
                             DbTotal = e.TotalCount > 0 ? e.TotalCount : 1,
-                            MaxPercent = 0
+                            SqlDbCount = e.TotalCount,
+                            MaxPercent = 0,
+                            HasFileBackup = e.HasFileBackup
                         };
                     }
                     _viewingPlanId = e.PlanId;
@@ -1226,7 +1231,9 @@ namespace KoruMsSqlYedek.Win
                         dbTracker.IsVssPhase = false;
 
                         // Kümülatif yüzde: önceki veritabanları tamamlandı
-                        int pct = (int)(((e.CurrentIndex - 1.0) / e.TotalCount) * 100);
+                        // HasFileBackup varsa SQL fazı %80'e kadar; yoksa %100'e kadar
+                        int maxSqlRange = dbTracker.HasFileBackup ? 80 : 100;
+                        int pct = (int)(((e.CurrentIndex - 1.0) / e.TotalCount) * maxSqlRange);
                         pct = Math.Max(pct, dbTracker.MaxPercent);
                         pct = Math.Clamp(pct, 0, 100);
                         dbTracker.MaxPercent = pct;
@@ -1249,6 +1256,39 @@ namespace KoruMsSqlYedek.Win
                                 stepTracker.HasVssUpload = true;
                             else if (e.StepName == "VSS Bulut Yükleme")
                                 stepTracker.IsVssPhase = true;
+                            else if (e.StepName == "Dosya Yedekleme" && !stepTracker.IsFileBackupPhase)
+                            {
+                                // Dosya yedekleme fazına geçiş
+                                stepTracker.IsFileBackupPhase = true;
+                                bool isFileOnly = stepTracker.SqlDbCount == 0;
+                                int fileBase = isFileOnly ? 0 : 80;
+                                int pct = Math.Max(fileBase, stepTracker.MaxPercent);
+                                pct = Math.Clamp(pct, 0, 100);
+                                stepTracker.MaxPercent = pct;
+                                if (stepPlanId == _viewingPlanId)
+                                {
+                                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                                    _progressBar.Value = pct;
+                                }
+                                UpdatePlanRowProgress(stepPlanId, pct);
+                            }
+                            else if (e.StepName == "Dosya Sıkıştırma" && stepTracker.IsFileBackupPhase)
+                            {
+                                // Dosya kopyalama + sıkıştırma tamamlandı — dosya fazının %25'i
+                                bool isFileOnly = stepTracker.SqlDbCount == 0;
+                                int fileBase = isFileOnly ? 0 : 80;
+                                int fileCopyWeight = isFileOnly ? 25 : 5;
+                                int pct = fileBase + fileCopyWeight;
+                                pct = Math.Max(pct, stepTracker.MaxPercent);
+                                pct = Math.Clamp(pct, 0, 100);
+                                stepTracker.MaxPercent = pct;
+                                if (stepPlanId == _viewingPlanId)
+                                {
+                                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                                    _progressBar.Value = pct;
+                                }
+                                UpdatePlanRowProgress(stepPlanId, pct);
+                            }
                         }
                     }
                     break;
@@ -1261,33 +1301,46 @@ namespace KoruMsSqlYedek.Win
                         if (_planProgressTracker.TryGetValue(uploadPlanId, out PlanProgressTracker upTracker)
                             && upTracker.DbTotal > 0)
                         {
-                            // Her veritabanı toplam ilerlemenin eşit bir dilimini alır
-                            double slicePerDb = 100.0 / upTracker.DbTotal;
-                            double dbBase = (upTracker.DbIndex - 1) * slicePerDb;
-
                             // Çoklu hedef: hedef sırasını da ağırlıkla dahil et
                             double overallCloudPct = e.ProgressPercent;
                             if (e.CloudTargetTotal > 1)
                                 overallCloudPct = ((e.CloudTargetIndex - 1) * 100.0 + e.ProgressPercent) / e.CloudTargetTotal;
 
-                            if (upTracker.HasVssUpload)
+                            if (upTracker.IsFileBackupPhase)
                             {
-                                // VSS dosyası var: SQL %20 + Ana bulut %50 + VSS bulut %30
-                                double sqlPortion = slicePerDb * 0.20;
-                                double mainCloudPortion = slicePerDb * 0.50;
-                                double vssCloudPortion = slicePerDb * 0.30;
-
-                                if (upTracker.IsVssPhase)
-                                    cumPct = (int)(dbBase + sqlPortion + mainCloudPortion + (overallCloudPct / 100.0) * vssCloudPortion);
-                                else
-                                    cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * mainCloudPortion);
+                                // Dosya yedekleme bulut yükleme fazı
+                                bool isFileOnly = upTracker.SqlDbCount == 0;
+                                int fileBase = isFileOnly ? 0 : 80;
+                                int fileCopyWeight = isFileOnly ? 25 : 5;
+                                int fileCloudWeight = isFileOnly ? 75 : 15;
+                                cumPct = fileBase + fileCopyWeight + (int)(overallCloudPct / 100.0 * fileCloudWeight);
                             }
                             else
                             {
-                                // VSS yok: SQL %30 + Bulut %70
-                                double sqlPortion = slicePerDb * 0.30;
-                                double cloudPortion = slicePerDb * 0.70;
-                                cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * cloudPortion);
+                                // SQL veritabanı bulut yükleme fazı
+                                double totalSqlRange = upTracker.HasFileBackup ? 80.0 : 100.0;
+                                double slicePerDb = totalSqlRange / upTracker.DbTotal;
+                                double dbBase = (upTracker.DbIndex - 1) * slicePerDb;
+
+                                if (upTracker.HasVssUpload)
+                                {
+                                    // VSS dosyası var: SQL %20 + Ana bulut %50 + VSS bulut %30
+                                    double sqlPortion = slicePerDb * 0.20;
+                                    double mainCloudPortion = slicePerDb * 0.50;
+                                    double vssCloudPortion = slicePerDb * 0.30;
+
+                                    if (upTracker.IsVssPhase)
+                                        cumPct = (int)(dbBase + sqlPortion + mainCloudPortion + (overallCloudPct / 100.0) * vssCloudPortion);
+                                    else
+                                        cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * mainCloudPortion);
+                                }
+                                else
+                                {
+                                    // VSS yok: SQL %30 + Bulut %70
+                                    double sqlPortion = slicePerDb * 0.30;
+                                    double cloudPortion = slicePerDb * 0.70;
+                                    cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * cloudPortion);
+                                }
                             }
                         }
                         else
