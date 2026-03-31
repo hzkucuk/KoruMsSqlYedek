@@ -340,6 +340,34 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                     dbName, archivePath);
                             }
                         }
+
+                        // 3c. Sıkıştırma başarılıysa ara .bak dosyasını sil
+                        bool verifyOk = !plan.VerifyAfterBackup || result.CompressionVerified == true;
+                        if (verifyOk && File.Exists(archivePath) && File.Exists(result.BackupFilePath))
+                        {
+                            try
+                            {
+                                long bakSize = new FileInfo(result.BackupFilePath).Length;
+                                File.Delete(result.BackupFilePath);
+                                Log.Information(
+                                    "Ara .bak dosyası silindi: {BakFile} [{Size}]",
+                                    Path.GetFileName(result.BackupFilePath), Fmt(bakSize));
+
+                                BackupActivityHub.Raise(new BackupActivityEventArgs
+                                {
+                                    PlanId = plan.PlanId,
+                                    PlanName = plan.PlanName,
+                                    DatabaseName = dbName,
+                                    ActivityType = BackupActivityType.StepChanged,
+                                    StepName = "Temizlik",
+                                    Message = $"Ara .bak dosyası silindi: {Path.GetFileName(result.BackupFilePath)} [{Fmt(bakSize)}]"
+                                });
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Warning(ex, "Ara .bak dosyası silinemedi: {File}", result.BackupFilePath);
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -567,6 +595,32 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             {
                 Log.Warning("Dosya yedekleme: Arşiv oluşturulamadı veya bulunamadı, bulut yüklemesi atlanıyor. Plan={PlanName}", plan.PlanName);
                 return;
+            }
+
+            // Arşiv başarılıysa ara Files klasörünü sil
+            if (Directory.Exists(filesDir))
+            {
+                try
+                {
+                    int fileCount = Directory.GetFiles(filesDir, "*.*", SearchOption.AllDirectories).Length;
+                    Directory.Delete(filesDir, recursive: true);
+                    Log.Information(
+                        "Ara Files klasörü silindi: {FilesDir} ({FileCount} dosya temizlendi)",
+                        filesDir, fileCount);
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "Temizlik",
+                        Message = $"Ara Files klasörü silindi: {fileCount} dosya temizlendi"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Ara Files klasörü silinemedi: {FilesDir}", filesDir);
+                }
             }
 
             // Bulut hedefleri hazır mı?

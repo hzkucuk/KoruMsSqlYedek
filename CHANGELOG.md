@@ -1,4 +1,13 @@
-﻿## [0.51.1] - 2026-05-12 — VSS Bulut Yükleme İlerleme Çubuğu Senkronizasyonu
+﻿## [0.52.0] - 2026-05-12 — Ara Dosya Otomatik Temizliği
+
+### Yeni Özellik
+- **Sıkıştırma sonrası .bak temizliği**: SQL yedekleme sonrası sıkıştırma başarılıysa (ve arşiv doğrulama geçtiyse) ara `.bak` dosyası otomatik olarak siliniyor. Disk alanı tasarrufu sağlanıyor. (etkilenen: `BackupJobExecutor.cs`)
+- **Files klasörü temizliği**: Dosya yedekleme arşivi (`.7z`) oluşturulduktan sonra geçici `Files` staging klasörü otomatik olarak siliniyor. (etkilenen: `BackupJobExecutor.cs`)
+- Her iki temizlik adımı log konsoluna `StepChanged "Temizlik"` eventi olarak yansıyor.
+
+---
+
+## [0.51.1] - 2026-05-12 — VSS Bulut Yükleme İlerleme Çubuğu Senkronizasyonu
 
 ### Hata Düzeltmesi
 - **İlerleme çubuğu VSS yüklemesi ile senkron değildi**: Ana bulut yüklemesi tamamlandığında progress bar %100'e ulaşıyordu ancak VSS dosyası hâlâ yükleniyordu. Yeni ağırlık modeli: VSS dosyası varsa SQL %20 + Ana bulut %50 + VSS bulut %30; yoksa SQL %30 + Bulut %70 (değişmez). `PlanProgressTracker`'a `HasVssUpload` ve `IsVssPhase` alanları eklendi. `StepChanged` eventleri ile "Express VSS" ve "VSS Bulut Yükleme" fazları algılanarak dinamik ağırlık geçişi yapılıyor. (etkilenen: `MainWindow.cs`)
