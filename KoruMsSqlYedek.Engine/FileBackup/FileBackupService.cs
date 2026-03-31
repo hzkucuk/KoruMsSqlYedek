@@ -189,18 +189,23 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     _vssService.DeleteSnapshot(snapshotId.Value);
                 }
 
-                result.Status = result.FailedFiles.Count == 0
-                    ? BackupResultStatus.Success
-                    : result.FilesCopied > 0
-                        ? BackupResultStatus.PartialSuccess
-                        : BackupResultStatus.Failed;
+                result.Status = filesToBackup.Count == 0
+                    ? BackupResultStatus.Failed
+                    : result.FailedFiles.Count == 0
+                        ? BackupResultStatus.Success
+                        : result.FilesCopied > 0
+                            ? BackupResultStatus.PartialSuccess
+                            : BackupResultStatus.Failed;
+
+                if (filesToBackup.Count == 0)
+                    result.ErrorMessage = "Kaynak dizinde eşleşen dosya bulunamadı";
 
                 result.CompletedAt = DateTime.UtcNow;
 
                 Log.Information(
-                    "Dosya yedekleme tamamlandı: {SourceName} — {Copied} kopyalandı, {Skipped} atlandı, {Verified} doğrulandı [{SizeMb:F1} MB]",
+                    "Dosya yedekleme tamamlandı: {SourceName} — {Copied} kopyalandı, {Skipped} atlandı, {Verified} doğrulandı, {Status} [{SizeMb:F1} MB]",
                     source.SourceName, result.FilesCopied, result.FilesSkipped,
-                    result.FilesVerified, result.TotalSizeBytes / BytesPerMb);
+                    result.FilesVerified, result.Status, result.TotalSizeBytes / BytesPerMb);
             }
             catch (Exception ex)
             {

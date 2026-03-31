@@ -329,11 +329,27 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
         private async Task ExecuteFileBackupAsync(BackupPlan plan, string correlationId, CancellationToken ct)
         {
-            if (FileBackupService == null || plan.FileBackup == null || !plan.FileBackup.IsEnabled)
+            if (FileBackupService == null)
+            {
+                Log.Error("Dosya yedekleme: FileBackupService null (Autofac inject başarısız). Plan={PlanName}", plan.PlanName);
                 return;
+            }
 
-            Log.Information("Dosya yedekleme başlıyor: Plan={PlanName}, CorrelationId={CorrelationId}",
-                plan.PlanName, correlationId);
+            if (plan.FileBackup == null)
+            {
+                Log.Warning("Dosya yedekleme: Plan.FileBackup yapılandırması null. Plan={PlanName}", plan.PlanName);
+                return;
+            }
+
+            if (!plan.FileBackup.IsEnabled)
+            {
+                Log.Information("Dosya yedekleme: FileBackup devre dışı. Plan={PlanName}", plan.PlanName);
+                return;
+            }
+
+            int enabledSources = plan.FileBackup.Sources?.Count(s => s.IsEnabled) ?? 0;
+            Log.Information("Dosya yedekleme başlıyor: Plan={PlanName}, Kaynaklar={SourceCount}, CorrelationId={CorrelationId}",
+                plan.PlanName, enabledSources, correlationId);
 
             var results = await FileBackupService.BackupFilesAsync(plan, null, ct);
 

@@ -1,4 +1,13 @@
-﻿## [0.42.11] - 2026-05-09 — UAC Manifest + Dosya Yedekleme Tanısal Loglama
+﻿## [0.42.12] - 2026-05-09 — Dosya Yedekleme Root Cause Düzeltmesi
+
+### Hata Düzeltmesi
+- **FileBackupService null sessiz return**: `ExecuteFileBackupAsync` ilk guard'ı 3 ayrı koşula bölündü; her biri kendi log seviyesiyle (Error/Warning/Information) raporlanıyor. Eğer Autofac inject başarısız olursa log'da “FileBackupService null” görünür. (etkilenen: `BackupJobExecutor.cs`)
+- **Status=Success bug (0 dosya)**: `BackupSourceAsync` içinde `CollectFiles` boş döndüğünde (kaynak dizin yok veya dosya eşleşmiyor) sonuç yanlışlıkla `Success` olarak işaretleniyordu. Artık 0 dosya bulununca `Status=Failed` + `ErrorMessage` set ediliyor. Bu, `ExecuteFileBackupAsync`’teki results kontrolünün doğru çalışmasını sağlıyor. (etkilenen: `FileBackupService.cs`)
+- **Kaynak sayısı logu**: Başlangıç log’una aktif kaynak sayısı eklendi — 0 kaynaklı planı hemen teşhis eder.
+
+---
+
+## [0.42.11] - 2026-05-09 — UAC Manifest + Dosya Yedekleme Tanısal Loglama
 
 ### Hata Düzeltmesi
 - **Dosya yedekleme bulut modu sessiz başarısızlıkları**: `ExecuteFileBackupAsync` içindeki tüm erken dönüş noktaları artık `Log.Warning` ile nedeni bildiriyor. Hangi adımda takıldığı (dosya kopyalanamadı / dizin yok / dizin boş / arşiv oluşturulamadı / CloudOrchestrator null / aktif hedef yok) logdan okunabilir. (etkilenen: `BackupJobExecutor.cs`)
