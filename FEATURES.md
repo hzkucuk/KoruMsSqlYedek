@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.50.0 — Kümülatif İlerleme Çubuğu
+- İlerleme çubuğu artık her adımda (DB → Cloud) sıfırlanmak yerine toplam işlem yüzdesini kümülatif olarak gösteriyor
+- Her veritabanı toplam ilerlemenin eşit dilimini alır; SQL yedekleme %30, bulut yükleme %70 ağırlıkla eşlenir
+- `PlanProgressTracker` ile monoton artış garantisi (Math.Max) — ilerleme asla geriye gitmez
+
 ---
 
 ## Faz Durumu

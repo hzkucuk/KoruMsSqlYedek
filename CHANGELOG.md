@@ -1,4 +1,13 @@
-﻿## [0.49.1] - 2026-05-11 — RichTextBox İlerleme Satırı Silme Hatası Düzeltmesi
+﻿## [0.50.0] - 2026-05-12 — Kümülatif İlerleme Çubuğu
+
+### Yeni Özellik
+- **Kümülatif progress bar**: Yedekleme ilerleme çubuğu artık her adımda sıfırlanmak yerine toplam işlem yüzdesini gösteriyor. Her veritabanı toplam ilerlemenin eşit bir dilimini alır (100/N%), veritabanı yedekleme %30'unu, bulut yükleme %70'ini kapsar. Çoklu bulut hedefleri de ağırlıklı olarak dahil edilir. `Math.Max` ile monoton artış garantisi sağlanır — ilerleme asla geriye gitmez. (etkilenen: `MainWindow.cs`)
+- **Tamamlanma göstergesi**: Başarılı yedekleme sonunda ilerleme çubuğu %100'ü kısa süre gösterdikten sonra sıfırlanır. (etkilenen: `MainWindow.cs`)
+- **PlanProgressTracker**: Yeni iç sınıf ile plan başına veritabanı sırası, toplam ve maksimum ilerleme izlenir. (etkilenen: `MainWindow.cs`)
+
+---
+
+## [0.49.1] - 2026-05-11 — RichTextBox İlerleme Satırı Silme Hatası Düzeltmesi
 
 ### Hata Düzeltmesi
 - **İlerleme satırı tüm metni siliyordu**: `RichTextBox.Text` (`\r\n`) ile `Select()` (dahili `\n`) arasındaki indeks uyumsuzluğu satır sayısı arttıkça yanlış bölge seçimine yol açıyordu. `Lines[]` + `GetFirstCharIndexFromLine()` ile doğru pozisyon hesabına geçildi. (etkilenen: `MainWindow.cs`)

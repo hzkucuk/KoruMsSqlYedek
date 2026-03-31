@@ -58,6 +58,21 @@ namespace KoruMsSqlYedek.Win
         // Per-plan grid progress (planId → yüzde 0-100)
         private readonly Dictionary<string, int> _planProgress = new Dictionary<string, int>();
 
+        // Per-plan cumulative progress tracking
+        private readonly Dictionary<string, PlanProgressTracker> _planProgressTracker = new Dictionary<string, PlanProgressTracker>();
+
+        /// <summary>
+        /// Plan bazında kümülatif ilerleme hesaplama durumunu tutar.
+        /// Her veritabanı toplam ilerlemenin eşit bir dilimini alır;
+        /// bulut yükleme, dilimin ikinci yarısına eşlenir.
+        /// </summary>
+        private sealed class PlanProgressTracker
+        {
+            public int DbIndex;       // 1 tabanlı, şu anki veritabanı sırası
+            public int DbTotal;       // toplam veritabanı sayısı
+            public int MaxPercent;    // monoton artış garantisi — asla geriye gitmez
+        }
+
         // Scheduler'dan gelen sonraki çalışma zamanları (planId → lokal saat metni)
         private readonly Dictionary<string, string> _nextFireTimes = new Dictionary<string, string>();
 
@@ -1176,7 +1191,15 @@ namespace KoruMsSqlYedek.Win
             {
                 case BackupActivityType.Started:
                     if (!string.IsNullOrEmpty(e.PlanId))
+                    {
                         _runningPlanIds.Add(e.PlanId);
+                        _planProgressTracker[e.PlanId] = new PlanProgressTracker
+                        {
+                            DbIndex = 0,
+                            DbTotal = e.TotalCount > 0 ? e.TotalCount : 1,
+                            MaxPercent = 0
+                        };
+                    }
                     _viewingPlanId = e.PlanId;
                     _progressBar.Value = 0;
                     _progressBar.ShowPercentage = true;
@@ -1187,32 +1210,80 @@ namespace KoruMsSqlYedek.Win
                 case BackupActivityType.DatabaseProgress:
                     if (e.TotalCount > 0)
                     {
-                        int pct = (int)((double)e.CurrentIndex / e.TotalCount * 50);
                         string dbPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
+
+                        // Tracker güncelle
+                        if (!_planProgressTracker.TryGetValue(dbPlanId, out PlanProgressTracker dbTracker))
+                        {
+                            dbTracker = new PlanProgressTracker { MaxPercent = 0 };
+                            _planProgressTracker[dbPlanId] = dbTracker;
+                        }
+                        dbTracker.DbIndex = e.CurrentIndex;  // 1 tabanlı
+                        dbTracker.DbTotal = e.TotalCount;
+
+                        // Kümülatif yüzde: önceki veritabanları tamamlandı
+                        int pct = (int)(((e.CurrentIndex - 1.0) / e.TotalCount) * 100);
+                        pct = Math.Max(pct, dbTracker.MaxPercent);
+                        pct = Math.Clamp(pct, 0, 100);
+                        dbTracker.MaxPercent = pct;
+
                         if (dbPlanId == _viewingPlanId)
+                        {
+                            _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
                             _progressBar.Value = pct;
+                        }
                         UpdatePlanRowProgress(dbPlanId, pct);
                     }
                     break;
 
                 case BackupActivityType.CloudUploadProgress:
                     {
-                        // PlanId yoksa _viewingPlanId kullan
                         string uploadPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
+
+                        int cumPct;
+                        if (_planProgressTracker.TryGetValue(uploadPlanId, out PlanProgressTracker upTracker)
+                            && upTracker.DbTotal > 0)
+                        {
+                            // Her veritabanı toplam ilerlemenin eşit bir dilimini alır
+                            double slicePerDb = 100.0 / upTracker.DbTotal;
+                            double dbBase = (upTracker.DbIndex - 1) * slicePerDb;
+                            double sqlPortion = slicePerDb * 0.30;   // SQL/sıkıştırma/doğrulama
+                            double cloudPortion = slicePerDb * 0.70; // bulut yükleme
+
+                            // Çoklu hedef: hedef sırasını da ağırlıkla dahil et
+                            double overallCloudPct = e.ProgressPercent;
+                            if (e.CloudTargetTotal > 1)
+                                overallCloudPct = ((e.CloudTargetIndex - 1) * 100.0 + e.ProgressPercent) / e.CloudTargetTotal;
+
+                            cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * cloudPortion);
+                        }
+                        else
+                        {
+                            cumPct = e.ProgressPercent;
+                        }
+
+                        // Monoton artış garantisi
+                        if (upTracker is not null)
+                        {
+                            cumPct = Math.Max(cumPct, upTracker.MaxPercent);
+                            cumPct = Math.Clamp(cumPct, 0, 100);
+                            upTracker.MaxPercent = cumPct;
+                        }
+
                         if (uploadPlanId == _viewingPlanId)
                         {
-                            _progressBar.Value = e.ProgressPercent;
+                            _progressBar.Value = cumPct;
                             if (e.BytesTotal > 0)
                             {
                                 _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.CustomText;
-                                _progressBar.Text = string.Format("{0}%  {1}/{2}  {3}/s",
-                                    e.ProgressPercent,
+                                _progressBar.Text = string.Format("%{0}  {1}/{2}  {3}/s",
+                                    cumPct,
                                     FormatFileSize(e.BytesSent),
                                     FormatFileSize(e.BytesTotal),
                                     FormatFileSize(e.SpeedBytesPerSecond));
                             }
                         }
-                        UpdatePlanRowProgress(uploadPlanId, e.ProgressPercent);
+                        UpdatePlanRowProgress(uploadPlanId, cumPct);
                     }
                     break;
 
@@ -1220,9 +1291,15 @@ namespace KoruMsSqlYedek.Win
                 case BackupActivityType.Failed:
                 case BackupActivityType.Cancelled:
                     if (!string.IsNullOrEmpty(e.PlanId))
+                    {
                         _runningPlanIds.Remove(e.PlanId);
+                        _planProgressTracker.Remove(e.PlanId);
+                    }
                     if (e.PlanId == _viewingPlanId)
                     {
+                        // Tamamlandıysa önce %100 göster
+                        if (e.ActivityType == BackupActivityType.Completed)
+                            _progressBar.Value = 100;
                         _progressBar.ShowPercentage = false;
                         _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
                         _progressBar.Value = 0;
