@@ -1,4 +1,11 @@
-﻿## [0.51.0] - 2026-05-12 — Tray Sidebar Program Adı + Servis Debug Modu + Log Renk Şeması Ayarları
+﻿## [0.51.1] - 2026-05-12 — VSS Bulut Yükleme İlerleme Çubuğu Senkronizasyonu
+
+### Hata Düzeltmesi
+- **İlerleme çubuğu VSS yüklemesi ile senkron değildi**: Ana bulut yüklemesi tamamlandığında progress bar %100'e ulaşıyordu ancak VSS dosyası hâlâ yükleniyordu. Yeni ağırlık modeli: VSS dosyası varsa SQL %20 + Ana bulut %50 + VSS bulut %30; yoksa SQL %30 + Bulut %70 (değişmez). `PlanProgressTracker`'a `HasVssUpload` ve `IsVssPhase` alanları eklendi. `StepChanged` eventleri ile "Express VSS" ve "VSS Bulut Yükleme" fazları algılanarak dinamik ağırlık geçişi yapılıyor. (etkilenen: `MainWindow.cs`)
+
+---
+
+## [0.51.0] - 2026-05-12 — Tray Sidebar Program Adı + Servis Debug Modu + Log Renk Şeması Ayarları
 
 ### Yeni Özellik
 - **Tray sidebar'da program adı**: Tray menü kenar çubuğu artık versiyon yanında "Koru MsSql Yedek" uygulama adını da gösteriyor. (etkilenen: `VersionSidebarRenderer.cs`, `TrayApplicationContext.cs`)

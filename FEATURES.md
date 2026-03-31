@@ -2,6 +2,10 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.51.1 — VSS Bulut Yükleme İlerleme Çubuğu Senkronizasyonu
+- VSS dosyası bulut yüklemesi artık ilerleme çubuğuna dahil — %100'e yalnızca tüm yüklemeler bitince ulaşılıyor
+- Dinamik ağırlık modeli: VSS varsa 20/50/30, yoksa 30/70 — StepChanged sinyalleri ile otomatik faz geçişi
+
 ### v0.51.0 — Tray Sidebar Program Adı + Servis Debug Modu + Log Renk Şeması Ayarları
 - Tray menü kenar çubuğu artık "Koru MsSql Yedek" program adı + versiyon gösteriyor
 - Windows Service yüklü değilken pipe bağlıysa "Servis: Bağlı (Debug) ✓" durumu gösteriliyor

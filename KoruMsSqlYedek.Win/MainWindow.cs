@@ -71,6 +71,8 @@ namespace KoruMsSqlYedek.Win
             public int DbIndex;       // 1 tabanlı, şu anki veritabanı sırası
             public int DbTotal;       // toplam veritabanı sayısı
             public int MaxPercent;    // monoton artış garantisi — asla geriye gitmez
+            public bool HasVssUpload; // "Express VSS" adımı algılandı — bu DB'de VSS dosyası var
+            public bool IsVssPhase;   // "VSS Bulut Yükleme" adımına girildi — şu an VSS upload aktif
         }
 
         // Scheduler'dan gelen sonraki çalışma zamanları (planId → lokal saat metni)
@@ -1220,6 +1222,8 @@ namespace KoruMsSqlYedek.Win
                         }
                         dbTracker.DbIndex = e.CurrentIndex;  // 1 tabanlı
                         dbTracker.DbTotal = e.TotalCount;
+                        dbTracker.HasVssUpload = false;
+                        dbTracker.IsVssPhase = false;
 
                         // Kümülatif yüzde: önceki veritabanları tamamlandı
                         int pct = (int)(((e.CurrentIndex - 1.0) / e.TotalCount) * 100);
@@ -1236,6 +1240,19 @@ namespace KoruMsSqlYedek.Win
                     }
                     break;
 
+                case BackupActivityType.StepChanged:
+                    {
+                        string stepPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
+                        if (_planProgressTracker.TryGetValue(stepPlanId, out PlanProgressTracker stepTracker))
+                        {
+                            if (e.StepName == "Express VSS")
+                                stepTracker.HasVssUpload = true;
+                            else if (e.StepName == "VSS Bulut Yükleme")
+                                stepTracker.IsVssPhase = true;
+                        }
+                    }
+                    break;
+
                 case BackupActivityType.CloudUploadProgress:
                     {
                         string uploadPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
@@ -1247,15 +1264,31 @@ namespace KoruMsSqlYedek.Win
                             // Her veritabanı toplam ilerlemenin eşit bir dilimini alır
                             double slicePerDb = 100.0 / upTracker.DbTotal;
                             double dbBase = (upTracker.DbIndex - 1) * slicePerDb;
-                            double sqlPortion = slicePerDb * 0.30;   // SQL/sıkıştırma/doğrulama
-                            double cloudPortion = slicePerDb * 0.70; // bulut yükleme
 
                             // Çoklu hedef: hedef sırasını da ağırlıkla dahil et
                             double overallCloudPct = e.ProgressPercent;
                             if (e.CloudTargetTotal > 1)
                                 overallCloudPct = ((e.CloudTargetIndex - 1) * 100.0 + e.ProgressPercent) / e.CloudTargetTotal;
 
-                            cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * cloudPortion);
+                            if (upTracker.HasVssUpload)
+                            {
+                                // VSS dosyası var: SQL %20 + Ana bulut %50 + VSS bulut %30
+                                double sqlPortion = slicePerDb * 0.20;
+                                double mainCloudPortion = slicePerDb * 0.50;
+                                double vssCloudPortion = slicePerDb * 0.30;
+
+                                if (upTracker.IsVssPhase)
+                                    cumPct = (int)(dbBase + sqlPortion + mainCloudPortion + (overallCloudPct / 100.0) * vssCloudPortion);
+                                else
+                                    cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * mainCloudPortion);
+                            }
+                            else
+                            {
+                                // VSS yok: SQL %30 + Bulut %70
+                                double sqlPortion = slicePerDb * 0.30;
+                                double cloudPortion = slicePerDb * 0.70;
+                                cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * cloudPortion);
+                            }
                         }
                         else
                         {
