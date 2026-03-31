@@ -1,4 +1,22 @@
-﻿## [0.43.0] - 2026-05-09 — Dosya Yedekleme Global Lock Çakışması Düzeltmesi
+﻿## [0.44.1] - 2026-05-09 — Upload Progress %100→%99 Glitch Düzeltmesi
+
+### Hata Düzeltmesi
+- **Bulut yükleme ilerlemesi %100→%99 sapması**: `Progress<T>` callback'leri ThreadPool üzerinden sırasız çalışabiliyordu. `CloudUploadOrchestrator`'a `lastReportedPct` koruması eklendi — geriye giden yüzde değerleri artık atlanıyor. (etkilenen: `CloudUploadOrchestrator.cs`)
+- **GoogleDriveProvider `Math.Min(percent, 99)` kaldırıldı**: İlerleme doğal değerini raporluyor; CloudUploadOrchestrator'daki koruma duplikasyonu önlüyor. (etkilenen: `GoogleDriveProvider.cs`)
+- **%100 ilerleme log satırı bastırıldı**: `CloudUploadCompleted` zaten "Başarılı ✓" yazdığı için %100 satırı gereksizdi. Boş satır koruması da `AppendBackupLog`'a eklendi. (etkilenen: `MainWindow.cs`)
+
+---
+
+## [0.44.0] - 2026-05-09 — Dashboard Log Zenginleştirme
+
+### Yeni Özellik
+- **Detaylı yedekleme adım bilgisi UI'da**: Servis logundaki zengin adım detayları (SQL yedek boyutu, Express VSS bilgisi, sıkıştırma oranı, arşiv doğrulama, bulut yükleme sonucu, retention temizliği) artık Win uygulamasının yedek log panelinde de görünüyor. (etkilenen: `BackupJobExecutor.cs`, `MainWindow.cs`)
+- **Dosya yedekleme adım bilgileri**: Dosya yedekleme başlangıcı, kaynak bazlı kopya sonuçları, arşiv boyutu ve bulut yükleme detayları UI'a yansıtılıyor.
+- Her pipeline adımında `BackupActivityHub.Raise(StepChanged)` çağrısı eklendi; `BuildActivityLogLine` formatı `Message` alanını doğrudan gösteriyor.
+
+---
+
+## [0.43.0] - 2026-05-09 — Dosya Yedekleme Global Lock Çakışması Düzeltmesi
 
 ### Hata Düzeltmesi
 - **Dosya yedekleme hiç çalışmıyordu (ROOT CAUSE)**: `TriggerPlanNowAsync` hem SQL hem FileBackup job'unu aynı anda tetikliyordu. FileBackup job'u `_globalBackupLock` semaforu yüzünden "Başka bir yedekleme zaten çalışıyor" uyarısıyla atlanıyordu. SQL job bittiğinde ise `plan.FileBackup.Schedule` dolu olduğu için dosya yedeklemeyi çalıştırmıyordu. **Sonuç: FileBackup hiçbir zaman çalışamıyordu.** (etkilenen: `QuartzSchedulerService.cs`, `BackupJobExecutor.cs`)

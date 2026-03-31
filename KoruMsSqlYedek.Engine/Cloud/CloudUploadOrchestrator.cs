@@ -129,8 +129,14 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 });
 
                 var uploadStartTime = DateTime.UtcNow;
+                int lastReportedPct = -1;
                 var hubProgress = new Progress<int>(pct =>
                 {
+                    // Progress<T> callback'leri ThreadPool'a post edilir —
+                    // sıra garantisi yoktur. Geriye giden yüzde değerlerini atla.
+                    if (pct <= lastReportedPct) return;
+                    lastReportedPct = pct;
+
                     long bytesSent = stateRecord.FileSizeBytes > 0
                         ? (long)(stateRecord.FileSizeBytes * pct / 100.0)
                         : 0L;

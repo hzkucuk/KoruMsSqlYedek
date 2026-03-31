@@ -238,7 +238,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     if (fileSize > 0 && progress != null)
                     {
                         int percent = (int)(uploadProgress.BytesSent * 100 / fileSize);
-                        progress.Report(Math.Min(percent, 99));
+                        progress.Report(percent);
                     }
                 };
 

@@ -1239,6 +1239,8 @@ namespace KoruMsSqlYedek.Win
 
         private void AppendBackupLog(string line)
         {
+            if (string.IsNullOrEmpty(line)) return;
+
             if (InvokeRequired)
             {
                 Invoke(new Action(() => AppendBackupLog(line)));
@@ -1273,10 +1275,13 @@ namespace KoruMsSqlYedek.Win
                 case BackupActivityType.DatabaseProgress:
                     return string.Format("{0} ({1}/{2}) işleniyor.", e.DatabaseName, e.CurrentIndex, e.TotalCount);
                 case BackupActivityType.StepChanged:
-                    return string.Format("Adım: {0}", e.StepName ?? e.Message);
+                    if (!string.IsNullOrEmpty(e.Message))
+                        return e.Message;
+                    return string.Format("Adım: {0}", e.StepName);
                 case BackupActivityType.CloudUploadStarted:
                     return string.Format("Bulut yükleme başladı: {0}", e.CloudTargetName);
                 case BackupActivityType.CloudUploadProgress:
+                    if (e.ProgressPercent >= 100) return string.Empty;
                     if (e.BytesTotal > 0)
                     {
                         long bytesRemaining = e.BytesTotal - e.BytesSent;

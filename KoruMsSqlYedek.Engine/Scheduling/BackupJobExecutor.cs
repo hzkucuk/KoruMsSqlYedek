@@ -228,9 +228,42 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
                 if (result.Status != BackupResultStatus.Success)
                 {
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        DatabaseName = dbName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "SQL Yedekleme",
+                        Message = $"Yedekleme başarısız: {dbName} — {result.ErrorMessage}"
+                    });
                     SaveHistory(result);
                     await NotifyIfConfigured(result, plan, ct);
                     continue;
+                }
+
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = plan.PlanId,
+                    PlanName = plan.PlanName,
+                    DatabaseName = dbName,
+                    ActivityType = BackupActivityType.StepChanged,
+                    StepName = "SQL Yedekleme",
+                    Message = $"Yedekleme başarılı: {dbName} ({effectiveType}) ␦ {Path.GetFileName(result.BackupFilePath)} [{Fmt(result.FileSizeBytes)}]"
+                });
+
+                // 1b. Express VSS bilgisi
+                if (result.VssFileCopySizeBytes > 0 && !string.IsNullOrEmpty(result.VssFileCopyPath))
+                {
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        DatabaseName = dbName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "Express VSS",
+                        Message = $"Express VSS tamamlandı: {dbName} ␦ {Path.GetFileName(result.VssFileCopyPath)} [{Fmt(result.VssFileCopySizeBytes)}]"
+                    });
                 }
 
                 // 2. Verify
@@ -238,6 +271,18 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 {
                     result.VerifyResult = await SqlBackupService.VerifyBackupAsync(
                         plan.SqlConnection, result.BackupFilePath, ct);
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        DatabaseName = dbName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "Doğrulama",
+                        Message = result.VerifyResult == true
+                            ? $"Yedek doğrulama başarılı ✓: {Path.GetFileName(result.BackupFilePath)}"
+                            : $"Yedek doğrulama başarısız ✕: {Path.GetFileName(result.BackupFilePath)}"
+                    });
 
                     if (result.VerifyResult == false)
                     {
@@ -259,11 +304,33 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             result.BackupFilePath, archivePath, password, null, ct);
                         result.CompressedFilePath = archivePath;
 
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            DatabaseName = dbName,
+                            ActivityType = BackupActivityType.StepChanged,
+                            StepName = "Sıkıştırma",
+                            Message = $"Sıkıştırma tamamlandı: {Path.GetFileName(archivePath)} [{Fmt(result.CompressedSizeBytes)}, oran: {FmtRatio(result.FileSizeBytes, result.CompressedSizeBytes)}]"
+                        });
+
                         // 3b. Arşiv bütünlük doğrulaması
                         if (plan.VerifyAfterBackup)
                         {
                             result.CompressionVerified = await CompressionService.VerifyArchiveAsync(
                                 archivePath, password, ct);
+
+                            BackupActivityHub.Raise(new BackupActivityEventArgs
+                            {
+                                PlanId = plan.PlanId,
+                                PlanName = plan.PlanName,
+                                DatabaseName = dbName,
+                                ActivityType = BackupActivityType.StepChanged,
+                                StepName = "Arşiv Doğrulama",
+                                Message = result.CompressionVerified == true
+                                    ? $"Arşiv bütünlük doğrulaması başarılı ✓: {Path.GetFileName(archivePath)}"
+                                    : $"Arşiv bütünlük doğrulaması başarısız ✕: {Path.GetFileName(archivePath)}"
+                            });
 
                             if (result.CompressionVerified == false)
                             {
@@ -300,6 +367,16 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         Log.Information(
                             "Bulut upload tamamlandı: {Database} — {Success}/{Total} başarılı",
                             dbName, successCount, totalCount);
+
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            DatabaseName = dbName,
+                            ActivityType = BackupActivityType.StepChanged,
+                            StepName = "Bulut Yükleme",
+                            Message = $"Bulut yükleme tamamlandı: {dbName} — {successCount}/{totalCount} başarılı [{Fmt(new FileInfo(fileToUpload).Length)}]"
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -313,6 +390,16 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     try
                     {
                         await RetentionService.CleanupAsync(plan, ct);
+
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            DatabaseName = dbName,
+                            ActivityType = BackupActivityType.StepChanged,
+                            StepName = "Temizlik",
+                            Message = $"Eski yedek temizliği tamamlandı: {dbName}"
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -352,13 +439,33 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             Log.Information("Dosya yedekleme başlıyor: Plan={PlanName}, Kaynaklar={SourceCount}, CorrelationId={CorrelationId}",
                 plan.PlanName, enabledSources, correlationId);
 
+            BackupActivityHub.Raise(new BackupActivityEventArgs
+            {
+                PlanId = plan.PlanId,
+                PlanName = plan.PlanName,
+                ActivityType = BackupActivityType.StepChanged,
+                StepName = "Dosya Yedekleme",
+                Message = $"Dosya yedekleme başlıyor: {enabledSources} kaynak"
+            });
+
             var results = await FileBackupService.BackupFilesAsync(plan, null, ct);
 
+            int totalCopied = 0;
             foreach (var fileResult in results)
             {
+                totalCopied += fileResult.FilesCopied;
                 Log.Information(
                     "Dosya yedekleme tamamlandı: {SourceName} — {FilesCopied} dosya, {Status}",
                     fileResult.SourceName, fileResult.FilesCopied, fileResult.Status);
+
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = plan.PlanId,
+                    PlanName = plan.PlanName,
+                    ActivityType = BackupActivityType.StepChanged,
+                    StepName = "Dosya Yedekleme",
+                    Message = $"  {fileResult.SourceName}: {fileResult.FilesCopied} dosya kopyalandı — {fileResult.Status}"
+                });
             }
 
             if (!results.Any(r => r.Status == BackupResultStatus.Success ||
@@ -397,6 +504,18 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
                     await sevenZip.CompressDirectoryAsync(filesDir, archivePath, password, level, null, ct);
                     Log.Information("Dosya yedek arşivi oluşturuldu: {ArchivePath}", archivePath);
+
+                    long archiveSize = 0;
+                    try { archiveSize = new FileInfo(archivePath).Length; } catch { }
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "Dosya Sıkıştırma",
+                        Message = $"Dosya yedek arşivi oluşturuldu: {Path.GetFileName(archivePath)} [{Fmt(archiveSize)}]"
+                    });
                 }
                 else
                 {
@@ -438,11 +557,41 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     archivePath, Path.GetFileName(archivePath),
                     plan.CloudTargets, null, ct, plan.PlanName);
                 Log.Information("Dosya yedek bulut yüklemesi tamamlandı. Plan={PlanName}", plan.PlanName);
+
+                long uploadSize = 0;
+                try { uploadSize = new FileInfo(archivePath).Length; } catch { }
+
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = plan.PlanId,
+                    PlanName = plan.PlanName,
+                    ActivityType = BackupActivityType.StepChanged,
+                    StepName = "Dosya Bulut Yükleme",
+                    Message = $"Dosya yedek bulut yüklemesi tamamlandı [{Fmt(uploadSize)}]"
+                });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Dosya yedek cloud upload hatası: Plan={PlanName}", plan.PlanName);
             }
+        }
+
+        /// <summary>Byte değerini okunabilir boyut metnine dönüştürür (örn. "723.7 MB").</summary>
+        private static string Fmt(long bytes)
+        {
+            if (bytes <= 0) return "—";
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024.0).ToString("F1") + " KB";
+            if (bytes < 1024L * 1024 * 1024) return (bytes / (1024.0 * 1024)).ToString("F1") + " MB";
+            return (bytes / (1024.0 * 1024 * 1024)).ToString("F2") + " GB";
+        }
+
+        /// <summary>Sıkıştırma oranını hesaplar (örn. "%93.4").</summary>
+        private static string FmtRatio(long original, long compressed)
+        {
+            if (original <= 0 || compressed <= 0) return "";
+            double ratio = (1.0 - (double)compressed / original) * 100;
+            return $"%{ratio:F1}";
         }
 
         private void SaveHistory(BackupResult result)
