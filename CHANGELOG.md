@@ -1,4 +1,16 @@
-﻿## [0.45.0] - 2026-05-09 — Tray İkon & Menü İyileştirmeleri
+﻿## [0.46.0] - 2026-05-09 — Eşzamanlı Yedekleme Desteği
+
+### Yeni Özellik
+- **Farklı planlar paralel çalışabilir**: Bir yedekleme planı çalışırken artık diğer planların "Yedekle" butonu/sağ-tık menüsü pasif olmuyor. Her plan bağımsız olarak başlatılabilir ve iptal edilebilir. (etkilenen: `MainWindow.cs`, `BackupJobExecutor.cs`)
+- **Plan bazlı kilit mekanizması**: Service tarafında global `SemaphoreSlim(1,1)` yerine plan başına `ConcurrentDictionary<string, SemaphoreSlim>` kullanılıyor — aynı plan iki kez çalışamaz, farklı planlar paralel çalışabilir. (etkilenen: `BackupJobExecutor.cs`)
+- **Per-plan UI durum takibi**: `_isBackupRunning` (bool) → `_runningPlanIds` (HashSet), `_activePlanId` → `_viewingPlanId` — progress bar ve log paneli seçili plana göre güncelleniyor. (etkilenen: `MainWindow.cs`)
+
+### Hata Düzeltmesi
+- **Tray animasyon renk taşması**: `CreateAnimationFrames` içinde `brightness - 120` negatif olabiliyordu → `Math.Clamp(0, 255)` ile düzeltildi. (etkilenen: `SymbolIconHelper.cs`)
+
+---
+
+## [0.45.0] - 2026-05-09 — Tray İkon & Menü İyileştirmeleri
 
 ### Yeni Özellik
 - **DPI uyumlu tray ikonu**: Tüm tray ikonları artık `SystemInformation.SmallIconSize` ile doğru boyutta render ediliyor; yüksek DPI ekranlarda net ve parlak görünüyor. (etkilenen: `SymbolIconHelper.cs`)

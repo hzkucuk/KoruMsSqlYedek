@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -19,16 +20,15 @@ namespace KoruMsSqlYedek.Engine.Scheduling
     /// Her tetiklemede yedekleme pipeline'ını çalıştırır:
     /// SQL Backup → Verify → Compress → Cloud Upload → Retention → History → Notify
     /// </summary>
-    [DisallowConcurrentExecution]
     public class BackupJobExecutor : IJob
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<BackupJobExecutor>();
 
         /// <summary>
-        /// Aynı anda yalnızca bir yedekleme çalışmasını garanti eden global kilit.
-        /// Farklı planlar için bile eşzamanlı çalışmayı engeller.
+        /// Plan başına eşzamanlı çalışmayı engelleyen kilit.
+        /// Farklı planlar paralel çalışabilir, aynı plan ise bekler.
         /// </summary>
-        private static readonly SemaphoreSlim _globalBackupLock = new SemaphoreSlim(1, 1);
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _planLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         // Bu alanlar Autofac property injection veya JobFactory ile doldurulur
         public IPlanManager PlanManager { get; set; }
@@ -69,10 +69,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     return;
                 }
 
-                if (!await _globalBackupLock.WaitAsync(0, context.CancellationToken))
+                var planLock = _planLocks.GetOrAdd(planId, _ => new SemaphoreSlim(1, 1));
+                if (!await planLock.WaitAsync(0, context.CancellationToken))
                 {
                     Log.Warning(
-                        "Başka bir yedekleme zaten çalışıyor, bu çalıştırma atlanıyor: Plan={PlanId}, Tür={BackupType}",
+                        "Bu plan zaten çalışıyor, atlanıyor: Plan={PlanId}, Tür={BackupType}",
                         planId, backupType);
                     return;
                 }
@@ -154,8 +155,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             }
             finally
             {
-                if (lockAcquired)
-                    _globalBackupLock.Release();
+                if (lockAcquired && _planLocks.TryGetValue(planId, out var releaseLock))
+                    releaseLock.Release();
             }
         }
 

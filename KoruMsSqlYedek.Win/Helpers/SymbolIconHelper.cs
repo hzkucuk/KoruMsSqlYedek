@@ -213,8 +213,8 @@ namespace KoruMsSqlYedek.Win.Helpers
                 // Her kare için parlaklığı pulse et — daha görünür animasyon
                 int brightness = 180 + (int)(75 * Math.Sin(i * Math.PI * 2 / frameCount));
                 var color = Color.FromArgb(
-                    Math.Min(brightness - 120, 255),
-                    Math.Min(brightness, 255),
+                    Math.Clamp(brightness - 120, 0, 255),
+                    Math.Clamp(brightness, 0, 255),
                     255);
                 frames[i] = RenderRotatedIcon(SymbolRefresh, size, color, i * step);
             }

@@ -840,3 +840,22 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 - [x] `KoruMsSqlYedek.Win\MainWindow.cs`
 - [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.37.0.0
 - [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.37.0.0
+
+---
+
+## Faz 38 — Eşzamanlı Yedekleme Desteği (v0.46.0) ✅
+
+### Yeni Özellikler
+- [x] **Farklı planlar paralel yedeklenebilir**: Bir plan çalışırken diğer planların "Yedekle" butonu ve sağ-tık menüsü aktif kalır
+- [x] **Per-plan kilit mekanizması**: Service tarafında global `SemaphoreSlim(1,1)` yerine plan bazlı `ConcurrentDictionary<string, SemaphoreSlim>` — aynı plan iki kez çalışamaz
+- [x] **Per-plan UI durum takibi**: `_isBackupRunning` (bool) → `_runningPlanIds` (HashSet) — seçili plana göre buton/menü durumu
+
+### Hata Düzeltmesi
+- [x] **Tray animasyon `ArgumentException`**: `Color.FromArgb` negatif red değer alıyordu → `Math.Clamp(0, 255)` ile düzeltildi
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Win\MainWindow.cs` — per-plan state tracking
+- [x] `KoruMsSqlYedek.Engine\Scheduling\BackupJobExecutor.cs` — per-plan lock
+- [x] `KoruMsSqlYedek.Win\Helpers\SymbolIconHelper.cs` — Math.Clamp fix
+- [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.46.0.0
+- [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.46.0.0

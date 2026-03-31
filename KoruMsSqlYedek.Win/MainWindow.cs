@@ -48,9 +48,9 @@ namespace KoruMsSqlYedek.Win
         // Settings state
         private AppSettings _settings;
 
-        // Backup state
-        private bool _isBackupRunning;
-        private string _activePlanId;
+        // Backup state — per-plan tracking
+        private readonly HashSet<string> _runningPlanIds = new HashSet<string>();
+        private string _viewingPlanId;
 
         // Per-plan log buffer (planId → satır listesi)
         private readonly Dictionary<string, List<string>> _planLogs = new Dictionary<string, List<string>>();
@@ -933,9 +933,9 @@ namespace KoruMsSqlYedek.Win
         {
             var plan = GetSelectedPlanSilent();
             bool hasPlan = plan != null;
-            bool running = _isBackupRunning && _activePlanId == plan?.PlanId;
+            bool running = hasPlan && _runningPlanIds.Contains(plan.PlanId);
 
-            _ctxBackupNow.Enabled = hasPlan && !_isBackupRunning && _pipeClient.IsConnected;
+            _ctxBackupNow.Enabled = hasPlan && !running && _pipeClient.IsConnected;
             _ctxStopBackup.Enabled = running && _pipeClient.IsConnected;
             _ctxEditPlan.Enabled = hasPlan && !running;
             _ctxDeletePlan.Enabled = hasPlan && !running;
@@ -1001,15 +1001,18 @@ namespace KoruMsSqlYedek.Win
                 return;
             }
 
-            _activePlanId = plan.PlanId;
-            _isBackupRunning = true;
+            if (_runningPlanIds.Contains(plan.PlanId))
+                return;
+
+            _runningPlanIds.Add(plan.PlanId);
+            _viewingPlanId = plan.PlanId;
             UpdateBackupButtonStates();
 
             // Bu plan için önceki log buffer'ını temizle
             _planLogs.Remove(plan.PlanId);
             _planProgress.Remove(plan.PlanId);
             _txtBackupLog.Clear();
-            AppendBackupLog(string.Format("[{0}] {1}", plan.PlanName, Res.Get("ManualBackup_Starting")));
+            AppendBackupLog(plan.PlanId, string.Format("[{0}] {1}", plan.PlanName, Res.Get("ManualBackup_Starting")));
 
             try
             {
@@ -1018,24 +1021,27 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Error(ex, "Manuel yedekleme komutu gönderilemedi: {PlanId}", plan.PlanId);
-                AppendBackupLog(Res.Format("Backup_SendError", ex.Message));
-                _isBackupRunning = false;
-                _activePlanId = null;
+                AppendBackupLog(plan.PlanId, Res.Format("Backup_SendError", ex.Message));
+                _runningPlanIds.Remove(plan.PlanId);
                 UpdateBackupButtonStates();
             }
         }
 
         private async void OnCancelBackupClick(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(_activePlanId)) return;
+            var plan = GetSelectedPlanSilent();
+            string targetPlanId = plan?.PlanId ?? _viewingPlanId;
+            if (string.IsNullOrEmpty(targetPlanId) || !_runningPlanIds.Contains(targetPlanId))
+                return;
+
             try
             {
-                await _pipeClient.SendCancelCommandAsync(_activePlanId);
-                AppendBackupLog(Res.Get("ManualBackup_Cancelling"));
+                await _pipeClient.SendCancelCommandAsync(targetPlanId);
+                AppendBackupLog(targetPlanId, Res.Get("ManualBackup_Cancelling"));
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "İptal komutu gönderilemedi: {PlanId}", _activePlanId);
+                Log.Error(ex, "İptal komutu gönderilemedi: {PlanId}", targetPlanId);
             }
         }
 
@@ -1044,14 +1050,18 @@ namespace KoruMsSqlYedek.Win
             var plan = GetSelectedPlanSilent();
             bool hasPlan = plan != null;
             bool connected = _pipeClient.IsConnected;
+            bool selectedRunning = hasPlan && _runningPlanIds.Contains(plan.PlanId);
+            bool anyRunning = _runningPlanIds.Count > 0;
 
-            _btnStart.Enabled = hasPlan && !_isBackupRunning && connected;
-            _btnCancelBackup.Enabled = _isBackupRunning;
+            _btnStart.Enabled = hasPlan && !selectedRunning && connected;
+            _btnCancelBackup.Enabled = selectedRunning;
 
             if (!connected)
                 _lblBackupStatus.Text = Res.Get("Backup_ServiceDisconnected");
-            else if (_isBackupRunning)
-                _lblBackupStatus.Text = Res.Format("Backup_ReadyForPlan", plan?.PlanName ?? _activePlanId);
+            else if (selectedRunning)
+                _lblBackupStatus.Text = Res.Format("Backup_ReadyForPlan", plan.PlanName);
+            else if (anyRunning)
+                _lblBackupStatus.Text = string.Format("{0} görev çalışıyor", _runningPlanIds.Count);
             else if (hasPlan)
                 _lblBackupStatus.Text = Res.Format("Backup_ReadyForPlan", plan.PlanName);
             else
@@ -1137,8 +1147,9 @@ namespace KoruMsSqlYedek.Win
             switch (e.ActivityType)
             {
                 case BackupActivityType.Started:
-                    _isBackupRunning = true;
-                    _activePlanId = e.PlanId;
+                    if (!string.IsNullOrEmpty(e.PlanId))
+                        _runningPlanIds.Add(e.PlanId);
+                    _viewingPlanId = e.PlanId;
                     _progressBar.Value = 0;
                     _progressBar.ShowPercentage = true;
                     _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
@@ -1149,40 +1160,47 @@ namespace KoruMsSqlYedek.Win
                     if (e.TotalCount > 0)
                     {
                         int pct = (int)((double)e.CurrentIndex / e.TotalCount * 50);
-                        _progressBar.Value = pct;
-                        UpdatePlanRowProgress(e.PlanId ?? _activePlanId, pct);
+                        if (e.PlanId == _viewingPlanId)
+                            _progressBar.Value = pct;
+                        UpdatePlanRowProgress(e.PlanId ?? _viewingPlanId, pct);
                     }
                     break;
 
                 case BackupActivityType.CloudUploadProgress:
-                    _progressBar.Value = e.ProgressPercent;
-                    if (e.BytesTotal > 0)
+                    if (e.PlanId == _viewingPlanId)
                     {
-                        _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.CustomText;
-                        _progressBar.Text = string.Format("{0}%  {1}/{2}  {3}/s",
-                            e.ProgressPercent,
-                            FormatFileSize(e.BytesSent),
-                            FormatFileSize(e.BytesTotal),
-                            FormatFileSize(e.SpeedBytesPerSecond));
+                        _progressBar.Value = e.ProgressPercent;
+                        if (e.BytesTotal > 0)
+                        {
+                            _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.CustomText;
+                            _progressBar.Text = string.Format("{0}%  {1}/{2}  {3}/s",
+                                e.ProgressPercent,
+                                FormatFileSize(e.BytesSent),
+                                FormatFileSize(e.BytesTotal),
+                                FormatFileSize(e.SpeedBytesPerSecond));
+                        }
                     }
-                    UpdatePlanRowProgress(_activePlanId, e.ProgressPercent);
+                    UpdatePlanRowProgress(e.PlanId ?? _viewingPlanId, e.ProgressPercent);
                     break;
 
                 case BackupActivityType.Completed:
                 case BackupActivityType.Failed:
                 case BackupActivityType.Cancelled:
-                    _isBackupRunning = false;
-                    _activePlanId = null;
-                    _progressBar.ShowPercentage = false;
-                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
-                    _progressBar.Value = 0;
+                    if (!string.IsNullOrEmpty(e.PlanId))
+                        _runningPlanIds.Remove(e.PlanId);
+                    if (e.PlanId == _viewingPlanId)
+                    {
+                        _progressBar.ShowPercentage = false;
+                        _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                        _progressBar.Value = 0;
+                    }
                     UpdatePlanRowProgress(e.PlanId, 0);
                     UpdatePlanRowStatus(e.PlanId, e.ActivityType);
                     break;
             }
 
             UpdateBackupButtonStates();
-            AppendBackupLog(BuildActivityLogLine(e));
+            AppendBackupLog(e.PlanId, BuildActivityLogLine(e));
         }
 
         private void UpdatePlanRowStatus(string planId, BackupActivityType activityType)
@@ -1237,30 +1255,29 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
-        private void AppendBackupLog(string line)
+        private void AppendBackupLog(string planId, string line)
         {
             if (string.IsNullOrEmpty(line)) return;
 
             if (InvokeRequired)
             {
-                Invoke(new Action(() => AppendBackupLog(line)));
+                Invoke(new Action(() => AppendBackupLog(planId, line)));
                 return;
             }
 
-            string effectivePlanId = _activePlanId;
             string formatted = "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line;
 
             // Plan'a ait buffer'a ekle
-            if (!string.IsNullOrEmpty(effectivePlanId))
+            if (!string.IsNullOrEmpty(planId))
             {
-                if (!_planLogs.ContainsKey(effectivePlanId))
-                    _planLogs[effectivePlanId] = new List<string>();
-                _planLogs[effectivePlanId].Add(formatted);
+                if (!_planLogs.ContainsKey(planId))
+                    _planLogs[planId] = new List<string>();
+                _planLogs[planId].Add(formatted);
             }
 
-            // Sadece seçili plan aktif planla eşleşiyorsa UI'yi güncelle
+            // Sadece seçili plan ile eşleşiyorsa UI'yi güncelle
             var selected = GetSelectedPlanSilent();
-            if (selected?.PlanId == effectivePlanId || string.IsNullOrEmpty(effectivePlanId))
+            if (selected?.PlanId == planId || string.IsNullOrEmpty(planId))
             {
                 _txtBackupLog.AppendText(formatted + Environment.NewLine);
             }
