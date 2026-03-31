@@ -69,7 +69,83 @@ Kullanıcı "release derle", "release yap", "release oluştur" veya benzeri dedi
 3. Dokümantasyon güncellemeleri
 4. Onay noktası
 
-## Git (her değişiklik sonrası — otomatik)
+## ═══════════════ REGRESYON ÖNLEME DİREKTİFLERİ ═══════════════
+> Bu bölüm, tekrarlayan hataların kök nedenlerinden çıkarılmış **zorunlu** kurallardır.
+> Her kod değişikliğinde bu kurallar kontrol edilmelidir.
+
+### 1. PlanId Propagasyonu (Kritik — Çoklu Plan Desteği)
+- **Kural:** Servis katmanından (Engine) UI katmanına (Win) ulaşan **her event/callback** mutlaka `PlanId` taşımalıdır.
+- **Kontrol listesi:**
+  - Yeni bir event args sınıfı oluşturulursa → `string PlanId` property'si zorunlu.
+  - Yeni bir `ICloudUploadOrchestrator`, `IBackupService` veya benzeri interface metodu eklenirse → `string planId` parametresi düşünülmeli.
+  - `BackupJobExecutor` içindeki her çağrıda `plan.PlanId` geçirilmeli.
+  - UI tarafında `AppendBackupLog` her zaman `planId` almalı; PlanId olmadan log eklenmez.
+- **Neden:** v0.48.0'da `CloudUploadOrchestrator` eventleri PlanId taşımadığı için farklı planların logları karıştı.
+
+### 2. Dictionary/Collection Güvenliği
+- **Kural:** `_nextFireTimes`, `_planLogs`, `_planProgress` gibi durum sözlüklerini **toptan temizleme (`Clear()`) yapma**.
+- Yalnızca tek anahtar güncelle (`dict[key] = value`) veya tek anahtar sil (`dict.Remove(key)`).
+- Yeni plan başladığında sadece o planın buffer'ını temizle, diğerlerine dokunma.
+- **Neden:** v0.48.0'da `_nextFireTimes` toptan temizlenince tüm planların sonraki çalışma zamanları kayboldu.
+
+### 3. İlerleme Satırı Yönetimi (Tek Satır Güncelleme)
+- **Kural:** Tekrarlayan ilerleme bilgisi (upload %, veritabanı ilerleme vb.) log paneline **yeni satır olarak eklenmez**, son ilerleme satırı **yerinde güncellenir**.
+- `isProgressLine` flag'i ile `AppendBackupLog` çağrılmalı.
+- `ReplaceLastProgressLine` metodu `ProgressLineMarker` sabiti ile son satırı tanır ve üzerine yazar.
+- Buffer'da da aynı mantık uygulanır (son tuple güncellenir, yeni eklenmez).
+- **Neden:** v0.48.0'da her upload progress eventi yeni satır ekliyordu, log paneli aşağı kayıyordu.
+
+### 4. Interface/Method İmza Değişikliği Propagasyonu
+- **Kural:** Bir interface veya method imzası değiştirildiğinde:
+  1. **Tüm implementasyonlar** güncellenmeli (Find All References / Go To Implementation kullan).
+  2. **Tüm çağrı noktaları** (callers) güncellenmeli.
+  3. Build ile doğrula — compile error kalmadığından emin ol.
+- Eksik parametre geçirme → runtime'da null/default davranış → sessiz hata.
+- **Kontrol:** `find_symbol` (navigationType=2 veya 3) ile tüm referansları ve implementasyonları kontrol et.
+
+### 5. Event Handler Zinciri Bütünlüğü
+- **Kural:** `OnBackupActivityChanged` gibi merkezi event handler'lara yeni bir `BackupActivityType` case eklendiğinde:
+  1. `switch` bloğuna case ekle (UI davranış).
+  2. `BuildActivityLogLine` → log metni.
+  3. `GetLogColor` → renk eşlemesi.
+  4. `UpdatePlanRowStatus` → grid ikonu/rengi.
+  5. Gerekirse `_progressBar` güncelleme mantığı.
+- **Eksik case = sessiz hata.** Her yeni ActivityType bu 5 noktada kontrol edilmeli.
+
+### 6. Buffer ↔ UI Senkronizasyonu
+- **Kural:** `_planLogs` buffer'ına yazılan her veri, UI'ya da aynı formatta yansımalı.
+- Buffer tuple tipi `(string Text, Color Color)` — değiştirilirse `OnPlanGridSelectionChanged` rebuild mantığı da güncellenmeli.
+- Plan geçişlerinde `_txtBackupLog.Clear()` + buffer'dan renkli rebuild yapılır.
+- **Asla** buffer'a yazıp UI'ya yazmayı veya tam tersini yapma.
+
+### 7. UI Thread Güvenliği
+- **Kural:** UI kontrollerine erişen **her method** `InvokeRequired` kontrolü yapmalı.
+- Pattern: `if (InvokeRequired) { Invoke(new Action(() => MethodName(args))); return; }`
+- `async void` event handler'lar hariç, arka plan thread'inden direkt UI erişimi **kesinlikle yasak**.
+- Timer/Callback'lerden gelen çağrılarda da aynı kontrol uygulanır.
+
+### 8. Yeni Özellik Ekleme Kontrol Listesi
+Her yeni özellik veya değişiklik sonrası şu soruları cevapla:
+- [ ] PlanId tüm event zincirine propagate ediliyor mu?
+- [ ] Dictionary/collection toptan temizleniyor mu? (Yasak)
+- [ ] İlerleme satırları tek satırda mı güncelleniyor?
+- [ ] Interface değişikliği varsa tüm implementasyon + caller güncel mi?
+- [ ] Event handler switch'ine yeni case ekleniyorsa 5 nokta kontrol edildi mi?
+- [ ] Buffer ve UI senkron mu?
+- [ ] UI thread safety sağlandı mı?
+- [ ] Build başarılı mı? (uyarı dahil kontrol)
+
+### 9. "Bozulma Riski Yüksek" Dosyalar
+Bu dosyalarda değişiklik yaparken **ekstra dikkatli** ol:
+
+| Dosya | Risk | Neden |
+|-------|------|-------|
+| `MainWindow.cs` → `OnBackupActivityChanged` | 🔴 Yüksek | Tüm backup eventlerinin merkezi; eksik case = sessiz hata |
+| `MainWindow.cs` → `AppendBackupLog` | 🔴 Yüksek | Buffer + UI + renk + ilerleme; 4 sorumluluğu var |
+| `MainWindow.cs` → `OnPlanGridSelectionChanged` | 🟡 Orta | Buffer rebuild; format değişirse kırılır |
+| `CloudUploadOrchestrator.cs` | 🟡 Orta | Event firing; PlanId eksikliği log karışmasına yol açar |
+| `BackupJobExecutor.cs` | 🟡 Orta | Plan lifecycle; PlanId geçirilmezse izolasyon bozulur |
+| `ModernTheme.cs` | 🟢 Düşük | Renk ekleme güvenli; ama Dark+Light **ikisi birden** güncellenmeli |
 Her görev/özellik/düzeltme tamamlandıktan ve build doğrulandıktan sonra:
 1. `git add -A`
 2. `git commit -m "<tip>: <kısa açıklama>"`
