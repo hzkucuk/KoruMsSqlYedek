@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.55.0 — İptal/Hata Durumunda Ara Dosya Temizliği
+- Yedekleme iptal veya hata durumunda tamamlanmamış `.bak`, `.7z`, `Files/` staging dosyaları otomatik siliniyor
+- Per-DB snapshot takibi: Başarıyla tamamlanan DB dosyaları korunuyor, yalnızca yarım kalan dosyalar temizleniyor
+- İç `catch` blokları `OperationCanceledException` yeniden fırlatıyor (iptal sinyali doğru yayılıyor)
+
 ### v0.54.0 — Named Pipe Güvenlik ACL Düzeltmesi
 - Servis (SYSTEM) → Tray (kullanıcı) pipe bağlantı hatası giderildi
 - `NamedPipeServerStreamAcl.Create()` ile `PipeSecurity` ACL eklendi (AuthenticatedUsers ReadWrite, SYSTEM FullControl)

@@ -1,4 +1,13 @@
-﻿## [0.54.0] - 2026-05-12 — Named Pipe Güvenlik ACL Düzeltmesi
+﻿## [0.55.0] - 2026-05-12 — İptal/Hata Durumunda Ara Dosya Temizliği
+
+### Yeni Özellik
+- **İptal/hata temizliği**: Yedekleme görevi iptal edildiğinde veya başarısız olduğunda tamamlanmamış ara dosyalar (`.bak`, `.7z`, `Files/` staging klasörü) otomatik olarak siliniyor. (etkilenen: `BackupJobExecutor.cs`)
+- **Per-DB snapshot takibi**: Her veritabanı için başarıyla tamamlanan dosyalar temizlik listesinden çıkarılıyor; yalnızca yarım kalan işlemin dosyaları temizleniyor.
+- **OperationCanceledException yayılımı**: Sıkıştırma, bulut yükleme ve retention adımlarındaki iç `catch` blokları artık iptal istisnalarını yutmak yerine yeniden fırlatıyor.
+
+---
+
+## [0.54.0] - 2026-05-12 — Named Pipe Güvenlik ACL Düzeltmesi
 
 ### Düzeltme
 - **Servis–Tray pipe bağlantı hatası giderildi**: `ServicePipeServer` artık `PipeSecurity` ile pipe oluşturuyor. SYSTEM hesabıyla çalışan servise normal kullanıcı olarak çalışan Tray uygulaması bağlanabiliyor. (`AuthenticatedUserSid` → ReadWrite, `LocalSystemSid` → FullControl) (etkilenen: `ServicePipeServer.cs`)

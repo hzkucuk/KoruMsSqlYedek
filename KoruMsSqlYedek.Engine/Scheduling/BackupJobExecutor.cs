@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -54,6 +55,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
             BackupPlan plan = null;
             bool lockAcquired = false;
+            var cleanupPaths = new List<string>();
             try
             {
                 plan = PlanManager.GetPlanById(planId);
@@ -107,7 +109,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         // Dosya yedekleme tipi
                         if (backupType == "FileBackup")
                         {
-                            await ExecuteFileBackupAsync(plan, correlationId, cts.Token);
+                            await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
+                            cleanupPaths.Clear();
                             BackupActivityHub.Raise(new BackupActivityEventArgs
                             {
                                 PlanId = plan.PlanId,
@@ -118,14 +121,15 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         }
 
                         // SQL yedekleme tipi
-                        await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token);
+                        await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token, cleanupPaths);
 
                         // Dosya yedekleme — ayrı zamanlama yoksa veya manuel tetikleme ise SQL yedek ile birlikte çalıştır
                         if (willRunFileBackup && backupType != "FileBackup")
                         {
-                            await ExecuteFileBackupAsync(plan, correlationId, cts.Token);
+                            await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
                         }
 
+                        cleanupPaths.Clear();
                         BackupActivityHub.Raise(new BackupActivityEventArgs
                         {
                             PlanId = plan.PlanId,
@@ -141,17 +145,22 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 catch (OperationCanceledException)
             {
                 Log.Warning("Job iptal edildi: Plan={PlanId}, CorrelationId={CorrelationId}", planId, correlationId);
+                CleanupOnFailure(cleanupPaths, planId);
                 if (plan != null)
                     BackupActivityHub.Raise(new BackupActivityEventArgs
                     {
                         PlanId = plan.PlanId,
                         PlanName = plan.PlanName,
-                        ActivityType = BackupActivityType.Cancelled
+                        ActivityType = BackupActivityType.Cancelled,
+                        Message = cleanupPaths.Count > 0
+                            ? $"{cleanupPaths.Count} ara dosya/klasör temizlendi"
+                            : null
                     });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Job hatası: Plan={PlanId}, CorrelationId={CorrelationId}", planId, correlationId);
+                CleanupOnFailure(cleanupPaths, planId);
                 if (plan != null)
                     BackupActivityHub.Raise(new BackupActivityEventArgs
                     {
@@ -169,7 +178,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
         }
 
         private async Task ExecuteSqlBackupAsync(
-            BackupPlan plan, string backupType, string correlationId, CancellationToken ct)
+            BackupPlan plan, string backupType, string correlationId, CancellationToken ct,
+            List<string> cleanupPaths)
         {
             SqlBackupType sqlType;
             switch (backupType)
@@ -191,6 +201,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             for (int i = 0; i < plan.Databases.Count; i++)
             {
                 ct.ThrowIfCancellationRequested();
+                int cleanupSnapshot = cleanupPaths.Count;
                 string dbName = plan.Databases[i];
 
                 BackupActivityHub.Raise(new BackupActivityEventArgs
@@ -234,6 +245,10 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 result.PlanId = plan.PlanId;
                 result.PlanName = plan.PlanName;
                 result.CorrelationId = correlationId;
+
+                // Ara dosya takibi: .bak
+                if (!string.IsNullOrEmpty(result.BackupFilePath) && File.Exists(result.BackupFilePath))
+                    cleanupPaths.Add(result.BackupFilePath);
 
                 if (result.Status != BackupResultStatus.Success)
                 {
@@ -313,6 +328,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             result.BackupFilePath, archivePath, password, null, ct);
                         result.CompressedFilePath = archivePath;
 
+                        // Ara dosya takibi: .7z
+                        cleanupPaths.Add(archivePath);
+
                         BackupActivityHub.Raise(new BackupActivityEventArgs
                         {
                             PlanId = plan.PlanId,
@@ -357,6 +375,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             {
                                 long bakSize = new FileInfo(result.BackupFilePath).Length;
                                 File.Delete(result.BackupFilePath);
+                                cleanupPaths.Remove(result.BackupFilePath);
                                 Log.Information(
                                     "Ara .bak dosyası silindi: {BakFile} [{Size}]",
                                     Path.GetFileName(result.BackupFilePath), Fmt(bakSize));
@@ -377,6 +396,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             }
                         }
                     }
+                    catch (OperationCanceledException) { throw; }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Sıkıştırma hatası: {Database}", dbName);
@@ -449,6 +469,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             });
                         }
                     }
+                    catch (OperationCanceledException) { throw; }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Bulut upload hatası: {Database}", dbName);
@@ -472,6 +493,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             Message = $"Eski yedek temizliği tamamlandı: {dbName}"
                         });
                     }
+                    catch (OperationCanceledException) { throw; }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Retention temizliği hatası: {Database}", dbName);
@@ -483,10 +505,15 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
                 // 7. Notify
                 await NotifyIfConfigured(result, plan, ct);
+
+                // Bu DB başarıyla tamamlandı — ara dosyalarını temizlik listesinden çıkar
+                if (cleanupPaths.Count > cleanupSnapshot)
+                    cleanupPaths.RemoveRange(cleanupSnapshot, cleanupPaths.Count - cleanupSnapshot);
             }
         }
 
-        private async Task ExecuteFileBackupAsync(BackupPlan plan, string correlationId, CancellationToken ct)
+        private async Task ExecuteFileBackupAsync(BackupPlan plan, string correlationId, CancellationToken ct,
+            List<string> cleanupPaths)
         {
             if (FileBackupService == null)
             {
@@ -548,6 +575,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             }
 
             string filesDir = Path.Combine(plan.LocalPath, "Files");
+
+            // Ara klasör takibi
+            if (Directory.Exists(filesDir))
+                cleanupPaths.Add(filesDir);
+
             if (!Directory.Exists(filesDir))
             {
                 Log.Warning("Dosya yedekleme: Hedef dizin bulunamadı, sıkıştırma atlanıyor: {FilesDir}", filesDir);
@@ -576,6 +608,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     await sevenZip.CompressDirectoryAsync(filesDir, archivePath, password, level, null, ct);
                     Log.Information("Dosya yedek arşivi oluşturuldu: {ArchivePath}", archivePath);
 
+                    // Ara dosya takibi: .7z
+                    cleanupPaths.Add(archivePath);
+
                     long archiveSize = 0;
                     try { archiveSize = new FileInfo(archivePath).Length; } catch { }
 
@@ -593,6 +628,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     Log.Warning("SevenZipCompressionService bulunamadı, dosya yedekleri sıkıştırılamadı.");
                 }
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 Log.Error(ex, "Dosya yedek sıkıştırma hatası: Plan={PlanName}", plan.PlanName);
@@ -612,6 +648,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 {
                     int fileCount = Directory.GetFiles(filesDir, "*.*", SearchOption.AllDirectories).Length;
                     Directory.Delete(filesDir, recursive: true);
+                    cleanupPaths.Remove(filesDir);
                     Log.Information(
                         "Ara Files klasörü silindi: {FilesDir} ({FileCount} dosya temizlendi)",
                         filesDir, fileCount);
@@ -667,9 +704,48 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     Message = $"Dosya yedek bulut yüklemesi tamamlandı [{Fmt(uploadSize)}]"
                 });
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 Log.Error(ex, "Dosya yedek cloud upload hatası: Plan={PlanName}", plan.PlanName);
+            }
+        }
+
+        /// <summary>
+        /// İptal veya hata durumunda ara dosyaları temizler.
+        /// Yalnızca tamamlanmamış (pipeline'ı bitmemiş) dosyaları siler.
+        /// </summary>
+        private static void CleanupOnFailure(List<string> paths, string planId)
+        {
+            if (paths == null || paths.Count == 0) return;
+
+            foreach (var path in paths)
+            {
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        long size = 0;
+                        try { size = new FileInfo(path).Length; } catch { }
+                        File.Delete(path);
+                        Log.Information(
+                            "İptal/hata temizliği: Dosya silindi — {File} [{Size}], Plan={PlanId}",
+                            Path.GetFileName(path), Fmt(size), planId);
+                    }
+                    else if (Directory.Exists(path))
+                    {
+                        int fileCount = 0;
+                        try { fileCount = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories).Length; } catch { }
+                        Directory.Delete(path, recursive: true);
+                        Log.Information(
+                            "İptal/hata temizliği: Klasör silindi — {Dir} ({FileCount} dosya), Plan={PlanId}",
+                            path, fileCount, planId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "İptal/hata temizliği başarısız: {Path}", path);
+                }
             }
         }
 
