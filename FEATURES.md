@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.56.0 — Proje Yönetişim & Branch Stratejisi
+- 3 katmanlı branch stratejisi: `master` → `develop` → `feature/*/fix/*/hotfix/*`
+- Modül stabilite haritası (`docs/STATUS.md`): 38 modül derecelendirmesi
+- Yol haritası (`docs/ROADMAP.md`): Kısa/orta/uzun vade planlama
+- Mimari kararlar günlüğü (`docs/DECISIONS.md`): 10 ADR kaydı
+- Copilot direktifi Git workflow güncellemesi
+
 ### v0.55.0 — İptal/Hata Durumunda Ara Dosya Temizliği
 - Yedekleme iptal veya hata durumunda tamamlanmamış `.bak`, `.7z`, `Files/` staging dosyaları otomatik siliniyor
 - Per-DB snapshot takibi: Başarıyla tamamlanan DB dosyaları korunuyor, yalnızca yarım kalan dosyalar temizleniyor

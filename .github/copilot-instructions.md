@@ -58,10 +58,12 @@ Kullanıcı "release derle", "release yap", "release oluştur" veya benzeri dedi
 2. **Dokümantasyon güncelle** — CHANGELOG.md, README.md, FEATURES.md, INSTALL.md gerekli bölümlerini güncelle
 3. **Build doğrula** — `dotnet build -c Release` çalıştır, hata olmadığından emin ol
 4. **Installer derle** — Projeye ait build/setup script'ini çalıştır, installer çıktısını doğrula
-5. **Git commit** — Tüm değişiklikleri commit et: `git add -A && git commit -m "release: vX.Y.Z"`
-6. **Git tag** — Versiyon tag'i oluştur: `git tag vX.Y.Z`
-7. **Git push** — Tag ile birlikte push et: `git push origin master --tags`
-8. **Bilgilendir** — GitHub Actions otomatik tetiklenecek, installer oluşturulup GitHub Release'e eklenecek
+5. **Git commit (develop)** — Tüm değişiklikleri commit et: `git add -A && git commit -m "release: vX.Y.Z"`
+6. **Merge to master** — `git checkout master && git merge develop --no-ff -m "release: vX.Y.Z"`
+7. **Git tag** — Versiyon tag'i oluştur: `git tag vX.Y.Z`
+8. **Git push** — Her iki branch'i push et: `git push origin master --tags && git push origin develop`
+9. **Develop'a dön** — `git checkout develop`
+10. **Bilgilendir** — GitHub Actions otomatik tetiklenecek, installer oluşturulup GitHub Release'e eklenecek
 
 ## Yanıt Formatı
 1. Değişiklik özeti (1-2 cümle)
@@ -153,13 +155,25 @@ Bu dosyalarda değişiklik yaparken **ekstra dikkatli** ol:
 | `CloudUploadOrchestrator.cs` | 🟡 Orta | Event firing; PlanId eksikliği log karışmasına yol açar |
 | `BackupJobExecutor.cs` | 🟡 Orta | Plan lifecycle; PlanId geçirilmezse izolasyon bozulur |
 | `ModernTheme.cs` | 🟢 Düşük | Renk ekleme güvenli; ama Dark+Light **ikisi birden** güncellenmeli |
+## Git Branch Stratejisi (3 Katmanlı)
+
+| Branch | Amaç | Kural |
+|--------|------|-------|
+| `master` | Sadece release'ler | Doğrudan commit **yasak**; sadece develop'tan merge |
+| `develop` | Günlük geliştirme | Varsayılan çalışma branch'i |
+| `feature/*` | Yeni özellik | develop'tan dallan, develop'a merge et |
+| `fix/*` | Bug düzeltme | develop'tan dallan, develop'a merge et |
+| `hotfix/*` | Acil düzeltme | master'dan dallan, master + develop'a merge et |
+
+### Günlük Git Akışı
 Her görev/özellik/düzeltme tamamlandıktan ve build doğrulandıktan sonra:
 1. `git add -A`
 2. `git commit -m "<tip>: <kısa açıklama>"`
-3. `git push origin master`
+3. `git push origin develop`
 
 **Commit tipleri:** `feat`, `fix`, `refactor`, `docs`, `chore`, `style`, `perf`
 **Kural:** Release commit'leri hariç tag oluşturma. Tag sadece "release derle" sürecinde atılır.
+**Kural:** `master` branch'ine doğrudan commit atma. Her zaman `develop` üzerinde çalış.
 
 ## Görev Sonrası Otomasyon (kritik — her görev tamamlandığında otomatik uygula)
 
@@ -168,7 +182,7 @@ Her özellik/güncelleme/düzeltme tamamlandıktan sonra aşağıdaki adımlar *
 1. **Versiyon güncelle** — Semantic versioning'e göre (MAJOR/MINOR/PATCH) versiyon noktalarını senkronize et
 2. **Dökümanları güncelle** — CHANGELOG.md, FEATURES.md, INSTALL.md, README.md (gerekli olanlar)
 3. **Build doğrula** — `dotnet build` ile derleme hatası olmadığından emin ol
-4. **Git gönder** — `git add -A` → `git commit` → `git push origin master`
+4. **Git gönder** — `git add -A` → `git commit` → `git push origin develop`
 
 > **Not:** Bu adımlar kullanıcı hatırlatmadan otomatik yapılır. Versiyon bump seviyesi:
 > - Yeni özellik → MINOR (1.8.0 → 1.9.0)

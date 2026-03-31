@@ -1,4 +1,15 @@
-﻿## [0.55.0] - 2026-05-12 — İptal/Hata Durumunda Ara Dosya Temizliği
+﻿## [0.56.0] - 2025-07-19 — Proje Yönetişim & Branch Stratejisi
+
+### Yeni Özellik
+- **3 katmanlı branch stratejisi**: `master` (release) → `develop` (günlük geliştirme) → `feature/*/fix/*/hotfix/*` dallanma modeli oluşturuldu.
+- **Modül stabilite haritası** (`docs/STATUS.md`): 5 proje, 38 modülün 🟢/🟡/🔴 derecelendirmesi.
+- **Yol haritası** (`docs/ROADMAP.md`): Kısa/orta/uzun vade iş kalemleri + teknik borç takibi.
+- **Mimari kararlar günlüğü** (`docs/DECISIONS.md`): 10 ADR kaydı (Clean Architecture, IPC, Quartz, VSS, Cancel Cleanup vb.).
+- **Copilot direktifi güncelleme**: Git workflow bölümleri yeni branch stratejisine uyarlandı.
+
+---
+
+## [0.55.0] - 2026-05-12 — İptal/Hata Durumunda Ara Dosya Temizliği
 
 ### Yeni Özellik
 - **İptal/hata temizliği**: Yedekleme görevi iptal edildiğinde veya başarısız olduğunda tamamlanmamış ara dosyalar (`.bak`, `.7z`, `Files/` staging klasörü) otomatik olarak siliniyor. (etkilenen: `BackupJobExecutor.cs`)
