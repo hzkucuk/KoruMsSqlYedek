@@ -1,4 +1,4 @@
-﻿# KoruMsSqlYedek
+# KoruMsSqlYedek
 
 **SQL Server Yedekleme & Bulut Senkronizasyon Sistemi**
 
@@ -58,7 +58,7 @@ KoruMsSqlYedek.sln
 | Bileşen | Minimum Versiyon |
 |---------|-----------------|
 | İşletim Sistemi | Windows 10+ |
-| .NET Framework | 4.8 |
+| .NET | 10.0 |
 | SQL Server | 2016+ |
 | Visual Studio | 2022+ (geliştirme için) |
 

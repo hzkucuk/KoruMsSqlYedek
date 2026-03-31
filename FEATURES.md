@@ -55,6 +55,8 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 | **Faz 39.2** | BackupJobExecutor Kapsamlı Test Genişletmesi (+12 test, 223 toplam) | ✅ Tamamlandı |
 | **Faz 40** | Periyodik Raporlama Motoru (Günlük/Haftalık/Aylık HTML rapor) | ✅ Tamamlandı |
 | **Faz 41** | Görev Listesi Kolon Sıralama + Arama (ToolStrip) | ✅ Tamamlandı |
+| **Faz 42** | UI Geliştirmeleri: Log Görev Filtresi + Dashboard Sıralama + Tray Animasyonu | ✅ Tamamlandı |
+| **Faz 42.1** | Bulut Hedef Tooltip + Pipe IOException Sessiz Yeniden Bağlanma | ✅ Tamamlandı |
 
 ---
 
@@ -135,6 +137,27 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 - [x] `.github\copilot-instructions.md` — Tam yeniden yazım
 - [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.42.0.0
 - [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.42.0.0
+
+---
+
+## Faz 42.1 — Bulut Hedef Tooltip + Pipe IOException Sessiz Yeniden Bağlanma ✅
+
+### Yeni Özellik
+- [x] **`_txtRemotePath` dinamik tooltip** (`CloudTargetEditDialog`): Provider türüne göre format rehberi
+  - **Google Drive / OneDrive**: başında `/` veya `\` olmadan; alt klasör için `/` ayırıcı; Örnek: `Yedekler/Plan1`
+  - **FTP / FTPS / SFTP**: Unix yolu, başında `/`; Örnek: `/yedekler/plan1`
+  - `UpdateRemotePathTooltip(type)` metodu `UpdateFieldVisibility()` içinden provider değişiminde tetiklenir
+  - Tooltip hem label (`_lblRemotePath`) hem de TextBox (`_txtRemotePath`) üzerinde gösterilir
+
+### Hata Düzeltmesi
+- [x] **Yedek sonrası "Servis bağlantısı kesildi" balonu** (`ServicePipeClient`): `ReadLoopAsync` içinde `IOException` yakalanarak `SetConnected(false)` tetiklenmemesi sağlandı; yeniden bağlanma döngüsü sessizce devam eder
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Win\Forms\CloudTargetEditDialog.cs` — `UpdateRemotePathTooltip()`, `UpdateFieldVisibility()` çağrısı
+- [x] `KoruMsSqlYedek.Win\Forms\CloudTargetEditDialog.Designer.cs` — `_toolTipRemotePath` alanı + `new ToolTip(components)`
+- [x] `KoruMsSqlYedek.Win\IPC\ServicePipeClient.cs` — `ReadLoopAsync` IOException try/catch
+- [x] `KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs` — v0.42.9.0
+- [x] `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — ApplicationVersion 0.42.9.0
 
 ---
 
