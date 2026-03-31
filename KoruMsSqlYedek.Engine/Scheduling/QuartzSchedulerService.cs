@@ -141,16 +141,33 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             if (_scheduler == null)
                 throw new InvalidOperationException("Scheduler henüz başlatılmamış.");
 
-            var jobKey = new JobKey($"{planId}_Full", "BackupJobs");
-            if (await _scheduler.CheckExists(jobKey, cancellationToken))
+            bool triggered = false;
+
+            // SQL yedek: Full > Differential > Incremental (en yüksek öncelikliyi tetikle)
+            string[] sqlTypes = { "Full", "Differential", "Incremental" };
+            foreach (string type in sqlTypes)
             {
-                await _scheduler.TriggerJob(jobKey, cancellationToken);
-                Log.Information("Plan manuel tetiklendi: {PlanId}", planId);
+                var jobKey = new JobKey($"{planId}_{type}", "BackupJobs");
+                if (await _scheduler.CheckExists(jobKey, cancellationToken))
+                {
+                    await _scheduler.TriggerJob(jobKey, cancellationToken);
+                    Log.Information("Plan manuel tetiklendi: {PlanId} ({BackupType})", planId, type);
+                    triggered = true;
+                    break;
+                }
             }
-            else
+
+            // Dosya yedekleme — ayrı schedule'a sahip FileBackup job'u varsa ayrıca tetikle
+            var fileJobKey = new JobKey($"{planId}_FileBackup", "BackupJobs");
+            if (await _scheduler.CheckExists(fileJobKey, cancellationToken))
             {
-                Log.Warning("Manuel tetikleme: Job bulunamadı: {PlanId}", planId);
+                await _scheduler.TriggerJob(fileJobKey, cancellationToken);
+                Log.Information("Dosya yedekleme manuel tetiklendi: {PlanId}", planId);
+                triggered = true;
             }
+
+            if (!triggered)
+                Log.Warning("Manuel tetikleme: Zamanlanmış job bulunamadı: {PlanId}", planId);
         }
 
         public async Task<DateTimeOffset?> GetNextFireTimeAsync(string planId, CancellationToken cancellationToken)

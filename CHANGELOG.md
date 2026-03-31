@@ -1,4 +1,15 @@
-﻿## [0.42.9] - 2026-04-06 — Uzak Klasör Yolu Tooltip + Pipe Bağlantı Kesilme Düzeltmesi
+﻿## [0.42.10] - 2026-05-09 — Dosya Yedekleme Bulut Düzeltmesi + Tray Servis Kontrolü
+
+### Hata Düzeltmesi
+- **Dosya yedekleme buluta gönderilmiyordu**: `BackupJobExecutor.ExecuteFileBackupAsync` içinde `UploadToAllAsync` çağrısına eksik olan `plan.PlanName` parametresi eklendi. Bu parametre olmadan bulut hedefinde yanlış/eksik klasör yolu kullanılıyordu. (etkilenen: `BackupJobExecutor.cs`)
+- **Manuel tetiklemede dosya yedekleme çalışmıyordu**: `QuartzSchedulerService.TriggerPlanNowAsync` yalnızca `{planId}_Full` job'unu arıyordu; FileBackup job'u hiç tetiklenmiyordu. Artık `Full / Differential / Incremental` öncelik sırasıyla SQL backup + ayrı schedule'a sahip `{planId}_FileBackup` job'u ayrıca tetikleniyor. (etkilenen: `QuartzSchedulerService.cs`)
+
+### Yeni Özellik
+- **Tray servis kontrol menüsü**: Sistem tepsisi menüsüne Servis Durumu göstergesi ve **Servisi Başlat / Servisi Durdur / Yeniden Başlat** düğmeleri eklendi. Menü her açılışta `ServiceController` üzerinden gerçek servis durumunu sorgular ve buton etkin/pasif durumunu otomatik günceller. (etkilenen: `TrayApplicationContext.cs`, `Resources.resx`, `Resources.tr-TR.resx`)
+
+---
+
+## [0.42.9] - 2026-04-06 — Uzak Klasör Yolu Tooltip + Pipe Bağlantı Kesilme Düzeltmesi
 
 ### Yeni Özellik
 - **Uzak Klasör Yolu tooltip**: "Bulut Hedef Düzenle" formundaki `Uzak Klasör Yolu` alanına provider türüne göre dinamik tooltip eklendi.

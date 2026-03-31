@@ -362,4 +362,16 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Restore_NoHistory" xml:space="preserve"><value>Bu plan için yedek kaydı bulunamadı.</value></data>
   <data name="CtxMenu_Restore" xml:space="preserve"><value>Geri Yükle...</value></data>
 
+  <!-- ===== Tray — Servis Kontrolü ===== -->
+  <data name="Tray_ServiceStatusRunning" xml:space="preserve"><value>Servis: Çalışıyor ✓</value></data>
+  <data name="Tray_ServiceStatusStopped" xml:space="preserve"><value>Servis: Durdu ✗</value></data>
+  <data name="Tray_ServiceStatusUnknown" xml:space="preserve"><value>Servis: Bilinmiyor</value></data>
+  <data name="Tray_ServiceStart" xml:space="preserve"><value>Servisi Başlat</value></data>
+  <data name="Tray_ServiceStop" xml:space="preserve"><value>Servisi Durdur</value></data>
+  <data name="Tray_ServiceRestart" xml:space="preserve"><value>Yeniden Başlat</value></data>
+  <data name="Tray_ServiceActionError" xml:space="preserve"><value>Servis işlemi başarısız: {0}</value></data>
+  <data name="Tray_ServiceStarted" xml:space="preserve"><value>Servis başarıyla başlatıldı.</value></data>
+  <data name="Tray_ServiceStopped" xml:space="preserve"><value>Servis durduruldu.</value></data>
+  <data name="Tray_ServiceRestarted" xml:space="preserve"><value>Servis yeniden başlatıldı.</value></data>
+
 </root>

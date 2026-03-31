@@ -388,7 +388,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 {
                     await CloudOrchestrator.UploadToAllAsync(
                         archivePath, Path.GetFileName(archivePath),
-                        plan.CloudTargets, null, ct);
+                        plan.CloudTargets, null, ct, plan.PlanName);
                 }
                 catch (Exception ex)
                 {

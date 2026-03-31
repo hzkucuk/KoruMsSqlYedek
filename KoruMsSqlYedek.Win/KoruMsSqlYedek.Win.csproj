@@ -7,7 +7,7 @@
     <AssemblyName>KoruMsSqlYedek.Win</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ApplicationVersion>0.42.9.0</ApplicationVersion>
+    <ApplicationVersion>0.42.10.0</ApplicationVersion>
     <NoWarn>$(NoWarn);WFO1000;CA1416</NoWarn>
   </PropertyGroup>
   <ItemGroup>
@@ -21,6 +21,7 @@
     <PackageReference Include="Autofac" Version="8.1.1" />
     <PackageReference Include="Serilog" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KoruMsSqlYedek.Core\KoruMsSqlYedek.Core.csproj" />

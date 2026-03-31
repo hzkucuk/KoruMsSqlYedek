@@ -362,4 +362,16 @@ Language change requires application restart.</value></data>
   <data name="Restore_NoHistory" xml:space="preserve"><value>No backup records found for this plan.</value></data>
   <data name="CtxMenu_Restore" xml:space="preserve"><value>Restore...</value></data>
 
+  <!-- ===== Tray — Service Control ===== -->
+  <data name="Tray_ServiceStatusRunning" xml:space="preserve"><value>Service: Running ✓</value></data>
+  <data name="Tray_ServiceStatusStopped" xml:space="preserve"><value>Service: Stopped ✗</value></data>
+  <data name="Tray_ServiceStatusUnknown" xml:space="preserve"><value>Service: Unknown</value></data>
+  <data name="Tray_ServiceStart" xml:space="preserve"><value>Start Service</value></data>
+  <data name="Tray_ServiceStop" xml:space="preserve"><value>Stop Service</value></data>
+  <data name="Tray_ServiceRestart" xml:space="preserve"><value>Restart Service</value></data>
+  <data name="Tray_ServiceActionError" xml:space="preserve"><value>Service operation failed: {0}</value></data>
+  <data name="Tray_ServiceStarted" xml:space="preserve"><value>Service started successfully.</value></data>
+  <data name="Tray_ServiceStopped" xml:space="preserve"><value>Service stopped.</value></data>
+  <data name="Tray_ServiceRestarted" xml:space="preserve"><value>Service restarted successfully.</value></data>
+
 </root>

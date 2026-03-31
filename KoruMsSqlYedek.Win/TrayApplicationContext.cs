@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using System.ServiceProcess;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Autofac;
 using KoruMsSqlYedek.Core.Events;
@@ -18,11 +20,19 @@ namespace KoruMsSqlYedek.Win
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<TrayApplicationContext>();
 
+        private const string ServiceName = "KoruMsSqlYedekService";
+
         private readonly NotifyIcon _notifyIcon;
         private readonly ContextMenuStrip _contextMenu;
         private readonly ILifetimeScope _scope;
         private readonly ServicePipeClient _pipeClient;
         private MainWindow _mainWindow;
+
+        // Servis kontrol menü öğeleri
+        private ToolStripMenuItem _tsmServiceStatus;
+        private ToolStripMenuItem _tsmServiceStart;
+        private ToolStripMenuItem _tsmServiceStop;
+        private ToolStripMenuItem _tsmServiceRestart;
 
         // Yedekleme animasyon durumu
         private readonly System.Windows.Forms.Timer _animTimer;
@@ -97,15 +107,27 @@ namespace KoruMsSqlYedek.Win
             var tsmSettings = new ToolStripMenuItem(Res.Get("Tray_MenuSettings"), null, (s, e) => OpenMainWindow(4));
             var tsmExit = new ToolStripMenuItem(Res.Get("Tray_MenuExit"), null, OnExitClick);
 
+            _tsmServiceStatus  = new ToolStripMenuItem(Res.Get("Tray_ServiceStatusUnknown")) { Enabled = false };
+            _tsmServiceStart   = new ToolStripMenuItem(Res.Get("Tray_ServiceStart"),   null, OnServiceStartClick);
+            _tsmServiceStop    = new ToolStripMenuItem(Res.Get("Tray_ServiceStop"),    null, OnServiceStopClick);
+            _tsmServiceRestart = new ToolStripMenuItem(Res.Get("Tray_ServiceRestart"), null, OnServiceRestartClick);
+
             menu.Items.Add(tsmDashboard);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmPlans);
             menu.Items.Add(tsmManualBackup);
             menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add(_tsmServiceStatus);
+            menu.Items.Add(_tsmServiceStart);
+            menu.Items.Add(_tsmServiceStop);
+            menu.Items.Add(_tsmServiceRestart);
+            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmLog);
             menu.Items.Add(tsmSettings);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmExit);
+
+            menu.Opening += (s, e) => UpdateServiceMenuItems();
 
             return menu;
         }
@@ -123,6 +145,105 @@ namespace KoruMsSqlYedek.Win
             }
 
             _mainWindow.SelectTab(tabIndex);
+        }
+
+        #endregion
+
+        #region Service Control
+
+        private void UpdateServiceMenuItems()
+        {
+            try
+            {
+                using var sc = new ServiceController(ServiceName);
+                var status = sc.Status;
+                bool running = status == ServiceControllerStatus.Running;
+                bool stopped = status == ServiceControllerStatus.Stopped;
+
+                _tsmServiceStatus.Text = running
+                    ? Res.Get("Tray_ServiceStatusRunning")
+                    : stopped
+                        ? Res.Get("Tray_ServiceStatusStopped")
+                        : Res.Get("Tray_ServiceStatusUnknown");
+
+                _tsmServiceStart.Enabled   = stopped;
+                _tsmServiceStop.Enabled    = running;
+                _tsmServiceRestart.Enabled = running;
+            }
+            catch
+            {
+                _tsmServiceStatus.Text     = Res.Get("Tray_ServiceStatusUnknown");
+                _tsmServiceStart.Enabled   = false;
+                _tsmServiceStop.Enabled    = false;
+                _tsmServiceRestart.Enabled = false;
+            }
+        }
+
+        private async void OnServiceStartClick(object sender, EventArgs e)
+        {
+            try
+            {
+                _tsmServiceStart.Enabled = false;
+                await Task.Run(() =>
+                {
+                    using var sc = new ServiceController(ServiceName);
+                    sc.Start();
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+                });
+                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStarted"), ToolTipIcon.Info, 2500);
+                Log.Information("Servis kullanıcı tarafından başlatıldı.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Servis başlatılamadı.");
+                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
+            }
+        }
+
+        private async void OnServiceStopClick(object sender, EventArgs e)
+        {
+            try
+            {
+                _tsmServiceStop.Enabled    = false;
+                _tsmServiceRestart.Enabled = false;
+                await Task.Run(() =>
+                {
+                    using var sc = new ServiceController(ServiceName);
+                    sc.Stop();
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+                });
+                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStopped"), ToolTipIcon.Info, 2500);
+                Log.Information("Servis kullanıcı tarafından durduruldu.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Servis durdurulamadı.");
+                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
+            }
+        }
+
+        private async void OnServiceRestartClick(object sender, EventArgs e)
+        {
+            try
+            {
+                _tsmServiceStop.Enabled    = false;
+                _tsmServiceRestart.Enabled = false;
+                await Task.Run(() =>
+                {
+                    using var sc = new ServiceController(ServiceName);
+                    sc.Stop();
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
+                    sc.Start();
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+                });
+                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceRestarted"), ToolTipIcon.Info, 2500);
+                Log.Information("Servis kullanıcı tarafından yeniden başlatıldı.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Servis yeniden başlatılamadı.");
+                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
+            }
         }
 
         #endregion
