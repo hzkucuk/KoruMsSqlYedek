@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.54.0 — Named Pipe Güvenlik ACL Düzeltmesi
+- Servis (SYSTEM) → Tray (kullanıcı) pipe bağlantı hatası giderildi
+- `NamedPipeServerStreamAcl.Create()` ile `PipeSecurity` ACL eklendi (AuthenticatedUsers ReadWrite, SYSTEM FullControl)
+- Ek NuGet paketi gerekmedi (`net10.0-windows` TFM yeterli)
+
 ### v0.53.1 — Uyarı Temizliği & Paket Güncellemesi
 - SMO 181.15.0, SqlClient 6.1.4, MSAL 4.83.3’e yükseltildi (NU1608 çözüldü)
 - 8 event handler’da CS8632 nullable uyarısı düzeltildi

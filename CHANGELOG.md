@@ -1,4 +1,12 @@
-﻿## [0.53.1] - 2026-05-12 — Uyarı Temizliği & Paket Güncellemesi
+﻿## [0.54.0] - 2026-05-12 — Named Pipe Güvenlik ACL Düzeltmesi
+
+### Düzeltme
+- **Servis–Tray pipe bağlantı hatası giderildi**: `ServicePipeServer` artık `PipeSecurity` ile pipe oluşturuyor. SYSTEM hesabıyla çalışan servise normal kullanıcı olarak çalışan Tray uygulaması bağlanabiliyor. (`AuthenticatedUserSid` → ReadWrite, `LocalSystemSid` → FullControl) (etkilenen: `ServicePipeServer.cs`)
+- `NamedPipeServerStreamAcl.Create()` kullanılarak pipe ACL'si açıkça tanımlandı.
+
+---
+
+## [0.53.1] - 2026-05-12 — Uyarı Temizliği & Paket Güncellemesi
 
 ### Düzeltme
 - **NU1608 çözümü**: SMO 171.30.0 → 181.15.0, SqlClient 6.0.2 → 6.1.4, MSAL 4.67.2 → 4.83.3 — bağımlılık kısıtlaması uyarıları giderildi.
