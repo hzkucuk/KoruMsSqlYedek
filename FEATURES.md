@@ -57,6 +57,7 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 | **Faz 41** | Görev Listesi Kolon Sıralama + Arama (ToolStrip) | ✅ Tamamlandı |
 | **Faz 42** | UI Geliştirmeleri: Log Görev Filtresi + Dashboard Sıralama + Tray Animasyonu | ✅ Tamamlandı |
 | **Faz 42.1** | Bulut Hedef Tooltip + Pipe IOException Sessiz Yeniden Bağlanma | ✅ Tamamlandı |
+| **Faz 42.2** | Plan Bazlı Log İzolasyonu + Tek Satır İlerleme + Sonraki Çalışma Zamanı Düzeltmesi | ✅ Tamamlandı |
 
 ---
 

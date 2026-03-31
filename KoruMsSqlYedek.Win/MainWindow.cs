@@ -296,6 +296,8 @@ namespace KoruMsSqlYedek.Win
                     break;
                 case 1: // Planlar + Yedekleme
                     RefreshPlanList();
+                    // Servisden güncel sonraki çalışma zamanlarını iste
+                    RequestNextFireTimesAsync();
                     break;
                 case 2: // Loglar
                     if (_allLogEntries.Count == 0)
@@ -1136,6 +1138,23 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
+        /// <summary>
+        /// Servisden güncel sonraki çalışma zamanlarını ister (fire-and-forget, hata yutulmaz).
+        /// Plans sekmesine her geçişte çağrılarak _nextFireTimes sözlüğünün güncel kalması sağlanır.
+        /// </summary>
+        private async void RequestNextFireTimesAsync()
+        {
+            try
+            {
+                if (_pipeClient.IsConnected)
+                    await _pipeClient.RequestStatusAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Sonraki çalışma zamanları isteği gönderilemedi.");
+            }
+        }
+
         private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
         {
             if (InvokeRequired)
@@ -1160,27 +1179,32 @@ namespace KoruMsSqlYedek.Win
                     if (e.TotalCount > 0)
                     {
                         int pct = (int)((double)e.CurrentIndex / e.TotalCount * 50);
-                        if (e.PlanId == _viewingPlanId)
+                        string dbPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
+                        if (dbPlanId == _viewingPlanId)
                             _progressBar.Value = pct;
-                        UpdatePlanRowProgress(e.PlanId ?? _viewingPlanId, pct);
+                        UpdatePlanRowProgress(dbPlanId, pct);
                     }
                     break;
 
                 case BackupActivityType.CloudUploadProgress:
-                    if (e.PlanId == _viewingPlanId)
                     {
-                        _progressBar.Value = e.ProgressPercent;
-                        if (e.BytesTotal > 0)
+                        // PlanId yoksa _viewingPlanId kullan
+                        string uploadPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
+                        if (uploadPlanId == _viewingPlanId)
                         {
-                            _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.CustomText;
-                            _progressBar.Text = string.Format("{0}%  {1}/{2}  {3}/s",
-                                e.ProgressPercent,
-                                FormatFileSize(e.BytesSent),
-                                FormatFileSize(e.BytesTotal),
-                                FormatFileSize(e.SpeedBytesPerSecond));
+                            _progressBar.Value = e.ProgressPercent;
+                            if (e.BytesTotal > 0)
+                            {
+                                _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.CustomText;
+                                _progressBar.Text = string.Format("{0}%  {1}/{2}  {3}/s",
+                                    e.ProgressPercent,
+                                    FormatFileSize(e.BytesSent),
+                                    FormatFileSize(e.BytesTotal),
+                                    FormatFileSize(e.SpeedBytesPerSecond));
+                            }
                         }
+                        UpdatePlanRowProgress(uploadPlanId, e.ProgressPercent);
                     }
-                    UpdatePlanRowProgress(e.PlanId ?? _viewingPlanId, e.ProgressPercent);
                     break;
 
                 case BackupActivityType.Completed:
@@ -1200,7 +1224,8 @@ namespace KoruMsSqlYedek.Win
             }
 
             UpdateBackupButtonStates();
-            AppendBackupLog(e.PlanId, BuildActivityLogLine(e));
+            bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress;
+            AppendBackupLog(e.PlanId, BuildActivityLogLine(e), isProgress);
         }
 
         private void UpdatePlanRowStatus(string planId, BackupActivityType activityType)
@@ -1255,32 +1280,74 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
-        private void AppendBackupLog(string planId, string line)
+        // İlerleme satırı tespiti için önek sabiti
+        private const string ProgressLineMarker = "Yükleniyor ";
+
+        private void AppendBackupLog(string planId, string line, bool isProgressLine = false)
         {
             if (string.IsNullOrEmpty(line)) return;
 
             if (InvokeRequired)
             {
-                Invoke(new Action(() => AppendBackupLog(planId, line)));
+                Invoke(new Action(() => AppendBackupLog(planId, line, isProgressLine)));
                 return;
             }
 
+            // PlanId yoksa çalışan plan'ın id'sini kullan (fallback)
+            string effectivePlanId = !string.IsNullOrEmpty(planId) ? planId : _viewingPlanId;
+
             string formatted = "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line;
 
-            // Plan'a ait buffer'a ekle
-            if (!string.IsNullOrEmpty(planId))
+            // Plan'a ait buffer'a ekle (ilerleme satırı ise son ilerleme satırını güncelle)
+            if (!string.IsNullOrEmpty(effectivePlanId))
             {
-                if (!_planLogs.ContainsKey(planId))
-                    _planLogs[planId] = new List<string>();
-                _planLogs[planId].Add(formatted);
+                if (!_planLogs.ContainsKey(effectivePlanId))
+                    _planLogs[effectivePlanId] = new List<string>();
+
+                var logList = _planLogs[effectivePlanId];
+                if (isProgressLine && logList.Count > 0 && logList[logList.Count - 1].Contains(ProgressLineMarker))
+                    logList[logList.Count - 1] = formatted;
+                else
+                    logList.Add(formatted);
             }
 
             // Sadece seçili plan ile eşleşiyorsa UI'yi güncelle
             var selected = GetSelectedPlanSilent();
-            if (selected?.PlanId == planId || string.IsNullOrEmpty(planId))
+            if (selected != null && selected.PlanId == effectivePlanId)
             {
-                _txtBackupLog.AppendText(formatted + Environment.NewLine);
+                if (isProgressLine)
+                    ReplaceLastProgressLine(formatted);
+                else
+                    _txtBackupLog.AppendText(formatted + Environment.NewLine);
             }
+        }
+
+        /// <summary>
+        /// TextBox'taki son ilerleme satırını yenisiyle değiştirir.
+        /// Eğer son satır ilerleme satırı değilse normal append yapar.
+        /// </summary>
+        private void ReplaceLastProgressLine(string newLine)
+        {
+            string text = _txtBackupLog.Text;
+            if (text.Length > 0)
+            {
+                // Son satırın başlangıç konumunu bul (son NewLine'dan önceki NewLine)
+                int lastNewLine = text.LastIndexOf(Environment.NewLine, text.Length - Environment.NewLine.Length - 1, StringComparison.Ordinal);
+                int lineStart = lastNewLine >= 0 ? lastNewLine + Environment.NewLine.Length : 0;
+                string lastLine = text.Substring(lineStart).TrimEnd('\r', '\n');
+
+                if (lastLine.Contains(ProgressLineMarker))
+                {
+                    _txtBackupLog.Select(lineStart, text.Length - lineStart);
+                    _txtBackupLog.SelectedText = newLine + Environment.NewLine;
+                    _txtBackupLog.SelectionStart = _txtBackupLog.Text.Length;
+                    _txtBackupLog.ScrollToCaret();
+                    return;
+                }
+            }
+
+            // Son satır ilerleme satırı değilse normal append
+            _txtBackupLog.AppendText(newLine + Environment.NewLine);
         }
 
         private string BuildActivityLogLine(BackupActivityEventArgs e)

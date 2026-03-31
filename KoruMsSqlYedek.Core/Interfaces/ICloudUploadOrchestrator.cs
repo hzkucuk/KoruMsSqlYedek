@@ -17,13 +17,15 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// Retry: 3 deneme, exponential backoff (2s → 4s → 8s).
         /// RemoteFolderPath boşsa otomatik olarak "KoruMsSqlYedek/{planName}" klasörü kullanılır.
         /// </summary>
+        /// <param name="planId">İlerleme olaylarına eklenen plan kimliği (null olabilir).</param>
         Task<List<CloudUploadResult>> UploadToAllAsync(
             string localFilePath,
             string remoteFileName,
             List<CloudTargetConfig> targets,
             IProgress<int> progress,
             CancellationToken cancellationToken,
-            string planName = null);
+            string planName = null,
+            string planId = null);
 
         /// <summary>
         /// Tüm aktif bulut hedeflerinden uzak dosyayı siler.

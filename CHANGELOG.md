@@ -1,4 +1,15 @@
-﻿## [0.47.0] - 2026-05-10 — VSS Bulut Yükleme + Modern Tray İkon + Servis Kontrol İyileştirmesi
+﻿## [0.48.0] - 2026-05-11 — Plan Bazlı Log İzolasyonu + Tek Satır İlerleme + Sonraki Çalışma Zamanı Düzeltmesi
+
+### Hata Düzeltmesi
+- **Log paneli plan karışması**: Bulut upload olayları (CloudUploadStarted/Progress/Completed) artık `PlanId` içeriyor. Farklı bir plan seçiliyken çalışan planın logları artık karışmıyor. `AppendBackupLog` null-planId catch-all kaldırıldı, `_viewingPlanId` fallback kullanılıyor. (etkilenen: `CloudUploadOrchestrator.cs`, `ICloudUploadOrchestrator.cs`, `BackupJobExecutor.cs`, `MainWindow.cs`)
+- **Sonraki çalışma zamanları boş gelme**: Plans sekmesine her geçişte servisden güncel zamanlama bilgisi isteniyor (`RequestStatusAsync`). `_nextFireTimes` sözlüğü hiçbir zaman temizlenmiyor, yalnızca güncelleniyor. (etkilenen: `MainWindow.cs`)
+
+### Yeni Özellik
+- **Tek satır ilerleme güncellemesi**: Bulut yükleme ilerleme satırları artık log panelinde tek satırda güncelleniyor, aşağı doğru kayma sorunu giderildi. Buffer ve UI aynı anda güncelleniyor. (etkilenen: `MainWindow.cs`)
+
+---
+
+## [0.47.0] - 2026-05-10 — VSS Bulut Yükleme + Modern Tray İkon + Servis Kontrol İyileştirmesi
 
 ### Hata Düzeltmesi
 - **VSS dosyası buluta yüklenmiyor**: Express VSS ile oluşturulan `*_VSS_*.7z` dosyaları artık SQL yedek dosyasından sonra otomatik olarak bulut hedeflerine yükleniyor. (etkilenen: `BackupJobExecutor.cs`)

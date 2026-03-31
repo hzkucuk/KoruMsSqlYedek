@@ -361,7 +361,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
                         result.CloudUploadResults = await CloudOrchestrator.UploadToAllAsync(
                             fileToUpload, remoteFileName, plan.CloudTargets, null, ct,
-                            plan.PlanName);
+                            plan.PlanName, plan.PlanId);
 
                         int successCount = result.CloudUploadResults.Count(r => r.IsSuccess);
                         int totalCount = result.CloudUploadResults.Count;
@@ -397,7 +397,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
                             var vssResults = await CloudOrchestrator.UploadToAllAsync(
                                 result.VssFileCopyPath, vssRemoteName, plan.CloudTargets, null, ct,
-                                plan.PlanName);
+                                plan.PlanName, plan.PlanId);
 
                             int vssSuccess = vssResults.Count(r => r.IsSuccess);
                             int vssTotal = vssResults.Count;
@@ -590,7 +590,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             {
                 await CloudOrchestrator.UploadToAllAsync(
                     archivePath, Path.GetFileName(archivePath),
-                    plan.CloudTargets, null, ct, plan.PlanName);
+                    plan.CloudTargets, null, ct, plan.PlanName, plan.PlanId);
                 Log.Information("Dosya yedek bulut yüklemesi tamamlandı. Plan={PlanName}", plan.PlanName);
 
                 long uploadSize = 0;

@@ -57,7 +57,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
             List<CloudTargetConfig> targets,
             IProgress<int> progress,
             CancellationToken cancellationToken,
-            string planName = null)
+            string planName = null,
+            string planId = null)
         {
             var results = new List<CloudUploadResult>();
             var enabledTargets = targets.Where(t => t.IsEnabled).ToList();
@@ -122,6 +123,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                 BackupActivityHub.Raise(new BackupActivityEventArgs
                 {
+                    PlanId = planId,
+                    PlanName = planName,
                     ActivityType = BackupActivityType.CloudUploadStarted,
                     CloudTargetName = effectiveTarget.DisplayName,
                     CloudTargetIndex = completed + 1,
@@ -147,6 +150,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                     BackupActivityHub.Raise(new BackupActivityEventArgs
                     {
+                        PlanId = planId,
+                        PlanName = planName,
                         ActivityType = BackupActivityType.CloudUploadProgress,
                         CloudTargetName = effectiveTarget.DisplayName,
                         CloudTargetIndex = completed + 1,
@@ -167,6 +172,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                 BackupActivityHub.Raise(new BackupActivityEventArgs
                 {
+                    PlanId = planId,
+                    PlanName = planName,
                     ActivityType = BackupActivityType.CloudUploadCompleted,
                     CloudTargetName = effectiveTarget.DisplayName,
                     CloudTargetIndex = completed,
