@@ -347,11 +347,23 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             if (!results.Any(r => r.Status == BackupResultStatus.Success ||
                                    r.Status == BackupResultStatus.PartialSuccess ||
                                    r.FilesCopied > 0))
+            {
+                Log.Warning("Dosya yedekleme: Hiçbir dosya kopyalanamadı, sıkıştırma atlanıyor. Plan={PlanName}", plan.PlanName);
                 return;
+            }
 
             string filesDir = Path.Combine(plan.LocalPath, "Files");
             if (!Directory.Exists(filesDir))
+            {
+                Log.Warning("Dosya yedekleme: Hedef dizin bulunamadı, sıkıştırma atlanıyor: {FilesDir}", filesDir);
                 return;
+            }
+
+            if (!Directory.EnumerateFiles(filesDir, "*.*", SearchOption.AllDirectories).Any())
+            {
+                Log.Warning("Dosya yedekleme: Hedef dizinde dosya yok, sıkıştırma atlanıyor: {FilesDir}", filesDir);
+                return;
+            }
 
             // Sıkıştır — yapılandırılmışsa o ayarları kullan, yoksa varsayılan (Level 3, şifresiz)
             string archivePath = null;
@@ -379,21 +391,40 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 Log.Error(ex, "Dosya yedek sıkıştırma hatası: Plan={PlanName}", plan.PlanName);
             }
 
-            // Buluta gönder
-            if (archivePath != null && File.Exists(archivePath) &&
-                CloudOrchestrator != null && plan.CloudTargets != null &&
-                plan.CloudTargets.Any(t => t.IsEnabled))
+            // Arşiv oluşturuldu mu?
+            if (archivePath == null || !File.Exists(archivePath))
             {
-                try
-                {
-                    await CloudOrchestrator.UploadToAllAsync(
-                        archivePath, Path.GetFileName(archivePath),
-                        plan.CloudTargets, null, ct, plan.PlanName);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Dosya yedek cloud upload hatası: Plan={PlanName}", plan.PlanName);
-                }
+                Log.Warning("Dosya yedekleme: Arşiv oluşturulamadı veya bulunamadı, bulut yüklemesi atlanıyor. Plan={PlanName}", plan.PlanName);
+                return;
+            }
+
+            // Bulut hedefleri hazır mı?
+            if (CloudOrchestrator == null)
+            {
+                Log.Warning("Dosya yedekleme: CloudOrchestrator null, bulut yüklemesi atlanıyor. Plan={PlanName}", plan.PlanName);
+                return;
+            }
+
+            if (plan.CloudTargets == null || !plan.CloudTargets.Any(t => t.IsEnabled))
+            {
+                Log.Information("Dosya yedekleme: Aktif bulut hedefi yok, yükleme atlanıyor. Plan={PlanName}", plan.PlanName);
+                return;
+            }
+
+            // Buluta gönder
+            int enabledTargetCount = plan.CloudTargets.Count(t => t.IsEnabled);
+            Log.Information("Dosya yedek bulut yüklemesi başlıyor: {Archive} — {TargetCount} hedef",
+                archivePath, enabledTargetCount);
+            try
+            {
+                await CloudOrchestrator.UploadToAllAsync(
+                    archivePath, Path.GetFileName(archivePath),
+                    plan.CloudTargets, null, ct, plan.PlanName);
+                Log.Information("Dosya yedek bulut yüklemesi tamamlandı. Plan={PlanName}", plan.PlanName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Dosya yedek cloud upload hatası: Plan={PlanName}", plan.PlanName);
             }
         }
 

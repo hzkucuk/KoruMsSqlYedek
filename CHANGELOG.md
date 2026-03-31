@@ -1,4 +1,16 @@
-﻿## [0.42.10] - 2026-05-09 — Dosya Yedekleme Bulut Düzeltmesi + Tray Servis Kontrolü
+﻿## [0.42.11] - 2026-05-09 — UAC Manifest + Dosya Yedekleme Tanısal Loglama
+
+### Hata Düzeltmesi
+- **Dosya yedekleme bulut modu sessiz başarısızlıkları**: `ExecuteFileBackupAsync` içindeki tüm erken dönüş noktaları artık `Log.Warning` ile nedeni bildiriyor. Hangi adımda takıldığı (dosya kopyalanamadı / dizin yok / dizin boş / arşiv oluşturulamadı / CloudOrchestrator null / aktif hedef yok) logdan okunabilir. (etkilenen: `BackupJobExecutor.cs`)
+- **Boş dizin → SevenZip çökmesi**: Hedef `Files/` dizini oluşturulmuş ama içinde hiç dosya olmadığında `CompressDirectoryAsync` hata fırlatıyordu. Artık sıkıştırma öncesi `Directory.EnumerateFiles` guard'ı ile boş dizin erkenden yakalanır.
+- **Bulut yükleme başlangıç/bitiş logu**: Upload öncesi kaç hedefe gönderileceği, bitiş sonrası tamamlandı logu eklendi.
+
+### Yeni Özellik
+- **requireAdministrator manifest**: `KoruMsSqlYedek.Win` projesi artık `app.manifest` ile `requireAdministrator` UAC seviyesinde çalışır. Tray menüsündeki Servis Başlat / Durdur / Yeniden Başlat işlemleri yönetici yetkisi gerektirdiğinden bu zorunluydu. (etkilenen: `app.manifest`, `KoruMsSqlYedek.Win.csproj`)
+
+---
+
+## [0.42.10] - 2026-05-09
 
 ### Hata Düzeltmesi
 - **Dosya yedekleme buluta gönderilmiyordu**: `BackupJobExecutor.ExecuteFileBackupAsync` içinde `UploadToAllAsync` çağrısına eksik olan `plan.PlanName` parametresi eklendi. Bu parametre olmadan bulut hedefinde yanlış/eksik klasör yolu kullanılıyordu. (etkilenen: `BackupJobExecutor.cs`)
