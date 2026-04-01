@@ -1,4 +1,19 @@
-﻿## [0.58.0] - 2025-07-20 — Y1/Y2: Local-mode SQL İlerleme + VSS Test Kapsamı
+﻿## [0.59.0] - 2025-07-20 — O1: Profesyonel E-posta Bildirim Şablonları
+
+### Yeni Özellik
+- **EmailTemplateBuilder:** Tüm e-posta bildirimleri için ortak HTML şablon sınıfı — koyu branded header, durum rozeti, özet/detay tabloları, hata bloğu, footer. (`EmailTemplateBuilder.cs`)
+- **SQL yedek bildirimi yenilendi:** Profesyonel şablon ile tutarlı marka görünümü, yeni alanlar: CompressionVerified (arşiv doğrulama), VssFileCopySizeBytes. (`EmailNotificationService.cs`)
+- **Dosya yedek bildirimi yenilendi:** Aynı şablon altyapısı, kaynak detay tablosu. (`EmailNotificationService.cs`)
+- **NotifyFileBackupAsync SMTP profil desteği:** Eski per-plan SMTP alanları yerine merkezi SmtpProfile çözümleme, çoklu alıcı desteği. (`EmailNotificationService.cs`)
+- **Bulut yükleme detay tablosu:** Bildirim e-postalarında hedef/durum/detay sütunlu tablo.
+
+### Test İstatistikleri
+- Yeni: 27 EmailTemplateBuilderTests
+- Toplam: 340 test | Geçen: 339 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.58.0] - 2025-07-20 — Y1/Y2: Local-mode SQL İlerleme + VSS Test Kapsamı
 
 ### Yeni Özellik
 - **Local-mode SQL ilerleme çubuğu (Y1):** Bulut hedefi olmayan planlarda ilerleme çubuğu artık her SQL adımında güncelleniyor. Ağırlıklar: SQL=%50, Doğrulama=%65, Sıkıştırma=%80, Arşiv Doğrulama=%88, Temizlik=%95. (`MainWindow.cs`, `BackupActivityEvent.cs`, `BackupJobExecutor.cs`)

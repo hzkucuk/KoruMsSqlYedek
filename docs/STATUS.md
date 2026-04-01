@@ -1,6 +1,6 @@
 # 📊 Modül Stabilite Haritası
 
-> Son güncelleme: 2025-07-20 — v0.58.0
+> Son güncelleme: 2025-07-20 — v0.59.0
 > Derecelendirme: 🟢 Stabil | 🟡 Yeni / Test Edilmeli | 🔴 Deneysel / Eksik
 
 ---
@@ -61,7 +61,7 @@
 
 | Modül | Durum | Son Değişiklik | Açıklama |
 |-------|-------|----------------|----------|
-| EmailNotificationService | 🟡 Yeni | v0.46.0 | MailKit tabanlı, şablon desteği eksik |
+| EmailNotificationService | 🟢 Stabil | v0.59.0 | Profesyonel HTML şablon, SMTP profil desteği, 27+11 test |
 | ReportingService | 🟡 Yeni | v0.46.0 | Temel rapor, detay eksik |
 
 ---
@@ -115,6 +115,8 @@
 | PasswordProtectorTests | ✅ | Şifreleme | Parola koruma |
 | PipeProtocolTests | ✅ | IPC Seri/Deseri | 18 mesaj türü, roundtrip, kenar durumu |
 | BackupCancellationRegistryTests | ✅ | İptal Kayıt | 20 test — Register/Cancel/Unregister, thread safety |
+| VssSnapshotServiceTests | ✅ | VSS Snapshot | 19 test — Dispose, path mapping, silme, IsAvailable |
+| EmailTemplateBuilderTests | ✅ | E-posta Şablon | 27 test — header, badge, tablo, hata bloğu, encode |
 
 > **Eksik test alanları:** Restore Dialog, Progress Tracker
 
@@ -126,9 +128,9 @@
 |--------|-------|
 | Toplam proje | 5 |
 | Toplam kaynak dosya | ~120 |
-| Toplam test dosyası | 20 |
-| 🟢 Stabil modül | 32 |
-| 🟡 Yeni / Test edilmeli | 5 |
+| Toplam test dosyası | 22 |
+| 🟢 Stabil modül | 33 |
+| 🟡 Yeni / Test edilmeli | 4 |
 | 🔴 Deneysel / Eksik | 0 |
-| Son sürüm | v0.55.0 |
+| Son sürüm | v0.59.0 |
 | İlk izlenen sürüm | v0.42.9 |

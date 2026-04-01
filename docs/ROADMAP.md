@@ -1,6 +1,6 @@
 # 🗺️ Yol Haritası (Roadmap)
 
-> Son güncelleme: 2025-07-20 — v0.58.0
+> Son güncelleme: 2025-07-20 — v0.59.0
 > Öncelik: 🔴 Kritik | 🟠 Yüksek | 🟡 Orta | 🟢 Düşük  
 > Durum: ⬜ Planlandı | 🔄 Devam Ediyor | ✅ Tamamlandı
 
@@ -33,7 +33,7 @@
 
 | # | İş Kalemi | Modül | Neden |
 |---|-----------|-------|-------|
-| O1 | E-posta bildirim şablonları (HTML) | Engine | Şu an düz metin, profesyonel şablon gerekli |
+| O1 | ✅ E-posta bildirim şablonları (HTML) | Engine | v0.59.0'da tamamlandı — EmailTemplateBuilder + profesyonel şablon + SMTP profil desteği |
 | O2 | Raporlama detaylandırma (grafik/özet) | Engine | Temel rapor var, detaylı istatistik eksik |
 | O3 | Retention politika detayları (grandfather-father-son) | Engine | Şu an basit sayısal, gelişmiş politika eklenebilir |
 | O4 | MainWindow sorumluluk ayrıştırma | Win | 4 sorumluluk (buffer+UI+renk+ilerleme) tek metotta, kırılganlık riski |
@@ -74,13 +74,13 @@
 
 ### Önerilen Sıralama
 
-1. **O1 — E-posta bildirim şablonları (HTML)**
-   - Profesyonel HTML şablon tasarımı
+1. **O2 — Raporlama detaylandırma (grafik/özet)**
+   - Detaylı istatistik raporları
 
-2. **O2-O3 — Raporlama detaylandırma + Gelişmiş Retention**
-   - Grafik/özet raporlar, grandfather-father-son politikası
+2. **O3 — Gelişmiş Retention politikası**
+   - Grandfather-father-son politikası
 
 3. **O4 — MainWindow sorumluluk ayrıştırma**
    - Buffer + UI + Renk + İlerleme mantığını ayrı sınıflara taşı
 
-> **Not:** K1/K2/K3/Y1/Y2/Y3/Y4 tamamlandı (v0.57.0–v0.58.0). Öncelik sırası kullanıcı geri bildirimine göre güncellenecektir.
+> **Not:** K1-K3/Y1-Y4/O1 tamamlandı (v0.57.0–v0.59.0). Öncelik sırası kullanıcı geri bildirimine göre güncellenecektir.

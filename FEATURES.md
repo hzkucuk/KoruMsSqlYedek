@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.59.0 — O1: Profesyonel E-posta Bildirim Şablonları
+- EmailTemplateBuilder: ortak HTML şablon sınıfı (header, statusBadge, summaryTable, detailTable, errorBlock, footer)
+- SQL yedek bildirimi: profesyonel şablon + CompressionVerified + VssFileCopy alanları
+- Dosya yedek bildirimi: aynı şablon + kaynak detay tablosu
+- NotifyFileBackupAsync: SmtpProfile desteği (eski per-plan SMTP yerine)
+- 27 EmailTemplateBuilderTests birim testi
+
 ### v0.58.0 — Y1/Y2: Local-mode SQL İlerleme + VSS Test Kapsamı
 - Local-mode SQL ilerleme çubuğu: bulut hedefsiz planlarda her adımda (SQL→Doğrulama→Sıkıştırma→Temizlik) ilerleme çubuğu güncelleniyor
 - HasCloudTargets flag: BackupActivityEventArgs + PlanProgressTracker, Started event ile bildirim
