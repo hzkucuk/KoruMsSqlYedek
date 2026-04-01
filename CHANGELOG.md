@@ -1,4 +1,17 @@
-﻿## [0.59.0] - 2025-07-20 — O1: Profesyonel E-posta Bildirim Şablonları
+﻿## [0.60.0] - 2025-07-21 — O2/O3/O4: Raporlama İstatistik + GFS Retention + MainWindow Ayrıştırma
+
+### Yeni Özellik
+- **Raporlama istatistikleri (O2):** `ReportingService.BuildReportHtml` artık `EmailTemplateBuilder` kullanıyor. Eklenen istatistikler: ortalama süre, en büyük yedek, sıkıştırma oranı, veritabanı bazlı özet tablosu. (`ReportingService.cs`)
+- **GFS Retention politikası (O3):** Grandfather-Father-Son saklama desteği — günlük/haftalık/aylık/yıllık periyot bazlı en iyi yedek koruması. `RetentionPolicyType.GFS` enum, `RetentionPolicy` modeline GFS alanları, `BuildGfsProtectedSet` algoritması. (`Enums.cs`, `ConfigModels.cs`, `RetentionCleanupService.cs`)
+- **MainWindow log ayrıştırma (O4):** `AppendBackupLog`, `ReplaceLastProgressLine`, `AppendColoredLine`, `ProgressLineMarker`, `_planLogs` buffer'ı `MainWindow.BackupLog.cs` partial class'ına taşındı. (`MainWindow.BackupLog.cs`, `MainWindow.cs`)
+
+### Test İstatistikleri
+- Yeni: 9 GFS Retention testi (GfsRetentionTests)
+- Toplam: 349 test | Geçen: 348 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.59.0] - 2025-07-20 — O1: Profesyonel E-posta Bildirim Şablonları
 
 ### Yeni Özellik
 - **EmailTemplateBuilder:** Tüm e-posta bildirimleri için ortak HTML şablon sınıfı — koyu branded header, durum rozeti, özet/detay tabloları, hata bloğu, footer. (`EmailTemplateBuilder.cs`)

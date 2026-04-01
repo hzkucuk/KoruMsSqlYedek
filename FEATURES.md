@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.60.0 — O2/O3/O4: Raporlama İstatistik + GFS Retention + MainWindow Ayrıştırma
+- Raporlama detaylandırma (O2): EmailTemplateBuilder ile tutarlı HTML, ek istatistikler (ort. süre, en büyük yedek, sıkıştırma), veritabanı bazlı özet tablosu
+- GFS Retention politikası (O3): Grandfather-Father-Son — günlük (7), haftalık (4), aylık (12), yıllık (2) periyot bazlı koruma
+- MainWindow sorumluluk ayrıştırma (O4): Log buffer + UI rendering MainWindow.BackupLog.cs partial class'a taşındı
+- 9 GFS Retention birim testi
+
 ### v0.59.0 — O1: Profesyonel E-posta Bildirim Şablonları
 - EmailTemplateBuilder: ortak HTML şablon sınıfı (header, statusBadge, summaryTable, detailTable, errorBlock, footer)
 - SQL yedek bildirimi: profesyonel şablon + CompressionVerified + VssFileCopy alanları

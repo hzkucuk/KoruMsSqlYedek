@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -250,6 +252,259 @@ namespace KoruMsSqlYedek.Tests
         {
             string filePath = Path.Combine(_testDir, fileName);
             File.WriteAllText(filePath, "fake");
+            return filePath;
+        }
+
+        private string CreateBackupFileWithSize(string fileName, int sizeBytes)
+        {
+            string filePath = Path.Combine(_testDir, fileName);
+            File.WriteAllBytes(filePath, new byte[sizeBytes]);
+            return filePath;
+        }
+    }
+
+    /// <summary>
+    /// GFS (Grandfather-Father-Son) retention politikası unit testleri.
+    /// BuildGfsProtectedSet internal static metodu üzerinden test edilir.
+    /// </summary>
+    [TestClass]
+    [TestCategory("Unit")]
+    public class GfsRetentionTests
+    {
+        private string _testDir;
+
+        [TestInitialize]
+        public void Setup()
+        {
+            _testDir = Path.Combine(Path.GetTempPath(), "KoruMsSqlYedek_GfsTests", Guid.NewGuid().ToString());
+            Directory.CreateDirectory(_testDir);
+        }
+
+        [TestCleanup]
+        public void Cleanup()
+        {
+            if (Directory.Exists(_testDir))
+                Directory.Delete(_testDir, recursive: true);
+        }
+
+        [TestMethod]
+        public void BuildGfsProtectedSet_Daily_ProtectsOneBestPerDay()
+        {
+            // Arrange — 3 gün, her gün 2 dosya (büyük ve küçük)
+            var files = new List<FileInfo>();
+            for (int d = 0; d < 3; d++)
+            {
+                DateTime day = DateTime.Now.Date.AddDays(-d);
+                string smallFile = CreateFileWithDate($"DB_Full_small_{d}.bak", day, 100);
+                string bigFile = CreateFileWithDate($"DB_Full_big_{d}.bak", day.AddHours(1), 500);
+                files.Add(new FileInfo(smallFile));
+                files.Add(new FileInfo(bigFile));
+            }
+
+            files = files.OrderByDescending(f => f.CreationTime).ToList();
+            var policy = new RetentionPolicy { GfsKeepDaily = 3 };
+
+            // Act
+            var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
+
+            // Assert — her günden büyük dosya korunmalı (3 dosya)
+            protectedSet.Should().HaveCount(3);
+            foreach (var file in files.Where(f => f.Name.Contains("big")))
+            {
+                protectedSet.Should().Contain(file.FullName);
+            }
+        }
+
+        [TestMethod]
+        public void BuildGfsProtectedSet_Weekly_ProtectsOneBestPerWeek()
+        {
+            // Arrange — 3 hafta, her haftadan 1 dosya
+            var files = new List<FileInfo>();
+            for (int w = 0; w < 3; w++)
+            {
+                DateTime weekDay = DateTime.Now.Date.AddDays(-w * 7);
+                string file = CreateFileWithDate($"DB_Full_w{w}.bak", weekDay, 200);
+                files.Add(new FileInfo(file));
+            }
+
+            files = files.OrderByDescending(f => f.CreationTime).ToList();
+            var policy = new RetentionPolicy { GfsKeepWeekly = 2, GfsKeepDaily = 0, GfsKeepMonthly = 0, GfsKeepYearly = 0 };
+
+            // Act
+            var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
+
+            // Assert — 2 hafta korunmalı
+            protectedSet.Should().HaveCount(2);
+        }
+
+        [TestMethod]
+        public void BuildGfsProtectedSet_Monthly_ProtectsOneBestPerMonth()
+        {
+            // Arrange — 4 ay, her aydan 1 dosya
+            var files = new List<FileInfo>();
+            for (int m = 0; m < 4; m++)
+            {
+                DateTime monthDay = DateTime.Now.Date.AddMonths(-m);
+                string file = CreateFileWithDate($"DB_Full_m{m}.bak", monthDay, 300);
+                files.Add(new FileInfo(file));
+            }
+
+            files = files.OrderByDescending(f => f.CreationTime).ToList();
+            var policy = new RetentionPolicy { GfsKeepMonthly = 3, GfsKeepDaily = 0, GfsKeepWeekly = 0, GfsKeepYearly = 0 };
+
+            // Act
+            var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
+
+            // Assert — 3 ay korunmalı
+            protectedSet.Should().HaveCount(3);
+        }
+
+        [TestMethod]
+        public void BuildGfsProtectedSet_Yearly_ProtectsOneBestPerYear()
+        {
+            // Arrange — 3 yıl, her yıldan 1 dosya
+            var files = new List<FileInfo>();
+            for (int y = 0; y < 3; y++)
+            {
+                DateTime yearDay = new DateTime(DateTime.Now.Year - y, 6, 15);
+                string file = CreateFileWithDate($"DB_Full_y{y}.bak", yearDay, 400);
+                files.Add(new FileInfo(file));
+            }
+
+            files = files.OrderByDescending(f => f.CreationTime).ToList();
+            var policy = new RetentionPolicy { GfsKeepYearly = 2, GfsKeepDaily = 0, GfsKeepWeekly = 0, GfsKeepMonthly = 0 };
+
+            // Act
+            var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
+
+            // Assert — 2 yıl korunmalı
+            protectedSet.Should().HaveCount(2);
+        }
+
+        [TestMethod]
+        public void BuildGfsProtectedSet_CombinedGfs_UnionOfAllPeriods()
+        {
+            // Arrange — çoklu dosya: günlük, haftalık ve aylık koruma çakışabilir
+            var files = new List<FileInfo>();
+
+            // Son 7 gün — her gün 1 dosya
+            for (int d = 0; d < 7; d++)
+            {
+                DateTime day = DateTime.Now.Date.AddDays(-d);
+                string file = CreateFileWithDate($"DB_Full_d{d}.bak", day, 200);
+                files.Add(new FileInfo(file));
+            }
+
+            // 30 gün önce — aylık yedek
+            string monthAgo = CreateFileWithDate("DB_Full_month.bak", DateTime.Now.Date.AddDays(-30), 500);
+            files.Add(new FileInfo(monthAgo));
+
+            files = files.OrderByDescending(f => f.CreationTime).ToList();
+            var policy = new RetentionPolicy
+            {
+                GfsKeepDaily = 3,
+                GfsKeepWeekly = 2,
+                GfsKeepMonthly = 2,
+                GfsKeepYearly = 0
+            };
+
+            // Act
+            var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
+
+            // Assert — en az günlük 3 + aylık dosya korunmalı (bazıları çakışabilir)
+            protectedSet.Count.Should().BeGreaterOrEqualTo(3);
+            protectedSet.Should().Contain(monthAgo);
+        }
+
+        [TestMethod]
+        public void BuildGfsProtectedSet_SelectsLargestFilePerPeriod()
+        {
+            // Arrange — aynı gün 3 dosya, farklı boyutlar
+            DateTime today = DateTime.Now.Date;
+            string small = CreateFileWithDate("DB_Full_s.bak", today, 100);
+            string medium = CreateFileWithDate("DB_Full_m.bak", today.AddHours(1), 300);
+            string large = CreateFileWithDate("DB_Full_l.bak", today.AddHours(2), 600);
+
+            var files = new List<FileInfo> { new(small), new(medium), new(large) }
+                .OrderByDescending(f => f.CreationTime).ToList();
+
+            var policy = new RetentionPolicy { GfsKeepDaily = 1, GfsKeepWeekly = 0, GfsKeepMonthly = 0, GfsKeepYearly = 0 };
+
+            // Act
+            var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
+
+            // Assert — en büyük dosya seçilmeli
+            protectedSet.Should().HaveCount(1);
+            protectedSet.Should().Contain(large);
+        }
+
+        [TestMethod]
+        public void BuildGfsProtectedSet_EmptyFileList_ReturnsEmpty()
+        {
+            var policy = new RetentionPolicy { GfsKeepDaily = 7, GfsKeepWeekly = 4 };
+
+            var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(new List<FileInfo>(), policy);
+
+            protectedSet.Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void BuildGfsProtectedSet_AllZeroPeriods_ReturnsEmpty()
+        {
+            DateTime today = DateTime.Now.Date;
+            string file = CreateFileWithDate("DB_Full.bak", today, 100);
+            var files = new List<FileInfo> { new(file) };
+
+            var policy = new RetentionPolicy { GfsKeepDaily = 0, GfsKeepWeekly = 0, GfsKeepMonthly = 0, GfsKeepYearly = 0 };
+
+            var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
+
+            protectedSet.Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_GfsPolicy_DeletesUnprotectedFiles()
+        {
+            // Arrange — 5 dosya: bugün, dün, 10 gün önce, 40 gün önce, 100 gün önce
+            var mockHistory = new Mock<IBackupHistoryManager>();
+            var service = new RetentionCleanupService(mockHistory.Object);
+
+            string today = CreateFileWithDate("TestDB_Full_today.bak", DateTime.Now, 500);
+            string yesterday = CreateFileWithDate("TestDB_Full_yesterday.bak", DateTime.Now.AddDays(-1), 400);
+            string tenDays = CreateFileWithDate("TestDB_Full_10d.bak", DateTime.Now.AddDays(-10), 300);
+            string fortyDays = CreateFileWithDate("TestDB_Full_40d.bak", DateTime.Now.AddDays(-40), 200);
+            string hundredDays = CreateFileWithDate("TestDB_Full_100d.bak", DateTime.Now.AddDays(-100), 100);
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                Retention = new RetentionPolicy
+                {
+                    Type = RetentionPolicyType.GFS,
+                    GfsKeepDaily = 2,
+                    GfsKeepWeekly = 0,
+                    GfsKeepMonthly = 0,
+                    GfsKeepYearly = 0
+                }
+            };
+
+            // Act
+            await service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert — sadece son 2 günün yedekleri korunmalı, eski olanlar silinmeli
+            File.Exists(today).Should().BeTrue("bugünkü dosya korunmalı");
+            File.Exists(yesterday).Should().BeTrue("dünkü dosya korunmalı");
+            File.Exists(tenDays).Should().BeFalse("10 gün önceki dosya silinmeli");
+            File.Exists(fortyDays).Should().BeFalse("40 gün önceki dosya silinmeli");
+            File.Exists(hundredDays).Should().BeFalse("100 gün önceki dosya silinmeli");
+        }
+
+        private string CreateFileWithDate(string fileName, DateTime creationTime, int sizeBytes)
+        {
+            string filePath = Path.Combine(_testDir, fileName);
+            File.WriteAllBytes(filePath, new byte[sizeBytes]);
+            File.SetCreationTime(filePath, creationTime);
             return filePath;
         }
     }

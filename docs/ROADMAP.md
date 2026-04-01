@@ -34,9 +34,9 @@
 | # | İş Kalemi | Modül | Neden |
 |---|-----------|-------|-------|
 | O1 | ✅ E-posta bildirim şablonları (HTML) | Engine | v0.59.0'da tamamlandı — EmailTemplateBuilder + profesyonel şablon + SMTP profil desteği |
-| O2 | Raporlama detaylandırma (grafik/özet) | Engine | Temel rapor var, detaylı istatistik eksik |
-| O3 | Retention politika detayları (grandfather-father-son) | Engine | Şu an basit sayısal, gelişmiş politika eklenebilir |
-| O4 | MainWindow sorumluluk ayrıştırma | Win | 4 sorumluluk (buffer+UI+renk+ilerleme) tek metotta, kırılganlık riski |
+| O2 | ✅ Raporlama detaylandırma (grafik/özet) | Engine | v0.60.0'da tamamlandı — EmailTemplateBuilder + istatistikler (ort. süre, en büyük yedek, sıkıştırma, DB özet tablosu) |
+| O3 | ✅ Retention politika detayları (grandfather-father-son) | Engine | v0.60.0'da tamamlandı — GFS: günlük/haftalık/aylık/yıllık periyot bazlı koruma |
+| O4 | ✅ MainWindow sorumluluk ayrıştırma | Win | v0.60.0'da tamamlandı — MainWindow.BackupLog.cs partial class'a taşındı |
 | O5 | Stres testi (büyük DB, çok plan, eşzamanlı) | Tests | Eşzamanlı yedekleme (v0.46.0) stres altında test edilmeli |
 | O6 | Progress Tracker unit testleri | Tests | PlanProgressTracker weight model'i için dedicated test eksik |
 | O7 | Otomatik güncelleme mekanizması | Win | Kullanıcıya yeni sürüm bildirimi / otomatik güncelleme |

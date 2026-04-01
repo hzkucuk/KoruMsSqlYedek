@@ -1,6 +1,6 @@
 # 📊 Modül Stabilite Haritası
 
-> Son güncelleme: 2025-07-20 — v0.59.0
+> Son güncelleme: 2025-07-21 — v0.60.0
 > Derecelendirme: 🟢 Stabil | 🟡 Yeni / Test Edilmeli | 🔴 Deneysel / Eksik
 
 ---
@@ -52,7 +52,7 @@
 | Modül | Durum | Son Değişiklik | Açıklama |
 |-------|-------|----------------|----------|
 | QuartzSchedulerService | 🟢 Stabil | v0.46.0 | Quartz.NET, eşzamanlı yedekleme |
-| RetentionCleanupService | 🟢 Stabil | v0.46.0 | Politika tabanlı temizlik |
+| RetentionCleanupService | 🟢 Stabil | v0.60.0 | Politika tabanlı temizlik + GFS (grandfather-father-son) |
 | PlanManager | 🟢 Stabil | v0.42.9 | JSON plan yönetimi |
 | AppSettingsManager | 🟢 Stabil | v0.42.9 | Uygulama ayarları |
 | BackupHistoryManager | 🟢 Stabil | v0.42.9 | Geçmiş kaydı |
@@ -62,7 +62,7 @@
 | Modül | Durum | Son Değişiklik | Açıklama |
 |-------|-------|----------------|----------|
 | EmailNotificationService | 🟢 Stabil | v0.59.0 | Profesyonel HTML şablon, SMTP profil desteği, 27+11 test |
-| ReportingService | 🟡 Yeni | v0.46.0 | Temel rapor, detay eksik |
+| ReportingService | 🟢 Stabil | v0.60.0 | EmailTemplateBuilder + istatistikler (ort. süre, sıkıştırma, DB özet) |
 
 ---
 
@@ -70,7 +70,7 @@
 
 | Modül | Durum | Son Değişiklik | Açıklama |
 |-------|-------|----------------|----------|
-| MainWindow (Log + Grid) | 🟡 Dikkat | v0.53.1 | 4 sorumluluk (buffer+UI+renk+ilerleme), kırılganlık riski |
+| MainWindow (Log + Grid) | 🟢 Stabil | v0.60.0 | Log sorumlulukları MainWindow.BackupLog.cs partial class'a ayrıştırıldı |
 | PlanProgressTracker | 🟢 Stabil | v0.53.0 | SQL/File/VSS ağırlık modeli |
 | TrayApplicationContext | 🟢 Stabil | v0.51.0 | Tray ikonu, sidebar, servis kontrolü |
 | PlanEditForm | 🟢 Stabil | v0.46.0 | Plan düzenleme |
@@ -117,6 +117,7 @@
 | BackupCancellationRegistryTests | ✅ | İptal Kayıt | 20 test — Register/Cancel/Unregister, thread safety |
 | VssSnapshotServiceTests | ✅ | VSS Snapshot | 19 test — Dispose, path mapping, silme, IsAvailable |
 | EmailTemplateBuilderTests | ✅ | E-posta Şablon | 27 test — header, badge, tablo, hata bloğu, encode |
+| GfsRetentionTests | ✅ | GFS Retention | 9 test — daily/weekly/monthly/yearly, combined, integration |
 
 > **Eksik test alanları:** Restore Dialog, Progress Tracker
 
@@ -129,8 +130,8 @@
 | Toplam proje | 5 |
 | Toplam kaynak dosya | ~120 |
 | Toplam test dosyası | 22 |
-| 🟢 Stabil modül | 33 |
-| 🟡 Yeni / Test edilmeli | 4 |
+| 🟢 Stabil modül | 35 |
+| 🟡 Yeni / Test edilmeli | 2 |
 | 🔴 Deneysel / Eksik | 0 |
-| Son sürüm | v0.59.0 |
+| Son sürüm | v0.60.0 |
 | İlk izlenen sürüm | v0.42.9 |

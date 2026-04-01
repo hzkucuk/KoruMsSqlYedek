@@ -53,9 +53,6 @@ namespace KoruMsSqlYedek.Win
         private readonly HashSet<string> _runningPlanIds = new HashSet<string>();
         private string _viewingPlanId;
 
-        // Per-plan log buffer (planId → satır listesi + renk)
-        private readonly Dictionary<string, List<(string Text, Color Color)>> _planLogs = new Dictionary<string, List<(string Text, Color Color)>>();
-
         // Per-plan grid progress (planId → yüzde 0-100)
         private readonly Dictionary<string, int> _planProgress = new Dictionary<string, int>();
 
@@ -1491,97 +1488,6 @@ namespace KoruMsSqlYedek.Win
                     row.Cells[_colProgress.Index].Value = percent;
                 break;
             }
-        }
-
-        // İlerleme satırı tespiti için önek sabiti
-        private const string ProgressLineMarker = "Yükleniyor ";
-
-        private void AppendBackupLog(string planId, string line, Color color, bool isProgressLine = false)
-        {
-            if (string.IsNullOrEmpty(line)) return;
-
-            if (InvokeRequired)
-            {
-                Invoke(new Action(() => AppendBackupLog(planId, line, color, isProgressLine)));
-                return;
-            }
-
-            // PlanId yoksa çalışan plan'ın id'sini kullan (fallback)
-            string effectivePlanId = !string.IsNullOrEmpty(planId) ? planId : _viewingPlanId;
-
-            string formatted = "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line;
-
-            // Plan'a ait buffer'a ekle (ilerleme satırı ise son ilerleme satırını güncelle)
-            if (!string.IsNullOrEmpty(effectivePlanId))
-            {
-                if (!_planLogs.ContainsKey(effectivePlanId))
-                    _planLogs[effectivePlanId] = new List<(string, Color)>();
-
-                var logList = _planLogs[effectivePlanId];
-                if (isProgressLine && logList.Count > 0 && logList[logList.Count - 1].Text.Contains(ProgressLineMarker))
-                    logList[logList.Count - 1] = (formatted, color);
-                else
-                    logList.Add((formatted, color));
-            }
-
-            // Sadece seçili plan ile eşleşiyorsa UI'yi güncelle
-            var selected = GetSelectedPlanSilent();
-            if (selected != null && selected.PlanId == effectivePlanId)
-            {
-                if (isProgressLine)
-                    ReplaceLastProgressLine(formatted, color);
-                else
-                    AppendColoredLine(formatted, color);
-            }
-        }
-
-        /// <summary>
-        /// RichTextBox'a renkli satır ekler.
-        /// </summary>
-        private void AppendColoredLine(string text, Color color)
-        {
-            _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
-            _txtBackupLog.SelectionLength = 0;
-            _txtBackupLog.SelectionColor = color;
-            _txtBackupLog.AppendText(text + Environment.NewLine);
-            _txtBackupLog.SelectionColor = Theme.ModernTheme.LogDefault;
-            _txtBackupLog.ScrollToCaret();
-        }
-
-        /// <summary>
-        /// RichTextBox'taki son ilerleme satırını yenisiyle değiştirir (renkli).
-        /// RichTextBox dahili olarak \n kullanır; Select() ile Text indeksi uyumsuz olduğundan
-        /// Lines[] + GetFirstCharIndexFromLine() ile doğru pozisyon hesaplanır.
-        /// </summary>
-        private void ReplaceLastProgressLine(string newLine, Color color)
-        {
-            int lineCount = _txtBackupLog.Lines.Length;
-            if (lineCount == 0)
-            {
-                AppendColoredLine(newLine, color);
-                return;
-            }
-
-            // Son boş olmayan satırı bul (RichTextBox.Lines sona boş eleman ekleyebilir)
-            int lastLineIdx = lineCount - 1;
-            if (lastLineIdx > 0 && string.IsNullOrEmpty(_txtBackupLog.Lines[lastLineIdx]))
-                lastLineIdx--;
-
-            string lastLine = _txtBackupLog.Lines[lastLineIdx];
-
-            if (lastLine.Contains(ProgressLineMarker))
-            {
-                int charIdx = _txtBackupLog.GetFirstCharIndexFromLine(lastLineIdx);
-                _txtBackupLog.Select(charIdx, _txtBackupLog.TextLength - charIdx);
-                _txtBackupLog.SelectionColor = color;
-                _txtBackupLog.SelectedText = newLine + Environment.NewLine;
-                _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
-                _txtBackupLog.ScrollToCaret();
-                return;
-            }
-
-            // Son satır ilerleme satırı değilse normal append
-            AppendColoredLine(newLine, color);
         }
 
         private string BuildActivityLogLine(BackupActivityEventArgs e)
