@@ -31,6 +31,7 @@ namespace KoruMsSqlYedek.Win
         private readonly IPlanManager _planManager;
         private readonly IBackupHistoryManager _historyManager;
         private readonly ISqlBackupService _sqlBackupService;
+        private readonly ICompressionService _compressionService;
         private readonly IAppSettingsManager _settingsManager;
         private readonly ServicePipeClient _pipeClient;
 
@@ -94,18 +95,21 @@ namespace KoruMsSqlYedek.Win
             IPlanManager planManager,
             IBackupHistoryManager historyManager,
             ISqlBackupService sqlBackupService,
+            ICompressionService compressionService,
             IAppSettingsManager settingsManager,
             ServicePipeClient pipeClient)
         {
             if (planManager == null) throw new ArgumentNullException(nameof(planManager));
             if (historyManager == null) throw new ArgumentNullException(nameof(historyManager));
             if (sqlBackupService == null) throw new ArgumentNullException(nameof(sqlBackupService));
+            if (compressionService == null) throw new ArgumentNullException(nameof(compressionService));
             if (settingsManager == null) throw new ArgumentNullException(nameof(settingsManager));
             if (pipeClient == null) throw new ArgumentNullException(nameof(pipeClient));
 
             _planManager = planManager;
             _historyManager = historyManager;
             _sqlBackupService = sqlBackupService;
+            _compressionService = compressionService;
             _settingsManager = settingsManager;
             _pipeClient = pipeClient;
 
@@ -980,7 +984,7 @@ namespace KoruMsSqlYedek.Win
             BackupPlan plan = GetSelectedPlanSilent();
             if (plan == null) return;
 
-            using RestoreDialog dlg = new RestoreDialog(plan, _historyManager, _sqlBackupService);
+            using RestoreDialog dlg = new RestoreDialog(plan, _historyManager, _sqlBackupService, _compressionService);
             dlg.ShowDialog(this);
         }
 

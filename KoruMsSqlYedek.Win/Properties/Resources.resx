@@ -360,6 +360,16 @@ Language change requires application restart.</value></data>
   <data name="Restore_Success" xml:space="preserve"><value>Restore completed successfully.</value></data>
   <data name="Restore_Failed" xml:space="preserve"><value>Restore failed. Check the log for details.</value></data>
   <data name="Restore_NoHistory" xml:space="preserve"><value>No backup records found for this plan.</value></data>
+  <data name="Restore_TargetDbEmpty" xml:space="preserve"><value>Target database name cannot be empty.</value></data>
+  <data name="Restore_VerifyTimeout" xml:space="preserve"><value>Verification timed out.</value></data>
+  <data name="Restore_Cancelled" xml:space="preserve"><value>Restore cancelled.</value></data>
+  <data name="Restore_Error" xml:space="preserve"><value>Error: {0}</value></data>
+  <data name="Restore_Extracting" xml:space="preserve"><value>Extracting compressed archive: {0}</value></data>
+  <data name="Restore_ExtractFailed" xml:space="preserve"><value>Archive extraction failed: {0}</value></data>
+  <data name="Restore_NoBakInArchive" xml:space="preserve"><value>No .bak file found in extracted archive.</value></data>
+  <data name="Restore_CancelConfirm" xml:space="preserve"><value>An operation is in progress. Cancel it?</value></data>
+  <data name="Restore_CancelConfirmTitle" xml:space="preserve"><value>Cancel Operation</value></data>
+  <data name="Restore_BtnCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="CtxMenu_Restore" xml:space="preserve"><value>Restore...</value></data>
 
   <!-- ===== Tray — Service Control ===== -->

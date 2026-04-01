@@ -1,6 +1,6 @@
 # 📊 Modül Stabilite Haritası
 
-> Son güncelleme: 2025-07-19 — v0.55.0  
+> Son güncelleme: 2025-07-20 — v0.57.0  
 > Derecelendirme: 🟢 Stabil | 🟡 Yeni / Test Edilmeli | 🔴 Deneysel / Eksik
 
 ---
@@ -12,7 +12,7 @@
 | Interfaces (15 adet) | 🟢 Stabil | Kontrat katmanı, nadiren değişir |
 | Models / Enums | 🟢 Stabil | BackupPlan, BackupResult, ConfigModels sabit yapıda |
 | Events (BackupActivityEvent) | 🟡 Yeni | v0.53.0'da HasFileBackup eklendi, genişlemeye açık |
-| IPC (PipeProtocol) | 🟡 Yeni | v0.54.0 ACL fix'i sonrası yeni yapı |
+| IPC (PipeProtocol) | 🟢 Stabil | v0.57.0 test kapsamı eklendi (18 PipeProtocol + 20 CancellationRegistry testi) |
 | Helpers | 🟢 Stabil | PasswordProtector, PathSanitizer — değişim az |
 
 ---
@@ -25,7 +25,7 @@
 |-------|-------|----------------|----------|
 | SqlBackupService | 🟢 Stabil | v0.44.0 | SMO tabanlı, Full/Diff/Log destekli, doğrulanmış |
 | BackupChainValidator | 🟢 Stabil | v0.44.0 | Zincir bütünlüğü kontrolü |
-| BackupJobExecutor | 🟡 Yeni | v0.55.0 | Cancel cleanup + cleanupPaths eklendi, üretimde test edilmeli |
+| BackupJobExecutor | 🟢 Stabil | v0.57.0 | Cancel cleanup + 8 yeni test ile doğrulandı |
 | SevenZipCompressionService | 🟢 Stabil | v0.52.0 | Şifreli sıkıştırma, ara dosya temizliği |
 
 ### Dosya Yedekleme
@@ -74,7 +74,7 @@
 | PlanProgressTracker | 🟢 Stabil | v0.53.0 | SQL/File/VSS ağırlık modeli |
 | TrayApplicationContext | 🟢 Stabil | v0.51.0 | Tray ikonu, sidebar, servis kontrolü |
 | PlanEditForm | 🟢 Stabil | v0.46.0 | Plan düzenleme |
-| RestoreDialog | 🔴 Eksik | v0.48.0 | Temel yapı var, tam test eksik |
+| RestoreDialog | 🟢 Stabil | v0.57.0 | .7z desteği, lokalizasyon, iptal UX tamamlandı |
 | ManualBackupDialog | 🟢 Stabil | v0.46.0 | Elle tetikleme |
 | CloudTargetEditDialog | 🟢 Stabil | v0.46.0 | Bulut hedef düzenleme |
 | SmtpProfileEditDialog | 🟢 Stabil | v0.46.0 | SMTP profil düzenleme |
@@ -111,10 +111,12 @@
 | EmailNotificationTests | ✅ | Gönderim | E-posta |
 | ReportingServiceTests | ✅ | Rapor | Raporlama |
 | RetentionCleanupTests | ✅ | Temizlik | Saklama politikası |
-| BackupJobExecutorTests | ✅ | Pipeline | Yedekleme akışı |
+| BackupJobExecutorTests | ✅ | Pipeline + Cancel | Yedekleme akışı + iptal/temizlik (8 yeni) |
 | PasswordProtectorTests | ✅ | Şifreleme | Parola koruma |
+| PipeProtocolTests | ✅ | IPC Seri/Deseri | 18 mesaj türü, roundtrip, kenar durumu |
+| BackupCancellationRegistryTests | ✅ | İptal Kayıt | 20 test — Register/Cancel/Unregister, thread safety |
 
-> **Eksik test alanları:** VSS Snapshot, Named Pipe IPC, Cancel/Failure Cleanup, Restore Dialog, Progress Tracker
+> **Eksik test alanları:** VSS Snapshot, Restore Dialog, Progress Tracker
 
 ---
 
@@ -124,9 +126,9 @@
 |--------|-------|
 | Toplam proje | 5 |
 | Toplam kaynak dosya | ~120 |
-| Toplam test dosyası | 17 |
-| 🟢 Stabil modül | 28 |
-| 🟡 Yeni / Test edilmeli | 9 |
-| 🔴 Deneysel / Eksik | 1 |
+| Toplam test dosyası | 19 |
+| 🟢 Stabil modül | 31 |
+| 🟡 Yeni / Test edilmeli | 6 |
+| 🔴 Deneysel / Eksik | 0 |
 | Son sürüm | v0.55.0 |
 | İlk izlenen sürüm | v0.42.9 |

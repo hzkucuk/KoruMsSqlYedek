@@ -2,6 +2,7 @@ using Autofac;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Engine;
 using KoruMsSqlYedek.Engine.Backup;
+using KoruMsSqlYedek.Engine.Compression;
 using KoruMsSqlYedek.Win.IPC;
 
 namespace KoruMsSqlYedek.Win.IoC
@@ -32,6 +33,11 @@ namespace KoruMsSqlYedek.Win.IoC
             // SQL servisi — yalnızca PlanEditForm'daki bağlantı testi ve DB listeleme için
             builder.RegisterType<SqlBackupService>()
                 .As<ISqlBackupService>()
+                .InstancePerDependency();
+
+            // Sıkıştırma servisi — RestoreDialog .7z arşiv açma için gerekli
+            builder.RegisterType<SevenZipCompressionService>()
+                .As<ICompressionService>()
                 .InstancePerDependency();
 
             // Pipe istemcisi — servis ile IPC iletişimi

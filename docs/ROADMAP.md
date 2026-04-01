@@ -1,6 +1,6 @@
 # 🗺️ Yol Haritası (Roadmap)
 
-> Son güncelleme: 2025-07-19 — v0.55.0  
+> Son güncelleme: 2025-07-20 — v0.57.0  
 > Öncelik: 🔴 Kritik | 🟠 Yüksek | 🟡 Orta | 🟢 Düşük  
 > Durum: ⬜ Planlandı | 🔄 Devam Ediyor | ✅ Tamamlandı
 
@@ -12,9 +12,9 @@
 
 | # | İş Kalemi | Modül | Neden |
 |---|-----------|-------|-------|
-| K1 | Named Pipe üretim testi (SYSTEM service ↔ user tray) | Service + Win | v0.54.0 ACL fix'i henüz gerçek ortamda test edilmedi |
-| K2 | Cancel/Failure cleanup üretim testi | Engine | v0.55.0'da eklendi, edge case'ler (disk dolu, erişim engeli) test edilmeli |
-| K3 | RestoreDialog tamamlama ve test | Win | Temel yapı var ama eksik, kullanıcı senaryoları tamamlanmalı |
+| K1 | ✅ Named Pipe IPC protokol testleri (18+20 birim test) | Service + Win + Tests | v0.57.0'da tamamlandı — PipeProtocol + CancellationRegistry testleri |
+| K2 | ✅ Cancel/Failure cleanup testleri (8 birim test) | Engine + Tests | v0.57.0'da tamamlandı — SQL/sıkıştırma/bulut iptal propagasyonu |
+| K3 | ✅ RestoreDialog tamamlama (.7z, lokalizasyon, iptal UX) | Win | v0.57.0'da tamamlandı — .7z desteği, 10 kaynak anahtarı, iptal UX |
 
 ### 🟠 Yüksek
 
@@ -22,8 +22,8 @@
 |---|-----------|-------|-------|
 | Y1 | Local-mode SQL ilerleme takibi (bulut olmadan) | Win + Engine | Bulut yükleme yokken SQL adımları ara ilerleme göstermiyor |
 | Y2 | VSS test kapsamı genişletme | Tests | VssSnapshotService için unit test yok |
-| Y3 | Named Pipe IPC test kapsamı | Tests | ServicePipeServer/Client için unit test yok |
-| Y4 | BackupJobExecutor cancel path test | Tests | v0.55.0 cleanup logic'i için dedicated testler eksik |
+| Y3 | ✅ Named Pipe IPC test kapsamı (38 test) | Tests | v0.57.0'da tamamlandı — PipeProtocolTests + CancellationRegistryTests |
+| Y4 | ✅ BackupJobExecutor cancel path test (8 test) | Tests | v0.57.0'da tamamlandı — iptal/hata/başarı akış testleri |
 
 ---
 
@@ -74,19 +74,13 @@
 
 ### Önerilen Sıralama
 
-1. **K1 — Named Pipe üretim testi**
-   - Windows Service'i SYSTEM olarak kur (`sc create`)
-   - Tray uygulamasını kullanıcı oturumundan başlat
-   - Bağlantı, komut gönderimi, event akışı doğrula
-
-2. **K3 — RestoreDialog tamamlama**
-   - Mevcut durumu incele, eksikleri belirle
-   - Restore akışını uçtan uca test et
-
-3. **Y1 — Local-mode SQL ilerleme**
+1. **Y1 — Local-mode SQL ilerleme**
    - Bulut hedefi olmayan planlarda progress bar davranışını iyileştir
 
-4. **Y2-Y4 — Test kapsamı genişletme**
-   - VSS, IPC, Cancel path testleri yaz
+2. **Y2 — VSS test kapsamı genişletme**
+   - VssSnapshotService için unit test yaz
 
-> **Not:** Öncelik sırası, kullanıcı geri bildirimine göre güncellenecektir.
+3. **O1-O3 — Orta vade iş kalemleri**
+   - E-posta şablonları, raporlama detayı, gelişmiş retention politikası
+
+> **Not:** K1/K2/K3 ve Y3/Y4 v0.57.0'da tamamlandı. Öncelik sırası, kullanıcı geri bildirimine göre güncellenecektir.

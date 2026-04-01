@@ -2,6 +2,16 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.57.0 — K1/K2/K3: IPC Testleri, İptal/Temizlik Testleri, RestoreDialog Tamamlama
+- Named Pipe IPC protokol testleri: 18 birim testi (tüm mesaj türleri, roundtrip, kenar durumları)
+- BackupCancellationRegistry testleri: 20 birim testi (Register/Cancel/Unregister, thread safety)
+- Cancel/Cleanup pipeline testleri: 8 yeni test (SQL/sıkıştırma/bulut iptal propagasyonu)
+- RestoreDialog `.7z` desteği: arşiv algılama → geçici klasöre açma → .bak bulma → geri yükleme → temizlik
+- RestoreDialog lokalizasyon: 10 kaynak anahtarı, tüm sabit stringler `Res.Get()`/`Res.Format()`
+- RestoreDialog iptal UX: işlem sırasında iptal butonu aktif, onay diyaloğu, dinamik buton metni
+- DI: `ICompressionService` (SevenZipCompressionService) WinModule'e kaydedildi
+- Test düzeltmeleri: SetJobData manualTrigger, UploadToAllAsync 7-param mock uyumu
+
 ### v0.56.0 — Proje Yönetişim & Branch Stratejisi
 - 3 katmanlı branch stratejisi: `master` → `develop` → `feature/*/fix/*/hotfix/*`
 - Modül stabilite haritası (`docs/STATUS.md`): 38 modül derecelendirmesi

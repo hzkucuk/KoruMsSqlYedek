@@ -1,4 +1,27 @@
-﻿## [0.56.0] - 2025-07-19 — Proje Yönetişim & Branch Stratejisi
+﻿## [0.57.0] - 2025-07-20 — K1/K2/K3: IPC Testleri, İptal/Temizlik Testleri, RestoreDialog Tamamlama
+
+### Yeni Özellik
+- **Named Pipe IPC testleri (K1):** 18 birim testi — tüm PipeProtocol mesaj türleri (FromArgs/ToArgs roundtrip, kenar durumları, büyük payload, özel karakter). (`PipeProtocolTests.cs`)
+- **BackupCancellationRegistry testleri (K1):** 20 birim testi — Register/Cancel/Unregister/IsRunning/IsAnyRunning, thread safety, büyük/küçük harf duyarsız PlanId. (`BackupCancellationRegistryTests.cs`)
+- **Cancel/Cleanup testleri (K2):** 8 yeni birim testi — SQL/sıkıştırma/bulut yükleme iptal propagasyonu, CancellationRegistry yaşam döngüsü, hata ve başarılı akış ActivityType doğrulaması. (`BackupJobExecutorTests.cs`)
+- **RestoreDialog .7z desteği (K3):** `.7z` arşivi algılama → `ExtractAsync` ile geçici klasöre açma → `.bak` bulma → geri yükleme → geçici klasör temizliği. (`RestoreDialog.cs`)
+- **RestoreDialog lokalizasyon (K3):** 10 yeni kaynak anahtarı (Restore_*), tüm sabit Türkçe stringler `Res.Get()`/`Res.Format()` ile değiştirildi. (`Resources.resx`)
+- **RestoreDialog iptal UX (K3):** `_isBusy` flag ile işlem sırasında iptal butonu aktif, iptal onay diyaloğu, buton metni dinamik (İptal/Kapat).
+
+### Düzeltme
+- **BackupJobExecutorTests SetJobData:** 2 parametreli `SetJobData` overload'una eksik `manualTrigger` anahtarı eklendi (27 test düzeltmesi).
+- **UploadToAllAsync mock düzeltmesi:** Tüm mock Setup/Verify çağrıları 6 parametreden 7 parametreye güncellendi (planId optional param).
+
+### Altyapı
+- **DI kaydı:** `SevenZipCompressionService` → `ICompressionService` olarak `WinModule.cs`'e eklendi.
+- **MainWindow:** `ICompressionService` constructor parametresi ve `RestoreDialog` çağrı güncellemesi.
+
+### Test İstatistikleri
+- Toplam: 294 test | Geçen: 293 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.56.0] - 2025-07-19 — Proje Yönetişim & Branch Stratejisi
 
 ### Yeni Özellik
 - **3 katmanlı branch stratejisi**: `master` (release) → `develop` (günlük geliştirme) → `feature/*/fix/*/hotfix/*` dallanma modeli oluşturuldu.
