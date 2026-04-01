@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.61.0 — O5/O6: Stres Testleri + PlanProgressTracker Testleri
+- Stres testleri (O5): 8 test — eşzamanlı plan çalıştırma, SemaphoreSlim kilit, büyük DB listesi, karma senaryolar, deadlock kontrolü, bulut paralel, monoton ilerleme, iptal propagasyonu
+- PlanProgressTracker ağırlık modeli testleri (O6): 22 test — sınır değerler, VSS (20/50/30), NoVSS (30/70), dosya-only pipeline, karma plan, çoklu hedef dağılımı, monoton garanti
+- PlanProgressTracker.cs eksik using düzeltmesi
+
 ### v0.60.0 — O2/O3/O4: Raporlama İstatistik + GFS Retention + MainWindow Ayrıştırma
 - Raporlama detaylandırma (O2): EmailTemplateBuilder ile tutarlı HTML, ek istatistikler (ort. süre, en büyük yedek, sıkıştırma), veritabanı bazlı özet tablosu
 - GFS Retention politikası (O3): Grandfather-Father-Son — günlük (7), haftalık (4), aylık (12), yıllık (2) periyot bazlı koruma

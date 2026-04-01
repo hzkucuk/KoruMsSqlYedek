@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KoruMsSqlYedek.Core;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
@@ -59,23 +60,7 @@ namespace KoruMsSqlYedek.Win
         // Per-plan cumulative progress tracking
         private readonly Dictionary<string, PlanProgressTracker> _planProgressTracker = new Dictionary<string, PlanProgressTracker>();
 
-        /// <summary>
-        /// Plan bazında kümülatif ilerleme hesaplama durumunu tutar.
-        /// Her veritabanı toplam ilerlemenin eşit bir dilimini alır;
-        /// bulut yükleme, dilimin ikinci yarısına eşlenir.
-        /// </summary>
-        private sealed class PlanProgressTracker
-        {
-            public int DbIndex;           // 1 tabanlı, şu anki veritabanı sırası
-            public int DbTotal;           // toplam veritabanı sayısı (min 1)
-            public int SqlDbCount;        // Gerçek SQL veritabanı sayısı (0 = dosya-only plan)
-            public int MaxPercent;        // monoton artış garantisi — asla geriye gitmez
-            public bool HasVssUpload;     // "Express VSS" adımı algılandı — bu DB'de VSS dosyası var
-            public bool IsVssPhase;       // "VSS Bulut Yükleme" adımına girildi — şu an VSS upload aktif
-            public bool HasFileBackup;    // Plan dosya yedekleme fazı içeriyor
-            public bool IsFileBackupPhase; // Dosya yedekleme fazına girildi
-            public bool HasCloudTargets;  // Plan en az bir etkin bulut hedefi içeriyor
-        }
+        // PlanProgressTracker artık standalone sınıf: PlanProgressTracker.cs
 
         // Scheduler'dan gelen sonraki çalışma zamanları (planId → lokal saat metni)
         private readonly Dictionary<string, string> _nextFireTimes = new Dictionary<string, string>();
@@ -1222,24 +1207,13 @@ namespace KoruMsSqlYedek.Win
                     {
                         string dbPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
 
-                        // Tracker güncelle
                         if (!_planProgressTracker.TryGetValue(dbPlanId, out PlanProgressTracker dbTracker))
                         {
                             dbTracker = new PlanProgressTracker { MaxPercent = 0 };
                             _planProgressTracker[dbPlanId] = dbTracker;
                         }
-                        dbTracker.DbIndex = e.CurrentIndex;  // 1 tabanlı
-                        dbTracker.DbTotal = e.TotalCount;
-                        dbTracker.HasVssUpload = false;
-                        dbTracker.IsVssPhase = false;
 
-                        // Kümülatif yüzde: önceki veritabanları tamamlandı
-                        // HasFileBackup varsa SQL fazı %80'e kadar; yoksa %100'e kadar
-                        int maxSqlRange = dbTracker.HasFileBackup ? 80 : 100;
-                        int pct = (int)(((e.CurrentIndex - 1.0) / e.TotalCount) * maxSqlRange);
-                        pct = Math.Max(pct, dbTracker.MaxPercent);
-                        pct = Math.Clamp(pct, 0, 100);
-                        dbTracker.MaxPercent = pct;
+                        int pct = dbTracker.CalculateDatabaseProgress(e.CurrentIndex, e.TotalCount);
 
                         if (dbPlanId == _viewingPlanId)
                         {
@@ -1255,76 +1229,35 @@ namespace KoruMsSqlYedek.Win
                         string stepPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
                         if (_planProgressTracker.TryGetValue(stepPlanId, out PlanProgressTracker stepTracker))
                         {
+                            int stepPct = -1;
+
                             if (e.StepName == "Express VSS")
                                 stepTracker.HasVssUpload = true;
                             else if (e.StepName == "VSS Bulut Yükleme")
                                 stepTracker.IsVssPhase = true;
                             else if (e.StepName == "Dosya Yedekleme" && !stepTracker.IsFileBackupPhase)
-                            {
-                                // Dosya yedekleme fazına geçiş
-                                stepTracker.IsFileBackupPhase = true;
-                                bool isFileOnly = stepTracker.SqlDbCount == 0;
-                                int fileBase = isFileOnly ? 0 : 80;
-                                int pct = Math.Max(fileBase, stepTracker.MaxPercent);
-                                pct = Math.Clamp(pct, 0, 100);
-                                stepTracker.MaxPercent = pct;
-                                if (stepPlanId == _viewingPlanId)
-                                {
-                                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
-                                    _progressBar.Value = pct;
-                                }
-                                UpdatePlanRowProgress(stepPlanId, pct);
-                            }
+                                stepPct = stepTracker.CalculateFileBackupPhaseStart();
                             else if (e.StepName == "Dosya Sıkıştırma" && stepTracker.IsFileBackupPhase)
+                                stepPct = stepTracker.CalculateFileCompressionProgress();
+
+                            if (stepPct >= 0 && stepPlanId == _viewingPlanId)
                             {
-                                // Dosya kopyalama + sıkıştırma tamamlandı — dosya fazının %25'i
-                                bool isFileOnly = stepTracker.SqlDbCount == 0;
-                                int fileBase = isFileOnly ? 0 : 80;
-                                int fileCopyWeight = isFileOnly ? 25 : 5;
-                                int pct = fileBase + fileCopyWeight;
-                                pct = Math.Max(pct, stepTracker.MaxPercent);
-                                pct = Math.Clamp(pct, 0, 100);
-                                stepTracker.MaxPercent = pct;
+                                _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                                _progressBar.Value = stepPct;
+                            }
+                            if (stepPct >= 0)
+                                UpdatePlanRowProgress(stepPlanId, stepPct);
+
+                            // Local-mode SQL adım bazlı ilerleme
+                            int localPct = stepTracker.CalculateLocalStepProgress(e.StepName);
+                            if (localPct >= 0)
+                            {
                                 if (stepPlanId == _viewingPlanId)
                                 {
                                     _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
-                                    _progressBar.Value = pct;
+                                    _progressBar.Value = localPct;
                                 }
-                                UpdatePlanRowProgress(stepPlanId, pct);
-                            }
-
-                            // ── Local-mode (bulut hedefsiz) SQL adım bazlı ilerleme ──
-                            // Bulut yükleme yoksa, her SQL adımı tamamlandığında ilerleme çubuğunu güncelle.
-                            // Ağırlıklar: SQL=%50, Doğrulama=%65, Sıkıştırma=%80, Arşiv Doğrulama=%88, Temizlik=%95
-                            if (!stepTracker.HasCloudTargets && !stepTracker.IsFileBackupPhase
-                                && stepTracker.DbTotal > 0 && stepTracker.DbIndex > 0)
-                            {
-                                double stepWeight = e.StepName switch
-                                {
-                                    "SQL Yedekleme" => 0.50,
-                                    "Doğrulama" => 0.65,
-                                    "Sıkıştırma" => 0.80,
-                                    "Arşiv Doğrulama" => 0.88,
-                                    "Temizlik" => 0.95,
-                                    _ => -1
-                                };
-
-                                if (stepWeight > 0)
-                                {
-                                    double maxSqlRange = stepTracker.HasFileBackup ? 80.0 : 100.0;
-                                    double slicePerDb = maxSqlRange / stepTracker.DbTotal;
-                                    double dbBase = (stepTracker.DbIndex - 1) * slicePerDb;
-                                    int pct = (int)(dbBase + slicePerDb * stepWeight);
-                                    pct = Math.Max(pct, stepTracker.MaxPercent);
-                                    pct = Math.Clamp(pct, 0, 100);
-                                    stepTracker.MaxPercent = pct;
-                                    if (stepPlanId == _viewingPlanId)
-                                    {
-                                        _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
-                                        _progressBar.Value = pct;
-                                    }
-                                    UpdatePlanRowProgress(stepPlanId, pct);
-                                }
+                                UpdatePlanRowProgress(stepPlanId, localPct);
                             }
                         }
                     }
@@ -1338,59 +1271,12 @@ namespace KoruMsSqlYedek.Win
                         if (_planProgressTracker.TryGetValue(uploadPlanId, out PlanProgressTracker upTracker)
                             && upTracker.DbTotal > 0)
                         {
-                            // Çoklu hedef: hedef sırasını da ağırlıkla dahil et
-                            double overallCloudPct = e.ProgressPercent;
-                            if (e.CloudTargetTotal > 1)
-                                overallCloudPct = ((e.CloudTargetIndex - 1) * 100.0 + e.ProgressPercent) / e.CloudTargetTotal;
-
-                            if (upTracker.IsFileBackupPhase)
-                            {
-                                // Dosya yedekleme bulut yükleme fazı
-                                bool isFileOnly = upTracker.SqlDbCount == 0;
-                                int fileBase = isFileOnly ? 0 : 80;
-                                int fileCopyWeight = isFileOnly ? 25 : 5;
-                                int fileCloudWeight = isFileOnly ? 75 : 15;
-                                cumPct = fileBase + fileCopyWeight + (int)(overallCloudPct / 100.0 * fileCloudWeight);
-                            }
-                            else
-                            {
-                                // SQL veritabanı bulut yükleme fazı
-                                double totalSqlRange = upTracker.HasFileBackup ? 80.0 : 100.0;
-                                double slicePerDb = totalSqlRange / upTracker.DbTotal;
-                                double dbBase = (upTracker.DbIndex - 1) * slicePerDb;
-
-                                if (upTracker.HasVssUpload)
-                                {
-                                    // VSS dosyası var: SQL %20 + Ana bulut %50 + VSS bulut %30
-                                    double sqlPortion = slicePerDb * 0.20;
-                                    double mainCloudPortion = slicePerDb * 0.50;
-                                    double vssCloudPortion = slicePerDb * 0.30;
-
-                                    if (upTracker.IsVssPhase)
-                                        cumPct = (int)(dbBase + sqlPortion + mainCloudPortion + (overallCloudPct / 100.0) * vssCloudPortion);
-                                    else
-                                        cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * mainCloudPortion);
-                                }
-                                else
-                                {
-                                    // VSS yok: SQL %30 + Bulut %70
-                                    double sqlPortion = slicePerDb * 0.30;
-                                    double cloudPortion = slicePerDb * 0.70;
-                                    cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * cloudPortion);
-                                }
-                            }
+                            cumPct = upTracker.CalculateCloudUploadProgress(
+                                e.ProgressPercent, e.CloudTargetIndex, e.CloudTargetTotal);
                         }
                         else
                         {
                             cumPct = e.ProgressPercent;
-                        }
-
-                        // Monoton artış garantisi
-                        if (upTracker is not null)
-                        {
-                            cumPct = Math.Max(cumPct, upTracker.MaxPercent);
-                            cumPct = Math.Clamp(cumPct, 0, 100);
-                            upTracker.MaxPercent = cumPct;
                         }
 
                         if (uploadPlanId == _viewingPlanId)

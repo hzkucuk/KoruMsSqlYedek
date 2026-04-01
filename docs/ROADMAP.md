@@ -1,6 +1,6 @@
 # 🗺️ Yol Haritası (Roadmap)
 
-> Son güncelleme: 2025-07-20 — v0.59.0
+> Son güncelleme: 2025-07-22 — v0.61.0
 > Öncelik: 🔴 Kritik | 🟠 Yüksek | 🟡 Orta | 🟢 Düşük  
 > Durum: ⬜ Planlandı | 🔄 Devam Ediyor | ✅ Tamamlandı
 
@@ -37,8 +37,8 @@
 | O2 | ✅ Raporlama detaylandırma (grafik/özet) | Engine | v0.60.0'da tamamlandı — EmailTemplateBuilder + istatistikler (ort. süre, en büyük yedek, sıkıştırma, DB özet tablosu) |
 | O3 | ✅ Retention politika detayları (grandfather-father-son) | Engine | v0.60.0'da tamamlandı — GFS: günlük/haftalık/aylık/yıllık periyot bazlı koruma |
 | O4 | ✅ MainWindow sorumluluk ayrıştırma | Win | v0.60.0'da tamamlandı — MainWindow.BackupLog.cs partial class'a taşındı |
-| O5 | Stres testi (büyük DB, çok plan, eşzamanlı) | Tests | Eşzamanlı yedekleme (v0.46.0) stres altında test edilmeli |
-| O6 | Progress Tracker unit testleri | Tests | PlanProgressTracker weight model'i için dedicated test eksik |
+| O5 | ✅ Stres testi (büyük DB, çok plan, eşzamanlı) | Tests | v0.61.0'da tamamlandı — 8 stres testi: paralel plan, SemaphoreSlim kilit, 20 DB, karma senaryo, deadlock, bulut paralel, monoton ilerleme, iptal |
+| O6 | ✅ Progress Tracker unit testleri | Tests | v0.61.0'da tamamlandı — 22 yeni test: sınır değerler, VSS ağırlık, dosya-only pipeline, karma plan, çoklu hedef, monoton garanti |
 | O7 | Otomatik güncelleme mekanizması | Win | Kullanıcıya yeni sürüm bildirimi / otomatik güncelleme |
 
 ---

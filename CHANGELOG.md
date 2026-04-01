@@ -1,4 +1,17 @@
-﻿## [0.60.0] - 2025-07-21 — O2/O3/O4: Raporlama İstatistik + GFS Retention + MainWindow Ayrıştırma
+﻿## [0.61.0] - 2025-07-22 — O5/O6: Stres Testleri + PlanProgressTracker Testleri
+
+### Yeni Test Kapsamı
+- **Stres testleri (O5):** 8 yeni stres testi — eşzamanlı farklı planlar, aynı plan SemaphoreSlim kilit testi, büyük DB listesi (20 DB), karma başarı/hata/iptal senaryoları, ardışık hızlı çalıştırma (deadlock kontrolü), paralel bulut upload, monoton ilerleme event doğrulaması, çoklu DB iptal propagasyonu. (`StressTests.cs`)
+- **PlanProgressTracker ağırlık modeli testleri (O6):** 22 yeni birim testi — sınır değerler (negatif totalCount, 100 DB, MaxPercent=100, büyük index), VSS ağırlık dağılımı (20/50/30) hassas doğrulama, NoVSS (30/70), dosya-only tam pipeline, SQL+dosya+bulut karma pipeline, çoklu bulut hedef yüzde dağılımı (2 ve 3 hedef), rastgele bulut yüzde monoton garanti, LocalStepProgress ascending doğrulama, sabit kontrolü. (`PlanProgressTrackerTests.cs`)
+- **Düzeltme:** PlanProgressTracker.cs'de eksik `using System;` ve `using System.Collections.Generic;` eklendi (pre-existing build issue).
+
+### Test İstatistikleri
+- Yeni: 30 test (8 Stres + 22 PlanProgressTracker)
+- Toplam: 412 test | Geçen: 411 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.60.0] - 2025-07-21 — O2/O3/O4: Raporlama İstatistik + GFS Retention + MainWindow Ayrıştırma
 
 ### Yeni Özellik
 - **Raporlama istatistikleri (O2):** `ReportingService.BuildReportHtml` artık `EmailTemplateBuilder` kullanıyor. Eklenen istatistikler: ortalama süre, en büyük yedek, sıkıştırma oranı, veritabanı bazlı özet tablosu. (`ReportingService.cs`)
