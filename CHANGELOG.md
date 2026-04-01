@@ -1,4 +1,30 @@
-﻿## [0.62.0] - 2025-07-23 — TB1/TB4: Switch Refactor + RestoreDialog & Exhaustiveness Testleri
+﻿## [0.63.0] - 2025-07-24 — O7: Inno Setup Installer + GitHub Actions CI/CD + Otomatik Güncelleme
+
+### Yeni Özellik (O7 — Otomatik Güncelleme Mekanizması)
+- **Inno Setup 6 installer:** Program Files kurulumu, Windows Service (sc.exe) kaydı, masaüstü kısayolu, başlangıçta çalıştır seçeneği, AppData korunur (kaldırma sırasında). (`installer/setup.iss`)
+- **PowerShell build script:** AssemblyInfo.cs'den otomatik versiyon algılama, dotnet publish (Win + Service), ISCC.exe ile installer derleme. (`installer/build.ps1`)
+- **GitHub Actions CI/CD:** `v*` tag push tetiklemesi, .NET 10 SDK, build/test/publish, Inno Setup via Chocolatey, GitHub Release oluşturma (installer asset). (`.github/workflows/release.yml`)
+- **IUpdateService:** GitHub Releases API üzerinden güncelleme kontrolü, `UpdateInfo` modeli (Version, Title, ReleaseNotes, DownloadUrl, FileSizeBytes, PublishedAt, HtmlUrl). (`IUpdateService.cs`)
+- **UpdateChecker:** `/releases/latest` endpoint, `System.Version` karşılaştırma, installer asset algılama (`KoruMsSqlYedek_Setup_` prefix), akışlı indirme + ilerleme raporlama. (`UpdateChecker.cs`)
+- **Tray güncelleme entegrasyonu:** Günlük otomatik kontrol (60s gecikme → 24 saat aralık), balon bildirim, manuel kontrol menü öğesi, temp klasöre indirme → `runas` ile installer başlatma. (`TrayApplicationContext.cs`)
+- **13 kaynak anahtarı:** Güncelleme UI metinleri (menü, kontrol, indirme, hata mesajları). (`Resources.resx`)
+- **Autofac kaydı:** `UpdateChecker` → `IUpdateService` (SingleInstance). (`WinModule.cs`)
+
+### Etkilenen Dosyalar
+- `installer/setup.iss` — yeni: Inno Setup 6 installer script
+- `installer/build.ps1` — yeni: PowerShell build + publish + installer derleme
+- `.github/workflows/release.yml` — yeni: GitHub Actions release workflow
+- `KoruMsSqlYedek.Core/Interfaces/IUpdateService.cs` — yeni: güncelleme servisi arayüzü + UpdateInfo modeli
+- `KoruMsSqlYedek.Engine/Update/UpdateChecker.cs` — yeni: GitHub API implementasyonu
+- `KoruMsSqlYedek.Win/TrayApplicationContext.cs` — güncelleme timer, menü, indirme/başlatma
+- `KoruMsSqlYedek.Win/IoC/WinModule.cs` — UpdateChecker DI kaydı
+- `KoruMsSqlYedek.Win/Properties/Resources.resx` — 13 Update_* kaynak anahtarı
+- `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs` — versiyon
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — versiyon
+
+---
+
+## [0.62.0] - 2025-07-23 — TB1/TB4: Switch Refactor + RestoreDialog & Exhaustiveness Testleri
 
 ### İyileştirme (TB1 — OnBackupActivityChanged Switch Refactor)
 - **BuildActivityLogLine:** switch statement → switch expression + `throw ArgumentOutOfRangeException` (fail-fast). Karmaşık CloudUploadProgress case'i `BuildCloudUploadLogLine` helper'a çıkarıldı. (`MainWindow.cs`)

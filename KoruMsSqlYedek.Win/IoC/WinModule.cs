@@ -3,6 +3,7 @@ using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Engine;
 using KoruMsSqlYedek.Engine.Backup;
 using KoruMsSqlYedek.Engine.Compression;
+using KoruMsSqlYedek.Engine.Update;
 using KoruMsSqlYedek.Win.IPC;
 
 namespace KoruMsSqlYedek.Win.IoC
@@ -43,6 +44,11 @@ namespace KoruMsSqlYedek.Win.IoC
             // Pipe istemcisi — servis ile IPC iletişimi
             builder.RegisterType<ServicePipeClient>()
                 .AsSelf()
+                .SingleInstance();
+
+            // Güncelleme kontrolü — GitHub Releases API
+            builder.RegisterType<UpdateChecker>()
+                .As<IUpdateService>()
                 .SingleInstance();
         }
     }

@@ -2,6 +2,15 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.63.0 — O7: Inno Setup Installer + GitHub Actions CI/CD + Otomatik Güncelleme
+- Inno Setup 6 installer: Program Files kurulumu, Windows Service sc.exe kaydı, masaüstü kısayolu, başlangıçta çalıştır, AppData korunur
+- PowerShell build script: otomatik versiyon algılama, dotnet publish (Win+Service), ISCC derleme
+- GitHub Actions CI/CD: v* tag tetikleme, .NET 10, build/test/publish, Inno Setup via Chocolatey, GitHub Release + installer asset
+- IUpdateService + UpdateChecker: GitHub Releases API, /releases/latest, System.Version karşılaştırma, akışlı indirme + ilerleme
+- Tray güncelleme entegrasyonu: günlük otomatik kontrol (24h), balon bildirim, manuel menü öğesi, temp indirme → runas installer
+- 13 güncelleme kaynak anahtarı (Resources.resx)
+- Autofac DI: UpdateChecker → IUpdateService (SingleInstance)
+
 ### v0.62.0 — TB1/TB4: Switch Refactor + RestoreDialog & Exhaustiveness Testleri
 - TB1 — OnBackupActivityChanged switch refactor: BuildActivityLogLine/GetLogColor → switch expression + throw (fail-fast), BuildCloudUploadLogLine helper, GetStatusDisplay tuple helper, default case Log.Warning, XML doc ⚠️ uyarıları
 - TB4 — RestoreDialogTests: 15 test (4 constructor null guard, 5 CleanupTempDirectory, 3 LoadHistory filtre, 3 grid row data)

@@ -1,6 +1,6 @@
 # 🗺️ Yol Haritası (Roadmap)
 
-> Son güncelleme: 2025-07-23 — v0.62.0
+> Son güncelleme: 2025-07-24 — v0.63.0
 > Öncelik: 🔴 Kritik | 🟠 Yüksek | 🟡 Orta | 🟢 Düşük  
 > Durum: ⬜ Planlandı | 🔄 Devam Ediyor | ✅ Tamamlandı
 
@@ -39,7 +39,7 @@
 | O4 | ✅ MainWindow sorumluluk ayrıştırma | Win | v0.60.0'da tamamlandı — MainWindow.BackupLog.cs partial class'a taşındı |
 | O5 | ✅ Stres testi (büyük DB, çok plan, eşzamanlı) | Tests | v0.61.0'da tamamlandı — 8 stres testi: paralel plan, SemaphoreSlim kilit, 20 DB, karma senaryo, deadlock, bulut paralel, monoton ilerleme, iptal |
 | O6 | ✅ Progress Tracker unit testleri | Tests | v0.61.0'da tamamlandı — 22 yeni test: sınır değerler, VSS ağırlık, dosya-only pipeline, karma plan, çoklu hedef, monoton garanti |
-| O7 | Otomatik güncelleme mekanizması | Win | Kullanıcıya yeni sürüm bildirimi / otomatik güncelleme |
+| O7 | ✅ Otomatik güncelleme mekanizması | Win | v0.63.0'da tamamlandı — Inno Setup installer + GitHub Actions CI/CD + tray güncelleme (günlük kontrol, balon bildirim, otomatik indirme) |
 
 ---
 

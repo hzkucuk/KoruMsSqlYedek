@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Autofac;
 using KoruMsSqlYedek.Core.Events;
+using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Win.IPC;
 using KoruMsSqlYedek.Win.Helpers;
 using Serilog;
@@ -40,6 +44,18 @@ namespace KoruMsSqlYedek.Win
         private int _animFrameIndex;
         private bool _isAnimating;
 
+        // Güncelleme kontrolü
+        private readonly IUpdateService _updateService;
+        private readonly System.Windows.Forms.Timer _updateTimer;
+        private ToolStripMenuItem _tsmCheckUpdate;
+        private UpdateInfo _pendingUpdate;
+
+        /// <summary>Günlük güncelleme kontrolü aralığı (ms) — 24 saat.</summary>
+        private const int UpdateCheckIntervalMs = 24 * 60 * 60 * 1000;
+
+        /// <summary>İlk güncelleme kontrolü gecikmesi (ms) — 60 saniye.</summary>
+        private const int UpdateCheckInitialDelayMs = 60_000;
+
         public TrayApplicationContext(
             ILifetimeScope scope,
             ServicePipeClient pipeClient)
@@ -49,6 +65,7 @@ namespace KoruMsSqlYedek.Win
 
             _scope = scope;
             _pipeClient = pipeClient;
+            _updateService = scope.Resolve<IUpdateService>();
 
             Log.Information("KoruMsSqlYedek Tray uygulaması başlatılıyor...");
 
@@ -68,6 +85,11 @@ namespace KoruMsSqlYedek.Win
 
             // Servis pipe bağlantısını başlat (arka planda otomatik yeniden bağlanır)
             _pipeClient.Start();
+
+            // Günlük güncelleme kontrolü — ilk kontrol 60 sn sonra
+            _updateTimer = new System.Windows.Forms.Timer { Interval = UpdateCheckInitialDelayMs };
+            _updateTimer.Tick += OnUpdateTimerTick;
+            _updateTimer.Start();
 
             Log.Information("Tray uygulaması başlatıldı.");
         }
@@ -133,6 +155,9 @@ namespace KoruMsSqlYedek.Win
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmLog);
             menu.Items.Add(tsmSettings);
+            menu.Items.Add(new ToolStripSeparator());
+            _tsmCheckUpdate = new ToolStripMenuItem(Res.Get("Update_MenuCheckForUpdates"), null, OnCheckUpdateClick);
+            menu.Items.Add(_tsmCheckUpdate);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmExit);
 
@@ -513,6 +538,139 @@ namespace KoruMsSqlYedek.Win
 
         #endregion
 
+        #region Update Check
+
+        private async void OnUpdateTimerTick(object sender, EventArgs e)
+        {
+            // İlk tick sonrası aralığı günlük yap
+            _updateTimer.Interval = UpdateCheckIntervalMs;
+
+            try
+            {
+                UpdateInfo info = await _updateService.CheckForUpdateAsync().ConfigureAwait(true);
+                if (info is not null)
+                {
+                    _pendingUpdate = info;
+                    _tsmCheckUpdate.Text = Res.Format("Update_BalloonMessage", info.Version);
+                    _tsmCheckUpdate.Font = new Font(_tsmCheckUpdate.Font, FontStyle.Bold);
+
+                    ShowBalloonTip(
+                        Res.Get("Update_BalloonTitle"),
+                        Res.Format("Update_BalloonMessage", info.Version),
+                        ToolTipIcon.Info, 5000);
+
+                    Log.Information("Yeni sürüm bildirimi gösterildi: v{Version}", info.Version);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Otomatik güncelleme kontrolü başarısız.");
+            }
+        }
+
+        private async void OnCheckUpdateClick(object sender, EventArgs e)
+        {
+            _tsmCheckUpdate.Enabled = false;
+            _tsmCheckUpdate.Text = Res.Get("Update_Checking");
+
+            try
+            {
+                UpdateInfo info = await _updateService.CheckForUpdateAsync().ConfigureAwait(true);
+
+                if (info is null)
+                {
+                    string currentVer = System.Reflection.Assembly
+                        .GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?";
+                    MessageBox.Show(
+                        Res.Format("Update_NoUpdateMessage", currentVer),
+                        Res.Get("Update_NoUpdate"),
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                _pendingUpdate = info;
+                DialogResult result = MessageBox.Show(
+                    Res.Format("Update_AvailableMessage", info.Version),
+                    Res.Get("Update_Available"),
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Information,
+                    MessageBoxDefaultButton.Button1);
+
+                if (result == DialogResult.Yes)
+                {
+                    await DownloadAndLaunchUpdateAsync(info).ConfigureAwait(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Manuel güncelleme kontrolü başarısız.");
+                MessageBox.Show(
+                    Res.Get("Update_CheckFailed"),
+                    Res.Get("AppName"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+            finally
+            {
+                _tsmCheckUpdate.Enabled = true;
+                _tsmCheckUpdate.Text = _pendingUpdate is not null
+                    ? Res.Format("Update_BalloonMessage", _pendingUpdate.Version)
+                    : Res.Get("Update_MenuCheckForUpdates");
+            }
+        }
+
+        private async Task DownloadAndLaunchUpdateAsync(UpdateInfo info)
+        {
+            string tempDir = Path.Combine(Path.GetTempPath(), "KoruUpdate");
+            Directory.CreateDirectory(tempDir);
+            string installerPath = Path.Combine(tempDir, $"KoruMsSqlYedek_Setup_v{info.Version}.exe");
+
+            try
+            {
+                ShowBalloonTip(
+                    Res.Get("AppName"),
+                    Res.Format("Update_Downloading", 0),
+                    ToolTipIcon.Info, 3000);
+
+                var progress = new Progress<int>(pct =>
+                {
+                    _notifyIcon.Text = Res.Format("Update_Downloading", pct);
+                });
+
+                await _updateService.DownloadInstallerAsync(
+                    info.DownloadUrl, installerPath, progress).ConfigureAwait(true);
+
+                ShowBalloonTip(
+                    Res.Get("AppName"),
+                    Res.Get("Update_DownloadComplete"),
+                    ToolTipIcon.Info, 2000);
+
+                Log.Information("Installer indirme tamamlandı, başlatılıyor: {Path}", installerPath);
+
+                // Installer'ı başlat ve uygulamayı kapat
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = installerPath,
+                    UseShellExecute = true,
+                    Verb = "runas"
+                });
+
+                ExitApplication();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Güncelleme indirme/başlatma hatası.");
+                MessageBox.Show(
+                    Res.Format("Update_DownloadFailed", ex.Message),
+                    Res.Get("AppName"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        #endregion
+
         #region Cleanup
 
         protected override void Dispose(bool disposing)
@@ -532,6 +690,9 @@ namespace KoruMsSqlYedek.Win
                     _isAnimating = false;
                 }
                 _animTimer?.Dispose();
+
+                _updateTimer?.Stop();
+                _updateTimer?.Dispose();
 
                 _pipeClient?.Dispose();
                 _notifyIcon?.Dispose();
