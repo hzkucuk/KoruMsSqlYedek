@@ -1,6 +1,6 @@
 # 📊 Modül Stabilite Haritası
 
-> Son güncelleme: 2025-07-20 — v0.57.0  
+> Son güncelleme: 2025-07-20 — v0.58.0
 > Derecelendirme: 🟢 Stabil | 🟡 Yeni / Test Edilmeli | 🔴 Deneysel / Eksik
 
 ---
@@ -33,7 +33,7 @@
 | Modül | Durum | Son Değişiklik | Açıklama |
 |-------|-------|----------------|----------|
 | FileBackupService | 🟢 Stabil | v0.52.0 | Klasör yedekleme, v0.43.0 kök neden düzeltmesi |
-| VssSnapshotService | 🟡 Yeni | v0.47.0 | AlphaVSS entegrasyonu, kilitli dosya desteği |
+| VssSnapshotService | 🟢 Stabil | v0.58.0 | 19 birim testi ile doğrulandı, AlphaVSS entegrasyonu |
 
 ### Bulut Yükleme
 
@@ -116,7 +116,7 @@
 | PipeProtocolTests | ✅ | IPC Seri/Deseri | 18 mesaj türü, roundtrip, kenar durumu |
 | BackupCancellationRegistryTests | ✅ | İptal Kayıt | 20 test — Register/Cancel/Unregister, thread safety |
 
-> **Eksik test alanları:** VSS Snapshot, Restore Dialog, Progress Tracker
+> **Eksik test alanları:** Restore Dialog, Progress Tracker
 
 ---
 
@@ -126,9 +126,9 @@
 |--------|-------|
 | Toplam proje | 5 |
 | Toplam kaynak dosya | ~120 |
-| Toplam test dosyası | 19 |
-| 🟢 Stabil modül | 31 |
-| 🟡 Yeni / Test edilmeli | 6 |
+| Toplam test dosyası | 20 |
+| 🟢 Stabil modül | 32 |
+| 🟡 Yeni / Test edilmeli | 5 |
 | 🔴 Deneysel / Eksik | 0 |
 | Son sürüm | v0.55.0 |
 | İlk izlenen sürüm | v0.42.9 |

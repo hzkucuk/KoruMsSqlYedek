@@ -1,6 +1,6 @@
 # 🗺️ Yol Haritası (Roadmap)
 
-> Son güncelleme: 2025-07-20 — v0.57.0  
+> Son güncelleme: 2025-07-20 — v0.58.0
 > Öncelik: 🔴 Kritik | 🟠 Yüksek | 🟡 Orta | 🟢 Düşük  
 > Durum: ⬜ Planlandı | 🔄 Devam Ediyor | ✅ Tamamlandı
 
@@ -20,8 +20,8 @@
 
 | # | İş Kalemi | Modül | Neden |
 |---|-----------|-------|-------|
-| Y1 | Local-mode SQL ilerleme takibi (bulut olmadan) | Win + Engine | Bulut yükleme yokken SQL adımları ara ilerleme göstermiyor |
-| Y2 | VSS test kapsamı genişletme | Tests | VssSnapshotService için unit test yok |
+| Y1 | ✅ Local-mode SQL ilerleme takibi (bulut olmadan) | Win + Engine | v0.58.0'da tamamlandı — HasCloudTargets flag + 5 adım ağırlık modeli |
+| Y2 | ✅ VSS test kapsamı genişletme (19 test) | Tests | v0.58.0'da tamamlandı — VssSnapshotServiceTests reflection tabanlı |
 | Y3 | ✅ Named Pipe IPC test kapsamı (38 test) | Tests | v0.57.0'da tamamlandı — PipeProtocolTests + CancellationRegistryTests |
 | Y4 | ✅ BackupJobExecutor cancel path test (8 test) | Tests | v0.57.0'da tamamlandı — iptal/hata/başarı akış testleri |
 
@@ -74,13 +74,13 @@
 
 ### Önerilen Sıralama
 
-1. **Y1 — Local-mode SQL ilerleme**
-   - Bulut hedefi olmayan planlarda progress bar davranışını iyileştir
+1. **O1 — E-posta bildirim şablonları (HTML)**
+   - Profesyonel HTML şablon tasarımı
 
-2. **Y2 — VSS test kapsamı genişletme**
-   - VssSnapshotService için unit test yaz
+2. **O2-O3 — Raporlama detaylandırma + Gelişmiş Retention**
+   - Grafik/özet raporlar, grandfather-father-son politikası
 
-3. **O1-O3 — Orta vade iş kalemleri**
-   - E-posta şablonları, raporlama detayı, gelişmiş retention politikası
+3. **O4 — MainWindow sorumluluk ayrıştırma**
+   - Buffer + UI + Renk + İlerleme mantığını ayrı sınıflara taşı
 
-> **Not:** K1/K2/K3 ve Y3/Y4 v0.57.0'da tamamlandı. Öncelik sırası, kullanıcı geri bildirimine göre güncellenecektir.
+> **Not:** K1/K2/K3/Y1/Y2/Y3/Y4 tamamlandı (v0.57.0–v0.58.0). Öncelik sırası kullanıcı geri bildirimine göre güncellenecektir.

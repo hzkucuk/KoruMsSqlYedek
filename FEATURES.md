@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.58.0 — Y1/Y2: Local-mode SQL İlerleme + VSS Test Kapsamı
+- Local-mode SQL ilerleme çubuğu: bulut hedefsiz planlarda her adımda (SQL→Doğrulama→Sıkıştırma→Temizlik) ilerleme çubuğu güncelleniyor
+- HasCloudTargets flag: BackupActivityEventArgs + PlanProgressTracker, Started event ile bildirim
+- VssSnapshotService testleri: 19 birim testi (Dispose, path mapping, argüman doğrulama, kontrat)
+
 ### v0.57.0 — K1/K2/K3: IPC Testleri, İptal/Temizlik Testleri, RestoreDialog Tamamlama
 - Named Pipe IPC protokol testleri: 18 birim testi (tüm mesaj türleri, roundtrip, kenar durumları)
 - BackupCancellationRegistry testleri: 20 birim testi (Register/Cancel/Unregister, thread safety)

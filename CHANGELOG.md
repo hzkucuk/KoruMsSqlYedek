@@ -1,4 +1,16 @@
-﻿## [0.57.0] - 2025-07-20 — K1/K2/K3: IPC Testleri, İptal/Temizlik Testleri, RestoreDialog Tamamlama
+﻿## [0.58.0] - 2025-07-20 — Y1/Y2: Local-mode SQL İlerleme + VSS Test Kapsamı
+
+### Yeni Özellik
+- **Local-mode SQL ilerleme çubuğu (Y1):** Bulut hedefi olmayan planlarda ilerleme çubuğu artık her SQL adımında güncelleniyor. Ağırlıklar: SQL=%50, Doğrulama=%65, Sıkıştırma=%80, Arşiv Doğrulama=%88, Temizlik=%95. (`MainWindow.cs`, `BackupActivityEvent.cs`, `BackupJobExecutor.cs`)
+- **HasCloudTargets flag:** `BackupActivityEventArgs` ve `PlanProgressTracker`'a eklendi. Started event'inde plan bulut hedefi durumunu bildiriyor.
+- **VSS test kapsamı (Y2):** 19 birim testi — Dispose güvenliği, CreateSnapshot argüman doğrulama, GetSnapshotFilePath path mapping (farklı volume'lar, iç içe yollar), DeleteSnapshot/DeleteAllSnapshots, IsAvailable, IVssService kontrat. (`VssSnapshotServiceTests.cs`)
+
+### Test İstatistikleri
+- Toplam: 313 test | Geçen: 312 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.57.0] - 2025-07-20 — K1/K2/K3: IPC Testleri, İptal/Temizlik Testleri, RestoreDialog Tamamlama
 
 ### Yeni Özellik
 - **Named Pipe IPC testleri (K1):** 18 birim testi — tüm PipeProtocol mesaj türleri (FromArgs/ToArgs roundtrip, kenar durumları, büyük payload, özel karakter). (`PipeProtocolTests.cs`)

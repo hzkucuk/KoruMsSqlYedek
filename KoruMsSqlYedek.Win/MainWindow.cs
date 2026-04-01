@@ -77,6 +77,7 @@ namespace KoruMsSqlYedek.Win
             public bool IsVssPhase;       // "VSS Bulut Yükleme" adımına girildi — şu an VSS upload aktif
             public bool HasFileBackup;    // Plan dosya yedekleme fazı içeriyor
             public bool IsFileBackupPhase; // Dosya yedekleme fazına girildi
+            public bool HasCloudTargets;  // Plan en az bir etkin bulut hedefi içeriyor
         }
 
         // Scheduler'dan gelen sonraki çalışma zamanları (planId → lokal saat metni)
@@ -1208,7 +1209,8 @@ namespace KoruMsSqlYedek.Win
                             DbTotal = e.TotalCount > 0 ? e.TotalCount : 1,
                             SqlDbCount = e.TotalCount,
                             MaxPercent = 0,
-                            HasFileBackup = e.HasFileBackup
+                            HasFileBackup = e.HasFileBackup,
+                            HasCloudTargets = e.HasCloudTargets
                         };
                     }
                     _viewingPlanId = e.PlanId;
@@ -1292,6 +1294,40 @@ namespace KoruMsSqlYedek.Win
                                     _progressBar.Value = pct;
                                 }
                                 UpdatePlanRowProgress(stepPlanId, pct);
+                            }
+
+                            // ── Local-mode (bulut hedefsiz) SQL adım bazlı ilerleme ──
+                            // Bulut yükleme yoksa, her SQL adımı tamamlandığında ilerleme çubuğunu güncelle.
+                            // Ağırlıklar: SQL=%50, Doğrulama=%65, Sıkıştırma=%80, Arşiv Doğrulama=%88, Temizlik=%95
+                            if (!stepTracker.HasCloudTargets && !stepTracker.IsFileBackupPhase
+                                && stepTracker.DbTotal > 0 && stepTracker.DbIndex > 0)
+                            {
+                                double stepWeight = e.StepName switch
+                                {
+                                    "SQL Yedekleme" => 0.50,
+                                    "Doğrulama" => 0.65,
+                                    "Sıkıştırma" => 0.80,
+                                    "Arşiv Doğrulama" => 0.88,
+                                    "Temizlik" => 0.95,
+                                    _ => -1
+                                };
+
+                                if (stepWeight > 0)
+                                {
+                                    double maxSqlRange = stepTracker.HasFileBackup ? 80.0 : 100.0;
+                                    double slicePerDb = maxSqlRange / stepTracker.DbTotal;
+                                    double dbBase = (stepTracker.DbIndex - 1) * slicePerDb;
+                                    int pct = (int)(dbBase + slicePerDb * stepWeight);
+                                    pct = Math.Max(pct, stepTracker.MaxPercent);
+                                    pct = Math.Clamp(pct, 0, 100);
+                                    stepTracker.MaxPercent = pct;
+                                    if (stepPlanId == _viewingPlanId)
+                                    {
+                                        _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                                        _progressBar.Value = pct;
+                                    }
+                                    UpdatePlanRowProgress(stepPlanId, pct);
+                                }
                             }
                         }
                     }
