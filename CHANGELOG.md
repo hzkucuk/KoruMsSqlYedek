@@ -1,4 +1,35 @@
-﻿## [0.61.0] - 2025-07-22 — O5/O6: Stres Testleri + PlanProgressTracker Testleri
+﻿## [0.62.0] - 2025-07-23 — TB1/TB4: Switch Refactor + RestoreDialog & Exhaustiveness Testleri
+
+### İyileştirme (TB1 — OnBackupActivityChanged Switch Refactor)
+- **BuildActivityLogLine:** switch statement → switch expression + `throw ArgumentOutOfRangeException` (fail-fast). Karmaşık CloudUploadProgress case'i `BuildCloudUploadLogLine` helper'a çıkarıldı. (`MainWindow.cs`)
+- **GetLogColor:** default case `ModernTheme.LogDefault` → `throw ArgumentOutOfRangeException` (sessiz hata yerine fail-fast). (`MainWindow.cs`)
+- **UpdatePlanRowStatus:** İnline switch → `GetStatusDisplay` switch expression helper'a çıkarıldı, `(string Icon, Color Color)` tuple döner. (`MainWindow.cs`)
+- **OnBackupActivityChanged:** `default:` case eklendi — `Log.Warning("Unhandled BackupActivityType...")` ile bilinmeyen türleri loglar. (`MainWindow.cs`)
+- **XML doc comments:** Tüm 5 sorumluluk noktasına ⚠️ uyarılı dokümantasyon eklendi.
+
+### Yeni Test Kapsamı (TB4 — RestoreDialog + Exhaustiveness Testleri)
+- **RestoreDialogTests:** 15 birim testi — 4 constructor null guard, 5 CleanupTempDirectory (method existence + null/empty/nonexistent/existing dir), 3 LoadHistory filtreleme mantığı (success-only, all-failed, empty), 3 grid row data doğrulama (boyut formatı, compressed path önceliği, fallback). (`RestoreDialogTests.cs`)
+- **BackupActivityExhaustivenessTests:** 20 parameterized test — enum değer sayısı kontrolü (9), KnownActivityTypes coverage, DynamicData ile her enum değeri için BuildActivityLogLine ve GetLogColor kapsam doğrulaması. (`BackupActivityExhaustivenessTests.cs`)
+- **InternalsVisibleTo:** Win projesinden Tests projesine internal erişim (AssemblyInfo.cs attribute). (`AssemblyInfo.cs`, `Tests.csproj`)
+
+### Altyapı
+- **InternalsVisibleTo düzeltme:** `GenerateAssemblyInfo=false` olan projede MSBuild `<InternalsVisibleTo>` item yerine AssemblyInfo.cs'e manuel attribute eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs` — TB1 switch refactor (4 değişiklik)
+- `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs` — InternalsVisibleTo + versiyon
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — versiyon
+- `KoruMsSqlYedek.Tests/RestoreDialogTests.cs` — yeni test dosyası
+- `KoruMsSqlYedek.Tests/BackupActivityExhaustivenessTests.cs` — yeni test dosyası
+- `KoruMsSqlYedek.Tests/KoruMsSqlYedek.Tests.csproj` — Win project reference
+
+### Test İstatistikleri
+- Yeni: 35 test (15 RestoreDialog + 20 BackupActivityExhaustiveness)
+- Toplam: 447 test | Geçen: 446 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.61.0] - 2025-07-22 — O5/O6: Stres Testleri + PlanProgressTracker Testleri
 
 ### Yeni Test Kapsamı
 - **Stres testleri (O5):** 8 yeni stres testi — eşzamanlı farklı planlar, aynı plan SemaphoreSlim kilit testi, büyük DB listesi (20 DB), karma başarı/hata/iptal senaryoları, ardışık hızlı çalıştırma (deadlock kontrolü), paralel bulut upload, monoton ilerleme event doğrulaması, çoklu DB iptal propagasyonu. (`StressTests.cs`)

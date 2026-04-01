@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.62.0 — TB1/TB4: Switch Refactor + RestoreDialog & Exhaustiveness Testleri
+- TB1 — OnBackupActivityChanged switch refactor: BuildActivityLogLine/GetLogColor → switch expression + throw (fail-fast), BuildCloudUploadLogLine helper, GetStatusDisplay tuple helper, default case Log.Warning, XML doc ⚠️ uyarıları
+- TB4 — RestoreDialogTests: 15 test (4 constructor null guard, 5 CleanupTempDirectory, 3 LoadHistory filtre, 3 grid row data)
+- TB4 — BackupActivityExhaustivenessTests: 20 parameterized test (enum count, coverage, DynamicData BuildActivityLogLine/GetLogColor)
+- InternalsVisibleTo: Win → Tests (AssemblyInfo.cs manual attribute, GenerateAssemblyInfo=false workaround)
+
 ### v0.61.0 — O5/O6: Stres Testleri + PlanProgressTracker Testleri
 - Stres testleri (O5): 8 test — eşzamanlı plan çalıştırma, SemaphoreSlim kilit, büyük DB listesi, karma senaryolar, deadlock kontrolü, bulut paralel, monoton ilerleme, iptal propagasyonu
 - PlanProgressTracker ağırlık modeli testleri (O6): 22 test — sınır değerler, VSS (20/50/30), NoVSS (30/70), dosya-only pipeline, karma plan, çoklu hedef dağılımı, monoton garanti

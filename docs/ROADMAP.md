@@ -1,6 +1,6 @@
 # 🗺️ Yol Haritası (Roadmap)
 
-> Son güncelleme: 2025-07-22 — v0.61.0
+> Son güncelleme: 2025-07-23 — v0.62.0
 > Öncelik: 🔴 Kritik | 🟠 Yüksek | 🟡 Orta | 🟢 Düşük  
 > Durum: ⬜ Planlandı | 🔄 Devam Ediyor | ✅ Tamamlandı
 
@@ -62,10 +62,10 @@
 
 | # | Açıklama | Etki | Öncelik |
 |---|----------|------|---------|
-| TB1 | MainWindow.OnBackupActivityChanged — merkezi switch, her yeni event tipi 5 noktada güncellenmeli | Sessiz hata riski | 🟠 |
+| TB1 | ✅ MainWindow.OnBackupActivityChanged — switch expression refactor, fail-fast, GetStatusDisplay/BuildCloudUploadLogLine helper | v0.62.0'da tamamlandı | ✅ |
 | TB2 | AppendBackupLog — Buffer + UI + Renk + İlerleme tek metotta | Kırılganlık | 🟡 |
 | TB3 | RichTextBox indeks uyumsuzluğu (Text \r\n vs Select \n) | Bilinen pitfall, dikkat gerekli | 🟡 |
-| TB4 | Test coverage: VSS, IPC, Cancel Cleanup, Progress Tracker, RestoreDialog | Güvenlik açığı | 🟠 |
+| TB4 | ✅ Test coverage: RestoreDialog (15 test) + BackupActivityExhaustiveness (20 test) | v0.62.0'da tamamlandı | ✅ |
 | TB5 | Serilog yapılandırılmış loglama standardizasyonu | Tutarlılık | 🟢 |
 
 ---

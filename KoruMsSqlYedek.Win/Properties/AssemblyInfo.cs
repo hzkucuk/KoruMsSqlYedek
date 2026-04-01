@@ -29,5 +29,7 @@ using System.Runtime.InteropServices;
 //      Yapı Numarası
 //      Düzeltme
 //
-[assembly: AssemblyVersion("0.61.0.0")]
-[assembly: AssemblyFileVersion("0.61.0.0")]
+[assembly: AssemblyVersion("0.62.0.0")]
+[assembly: AssemblyFileVersion("0.62.0.0")]
+
+[assembly: InternalsVisibleTo("KoruMsSqlYedek.Tests")]

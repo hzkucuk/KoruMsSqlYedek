@@ -1316,6 +1316,10 @@ namespace KoruMsSqlYedek.Win
                     UpdatePlanRowProgress(e.PlanId, 0);
                     UpdatePlanRowStatus(e.PlanId, e.ActivityType);
                     break;
+
+                default:
+                    Log.Warning("Unhandled BackupActivityType: {ActivityType} — OnBackupActivityChanged güncellenmelidir.", e.ActivityType);
+                    break;
             }
 
             UpdateBackupButtonStates();
@@ -1324,34 +1328,18 @@ namespace KoruMsSqlYedek.Win
             AppendBackupLog(e.PlanId, BuildActivityLogLine(e), logColor, isProgress);
         }
 
+        /// <summary>
+        /// Plan grid satırının durum hücresini günceller (ikon + renk).
+        /// ⚠️ Yeni terminal BackupActivityType eklendiğinde bu metot güncellenmelidir.
+        /// </summary>
         private void UpdatePlanRowStatus(string planId, BackupActivityType activityType)
         {
+            (string icon, Color color) = GetStatusDisplay(activityType);
+
             foreach (DataGridViewRow row in _dgvPlans.Rows)
             {
                 var plan = row.Tag as BackupPlan;
                 if (plan == null || plan.PlanId != planId) continue;
-
-                string icon;
-                Color color;
-                switch (activityType)
-                {
-                    case BackupActivityType.Completed:
-                        icon = "✓ " + DateTime.Now.ToString("HH:mm");
-                        color = Theme.ModernTheme.StatusSuccess;
-                        break;
-                    case BackupActivityType.Failed:
-                        icon = "✕ " + DateTime.Now.ToString("HH:mm");
-                        color = Theme.ModernTheme.StatusError;
-                        break;
-                    case BackupActivityType.Cancelled:
-                        icon = "■ " + DateTime.Now.ToString("HH:mm");
-                        color = Color.Gray;
-                        break;
-                    default:
-                        icon = "⟳ " + DateTime.Now.ToString("HH:mm");
-                        color = Theme.ModernTheme.AccentPrimary;
-                        break;
-                }
 
                 if (row.Cells[_colStatus.Index] != null)
                 {
@@ -1361,6 +1349,17 @@ namespace KoruMsSqlYedek.Win
                 break;
             }
         }
+
+        /// <summary>
+        /// BackupActivityType → grid durum ikonu ve rengi.
+        /// </summary>
+        private static (string Icon, Color Color) GetStatusDisplay(BackupActivityType activityType) => activityType switch
+        {
+            BackupActivityType.Completed => ("✓ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.StatusSuccess),
+            BackupActivityType.Failed    => ("✕ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.StatusError),
+            BackupActivityType.Cancelled => ("■ " + DateTime.Now.ToString("HH:mm"), Color.Gray),
+            _                            => ("⟳ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.AccentPrimary),
+        };
 
         private void UpdatePlanRowProgress(string planId, int percent)
         {
@@ -1376,55 +1375,74 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
-        private string BuildActivityLogLine(BackupActivityEventArgs e)
+        /// <summary>
+        /// BackupActivityEventArgs → kullanıcıya gösterilecek log satır metni.
+        /// ⚠️ Yeni BackupActivityType eklendiğinde bu metot + GetLogColor + UpdatePlanRowStatus
+        ///    + OnBackupActivityChanged switch bloğu birlikte güncellenmelidir.
+        /// </summary>
+        private string BuildActivityLogLine(BackupActivityEventArgs e) => e.ActivityType switch
         {
-            switch (e.ActivityType)
+            BackupActivityType.Started
+                => string.Format("[{0}] Yedekleme başladı.", e.PlanName ?? e.PlanId),
+
+            BackupActivityType.DatabaseProgress
+                => string.Format("{0} ({1}/{2}) işleniyor.", e.DatabaseName, e.CurrentIndex, e.TotalCount),
+
+            BackupActivityType.StepChanged
+                => !string.IsNullOrEmpty(e.Message) ? e.Message : string.Format("Adım: {0}", e.StepName),
+
+            BackupActivityType.CloudUploadStarted
+                => string.Format("Bulut yükleme başladı: {0}", e.CloudTargetName),
+
+            BackupActivityType.CloudUploadProgress
+                => BuildCloudUploadLogLine(e),
+
+            BackupActivityType.CloudUploadCompleted
+                => string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕"),
+
+            BackupActivityType.Completed
+                => string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId),
+
+            BackupActivityType.Failed
+                => string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message),
+
+            BackupActivityType.Cancelled
+                => string.Format("[{0}] Yedekleme iptal edildi.", e.PlanName ?? e.PlanId),
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(e.ActivityType), e.ActivityType,
+                $"Unhandled BackupActivityType: {e.ActivityType}. Tüm 5 sorumluluk noktasını güncelleyin.")
+        };
+
+        /// <summary>
+        /// CloudUploadProgress için detaylı log satırı oluşturur (hız/ETA dahil).
+        /// </summary>
+        private string BuildCloudUploadLogLine(BackupActivityEventArgs e)
+        {
+            if (e.ProgressPercent >= 100) return string.Empty;
+            if (e.BytesTotal > 0)
             {
-                case BackupActivityType.Started:
-                    return string.Format("[{0}] Yedekleme başladı.", e.PlanName ?? e.PlanId);
-                case BackupActivityType.DatabaseProgress:
-                    return string.Format("{0} ({1}/{2}) işleniyor.", e.DatabaseName, e.CurrentIndex, e.TotalCount);
-                case BackupActivityType.StepChanged:
-                    if (!string.IsNullOrEmpty(e.Message))
-                        return e.Message;
-                    return string.Format("Adım: {0}", e.StepName);
-                case BackupActivityType.CloudUploadStarted:
-                    return string.Format("Bulut yükleme başladı: {0}", e.CloudTargetName);
-                case BackupActivityType.CloudUploadProgress:
-                    if (e.ProgressPercent >= 100) return string.Empty;
-                    if (e.BytesTotal > 0)
-                    {
-                        long bytesRemaining = e.BytesTotal - e.BytesSent;
-                        string etaStr = e.SpeedBytesPerSecond > 0
-                            ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
-                            : "";
-                        string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
-                        return string.Format("Yükleniyor {0}: %{1} | Gönderilen: {2}/{3} | Kalan: {4} | Hız: {5}/s{6}",
-                            e.CloudTargetName,
-                            e.ProgressPercent,
-                            FormatFileSize(e.BytesSent),
-                            FormatFileSize(e.BytesTotal),
-                            FormatFileSize(bytesRemaining),
-                            FormatFileSize(e.SpeedBytesPerSecond),
-                            etaPart);
-                    }
-                    return string.Format("Yükleniyor {0}: %{1}", e.CloudTargetName, e.ProgressPercent);
-                case BackupActivityType.CloudUploadCompleted:
-                    return string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕");
-                case BackupActivityType.Completed:
-                    return string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId);
-                case BackupActivityType.Failed:
-                    return string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message);
-                case BackupActivityType.Cancelled:
-                    return string.Format("[{0}] Yedekleme iptal edildi.", e.PlanName ?? e.PlanId);
-                default:
-                    return e.Message ?? string.Empty;
+                long bytesRemaining = e.BytesTotal - e.BytesSent;
+                string etaStr = e.SpeedBytesPerSecond > 0
+                    ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
+                    : "";
+                string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
+                return string.Format("Yükleniyor {0}: %{1} | Gönderilen: {2}/{3} | Kalan: {4} | Hız: {5}/s{6}",
+                    e.CloudTargetName,
+                    e.ProgressPercent,
+                    FormatFileSize(e.BytesSent),
+                    FormatFileSize(e.BytesTotal),
+                    FormatFileSize(bytesRemaining),
+                    FormatFileSize(e.SpeedBytesPerSecond),
+                    etaPart);
             }
+            return string.Format("Yükleniyor {0}: %{1}", e.CloudTargetName, e.ProgressPercent);
         }
 
         /// <summary>
         /// BackupActivityType → "Koru" temalı konsol rengi.
         /// Yeşil = güvenli/başarılı, Mavi = bilgi, Kırmızı = hata, Turkuaz = ilerleme.
+        /// ⚠️ Yeni BackupActivityType eklendiğinde bu metot güncellenmelidir.
         /// </summary>
         private static Color GetLogColor(BackupActivityType activityType) => activityType switch
         {
@@ -1437,7 +1455,9 @@ namespace KoruMsSqlYedek.Win
             BackupActivityType.CloudUploadStarted => Theme.ModernTheme.LogCloud,
             BackupActivityType.CloudUploadProgress => Theme.ModernTheme.LogProgress,
             BackupActivityType.CloudUploadCompleted => Theme.ModernTheme.LogCloud,
-            _ => Theme.ModernTheme.LogDefault,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(activityType), activityType,
+                $"Unhandled BackupActivityType: {activityType}. GetLogColor güncellenmelidir.")
         };
 
         #endregion
