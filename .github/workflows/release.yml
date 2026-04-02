@@ -17,7 +17,7 @@ permissions:
 
 env:
   DOTNET_VERSION: '10.0.x'
-  SOLUTION_FILE: 'KoruMsSqlYedek.sln'
+  SOLUTION_FILE: 'KoruMsSqlYedek.slnx'
 
 jobs:
   build-and-release:

@@ -14,7 +14,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-if (-not (Test-Path "$Root\KoruMsSqlYedek.sln")) {
+if (-not (Test-Path "$Root\KoruMsSqlYedek.slnx")) {
     $Root = $PSScriptRoot
 }
 

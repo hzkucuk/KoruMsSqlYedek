@@ -32,6 +32,8 @@ DefaultDirName={autopf}\KoruMsSqlYedek
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=dialog
+UsedUserAreasWarning=no
 OutputDir=..\installer\output
 OutputBaseFilename=KoruMsSqlYedek_Setup_v{#MyAppVersion}
 Compression=lzma2/ultra64
@@ -82,11 +84,11 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} uygulamasını ba�
 
 [UninstallRun]
 ; ── Kaldırma: Servisi durdur ve sil ──────────────────────────────
-Filename: "sc.exe"; Parameters: "stop {#MyServiceName}"; Flags: runhidden waituntilterminated
-Filename: "sc.exe"; Parameters: "delete {#MyServiceName}"; Flags: runhidden waituntilterminated
+Filename: "sc.exe"; Parameters: "stop {#MyServiceName}"; Flags: runhidden waituntilterminated; RunOnceId: "StopService"
+Filename: "sc.exe"; Parameters: "delete {#MyServiceName}"; Flags: runhidden waituntilterminated; RunOnceId: "DeleteService"
 
 ; ── Kaldırma öncesi çalışan uygulamayı kapat ─────────────────────
-Filename: "taskkill.exe"; Parameters: "/F /IM {#MyAppExeName}"; Flags: runhidden
+Filename: "taskkill.exe"; Parameters: "/F /IM {#MyAppExeName}"; Flags: runhidden; RunOnceId: "KillTrayApp"
 
 [Code]
 // ═══════════════════════════════════════════════════════════════════
