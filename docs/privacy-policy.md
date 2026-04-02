@@ -5,7 +5,7 @@ title: Gizlilik Politikası — Koru MsSql Yedek
 
 # Gizlilik Politikası
 
-**Son güncelleme:** 24 Temmuz 2025
+**Son güncelleme:** 25 Temmuz 2026
 
 Bu gizlilik politikası, **Koru MsSql Yedek** ("Uygulama") uygulamasının kullanıcı verilerini nasıl topladığını, kullandığını ve koruduğunu açıklar.
 
