@@ -427,17 +427,21 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>
         /// Yapılandırmayı doğrular.
+        /// ClientId/Secret gömülü credential'lardan da gelebilir, zorunlu değil.
         /// </summary>
         private static void ValidateConfig(CloudTargetConfig config)
         {
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
 
-            if (string.IsNullOrEmpty(config.OAuthClientId))
-                throw new ArgumentException("Google Drive OAuth2 Client ID yapılandırılmamış.");
+            // ClientId/Secret: config'de veya gömülü credential'larda olmalı
+            bool hasConfigCredentials = !string.IsNullOrEmpty(config.OAuthClientId)
+                                     && !string.IsNullOrEmpty(config.OAuthClientSecret);
 
-            if (string.IsNullOrEmpty(config.OAuthClientSecret))
-                throw new ArgumentException("Google Drive OAuth2 Client Secret yapılandırılmamış.");
+            if (!hasConfigCredentials && !GoogleOAuthCredentials.IsConfigured)
+                throw new ArgumentException(
+                    "Google Drive OAuth2 kimlik bilgileri yapılandırılmamış. " +
+                    "Gömülü credential bulunamadı ve config'de de yok.");
 
             if (string.IsNullOrEmpty(config.OAuthTokenJson))
                 throw new ArgumentException("Google Drive OAuth2 token bulunamadı. Önce kimlik doğrulama yapılmalıdır.");

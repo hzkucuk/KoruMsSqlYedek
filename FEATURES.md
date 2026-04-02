@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.64.0 — Google Drive OAuth Sadeleştirme (Gömülü Credential)
+- Gömülü OAuth Credential: Client ID/Secret Base64-obfuscated olarak uygulamaya gömüldü
+- Parametresiz AuthorizeInteractiveAsync: tek tıkla Google hesabı bağlama
+- Credential öncelik sırası: config özel > gömülü (backward compat)
+- UI sadeleştirme: Client ID/Secret alanları kaldırıldı, "Hesap Bağlama" grubu
+
 ### v0.63.0 — O7: Inno Setup Installer + GitHub Actions CI/CD + Otomatik Güncelleme
 - Inno Setup 6 installer: Program Files kurulumu, Windows Service sc.exe kaydı, masaüstü kısayolu, başlangıçta çalıştır, AppData korunur
 - PowerShell build script: otomatik versiyon algılama, dotnet publish (Win+Service), ISCC derleme

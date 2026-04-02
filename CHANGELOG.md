@@ -1,4 +1,24 @@
-﻿## [0.63.0] - 2025-07-24 — O7: Inno Setup Installer + GitHub Actions CI/CD + Otomatik Güncelleme
+﻿## [0.64.0] - 2025-07-25 — Google Drive OAuth Sadeleştirme (Gömülü Credential)
+
+### Yeni Özellik
+- **Gömülü OAuth Credential:** Google Drive OAuth2 Client ID/Secret uygulamaya Base64-obfuscated olarak gömüldü. Kullanıcıların Google Cloud Console'dan credential almasına gerek kalmadı.
+- **GoogleOAuthCredentials.cs:** Statik sınıf — Base64 encode/decode, `IsConfigured` property, try/catch ile hata koruması.
+- **Parametresiz AuthorizeInteractiveAsync:** Gömülü credential ile tek tıkla Google hesabı bağlama.
+- **Credential öncelik sırası:** Config'deki özel credential > gömülü credential (backward compat).
+- **UI sadeleştirme:** Client ID/Secret alanları kaldırıldı, OAuth grubu "Hesap Bağlama" olarak yeniden adlandırıldı, tek buton + durum etiketi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/GoogleOAuthCredentials.cs` — yeni: gömülü credential sınıfı
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveAuthHelper.cs` — parametresiz overload + fallback mantığı
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs` — ValidateConfig gömülü/config dual destek
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs` — UI mantığı sadeleştirme
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.Designer.cs` — ClientId/Secret kontrolleri kaldırıldı
+- `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs` — versiyon
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — versiyon
+
+---
+
+## [0.63.0] - 2025-07-24 — O7: Inno Setup Installer + GitHub Actions CI/CD + Otomatik Güncelleme
 
 ### Yeni Özellik (O7 — Otomatik Güncelleme Mekanizması)
 - **Inno Setup 6 installer:** Program Files kurulumu, Windows Service (sc.exe) kaydı, masaüstü kısayolu, başlangıçta çalıştır seçeneği, AppData korunur (kaldırma sırasında). (`installer/setup.iss`)
