@@ -5,7 +5,7 @@ title: Kullanım Koşulları — Koru MsSql Yedek
 
 # Kullanım Koşulları
 
-**Son güncelleme:** 24 Temmuz 2025
+**Son güncelleme:** 25 Temmuz 2026
 
 Bu kullanım koşulları, **Koru MsSql Yedek** ("Uygulama") uygulamasının kullanımını düzenler.
 
