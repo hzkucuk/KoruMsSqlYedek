@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.65.0 — Log Performansı, Dark Dialog, Şifre Koruması
+- Log viewer VirtualMode: Büyük log dosyaları artık UI’yı dondurmaz
+- ModernMessageBox: Tüm dialog’lar dark tema ile tutarlı
+- Şifre koruması: Görev işlemleri şifre ile korunur, güvenlik sorusu ile kurtarma
+- Tray menü sadeleştirme: Gereksiz öğeler kaldırıldı
+
 ### v0.64.1 — Provider Listesi Sadeleştirme
 - Google Drive (Bireysel/Workspace) → tek "Google Drive ✓" satırı
 - OneDrive (Bireysel/Kurumsal) → tek "OneDrive" satırı

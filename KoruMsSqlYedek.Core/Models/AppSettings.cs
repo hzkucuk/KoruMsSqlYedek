@@ -54,6 +54,24 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("logColorScheme")]
         public string LogColorScheme { get; set; } = "koru";
 
+        // ═══════════════ ŞİFRE KORUMASI ═══════════════
+
+        /// <summary>Görev şifresi (SHA256 hash, DPAPI ile korumalı). Boş ise koruma yok.</summary>
+        [JsonProperty("passwordHash", NullValueHandling = NullValueHandling.Ignore)]
+        public string PasswordHash { get; set; }
+
+        /// <summary>Şifre kurtarma güvenlik sorusu.</summary>
+        [JsonProperty("securityQuestion", NullValueHandling = NullValueHandling.Ignore)]
+        public string SecurityQuestion { get; set; }
+
+        /// <summary>Güvenlik sorusu cevabı (SHA256 hash, DPAPI ile korumalı).</summary>
+        [JsonProperty("securityAnswerHash", NullValueHandling = NullValueHandling.Ignore)]
+        public string SecurityAnswerHash { get; set; }
+
+        /// <summary>Şifre koruması etkin mi?</summary>
+        [JsonIgnore]
+        public bool IsPasswordProtected => !string.IsNullOrEmpty(PasswordHash);
+
         /// <summary>Ayar şeması versiyonu (geriye uyumluluk).</summary>
         [JsonProperty("schemaVersion")]
         public int SchemaVersion { get; set; } = 1;

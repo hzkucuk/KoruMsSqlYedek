@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Helpers;
@@ -81,7 +81,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             if (string.IsNullOrWhiteSpace(_txtSourceName.Text))
             {
-                MessageBox.Show(Res.Get("FileSource_NameRequired"), Res.Get("ValidationError"),
+                Theme.ModernMessageBox.Show(Res.Get("FileSource_NameRequired"), Res.Get("ValidationError"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtSourceName.Focus();
                 return false;
@@ -89,7 +89,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
             if (string.IsNullOrWhiteSpace(_txtSourcePath.Text))
             {
-                MessageBox.Show(Res.Get("FileSource_PathRequired"), Res.Get("ValidationError"),
+                Theme.ModernMessageBox.Show(Res.Get("FileSource_PathRequired"), Res.Get("ValidationError"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtSourcePath.Focus();
                 return false;

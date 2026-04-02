@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -230,14 +230,14 @@ namespace KoruMsSqlYedek.Win.Forms
                 case 0:
                     if (string.IsNullOrWhiteSpace(_txtPlanName.Text))
                     {
-                        MessageBox.Show(Res.Get("PlanEdit_NameRequired"), Res.Get("ValidationError"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_NameRequired"), Res.Get("ValidationError"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         _txtPlanName.Focus();
                         return false;
                     }
                     if (string.IsNullOrWhiteSpace(_txtServer.Text))
                     {
-                        MessageBox.Show(Res.Get("PlanEdit_ServerRequired"), Res.Get("ValidationError"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ServerRequired"), Res.Get("ValidationError"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         _txtServer.Focus();
                         return false;
@@ -267,7 +267,7 @@ namespace KoruMsSqlYedek.Win.Forms
                     }
                     else
                     {
-                        MessageBox.Show(Res.Get("PlanEdit_ConnFailed"), Res.Get("Warning"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ConnFailed"), Res.Get("Warning"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
@@ -464,7 +464,7 @@ namespace KoruMsSqlYedek.Win.Forms
             if (string.IsNullOrWhiteSpace(_txtPlanName.Text))
             {
                 ShowStep(0);
-                MessageBox.Show(Res.Get("PlanEdit_NameRequired"), Res.Get("ValidationError"),
+                Theme.ModernMessageBox.Show(Res.Get("PlanEdit_NameRequired"), Res.Get("ValidationError"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtPlanName.Focus();
                 return false;
@@ -565,7 +565,7 @@ namespace KoruMsSqlYedek.Win.Forms
             catch (Exception ex)
             {
                 Log.Error(ex, "Plan kaydedilirken hata: {PlanId}", _plan.PlanId);
-                MessageBox.Show(Res.Format("PlanEdit_SaveError", ex.Message),
+                Theme.ModernMessageBox.Show(Res.Format("PlanEdit_SaveError", ex.Message),
                     Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -592,14 +592,14 @@ namespace KoruMsSqlYedek.Win.Forms
                     if (isConnected)
                     {
                         _connectionTested = true;
-                        MessageBox.Show(Res.Get("PlanEdit_ConnSuccess"), Res.Get("PlanEdit_ConnSuccessTitle"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ConnSuccess"), Res.Get("PlanEdit_ConnSuccessTitle"),
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                         await LoadDatabaseListAsync(connInfo);
                     }
                     else
                     {
-                        MessageBox.Show(Res.Get("PlanEdit_ConnFailed"), Res.Get("PlanEdit_ConnSuccessTitle"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ConnFailed"), Res.Get("PlanEdit_ConnSuccessTitle"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
@@ -607,7 +607,7 @@ namespace KoruMsSqlYedek.Win.Forms
             catch (Exception ex)
             {
                 Log.Error(ex, "SQL bağlantı testi hatası.");
-                MessageBox.Show(Res.Format("PlanEdit_ConnError", ex.Message), Res.Get("Error"),
+                Theme.ModernMessageBox.Show(Res.Format("PlanEdit_ConnError", ex.Message), Res.Get("Error"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -715,7 +715,7 @@ namespace KoruMsSqlYedek.Win.Forms
             var target = _lvCloudTargets.SelectedItems[0].Tag as CloudTargetConfig;
             if (target == null) return;
 
-            var result = MessageBox.Show(
+            var result = Theme.ModernMessageBox.Show(
                 Res.Format("PlanEdit_RemoveTargetConfirm", target.DisplayName),
                 Res.Get("PlanEdit_RemoveTargetTitle"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
@@ -804,7 +804,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnOpenSmtpSettingsClick(object sender, System.Windows.Forms.LinkLabelLinkClickedEventArgs e)
         {
-            MessageBox.Show(
+            Theme.ModernMessageBox.Show(
                 Res.Get("PlanEdit_SmtpGoToSettings") ?? "SMTP profillerini yönetmek için ana pencereden\nAyarlar \u003e E-posta (SMTP) sekmesini açın.",
                 Res.Get("Info") ?? "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }

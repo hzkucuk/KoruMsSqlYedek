@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Threading;
 using System.Windows.Forms;
@@ -74,7 +74,7 @@ namespace KoruMsSqlYedek.Win
                 catch (Exception ex)
                 {
                     Log.Fatal(ex, "Uygulama beklenmeyen bir hata ile sonlandı.");
-                    MessageBox.Show(
+                    Theme.ModernMessageBox.Show(
                         Res.Get("Program_CriticalErrorMessage"),
                         Res.Get("Program_CriticalErrorTitle"),
                         MessageBoxButtons.OK,
@@ -172,7 +172,7 @@ namespace KoruMsSqlYedek.Win
         {
             Log.Error(e.Exception, "UI thread'de yakalanmamış hata.");
 
-            MessageBox.Show(
+            Theme.ModernMessageBox.Show(
                 Res.Get("Program_ThreadErrorMessage"),
                 Res.Get("Program_ThreadErrorTitle"),
                 MessageBoxButtons.OK,

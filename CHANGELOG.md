@@ -1,4 +1,29 @@
-﻿## [0.64.1] - 2026-04-02 — Provider Listesi Sadeleştirme
+﻿## [0.65.0] - 2026-04-03 — Log Performansı, Dark Dialog, Şifre Koruması, Tray Sadeleştirme
+
+### Yeni Özellik
+- **Şifre Koruması:** Görev ekleme/düzenleme/silme işlemleri için şifre koruması. SHA256+DPAPI hash, güvenlik sorusu ile kurtarma.
+- **ModernMessageBox:** Standart MessageBox yerine dark temalı özel dialog. Windows 10’da da tutarlı dark görünüm.
+- **Şifre Dialogları:** PasswordDialog (doğrulama + güvenlik sorusu kurtarma), PasswordSetupDialog (oluşturma/değiştirme/kaldırma).
+
+### İyileştirme
+- **Log VirtualMode:** DataGridView VirtualMode ile büyük log dosyaları artık UI’yı dondurmaz. CellValueNeeded/CellFormatting pattern, AutoSizeRowsMode=DisplayedCells.
+- **Tray Menü Sadeleştirme:** Planlar, Manuel Yedekleme, Log Görüntüle kaldırıldı (Dashboard’dan erişilebilir).
+- **Plan toolbar:** Şifre koruması butonu eklendi (kalkan ikonu, durum rengi).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Theme/ModernMessageBox.cs` — yeni: dark temalı MessageBox
+- `KoruMsSqlYedek.Win/Forms/PasswordDialog.cs/.Designer.cs` — yeni: şifre doğrulama
+- `KoruMsSqlYedek.Win/Forms/PasswordSetupDialog.cs/.Designer.cs` — yeni: şifre kurulum
+- `KoruMsSqlYedek.Core/Helpers/PlanPasswordHelper.cs` — yeni: SHA256+DPAPI hash/verify
+- `KoruMsSqlYedek.Core/Models/AppSettings.cs` — PasswordHash, SecurityQuestion, SecurityAnswerHash
+- `KoruMsSqlYedek.Win/MainWindow.cs` — VirtualMode, CheckPlanPassword, OnPasswordSetupClick
+- `KoruMsSqlYedek.Win/MainWindow.Designer.cs` — VirtualMode, şifre butonu
+- `KoruMsSqlYedek.Win/TrayApplicationContext.cs` — menü sadeleştirme
+- Tüm form dosyaları — MessageBox → ModernMessageBox
+
+---
+
+## [0.64.1] - 2026-04-02 — Provider Listesi Sadeleştirme
 
 ### İyileştirme
 - **Provider listesi sadeleştirildi:** Google Drive (Bireysel/Workspace) → tek "Google Drive" satırı, OneDrive (Bireysel/Kurumsal) → tek "OneDrive" satırı.

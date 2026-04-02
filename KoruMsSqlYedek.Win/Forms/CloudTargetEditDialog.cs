@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Models;
@@ -159,7 +159,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             if (string.IsNullOrWhiteSpace(_txtDisplayName.Text))
             {
-                MessageBox.Show(Res.Get("CloudTarget_NameRequired"), Res.Get("ValidationError"),
+                Theme.ModernMessageBox.Show(Res.Get("CloudTarget_NameRequired"), Res.Get("ValidationError"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtDisplayName.Focus();
                 return false;
@@ -252,7 +252,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 if (providerType != CloudProviderType.GoogleDrivePersonal &&
                     providerType != CloudProviderType.GoogleDriveWorkspace)
                 {
-                    MessageBox.Show("Bu sa\u011flay\u0131c\u0131 i\u00e7in hesap ba\u011flama hen\u00fcz desteklenmiyor.",
+                    Theme.ModernMessageBox.Show("Bu sa\u011flay\u0131c\u0131 i\u00e7in hesap ba\u011flama hen\u00fcz desteklenmiyor.",
                         "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
@@ -284,7 +284,7 @@ namespace KoruMsSqlYedek.Win.Forms
             {
                 _lblAuthStatus.Text = "\u2718 Ba\u015far\u0131s\u0131z";
                 _lblAuthStatus.ForeColor = System.Drawing.Color.Red;
-                MessageBox.Show($"Kimlik do\u011frulama ba\u015far\u0131s\u0131z:\n{ex.Message}",
+                Theme.ModernMessageBox.Show($"Kimlik do\u011frulama ba\u015far\u0131s\u0131z:\n{ex.Message}",
                     "OAuth Hatas\u0131", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally

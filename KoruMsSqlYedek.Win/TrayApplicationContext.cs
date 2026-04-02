@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -130,10 +130,7 @@ namespace KoruMsSqlYedek.Win
             var tsmDashboard = new ToolStripMenuItem(Res.Get("Tray_MenuDashboard"), null, (s, e) => OpenMainWindow(0));
             tsmDashboard.Font = new System.Drawing.Font(tsmDashboard.Font, System.Drawing.FontStyle.Bold);
 
-            var tsmPlans = new ToolStripMenuItem(Res.Get("Tray_MenuPlans"), null, (s, e) => OpenMainWindow(1));
-            var tsmManualBackup = new ToolStripMenuItem(Res.Get("Tray_MenuManualBackup"), null, (s, e) => OpenMainWindow(2));
-            var tsmLog = new ToolStripMenuItem(Res.Get("Tray_MenuLog"), null, (s, e) => OpenMainWindow(3));
-            var tsmSettings = new ToolStripMenuItem(Res.Get("Tray_MenuSettings"), null, (s, e) => OpenMainWindow(4));
+            var tsmSettings = new ToolStripMenuItem(Res.Get("Tray_MenuSettings"), null, (s, e) => OpenMainWindow(3));
             var tsmExit = new ToolStripMenuItem(Res.Get("Tray_MenuExit"), null, OnExitClick);
 
             _tsmServiceStatus  = new ToolStripMenuItem(Res.Get("Tray_ServiceStatusUnknown")) { Enabled = false };
@@ -145,15 +142,11 @@ namespace KoruMsSqlYedek.Win
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmDashboard);
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(tsmPlans);
-            menu.Items.Add(tsmManualBackup);
-            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(_tsmServiceStatus);
             menu.Items.Add(_tsmServiceStart);
             menu.Items.Add(_tsmServiceStop);
             menu.Items.Add(_tsmServiceRestart);
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(tsmLog);
             menu.Items.Add(tsmSettings);
             menu.Items.Add(new ToolStripSeparator());
             _tsmCheckUpdate = new ToolStripMenuItem(Res.Get("Update_MenuCheckForUpdates"), null, OnCheckUpdateClick);
@@ -337,7 +330,7 @@ namespace KoruMsSqlYedek.Win
         {
             Log.Information("Kullanıcı çıkış isteğinde bulundu.");
 
-            var result = MessageBox.Show(
+            var result = Theme.ModernMessageBox.Show(
                 Res.Get("Tray_ExitConfirmMessage"),
                 Res.Get("Tray_ExitConfirmTitle"),
                 MessageBoxButtons.YesNo,
@@ -581,7 +574,7 @@ namespace KoruMsSqlYedek.Win
                 {
                     string currentVer = System.Reflection.Assembly
                         .GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?";
-                    MessageBox.Show(
+                    Theme.ModernMessageBox.Show(
                         Res.Format("Update_NoUpdateMessage", currentVer),
                         Res.Get("Update_NoUpdate"),
                         MessageBoxButtons.OK,
@@ -590,7 +583,7 @@ namespace KoruMsSqlYedek.Win
                 }
 
                 _pendingUpdate = info;
-                DialogResult result = MessageBox.Show(
+                DialogResult result = Theme.ModernMessageBox.Show(
                     Res.Format("Update_AvailableMessage", info.Version),
                     Res.Get("Update_Available"),
                     MessageBoxButtons.YesNo,
@@ -605,7 +598,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Warning(ex, "Manuel güncelleme kontrolü başarısız.");
-                MessageBox.Show(
+                Theme.ModernMessageBox.Show(
                     Res.Get("Update_CheckFailed"),
                     Res.Get("AppName"),
                     MessageBoxButtons.OK,
@@ -661,7 +654,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Error(ex, "Güncelleme indirme/başlatma hatası.");
-                MessageBox.Show(
+                Theme.ModernMessageBox.Show(
                     Res.Format("Update_DownloadFailed", ex.Message),
                     Res.Get("AppName"),
                     MessageBoxButtons.OK,
