@@ -66,7 +66,7 @@
             _tslSearchLabel = new System.Windows.Forms.ToolStripLabel();
             _tstSearch = new System.Windows.Forms.ToolStripTextBox();
             _tsSep4 = new System.Windows.Forms.ToolStripSeparator();
-            _tsbPassword = new System.Windows.Forms.ToolStripButton();
+            _tsbPassword = new System.Windows.Forms.ToolStripSplitButton();
             _dgvPlans = new System.Windows.Forms.DataGridView();
             _ctxPlan = new System.Windows.Forms.ContextMenuStrip(components);
             _ctxBackupNow = new System.Windows.Forms.ToolStripMenuItem();
@@ -354,7 +354,15 @@
             _tsbExport.Text = "Dışa Aktar"; _tsbExport.Click += OnExportPlanClick;
             _tsbImport.Text = "İçe Aktar"; _tsbImport.Click += OnImportPlanClick;
             _tsbRefreshPlans.Text = "Yenile"; _tsbRefreshPlans.Click += OnRefreshPlansClick;
-            _tsbPassword.Text = "Şifre"; _tsbPassword.Click += OnPasswordSetupClick;
+            _tsbPassword.Text = "Şifre";
+            _tsbPassword.ButtonClick += OnPasswordSetupClick;
+            _tsmiPasswordToggle = new System.Windows.Forms.ToolStripMenuItem();
+            _tsmiPasswordToggle.Text = "Şifre Korumasını Pasif Yap";
+            _tsmiPasswordToggle.Click += OnPasswordToggleClick;
+            _tsmiPasswordSetup = new System.Windows.Forms.ToolStripMenuItem();
+            _tsmiPasswordSetup.Text = "Şifre Ayarları...";
+            _tsmiPasswordSetup.Click += OnPasswordSetupClick;
+            _tsbPassword.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { _tsmiPasswordToggle, _tsmiPasswordSetup });
 
             _tslSearchLabel.Text = "Ara:";
             _tslSearchLabel.ForeColor = Theme.ModernTheme.TextSecondary;
@@ -1038,7 +1046,9 @@
         private System.Windows.Forms.ToolStripLabel _tslSearchLabel;
         private System.Windows.Forms.ToolStripTextBox _tstSearch;
         private System.Windows.Forms.ToolStripSeparator _tsSep4;
-        private System.Windows.Forms.ToolStripButton _tsbPassword;
+        private System.Windows.Forms.ToolStripSplitButton _tsbPassword;
+        private System.Windows.Forms.ToolStripMenuItem _tsmiPasswordToggle;
+        private System.Windows.Forms.ToolStripMenuItem _tsmiPasswordSetup;
         private System.Windows.Forms.DataGridView _dgvPlans;
         private System.Windows.Forms.ContextMenuStrip _ctxPlan;
         private System.Windows.Forms.ToolStripMenuItem _ctxBackupNow;

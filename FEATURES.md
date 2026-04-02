@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.66.0 — Şifre Koruması Aktif/Pasif Toggle
+- Şifre aktif/pasif toggle: Şifreyi kaldırmadan korumayı geçici olarak devre dışı bırakma
+- ToolStripSplitButton: Dropdown menü ile hızlı aktif/pasif geçişi
+- 3 durumlu kalkan ikonu: yeşil (aktif), turuncu (pasif), gri (tanımsız)
+
 ### v0.65.0 — Log Performansı, Dark Dialog, Şifre Koruması
 - Log viewer VirtualMode: Büyük log dosyaları artık UI’yı dondurmaz
 - ModernMessageBox: Tüm dialog’lar dark tema ile tutarlı

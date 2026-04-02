@@ -68,9 +68,17 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("securityAnswerHash", NullValueHandling = NullValueHandling.Ignore)]
         public string SecurityAnswerHash { get; set; }
 
-        /// <summary>Şifre koruması etkin mi?</summary>
+        /// <summary>Şifre koruması aktif/pasif durumu. true ise şifre sorulur.</summary>
+        [JsonProperty("passwordEnabled")]
+        public bool PasswordEnabled { get; set; } = true;
+
+        /// <summary>Şifre tanımlı mı? (hash var mı)</summary>
         [JsonIgnore]
-        public bool IsPasswordProtected => !string.IsNullOrEmpty(PasswordHash);
+        public bool HasPassword => !string.IsNullOrEmpty(PasswordHash);
+
+        /// <summary>Şifre koruması etkin mi? (tanımlı + aktif)</summary>
+        [JsonIgnore]
+        public bool IsPasswordProtected => HasPassword && PasswordEnabled;
 
         /// <summary>Ayar şeması versiyonu (geriye uyumluluk).</summary>
         [JsonProperty("schemaVersion")]

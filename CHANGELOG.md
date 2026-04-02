@@ -1,4 +1,25 @@
-﻿## [0.65.0] - 2026-04-03 — Log Performansı, Dark Dialog, Şifre Koruması, Tray Sadeleştirme
+﻿## [0.66.0] - 2026-04-03 — Şifre Koruması Aktif/Pasif Toggle
+
+### Yeni Özellik
+- **Şifre Aktif/Pasif Toggle:** Şifre koruması tanımlandıktan sonra kaldırmaya gerek kalmadan aktif/pasif yapılabilir.
+- **ToolStripSplitButton:** Şifre butonu dropdown menü ile genişletildi (Aktif/Pasif Yap + Şifre Ayarları).
+- **3 Durumlu İkon:** Kalkan ikonu — yeşil (aktif), turuncu/çizgili (pasif), gri (tanımsız).
+
+### İyileştirme
+- `AppSettings`: `PasswordEnabled` (JSON persisted) ve `HasPassword` (computed) property eklendi.
+- `IsPasswordProtected` artık `HasPassword && PasswordEnabled` kontrolü yapar.
+- `PasswordSetupDialog`: Şifre kaldırma artık `PasswordEnabled` değerini de sıfırlar.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/AppSettings.cs` — PasswordEnabled, HasPassword
+- `KoruMsSqlYedek.Win/MainWindow.cs` — OnPasswordToggleClick, UpdatePasswordButtonIcon (3 durum)
+- `KoruMsSqlYedek.Win/MainWindow.Designer.cs` — ToolStripSplitButton, dropdown items
+- `KoruMsSqlYedek.Win/Forms/PasswordSetupDialog.cs` — PasswordEnabled set/reset
+- `KoruMsSqlYedek.Win/Theme/PhosphorIcons.cs` — ShieldSlash ikonu
+
+---
+
+## [0.65.0] - 2026-04-03 — Log Performansı, Dark Dialog, Şifre Koruması, Tray Sadeleştirme
 
 ### Yeni Özellik
 - **Şifre Koruması:** Görev ekleme/düzenleme/silme işlemleri için şifre koruması. SHA256+DPAPI hash, güvenlik sorusu ile kurtarma.

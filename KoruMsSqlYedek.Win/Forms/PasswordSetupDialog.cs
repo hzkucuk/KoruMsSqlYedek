@@ -84,6 +84,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _settings.PasswordHash = PlanPasswordHelper.HashPassword(password);
             _settings.SecurityQuestion = question;
             _settings.SecurityAnswerHash = PlanPasswordHelper.HashPassword(answer.ToLowerInvariant());
+            _settings.PasswordEnabled = true;
             _settingsManager.Save(_settings);
 
             ModernMessageBox.Show(
@@ -97,15 +98,15 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnRemovePasswordClick(object sender, EventArgs e)
         {
-            if (!_settings.IsPasswordProtected)
+            if (!_settings.HasPassword)
             {
-                ModernMessageBox.Show("Şifre koruması zaten aktif değil.", "Bilgi",
+                ModernMessageBox.Show("Şifre koruması zaten tanımlı değil.", "Bilgi",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             var result = ModernMessageBox.Show(
-                "Şifre korumasını kaldırmak istediğinize emin misiniz?",
+                "Şifre korumasını tamamen kaldırmak istediğinize emin misiniz?\n(Güvenlik sorusu dahil tüm veriler silinecek)",
                 "Şifre Korumasını Kaldır",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
@@ -114,6 +115,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 _settings.PasswordHash = null;
                 _settings.SecurityQuestion = null;
                 _settings.SecurityAnswerHash = null;
+                _settings.PasswordEnabled = true;
                 _settingsManager.Save(_settings);
 
                 ModernMessageBox.Show("Şifre koruması kaldırıldı.", "Başarılı",

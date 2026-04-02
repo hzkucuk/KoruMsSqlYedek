@@ -838,7 +838,7 @@ namespace KoruMsSqlYedek.Win
         private void OnPasswordSetupClick(object sender, EventArgs e)
         {
             // Mevcut şifre varsa önce doğrula
-            if (_settings != null && _settings.IsPasswordProtected)
+            if (_settings != null && _settings.HasPassword)
             {
                 if (!CheckPlanPassword()) return;
             }
@@ -853,14 +853,88 @@ namespace KoruMsSqlYedek.Win
             UpdatePasswordButtonIcon();
         }
 
-        /// <summary>Şifre buton ikonunu duruma göre günceller.</summary>
+        /// <summary>Şifre korumasını aktif/pasif yapar.</summary>
+        private void OnPasswordToggleClick(object sender, EventArgs e)
+        {
+            if (_settings == null || !_settings.HasPassword)
+            {
+                Theme.ModernMessageBox.Show(
+                    "Önce bir şifre tanımlamanız gerekiyor.",
+                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // Pasif yapılacaksa şifre doğrulama iste
+            if (_settings.PasswordEnabled)
+            {
+                if (!CheckPlanPassword()) return;
+
+                _settings.PasswordEnabled = false;
+                _settingsManager.Save(_settings);
+
+                Theme.ModernMessageBox.Show(
+                    "Şifre koruması pasif yapıldı.\nGörev işlemleri şifresiz yapılabilir.",
+                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                // Aktif yapılacaksa da şifreyi doğrula
+                using (var dlg = new PasswordDialog(_settings, _settingsManager))
+                {
+                    if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                }
+
+                _settings.PasswordEnabled = true;
+                _settingsManager.Save(_settings);
+
+                Theme.ModernMessageBox.Show(
+                    "Şifre koruması aktif yapıldı.\nGörev işlemleri artık şifre ile korunuyor.",
+                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
+            UpdatePasswordButtonIcon();
+        }
+
+        /// <summary>Şifre buton ikonunu duruma göre günceller (3 durum: yok/aktif/pasif).</summary>
         private void UpdatePasswordButtonIcon()
         {
-            bool isProtected = _settings != null && _settings.IsPasswordProtected;
-            _tsbPassword.Image = Theme.PhosphorIcons.Render(
-                isProtected ? Theme.PhosphorIcons.ShieldCheck : Theme.PhosphorIcons.ShieldCheck,
-                isProtected ? Theme.ModernTheme.StatusSuccess : Theme.ModernTheme.TextSecondary, 18);
-            _tsbPassword.ToolTipText = isProtected ? "Şifre Koruması Aktif" : "Şifre Koruması Ayarla";
+            bool hasPassword = _settings != null && _settings.HasPassword;
+            bool isActive = _settings != null && _settings.IsPasswordProtected;
+
+            char icon;
+            Color color;
+            string tooltip;
+
+            if (!hasPassword)
+            {
+                icon = Theme.PhosphorIcons.ShieldCheck;
+                color = Theme.ModernTheme.TextSecondary;
+                tooltip = "Şifre Koruması Ayarla";
+            }
+            else if (isActive)
+            {
+                icon = Theme.PhosphorIcons.ShieldCheck;
+                color = Theme.ModernTheme.StatusSuccess;
+                tooltip = "Şifre Koruması Aktif";
+            }
+            else
+            {
+                icon = Theme.PhosphorIcons.ShieldSlash;
+                color = Theme.ModernTheme.StatusWarning;
+                tooltip = "Şifre Koruması Pasif";
+            }
+
+            _tsbPassword.Image = Theme.PhosphorIcons.Render(icon, color, 18);
+            _tsbPassword.ToolTipText = tooltip;
+
+            // Dropdown menü metnini güncelle
+            if (_tsmiPasswordToggle != null)
+            {
+                _tsmiPasswordToggle.Text = isActive
+                    ? "🔓 Şifre Korumasını Pasif Yap"
+                    : "🔒 Şifre Korumasını Aktif Yap";
+                _tsmiPasswordToggle.Enabled = hasPassword;
+            }
         }
 
         private async void OnNewPlanClick(object sender, EventArgs e)
