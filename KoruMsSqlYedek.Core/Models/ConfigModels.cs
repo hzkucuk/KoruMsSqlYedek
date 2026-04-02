@@ -92,6 +92,24 @@ namespace KoruMsSqlYedek.Core.Models
 
         [JsonProperty("deleteOlderThanDays")]
         public int DeleteOlderThanDays { get; set; } = 90;
+
+        // ── GFS (Grandfather-Father-Son) alanları ──
+
+        /// <summary>Son N günün en iyi yedeğini sakla.</summary>
+        [JsonProperty("gfsKeepDaily")]
+        public int GfsKeepDaily { get; set; } = 7;
+
+        /// <summary>Son N haftanın en iyi yedeğini sakla.</summary>
+        [JsonProperty("gfsKeepWeekly")]
+        public int GfsKeepWeekly { get; set; } = 4;
+
+        /// <summary>Son N ayın en iyi yedeğini sakla.</summary>
+        [JsonProperty("gfsKeepMonthly")]
+        public int GfsKeepMonthly { get; set; } = 12;
+
+        /// <summary>Son N yılın en iyi yedeğini sakla.</summary>
+        [JsonProperty("gfsKeepYearly")]
+        public int GfsKeepYearly { get; set; } = 2;
     }
 
     /// <summary>

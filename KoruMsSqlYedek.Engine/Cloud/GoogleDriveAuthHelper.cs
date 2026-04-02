@@ -47,6 +47,24 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         /// <summary>
+        /// Gömülü credential'ları kullanarak OAuth2 interaktif kimlik doğrulama başlatır.
+        /// Kullanıcı tarayıcıda Google hesabını onaylar.
+        /// </summary>
+        public static Task<string> AuthorizeInteractiveAsync(
+            CancellationToken cancellationToken)
+        {
+            string clientId = GoogleOAuthCredentials.ClientId;
+            string clientSecret = GoogleOAuthCredentials.ClientSecret;
+
+            if (!GoogleOAuthCredentials.IsConfigured)
+                throw new InvalidOperationException(
+                    "Google OAuth kimlik bilgileri yapılandırılmamış. " +
+                    "Lütfen geliştiriciye başvurun veya kendi Client ID/Secret değerlerinizi girin.");
+
+            return AuthorizeInteractiveAsync(clientId, clientSecret, cancellationToken);
+        }
+
+        /// <summary>
         /// OAuth2 interaktif kimlik doğrulama akışını başlatır (tarayıcı açılır).
         /// Sonuç token JSON olarak döner ve CloudTargetConfig.OAuthTokenJson'a kaydedilmelidir.
         /// </summary>
@@ -124,8 +142,15 @@ namespace KoruMsSqlYedek.Engine.Cloud
             CloudTargetConfig config,
             CancellationToken cancellationToken)
         {
-            string clientId = config.OAuthClientId;
-            string clientSecret = DecryptIfNeeded(config.OAuthClientSecret);
+            // Öncelik: config'deki özel credential > gömülü credential
+            string clientId = !string.IsNullOrEmpty(config.OAuthClientId)
+                ? config.OAuthClientId
+                : GoogleOAuthCredentials.ClientId;
+
+            string clientSecret = !string.IsNullOrEmpty(config.OAuthClientSecret)
+                ? DecryptIfNeeded(config.OAuthClientSecret)
+                : GoogleOAuthCredentials.ClientSecret;
+
             string tokenJson = DecryptIfNeeded(config.OAuthTokenJson);
 
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))

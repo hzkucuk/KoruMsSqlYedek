@@ -45,6 +45,13 @@ namespace KoruMsSqlYedek.Core.Events
         public bool HasFileBackup { get; set; }
 
         /// <summary>
+        /// Plan en az bir etkin bulut hedefi içeriyorsa true.
+        /// false ise bulut yükleme adımı atlanır ve ilerleme çubuğu
+        /// yerel adımlara (SQL, doğrulama, sıkıştırma, temizlik) göre ilerler.
+        /// </summary>
+        public bool HasCloudTargets { get; set; }
+
+        /// <summary>
         /// Plan konfigürasyonundan gelen ToastEnabled değeri.
         /// Tray uygulaması bu değere göre balloon tip gösterir.
         /// Varsayılan true — plan bilgisi yoksa her zaman göster.

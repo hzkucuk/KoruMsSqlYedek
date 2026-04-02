@@ -1,4 +1,168 @@
-﻿## [0.55.0] - 2026-05-12 — İptal/Hata Durumunda Ara Dosya Temizliği
+﻿## [0.64.0] - 2025-07-25 — Google Drive OAuth Sadeleştirme (Gömülü Credential)
+
+### Yeni Özellik
+- **Gömülü OAuth Credential:** Google Drive OAuth2 Client ID/Secret uygulamaya Base64-obfuscated olarak gömüldü. Kullanıcıların Google Cloud Console'dan credential almasına gerek kalmadı.
+- **GoogleOAuthCredentials.cs:** Statik sınıf — Base64 encode/decode, `IsConfigured` property, try/catch ile hata koruması.
+- **Parametresiz AuthorizeInteractiveAsync:** Gömülü credential ile tek tıkla Google hesabı bağlama.
+- **Credential öncelik sırası:** Config'deki özel credential > gömülü credential (backward compat).
+- **UI sadeleştirme:** Client ID/Secret alanları kaldırıldı, OAuth grubu "Hesap Bağlama" olarak yeniden adlandırıldı, tek buton + durum etiketi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/GoogleOAuthCredentials.cs` — yeni: gömülü credential sınıfı
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveAuthHelper.cs` — parametresiz overload + fallback mantığı
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs` — ValidateConfig gömülü/config dual destek
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs` — UI mantığı sadeleştirme
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.Designer.cs` — ClientId/Secret kontrolleri kaldırıldı
+- `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs` — versiyon
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — versiyon
+
+---
+
+## [0.63.0] - 2025-07-24 — O7: Inno Setup Installer + GitHub Actions CI/CD + Otomatik Güncelleme
+
+### Yeni Özellik (O7 — Otomatik Güncelleme Mekanizması)
+- **Inno Setup 6 installer:** Program Files kurulumu, Windows Service (sc.exe) kaydı, masaüstü kısayolu, başlangıçta çalıştır seçeneği, AppData korunur (kaldırma sırasında). (`installer/setup.iss`)
+- **PowerShell build script:** AssemblyInfo.cs'den otomatik versiyon algılama, dotnet publish (Win + Service), ISCC.exe ile installer derleme. (`installer/build.ps1`)
+- **GitHub Actions CI/CD:** `v*` tag push tetiklemesi, .NET 10 SDK, build/test/publish, Inno Setup via Chocolatey, GitHub Release oluşturma (installer asset). (`.github/workflows/release.yml`)
+- **IUpdateService:** GitHub Releases API üzerinden güncelleme kontrolü, `UpdateInfo` modeli (Version, Title, ReleaseNotes, DownloadUrl, FileSizeBytes, PublishedAt, HtmlUrl). (`IUpdateService.cs`)
+- **UpdateChecker:** `/releases/latest` endpoint, `System.Version` karşılaştırma, installer asset algılama (`KoruMsSqlYedek_Setup_` prefix), akışlı indirme + ilerleme raporlama. (`UpdateChecker.cs`)
+- **Tray güncelleme entegrasyonu:** Günlük otomatik kontrol (60s gecikme → 24 saat aralık), balon bildirim, manuel kontrol menü öğesi, temp klasöre indirme → `runas` ile installer başlatma. (`TrayApplicationContext.cs`)
+- **13 kaynak anahtarı:** Güncelleme UI metinleri (menü, kontrol, indirme, hata mesajları). (`Resources.resx`)
+- **Autofac kaydı:** `UpdateChecker` → `IUpdateService` (SingleInstance). (`WinModule.cs`)
+
+### Etkilenen Dosyalar
+- `installer/setup.iss` — yeni: Inno Setup 6 installer script
+- `installer/build.ps1` — yeni: PowerShell build + publish + installer derleme
+- `.github/workflows/release.yml` — yeni: GitHub Actions release workflow
+- `KoruMsSqlYedek.Core/Interfaces/IUpdateService.cs` — yeni: güncelleme servisi arayüzü + UpdateInfo modeli
+- `KoruMsSqlYedek.Engine/Update/UpdateChecker.cs` — yeni: GitHub API implementasyonu
+- `KoruMsSqlYedek.Win/TrayApplicationContext.cs` — güncelleme timer, menü, indirme/başlatma
+- `KoruMsSqlYedek.Win/IoC/WinModule.cs` — UpdateChecker DI kaydı
+- `KoruMsSqlYedek.Win/Properties/Resources.resx` — 13 Update_* kaynak anahtarı
+- `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs` — versiyon
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — versiyon
+
+---
+
+## [0.62.0] - 2025-07-23 — TB1/TB4: Switch Refactor + RestoreDialog & Exhaustiveness Testleri
+
+### İyileştirme (TB1 — OnBackupActivityChanged Switch Refactor)
+- **BuildActivityLogLine:** switch statement → switch expression + `throw ArgumentOutOfRangeException` (fail-fast). Karmaşık CloudUploadProgress case'i `BuildCloudUploadLogLine` helper'a çıkarıldı. (`MainWindow.cs`)
+- **GetLogColor:** default case `ModernTheme.LogDefault` → `throw ArgumentOutOfRangeException` (sessiz hata yerine fail-fast). (`MainWindow.cs`)
+- **UpdatePlanRowStatus:** İnline switch → `GetStatusDisplay` switch expression helper'a çıkarıldı, `(string Icon, Color Color)` tuple döner. (`MainWindow.cs`)
+- **OnBackupActivityChanged:** `default:` case eklendi — `Log.Warning("Unhandled BackupActivityType...")` ile bilinmeyen türleri loglar. (`MainWindow.cs`)
+- **XML doc comments:** Tüm 5 sorumluluk noktasına ⚠️ uyarılı dokümantasyon eklendi.
+
+### Yeni Test Kapsamı (TB4 — RestoreDialog + Exhaustiveness Testleri)
+- **RestoreDialogTests:** 15 birim testi — 4 constructor null guard, 5 CleanupTempDirectory (method existence + null/empty/nonexistent/existing dir), 3 LoadHistory filtreleme mantığı (success-only, all-failed, empty), 3 grid row data doğrulama (boyut formatı, compressed path önceliği, fallback). (`RestoreDialogTests.cs`)
+- **BackupActivityExhaustivenessTests:** 20 parameterized test — enum değer sayısı kontrolü (9), KnownActivityTypes coverage, DynamicData ile her enum değeri için BuildActivityLogLine ve GetLogColor kapsam doğrulaması. (`BackupActivityExhaustivenessTests.cs`)
+- **InternalsVisibleTo:** Win projesinden Tests projesine internal erişim (AssemblyInfo.cs attribute). (`AssemblyInfo.cs`, `Tests.csproj`)
+
+### Altyapı
+- **InternalsVisibleTo düzeltme:** `GenerateAssemblyInfo=false` olan projede MSBuild `<InternalsVisibleTo>` item yerine AssemblyInfo.cs'e manuel attribute eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs` — TB1 switch refactor (4 değişiklik)
+- `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs` — InternalsVisibleTo + versiyon
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — versiyon
+- `KoruMsSqlYedek.Tests/RestoreDialogTests.cs` — yeni test dosyası
+- `KoruMsSqlYedek.Tests/BackupActivityExhaustivenessTests.cs` — yeni test dosyası
+- `KoruMsSqlYedek.Tests/KoruMsSqlYedek.Tests.csproj` — Win project reference
+
+### Test İstatistikleri
+- Yeni: 35 test (15 RestoreDialog + 20 BackupActivityExhaustiveness)
+- Toplam: 447 test | Geçen: 446 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.61.0] - 2025-07-22 — O5/O6: Stres Testleri + PlanProgressTracker Testleri
+
+### Yeni Test Kapsamı
+- **Stres testleri (O5):** 8 yeni stres testi — eşzamanlı farklı planlar, aynı plan SemaphoreSlim kilit testi, büyük DB listesi (20 DB), karma başarı/hata/iptal senaryoları, ardışık hızlı çalıştırma (deadlock kontrolü), paralel bulut upload, monoton ilerleme event doğrulaması, çoklu DB iptal propagasyonu. (`StressTests.cs`)
+- **PlanProgressTracker ağırlık modeli testleri (O6):** 22 yeni birim testi — sınır değerler (negatif totalCount, 100 DB, MaxPercent=100, büyük index), VSS ağırlık dağılımı (20/50/30) hassas doğrulama, NoVSS (30/70), dosya-only tam pipeline, SQL+dosya+bulut karma pipeline, çoklu bulut hedef yüzde dağılımı (2 ve 3 hedef), rastgele bulut yüzde monoton garanti, LocalStepProgress ascending doğrulama, sabit kontrolü. (`PlanProgressTrackerTests.cs`)
+- **Düzeltme:** PlanProgressTracker.cs'de eksik `using System;` ve `using System.Collections.Generic;` eklendi (pre-existing build issue).
+
+### Test İstatistikleri
+- Yeni: 30 test (8 Stres + 22 PlanProgressTracker)
+- Toplam: 412 test | Geçen: 411 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.60.0] - 2025-07-21 — O2/O3/O4: Raporlama İstatistik + GFS Retention + MainWindow Ayrıştırma
+
+### Yeni Özellik
+- **Raporlama istatistikleri (O2):** `ReportingService.BuildReportHtml` artık `EmailTemplateBuilder` kullanıyor. Eklenen istatistikler: ortalama süre, en büyük yedek, sıkıştırma oranı, veritabanı bazlı özet tablosu. (`ReportingService.cs`)
+- **GFS Retention politikası (O3):** Grandfather-Father-Son saklama desteği — günlük/haftalık/aylık/yıllık periyot bazlı en iyi yedek koruması. `RetentionPolicyType.GFS` enum, `RetentionPolicy` modeline GFS alanları, `BuildGfsProtectedSet` algoritması. (`Enums.cs`, `ConfigModels.cs`, `RetentionCleanupService.cs`)
+- **MainWindow log ayrıştırma (O4):** `AppendBackupLog`, `ReplaceLastProgressLine`, `AppendColoredLine`, `ProgressLineMarker`, `_planLogs` buffer'ı `MainWindow.BackupLog.cs` partial class'ına taşındı. (`MainWindow.BackupLog.cs`, `MainWindow.cs`)
+
+### Test İstatistikleri
+- Yeni: 9 GFS Retention testi (GfsRetentionTests)
+- Toplam: 349 test | Geçen: 348 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.59.0] - 2025-07-20 — O1: Profesyonel E-posta Bildirim Şablonları
+
+### Yeni Özellik
+- **EmailTemplateBuilder:** Tüm e-posta bildirimleri için ortak HTML şablon sınıfı — koyu branded header, durum rozeti, özet/detay tabloları, hata bloğu, footer. (`EmailTemplateBuilder.cs`)
+- **SQL yedek bildirimi yenilendi:** Profesyonel şablon ile tutarlı marka görünümü, yeni alanlar: CompressionVerified (arşiv doğrulama), VssFileCopySizeBytes. (`EmailNotificationService.cs`)
+- **Dosya yedek bildirimi yenilendi:** Aynı şablon altyapısı, kaynak detay tablosu. (`EmailNotificationService.cs`)
+- **NotifyFileBackupAsync SMTP profil desteği:** Eski per-plan SMTP alanları yerine merkezi SmtpProfile çözümleme, çoklu alıcı desteği. (`EmailNotificationService.cs`)
+- **Bulut yükleme detay tablosu:** Bildirim e-postalarında hedef/durum/detay sütunlu tablo.
+
+### Test İstatistikleri
+- Yeni: 27 EmailTemplateBuilderTests
+- Toplam: 340 test | Geçen: 339 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.58.0] - 2025-07-20 — Y1/Y2: Local-mode SQL İlerleme + VSS Test Kapsamı
+
+### Yeni Özellik
+- **Local-mode SQL ilerleme çubuğu (Y1):** Bulut hedefi olmayan planlarda ilerleme çubuğu artık her SQL adımında güncelleniyor. Ağırlıklar: SQL=%50, Doğrulama=%65, Sıkıştırma=%80, Arşiv Doğrulama=%88, Temizlik=%95. (`MainWindow.cs`, `BackupActivityEvent.cs`, `BackupJobExecutor.cs`)
+- **HasCloudTargets flag:** `BackupActivityEventArgs` ve `PlanProgressTracker`'a eklendi. Started event'inde plan bulut hedefi durumunu bildiriyor.
+- **VSS test kapsamı (Y2):** 19 birim testi — Dispose güvenliği, CreateSnapshot argüman doğrulama, GetSnapshotFilePath path mapping (farklı volume'lar, iç içe yollar), DeleteSnapshot/DeleteAllSnapshots, IsAvailable, IVssService kontrat. (`VssSnapshotServiceTests.cs`)
+
+### Test İstatistikleri
+- Toplam: 313 test | Geçen: 312 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.57.0] - 2025-07-20 — K1/K2/K3: IPC Testleri, İptal/Temizlik Testleri, RestoreDialog Tamamlama
+
+### Yeni Özellik
+- **Named Pipe IPC testleri (K1):** 18 birim testi — tüm PipeProtocol mesaj türleri (FromArgs/ToArgs roundtrip, kenar durumları, büyük payload, özel karakter). (`PipeProtocolTests.cs`)
+- **BackupCancellationRegistry testleri (K1):** 20 birim testi — Register/Cancel/Unregister/IsRunning/IsAnyRunning, thread safety, büyük/küçük harf duyarsız PlanId. (`BackupCancellationRegistryTests.cs`)
+- **Cancel/Cleanup testleri (K2):** 8 yeni birim testi — SQL/sıkıştırma/bulut yükleme iptal propagasyonu, CancellationRegistry yaşam döngüsü, hata ve başarılı akış ActivityType doğrulaması. (`BackupJobExecutorTests.cs`)
+- **RestoreDialog .7z desteği (K3):** `.7z` arşivi algılama → `ExtractAsync` ile geçici klasöre açma → `.bak` bulma → geri yükleme → geçici klasör temizliği. (`RestoreDialog.cs`)
+- **RestoreDialog lokalizasyon (K3):** 10 yeni kaynak anahtarı (Restore_*), tüm sabit Türkçe stringler `Res.Get()`/`Res.Format()` ile değiştirildi. (`Resources.resx`)
+- **RestoreDialog iptal UX (K3):** `_isBusy` flag ile işlem sırasında iptal butonu aktif, iptal onay diyaloğu, buton metni dinamik (İptal/Kapat).
+
+### Düzeltme
+- **BackupJobExecutorTests SetJobData:** 2 parametreli `SetJobData` overload'una eksik `manualTrigger` anahtarı eklendi (27 test düzeltmesi).
+- **UploadToAllAsync mock düzeltmesi:** Tüm mock Setup/Verify çağrıları 6 parametreden 7 parametreye güncellendi (planId optional param).
+
+### Altyapı
+- **DI kaydı:** `SevenZipCompressionService` → `ICompressionService` olarak `WinModule.cs`'e eklendi.
+- **MainWindow:** `ICompressionService` constructor parametresi ve `RestoreDialog` çağrı güncellemesi.
+
+### Test İstatistikleri
+- Toplam: 294 test | Geçen: 293 | Başarısız: 1 (ilgisiz, önceden var olan FileBackupServiceTests hatası)
+
+---
+
+## [0.56.0] - 2025-07-19 — Proje Yönetişim & Branch Stratejisi
+
+### Yeni Özellik
+- **3 katmanlı branch stratejisi**: `master` (release) → `develop` (günlük geliştirme) → `feature/*/fix/*/hotfix/*` dallanma modeli oluşturuldu.
+- **Modül stabilite haritası** (`docs/STATUS.md`): 5 proje, 38 modülün 🟢/🟡/🔴 derecelendirmesi.
+- **Yol haritası** (`docs/ROADMAP.md`): Kısa/orta/uzun vade iş kalemleri + teknik borç takibi.
+- **Mimari kararlar günlüğü** (`docs/DECISIONS.md`): 10 ADR kaydı (Clean Architecture, IPC, Quartz, VSS, Cancel Cleanup vb.).
+- **Copilot direktifi güncelleme**: Git workflow bölümleri yeni branch stratejisine uyarlandı.
+
+---
+
+## [0.55.0] - 2026-05-12 — İptal/Hata Durumunda Ara Dosya Temizliği
 
 ### Yeni Özellik
 - **İptal/hata temizliği**: Yedekleme görevi iptal edildiğinde veya başarısız olduğunda tamamlanmamış ara dosyalar (`.bak`, `.7z`, `Files/` staging klasörü) otomatik olarak siliniyor. (etkilenen: `BackupJobExecutor.cs`)

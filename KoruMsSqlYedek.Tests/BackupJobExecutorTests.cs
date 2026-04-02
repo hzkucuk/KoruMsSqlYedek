@@ -7,7 +7,9 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Quartz;
+using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Core.IPC;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Engine.Backup;
 using KoruMsSqlYedek.Engine.Scheduling;
@@ -28,6 +30,7 @@ namespace KoruMsSqlYedek.Tests
         private Mock<ICloudUploadOrchestrator> _mockCloudOrchestrator;
         private Mock<IBackupHistoryManager> _mockHistoryManager;
         private Mock<IJobExecutionContext> _mockJobContext;
+        private Mock<IBackupCancellationRegistry> _mockCancellationRegistry;
         private BackupJobExecutor _executor;
 
         [TestInitialize]
@@ -41,6 +44,7 @@ namespace KoruMsSqlYedek.Tests
             _mockFileBackup = new Mock<IFileBackupService>();
             _mockCloudOrchestrator = new Mock<ICloudUploadOrchestrator>();
             _mockHistoryManager = new Mock<IBackupHistoryManager>();
+            _mockCancellationRegistry = new Mock<IBackupCancellationRegistry>();
 
             _executor = new BackupJobExecutor
             {
@@ -51,7 +55,8 @@ namespace KoruMsSqlYedek.Tests
                 RetentionService = _mockRetention.Object,
                 FileBackupService = _mockFileBackup.Object,
                 CloudOrchestrator = _mockCloudOrchestrator.Object,
-                HistoryManager = _mockHistoryManager.Object
+                HistoryManager = _mockHistoryManager.Object,
+                CancellationRegistry = _mockCancellationRegistry.Object
             };
 
             // JobExecutionContext mock
@@ -266,7 +271,7 @@ namespace KoruMsSqlYedek.Tests
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<List<CloudTargetConfig>>(),
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
-                    It.IsAny<string>()))
+                    It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(TestDataFactory.CreateCloudUploadResults());
 
             // Act
@@ -277,7 +282,7 @@ namespace KoruMsSqlYedek.Tests
                 It.IsAny<string>(), It.IsAny<string>(),
                 plan.CloudTargets,
                 It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
-                It.IsAny<string>()), Times.Once);
+                It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [TestMethod]
@@ -609,7 +614,7 @@ namespace KoruMsSqlYedek.Tests
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<List<CloudTargetConfig>>(),
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
-                    It.IsAny<string>()),
+                    It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
         }
 
@@ -884,7 +889,7 @@ namespace KoruMsSqlYedek.Tests
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<List<CloudTargetConfig>>(),
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
-                    It.IsAny<string>()))
+                    It.IsAny<string>(), It.IsAny<string>()))
                 .ThrowsAsync(new Exception("Ağ hatası — upload başarısız"));
 
             // Act
@@ -923,7 +928,7 @@ namespace KoruMsSqlYedek.Tests
                     It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<List<CloudTargetConfig>>(),
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
-                    It.IsAny<string>()))
+                    It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(TestDataFactory.CreateCloudUploadResults());
 
             // Act
@@ -941,7 +946,7 @@ namespace KoruMsSqlYedek.Tests
                     It.IsAny<string>(),
                     It.IsAny<List<CloudTargetConfig>>(),
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
-                    It.IsAny<string>()),
+                    It.IsAny<string>(), It.IsAny<string>()),
                 Times.Once);
         }
 
@@ -1094,9 +1099,310 @@ namespace KoruMsSqlYedek.Tests
             var jobDataMap = new JobDataMap
             {
                 { "planId", planId },
-                { "backupType", backupType }
+                { "backupType", backupType },
+                { "manualTrigger", "false" }
             };
             _mockJobContext.Setup(c => c.MergedJobDataMap).Returns(jobDataMap);
+        }
+
+        private void SetJobData(string planId, string backupType, bool manualTrigger)
+        {
+            var jobDataMap = new JobDataMap
+            {
+                { "planId", planId },
+                { "backupType", backupType },
+                { "manualTrigger", manualTrigger ? "true" : "false" }
+            };
+            _mockJobContext.Setup(c => c.MergedJobDataMap).Returns(jobDataMap);
+        }
+
+        // ── İptal/Hata Temizlik (Cleanup) Testleri — K2 ──────────────────────────
+
+        [TestMethod]
+        public async Task Execute_SqlBackupThrowsOperationCanceled_CancellationRegistryUnregistered()
+        {
+            // Arrange — SQL yedek sırasında OperationCanceledException fırlatılırsa
+            // CancellationRegistry.Unregister çağrılmalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — Registry'den plan temizlenmeli
+            _mockCancellationRegistry.Verify(
+                r => r.Unregister(plan.PlanId), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_SqlBackupThrowsException_RaisesFailedActivity()
+        {
+            // Arrange — SQL yedek sırasında beklenmeyen hata fırlatılırsa
+            // Failed activity event'i yayınlanmalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Disk dolu"));
+
+            BackupActivityEventArgs capturedArgs = null;
+            BackupActivityHub.ActivityChanged += (s, e) =>
+            {
+                if (e.ActivityType == BackupActivityType.Failed)
+                    capturedArgs = e;
+            };
+
+            try
+            {
+                // Act
+                await _executor.Execute(_mockJobContext.Object);
+
+                // Assert — Failed event yayınlanmalı
+                capturedArgs.Should().NotBeNull();
+                capturedArgs.PlanId.Should().Be(plan.PlanId);
+                capturedArgs.ActivityType.Should().Be(BackupActivityType.Failed);
+                capturedArgs.Message.Should().Contain("Disk dolu");
+            }
+            finally
+            {
+                // Temizlik — statik event'ten handler'ı kaldır
+                BackupActivityHub.ActivityChanged -= (s, e) => { };
+            }
+        }
+
+        [TestMethod]
+        public async Task Execute_CancellationDuringBackup_RaisesCancelledActivity()
+        {
+            // Arrange — İptal sırasında Cancelled activity event yayınlanmalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+
+            using var cts = new CancellationTokenSource();
+            _mockJobContext.Setup(c => c.CancellationToken).Returns(cts.Token);
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .Returns<SqlConnectionInfo, string, SqlBackupType, string, IProgress<int>, CancellationToken>(
+                    (conn, db, type, path, prog, ct) =>
+                    {
+                        cts.Cancel();
+                        ct.ThrowIfCancellationRequested();
+                        return Task.FromResult(TestDataFactory.CreateSuccessResult());
+                    });
+
+            BackupActivityEventArgs capturedArgs = null;
+            void handler(object s, BackupActivityEventArgs e)
+            {
+                if (e.ActivityType == BackupActivityType.Cancelled)
+                    capturedArgs = e;
+            }
+
+            BackupActivityHub.ActivityChanged += handler;
+            try
+            {
+                // Act
+                await _executor.Execute(_mockJobContext.Object);
+
+                // Assert — Cancelled event yayınlanmalı
+                capturedArgs.Should().NotBeNull();
+                capturedArgs.PlanId.Should().Be(plan.PlanId);
+                capturedArgs.ActivityType.Should().Be(BackupActivityType.Cancelled);
+            }
+            finally
+            {
+                BackupActivityHub.ActivityChanged -= handler;
+            }
+        }
+
+        [TestMethod]
+        public async Task Execute_SuccessfulPipeline_CompletedActivityRaised()
+        {
+            // Arrange — Tam pipeline başarıyla tamamlanınca Completed event yayınlanmalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            BackupActivityEventArgs capturedArgs = null;
+            void handler(object s, BackupActivityEventArgs e)
+            {
+                if (e.ActivityType == BackupActivityType.Completed)
+                    capturedArgs = e;
+            }
+
+            BackupActivityHub.ActivityChanged += handler;
+            try
+            {
+                // Act
+                await _executor.Execute(_mockJobContext.Object);
+
+                // Assert
+                capturedArgs.Should().NotBeNull();
+                capturedArgs.PlanId.Should().Be(plan.PlanId);
+                capturedArgs.ActivityType.Should().Be(BackupActivityType.Completed);
+            }
+            finally
+            {
+                BackupActivityHub.ActivityChanged -= handler;
+            }
+        }
+
+        [TestMethod]
+        public async Task Execute_CancellationRegistryRegisterCalledOnStart()
+        {
+            // Arrange — Job başladığında CancellationRegistry.Register çağrılmalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — Register ve Unregister sırayla çağrılmalı
+            _mockCancellationRegistry.Verify(
+                r => r.Register(plan.PlanId, It.IsAny<CancellationTokenSource>()), Times.Once);
+            _mockCancellationRegistry.Verify(
+                r => r.Unregister(plan.PlanId), Times.Once);
+        }
+
+        [TestMethod]
+        public async Task Execute_CompressionThrowsOperationCanceled_PropagatesAsCancellation()
+        {
+            // Arrange — Sıkıştırma sırasında iptal; OperationCanceledException yeniden fırlatılmalı
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            BackupActivityEventArgs capturedArgs = null;
+            void handler(object s, BackupActivityEventArgs e)
+            {
+                if (e.ActivityType == BackupActivityType.Cancelled)
+                    capturedArgs = e;
+            }
+
+            BackupActivityHub.ActivityChanged += handler;
+            try
+            {
+                // Act
+                await _executor.Execute(_mockJobContext.Object);
+
+                // Assert — Cancelled event yayınlanmalı (OperationCanceledException propagate ediliyor)
+                capturedArgs.Should().NotBeNull();
+                capturedArgs.ActivityType.Should().Be(BackupActivityType.Cancelled);
+            }
+            finally
+            {
+                BackupActivityHub.ActivityChanged -= handler;
+            }
+        }
+
+        [TestMethod]
+        public async Task Execute_CloudUploadThrowsOperationCanceled_PropagatesAsCancellation()
+        {
+            // Arrange — Bulut yükleme sırasında iptal; OperationCanceledException yeniden fırlatılmalı
+            var plan = TestDataFactory.CreatePlanWithCloudTargets();
+            plan.Databases = new List<string> { "TestDB" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+
+            _mockCompression.Setup(c => c.CompressAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1024L * 1024 * 30);
+
+            _mockCloudOrchestrator.Setup(c => c.UploadToAllAsync(
+                    It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<List<CloudTargetConfig>>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<string>(), It.IsAny<string>()))
+                .ThrowsAsync(new OperationCanceledException());
+
+            BackupActivityEventArgs capturedArgs = null;
+            void handler(object s, BackupActivityEventArgs e)
+            {
+                if (e.ActivityType == BackupActivityType.Cancelled)
+                    capturedArgs = e;
+            }
+
+            BackupActivityHub.ActivityChanged += handler;
+            try
+            {
+                // Act
+                await _executor.Execute(_mockJobContext.Object);
+
+                // Assert — Cancelled event yayınlanmalı
+                capturedArgs.Should().NotBeNull();
+                capturedArgs.ActivityType.Should().Be(BackupActivityType.Cancelled);
+            }
+            finally
+            {
+                BackupActivityHub.ActivityChanged -= handler;
+            }
         }
     }
 }

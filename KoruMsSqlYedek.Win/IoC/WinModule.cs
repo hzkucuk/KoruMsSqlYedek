@@ -2,6 +2,8 @@ using Autofac;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Engine;
 using KoruMsSqlYedek.Engine.Backup;
+using KoruMsSqlYedek.Engine.Compression;
+using KoruMsSqlYedek.Engine.Update;
 using KoruMsSqlYedek.Win.IPC;
 
 namespace KoruMsSqlYedek.Win.IoC
@@ -34,9 +36,19 @@ namespace KoruMsSqlYedek.Win.IoC
                 .As<ISqlBackupService>()
                 .InstancePerDependency();
 
+            // Sıkıştırma servisi — RestoreDialog .7z arşiv açma için gerekli
+            builder.RegisterType<SevenZipCompressionService>()
+                .As<ICompressionService>()
+                .InstancePerDependency();
+
             // Pipe istemcisi — servis ile IPC iletişimi
             builder.RegisterType<ServicePipeClient>()
                 .AsSelf()
+                .SingleInstance();
+
+            // Güncelleme kontrolü — GitHub Releases API
+            builder.RegisterType<UpdateChecker>()
+                .As<IUpdateService>()
                 .SingleInstance();
         }
     }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Helpers;
@@ -23,25 +24,30 @@ namespace KoruMsSqlYedek.Win.Forms
         private readonly BackupPlan _plan;
         private readonly IBackupHistoryManager _historyManager;
         private readonly ISqlBackupService _sqlService;
+        private readonly ICompressionService _compressionService;
 
         private List<BackupResult> _history;
         private BackupResult _selectedResult;
         private CancellationTokenSource _cts;
+        private bool _isBusy;
 
         private const double BytesPerMb = 1_048_576.0;
 
         public RestoreDialog(
             BackupPlan plan,
             IBackupHistoryManager historyManager,
-            ISqlBackupService sqlService)
+            ISqlBackupService sqlService,
+            ICompressionService compressionService)
         {
             ArgumentNullException.ThrowIfNull(plan);
             ArgumentNullException.ThrowIfNull(historyManager);
             ArgumentNullException.ThrowIfNull(sqlService);
+            ArgumentNullException.ThrowIfNull(compressionService);
 
-            _plan           = plan;
-            _historyManager = historyManager;
-            _sqlService     = sqlService;
+            _plan               = plan;
+            _historyManager     = historyManager;
+            _sqlService         = sqlService;
+            _compressionService = compressionService;
 
             InitializeComponent();
 
@@ -181,11 +187,11 @@ namespace KoruMsSqlYedek.Win.Forms
             }
             catch (OperationCanceledException)
             {
-                AppendLog("Doğrulama zaman aşımına uğradı.");
+                AppendLog(Res.Get("Restore_VerifyTimeout"));
             }
             catch (Exception ex)
             {
-                AppendLog($"Hata: {ex.Message}");
+                AppendLog(Res.Format("Restore_Error", ex.Message));
                 Log.Error(ex, "Restore doğrulama hatası: {File}", filePath);
             }
             finally
@@ -207,7 +213,7 @@ namespace KoruMsSqlYedek.Win.Forms
             string targetDb = _txtTargetDb.Text.Trim();
             if (string.IsNullOrWhiteSpace(targetDb))
             {
-                AppendLog("Hedef veritabanı adı boş olamaz.");
+                AppendLog(Res.Get("Restore_TargetDbEmpty"));
                 _txtTargetDb.Focus();
                 return;
             }
@@ -233,6 +239,8 @@ namespace KoruMsSqlYedek.Win.Forms
             _progressBar.Value = 0;
             AppendLog($"[RESTORE] {targetDb} ← {Path.GetFileName(filePath)}");
 
+            string tempExtractDir = null;
+
             try
             {
                 _cts = new CancellationTokenSource(TimeSpan.FromHours(2));
@@ -244,10 +252,39 @@ namespace KoruMsSqlYedek.Win.Forms
                         _progressBar.Value = Math.Min(pct, 100);
                 });
 
+                string restoreFilePath = filePath;
+
+                // .7z arşiv ise önce çıkar
+                if (filePath.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
+                {
+                    AppendLog(Res.Get("Restore_Extracting"));
+                    tempExtractDir = Path.Combine(Path.GetTempPath(), "KoruRestore_" + Guid.NewGuid().ToString("N"));
+                    Directory.CreateDirectory(tempExtractDir);
+
+                    string password = !string.IsNullOrEmpty(_plan.Compression?.ArchivePassword)
+                        ? PasswordProtector.Unprotect(_plan.Compression.ArchivePassword)
+                        : null;
+
+                    await _compressionService.ExtractAsync(
+                        filePath, tempExtractDir, password, progress, _cts.Token);
+
+                    string bakFile = Directory.EnumerateFiles(tempExtractDir, "*.bak", SearchOption.AllDirectories)
+                        .FirstOrDefault();
+
+                    if (string.IsNullOrEmpty(bakFile))
+                    {
+                        AppendLog(Res.Get("Restore_NoBakInArchive"));
+                        return;
+                    }
+
+                    restoreFilePath = bakFile;
+                    _progressBar.Value = 0;
+                }
+
                 bool ok = await _sqlService.RestoreDatabaseAsync(
                     _plan.SqlConnection,
                     targetDb,
-                    filePath,
+                    restoreFilePath,
                     _chkPreBackup.Checked,
                     progress,
                     _cts.Token);
@@ -260,15 +297,16 @@ namespace KoruMsSqlYedek.Win.Forms
             }
             catch (OperationCanceledException)
             {
-                AppendLog("Geri yükleme iptal edildi.");
+                AppendLog(Res.Get("Restore_Cancelled"));
             }
             catch (Exception ex)
             {
-                AppendLog($"Hata: {ex.Message}");
+                AppendLog(Res.Format("Restore_Error", ex.Message));
                 Log.Error(ex, "Restore hatası: {TargetDb} ← {File}", targetDb, filePath);
             }
             finally
             {
+                CleanupTempDirectory(tempExtractDir);
                 SetBusy(false);
             }
         }
@@ -277,13 +315,32 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnCloseClick(object sender, EventArgs e)
         {
-            _cts?.Cancel();
+            if (_isBusy)
+            {
+                var result = MessageBox.Show(
+                    Res.Get("Restore_CancelConfirm"),
+                    Res.Get("Restore_CancelConfirmTitle"),
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+
+                if (result != DialogResult.Yes)
+                    return;
+
+                _cts?.Cancel();
+                return;
+            }
+
             Close();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            _cts?.Cancel();
+            if (_isBusy)
+            {
+                _cts?.Cancel();
+            }
+
             base.OnFormClosing(e);
         }
 
@@ -291,9 +348,10 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void SetBusy(bool busy)
         {
+            _isBusy = busy;
             _btnVerify.Enabled  = !busy;
             _btnRestore.Enabled = !busy;
-            _btnClose.Enabled   = !busy;
+            _btnClose.Text = busy ? Res.Get("Restore_BtnCancel") : Res.Get("Restore_BtnClose");
             Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
         }
 
@@ -301,6 +359,21 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             string line = $"[{DateTime.Now:HH:mm:ss}] {message}";
             _txtLog.AppendText(line + Environment.NewLine);
+        }
+
+        private static void CleanupTempDirectory(string tempDir)
+        {
+            if (string.IsNullOrEmpty(tempDir) || !Directory.Exists(tempDir))
+                return;
+
+            try
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "Geçici dizin silinemedi: {Dir}", tempDir);
+            }
         }
     }
 }

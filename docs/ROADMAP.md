@@ -1,0 +1,86 @@
+# 🗺️ Yol Haritası (Roadmap)
+
+> Son güncelleme: 2025-07-24 — v0.63.0
+> Öncelik: 🔴 Kritik | 🟠 Yüksek | 🟡 Orta | 🟢 Düşük  
+> Durum: ⬜ Planlandı | 🔄 Devam Ediyor | ✅ Tamamlandı
+
+---
+
+## Kısa Vade (Sonraki 1-2 Sprint)
+
+### 🔴 Kritik
+
+| # | İş Kalemi | Modül | Neden |
+|---|-----------|-------|-------|
+| K1 | ✅ Named Pipe IPC protokol testleri (18+20 birim test) | Service + Win + Tests | v0.57.0'da tamamlandı — PipeProtocol + CancellationRegistry testleri |
+| K2 | ✅ Cancel/Failure cleanup testleri (8 birim test) | Engine + Tests | v0.57.0'da tamamlandı — SQL/sıkıştırma/bulut iptal propagasyonu |
+| K3 | ✅ RestoreDialog tamamlama (.7z, lokalizasyon, iptal UX) | Win | v0.57.0'da tamamlandı — .7z desteği, 10 kaynak anahtarı, iptal UX |
+
+### 🟠 Yüksek
+
+| # | İş Kalemi | Modül | Neden |
+|---|-----------|-------|-------|
+| Y1 | ✅ Local-mode SQL ilerleme takibi (bulut olmadan) | Win + Engine | v0.58.0'da tamamlandı — HasCloudTargets flag + 5 adım ağırlık modeli |
+| Y2 | ✅ VSS test kapsamı genişletme (19 test) | Tests | v0.58.0'da tamamlandı — VssSnapshotServiceTests reflection tabanlı |
+| Y3 | ✅ Named Pipe IPC test kapsamı (38 test) | Tests | v0.57.0'da tamamlandı — PipeProtocolTests + CancellationRegistryTests |
+| Y4 | ✅ BackupJobExecutor cancel path test (8 test) | Tests | v0.57.0'da tamamlandı — iptal/hata/başarı akış testleri |
+
+---
+
+## Orta Vade (Sonraki 3-5 Sprint)
+
+### 🟡 Orta
+
+| # | İş Kalemi | Modül | Neden |
+|---|-----------|-------|-------|
+| O1 | ✅ E-posta bildirim şablonları (HTML) | Engine | v0.59.0'da tamamlandı — EmailTemplateBuilder + profesyonel şablon + SMTP profil desteği |
+| O2 | ✅ Raporlama detaylandırma (grafik/özet) | Engine | v0.60.0'da tamamlandı — EmailTemplateBuilder + istatistikler (ort. süre, en büyük yedek, sıkıştırma, DB özet tablosu) |
+| O3 | ✅ Retention politika detayları (grandfather-father-son) | Engine | v0.60.0'da tamamlandı — GFS: günlük/haftalık/aylık/yıllık periyot bazlı koruma |
+| O4 | ✅ MainWindow sorumluluk ayrıştırma | Win | v0.60.0'da tamamlandı — MainWindow.BackupLog.cs partial class'a taşındı |
+| O5 | ✅ Stres testi (büyük DB, çok plan, eşzamanlı) | Tests | v0.61.0'da tamamlandı — 8 stres testi: paralel plan, SemaphoreSlim kilit, 20 DB, karma senaryo, deadlock, bulut paralel, monoton ilerleme, iptal |
+| O6 | ✅ Progress Tracker unit testleri | Tests | v0.61.0'da tamamlandı — 22 yeni test: sınır değerler, VSS ağırlık, dosya-only pipeline, karma plan, çoklu hedef, monoton garanti |
+| O7 | ✅ Otomatik güncelleme mekanizması | Win | v0.63.0'da tamamlandı — Inno Setup installer + GitHub Actions CI/CD + tray güncelleme (günlük kontrol, balon bildirim, otomatik indirme) |
+
+---
+
+## Uzun Vade (Gelecek Çeyrek)
+
+### 🟢 Düşük
+
+| # | İş Kalemi | Modül | Neden |
+|---|-----------|-------|-------|
+| U1 | Azure Blob Storage provider | Engine | Yeni bulut hedefi |
+| U2 | AWS S3 provider | Engine | Yeni bulut hedefi |
+| U3 | Web dashboard (opsiyonel) | Yeni Proje | Uzaktan izleme arayüzü |
+| U4 | Çoklu dil desteği (i18n) tamamlama | Win | Resources.resx altyapısı var, tüm string'ler taşınmalı |
+| U5 | PowerShell script desteği (pre/post backup) | Engine | Kullanıcı tanımlı script'ler |
+| U6 | Yedekleme doğrulama (otomatik restore + checksum) | Engine | Yedek bütünlüğü otomatik doğrulama |
+
+---
+
+## Teknik Borç
+
+| # | Açıklama | Etki | Öncelik |
+|---|----------|------|---------|
+| TB1 | ✅ MainWindow.OnBackupActivityChanged — switch expression refactor, fail-fast, GetStatusDisplay/BuildCloudUploadLogLine helper | v0.62.0'da tamamlandı | ✅ |
+| TB2 | AppendBackupLog — Buffer + UI + Renk + İlerleme tek metotta | Kırılganlık | 🟡 |
+| TB3 | RichTextBox indeks uyumsuzluğu (Text \r\n vs Select \n) | Bilinen pitfall, dikkat gerekli | 🟡 |
+| TB4 | ✅ Test coverage: RestoreDialog (15 test) + BackupActivityExhaustiveness (20 test) | v0.62.0'da tamamlandı | ✅ |
+| TB5 | Serilog yapılandırılmış loglama standardizasyonu | Tutarlılık | 🟢 |
+
+---
+
+## Yarın (Sonraki Oturum) Planı
+
+### Önerilen Sıralama
+
+1. **O2 — Raporlama detaylandırma (grafik/özet)**
+   - Detaylı istatistik raporları
+
+2. **O3 — Gelişmiş Retention politikası**
+   - Grandfather-father-son politikası
+
+3. **O4 — MainWindow sorumluluk ayrıştırma**
+   - Buffer + UI + Renk + İlerleme mantığını ayrı sınıflara taşı
+
+> **Not:** K1-K3/Y1-Y4/O1 tamamlandı (v0.57.0–v0.59.0). Öncelik sırası kullanıcı geri bildirimine göre güncellenecektir.

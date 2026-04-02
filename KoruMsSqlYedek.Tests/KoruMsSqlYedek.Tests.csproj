@@ -18,5 +18,6 @@
   <ItemGroup>
     <ProjectReference Include="..\KoruMsSqlYedek.Core\KoruMsSqlYedek.Core.csproj" />
     <ProjectReference Include="..\KoruMsSqlYedek.Engine\KoruMsSqlYedek.Engine.csproj" />
+    <ProjectReference Include="..\KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj" />
   </ItemGroup>
 </Project>

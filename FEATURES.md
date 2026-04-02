@@ -2,6 +2,67 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.64.0 — Google Drive OAuth Sadeleştirme (Gömülü Credential)
+- Gömülü OAuth Credential: Client ID/Secret Base64-obfuscated olarak uygulamaya gömüldü
+- Parametresiz AuthorizeInteractiveAsync: tek tıkla Google hesabı bağlama
+- Credential öncelik sırası: config özel > gömülü (backward compat)
+- UI sadeleştirme: Client ID/Secret alanları kaldırıldı, "Hesap Bağlama" grubu
+
+### v0.63.0 — O7: Inno Setup Installer + GitHub Actions CI/CD + Otomatik Güncelleme
+- Inno Setup 6 installer: Program Files kurulumu, Windows Service sc.exe kaydı, masaüstü kısayolu, başlangıçta çalıştır, AppData korunur
+- PowerShell build script: otomatik versiyon algılama, dotnet publish (Win+Service), ISCC derleme
+- GitHub Actions CI/CD: v* tag tetikleme, .NET 10, build/test/publish, Inno Setup via Chocolatey, GitHub Release + installer asset
+- IUpdateService + UpdateChecker: GitHub Releases API, /releases/latest, System.Version karşılaştırma, akışlı indirme + ilerleme
+- Tray güncelleme entegrasyonu: günlük otomatik kontrol (24h), balon bildirim, manuel menü öğesi, temp indirme → runas installer
+- 13 güncelleme kaynak anahtarı (Resources.resx)
+- Autofac DI: UpdateChecker → IUpdateService (SingleInstance)
+
+### v0.62.0 — TB1/TB4: Switch Refactor + RestoreDialog & Exhaustiveness Testleri
+- TB1 — OnBackupActivityChanged switch refactor: BuildActivityLogLine/GetLogColor → switch expression + throw (fail-fast), BuildCloudUploadLogLine helper, GetStatusDisplay tuple helper, default case Log.Warning, XML doc ⚠️ uyarıları
+- TB4 — RestoreDialogTests: 15 test (4 constructor null guard, 5 CleanupTempDirectory, 3 LoadHistory filtre, 3 grid row data)
+- TB4 — BackupActivityExhaustivenessTests: 20 parameterized test (enum count, coverage, DynamicData BuildActivityLogLine/GetLogColor)
+- InternalsVisibleTo: Win → Tests (AssemblyInfo.cs manual attribute, GenerateAssemblyInfo=false workaround)
+
+### v0.61.0 — O5/O6: Stres Testleri + PlanProgressTracker Testleri
+- Stres testleri (O5): 8 test — eşzamanlı plan çalıştırma, SemaphoreSlim kilit, büyük DB listesi, karma senaryolar, deadlock kontrolü, bulut paralel, monoton ilerleme, iptal propagasyonu
+- PlanProgressTracker ağırlık modeli testleri (O6): 22 test — sınır değerler, VSS (20/50/30), NoVSS (30/70), dosya-only pipeline, karma plan, çoklu hedef dağılımı, monoton garanti
+- PlanProgressTracker.cs eksik using düzeltmesi
+
+### v0.60.0 — O2/O3/O4: Raporlama İstatistik + GFS Retention + MainWindow Ayrıştırma
+- Raporlama detaylandırma (O2): EmailTemplateBuilder ile tutarlı HTML, ek istatistikler (ort. süre, en büyük yedek, sıkıştırma), veritabanı bazlı özet tablosu
+- GFS Retention politikası (O3): Grandfather-Father-Son — günlük (7), haftalık (4), aylık (12), yıllık (2) periyot bazlı koruma
+- MainWindow sorumluluk ayrıştırma (O4): Log buffer + UI rendering MainWindow.BackupLog.cs partial class'a taşındı
+- 9 GFS Retention birim testi
+
+### v0.59.0 — O1: Profesyonel E-posta Bildirim Şablonları
+- EmailTemplateBuilder: ortak HTML şablon sınıfı (header, statusBadge, summaryTable, detailTable, errorBlock, footer)
+- SQL yedek bildirimi: profesyonel şablon + CompressionVerified + VssFileCopy alanları
+- Dosya yedek bildirimi: aynı şablon + kaynak detay tablosu
+- NotifyFileBackupAsync: SmtpProfile desteği (eski per-plan SMTP yerine)
+- 27 EmailTemplateBuilderTests birim testi
+
+### v0.58.0 — Y1/Y2: Local-mode SQL İlerleme + VSS Test Kapsamı
+- Local-mode SQL ilerleme çubuğu: bulut hedefsiz planlarda her adımda (SQL→Doğrulama→Sıkıştırma→Temizlik) ilerleme çubuğu güncelleniyor
+- HasCloudTargets flag: BackupActivityEventArgs + PlanProgressTracker, Started event ile bildirim
+- VssSnapshotService testleri: 19 birim testi (Dispose, path mapping, argüman doğrulama, kontrat)
+
+### v0.57.0 — K1/K2/K3: IPC Testleri, İptal/Temizlik Testleri, RestoreDialog Tamamlama
+- Named Pipe IPC protokol testleri: 18 birim testi (tüm mesaj türleri, roundtrip, kenar durumları)
+- BackupCancellationRegistry testleri: 20 birim testi (Register/Cancel/Unregister, thread safety)
+- Cancel/Cleanup pipeline testleri: 8 yeni test (SQL/sıkıştırma/bulut iptal propagasyonu)
+- RestoreDialog `.7z` desteği: arşiv algılama → geçici klasöre açma → .bak bulma → geri yükleme → temizlik
+- RestoreDialog lokalizasyon: 10 kaynak anahtarı, tüm sabit stringler `Res.Get()`/`Res.Format()`
+- RestoreDialog iptal UX: işlem sırasında iptal butonu aktif, onay diyaloğu, dinamik buton metni
+- DI: `ICompressionService` (SevenZipCompressionService) WinModule'e kaydedildi
+- Test düzeltmeleri: SetJobData manualTrigger, UploadToAllAsync 7-param mock uyumu
+
+### v0.56.0 — Proje Yönetişim & Branch Stratejisi
+- 3 katmanlı branch stratejisi: `master` → `develop` → `feature/*/fix/*/hotfix/*`
+- Modül stabilite haritası (`docs/STATUS.md`): 38 modül derecelendirmesi
+- Yol haritası (`docs/ROADMAP.md`): Kısa/orta/uzun vade planlama
+- Mimari kararlar günlüğü (`docs/DECISIONS.md`): 10 ADR kaydı
+- Copilot direktifi Git workflow güncellemesi
+
 ### v0.55.0 — İptal/Hata Durumunda Ara Dosya Temizliği
 - Yedekleme iptal veya hata durumunda tamamlanmamış `.bak`, `.7z`, `Files/` staging dosyaları otomatik siliniyor
 - Per-DB snapshot takibi: Başarıyla tamamlanan DB dosyaları korunuyor, yalnızca yarım kalan dosyalar temizleniyor

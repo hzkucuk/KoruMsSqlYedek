@@ -360,6 +360,16 @@ Language change requires application restart.</value></data>
   <data name="Restore_Success" xml:space="preserve"><value>Restore completed successfully.</value></data>
   <data name="Restore_Failed" xml:space="preserve"><value>Restore failed. Check the log for details.</value></data>
   <data name="Restore_NoHistory" xml:space="preserve"><value>No backup records found for this plan.</value></data>
+  <data name="Restore_TargetDbEmpty" xml:space="preserve"><value>Target database name cannot be empty.</value></data>
+  <data name="Restore_VerifyTimeout" xml:space="preserve"><value>Verification timed out.</value></data>
+  <data name="Restore_Cancelled" xml:space="preserve"><value>Restore cancelled.</value></data>
+  <data name="Restore_Error" xml:space="preserve"><value>Error: {0}</value></data>
+  <data name="Restore_Extracting" xml:space="preserve"><value>Extracting compressed archive: {0}</value></data>
+  <data name="Restore_ExtractFailed" xml:space="preserve"><value>Archive extraction failed: {0}</value></data>
+  <data name="Restore_NoBakInArchive" xml:space="preserve"><value>No .bak file found in extracted archive.</value></data>
+  <data name="Restore_CancelConfirm" xml:space="preserve"><value>An operation is in progress. Cancel it?</value></data>
+  <data name="Restore_CancelConfirmTitle" xml:space="preserve"><value>Cancel Operation</value></data>
+  <data name="Restore_BtnCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="CtxMenu_Restore" xml:space="preserve"><value>Restore...</value></data>
 
   <!-- ===== Tray — Service Control ===== -->
@@ -376,5 +386,20 @@ Language change requires application restart.</value></data>
   <data name="Tray_ServiceNotInstalled" xml:space="preserve"><value>Service: Not Installed ⚠</value></data>
   <data name="Tray_ServiceDebugMode" xml:space="preserve"><value>Service: Connected (Debug) ✓</value></data>
   <data name="Settings_LogColorScheme" xml:space="preserve"><value>Log Color Scheme:</value></data>
+
+  <!-- ── Güncelleme (O7) ───────────────────────────────────────── -->
+  <data name="Update_MenuCheckForUpdates" xml:space="preserve"><value>Güncelleme Kontrol Et</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Güncelleme kontrol ediliyor...</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>Yeni Sürüm Mevcut</value></data>
+  <data name="Update_AvailableMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} yayınlandı. Güncellemek ister misiniz?</value></data>
+  <data name="Update_NoUpdate" xml:space="preserve"><value>Güncelleme Yok</value></data>
+  <data name="Update_NoUpdateMessage" xml:space="preserve"><value>En güncel sürümü kullanıyorsunuz (v{0}).</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Güncelleme indiriliyor... %{0}</value></data>
+  <data name="Update_DownloadComplete" xml:space="preserve"><value>İndirme tamamlandı. Installer başlatılıyor...</value></data>
+  <data name="Update_DownloadFailed" xml:space="preserve"><value>Güncelleme indirilemedi: {0}</value></data>
+  <data name="Update_CheckFailed" xml:space="preserve"><value>Güncelleme kontrolü başarısız. İnternet bağlantınızı kontrol edin.</value></data>
+  <data name="Update_BalloonTitle" xml:space="preserve"><value>Güncelleme Mevcut</value></data>
+  <data name="Update_BalloonMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} yayınlandı. Tıklayarak güncelleyin.</value></data>
+  <data name="Update_ReleaseNotes" xml:space="preserve"><value>Değişiklikler:</value></data>
 
 </root>

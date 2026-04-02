@@ -90,13 +90,18 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
                 int sqlDbCount = backupType == "FileBackup" ? 0 : (plan.Databases?.Count ?? 0);
 
+                bool hasCloudTargets = CloudOrchestrator != null
+                    && plan.CloudTargets != null
+                    && plan.CloudTargets.Any(t => t.IsEnabled);
+
                 BackupActivityHub.Raise(new BackupActivityEventArgs
                 {
                     PlanId = plan.PlanId,
                     PlanName = plan.PlanName,
                     ActivityType = BackupActivityType.Started,
                     TotalCount = sqlDbCount,
-                    HasFileBackup = willRunFileBackup
+                    HasFileBackup = willRunFileBackup,
+                    HasCloudTargets = hasCloudTargets
                 });
 
                 var cts = CancellationTokenSource.CreateLinkedTokenSource(

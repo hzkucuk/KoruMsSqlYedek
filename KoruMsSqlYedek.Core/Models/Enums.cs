@@ -91,7 +91,10 @@
     {
         KeepLastN = 0,
         DeleteOlderThanDays = 1,
-        Both = 2
+        Both = 2,
+
+        /// <summary>Grandfather-Father-Son: Günlük / Haftalık / Aylık / Yıllık periyot bazlı saklama.</summary>
+        GFS = 3
     }
 
     /// <summary>

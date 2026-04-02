@@ -37,10 +37,6 @@
 
             // OAuth grubu
             _grpOAuth = new System.Windows.Forms.GroupBox();
-            _lblClientId = new System.Windows.Forms.Label();
-            _txtClientId = new System.Windows.Forms.TextBox();
-            _lblClientSecret = new System.Windows.Forms.Label();
-            _txtClientSecret = new System.Windows.Forms.TextBox();
             _btnGoogleAuth = new Theme.ModernButton();
             _lblAuthStatus = new System.Windows.Forms.Label();
 
@@ -137,37 +133,20 @@
             _grpFtp.Controls.Add(_txtPassword);
 
             // === OAuth Grubu ===
-            _grpOAuth.Text = "OAuth2 Ayarları";
+            _grpOAuth.Text = "Hesap Ba\u011flama";
             _grpOAuth.Location = new System.Drawing.Point(lx, 110);
-            _grpOAuth.Size = new System.Drawing.Size(tw + 140, 120);
-
-            _lblClientId.Text = "Client ID:";
-            _lblClientId.AutoSize = true;
-            _lblClientId.Location = new System.Drawing.Point(6, 25);
-            _txtClientId.Location = new System.Drawing.Point(130, 22);
-            _txtClientId.Size = new System.Drawing.Size(270, 23);
-
-            _lblClientSecret.Text = "Client Secret:";
-            _lblClientSecret.AutoSize = true;
-            _lblClientSecret.Location = new System.Drawing.Point(6, 55);
-            _txtClientSecret.Location = new System.Drawing.Point(130, 52);
-            _txtClientSecret.Size = new System.Drawing.Size(270, 23);
-            _txtClientSecret.UseSystemPasswordChar = true;
+            _grpOAuth.Size = new System.Drawing.Size(tw + 140, 60);
 
             _btnGoogleAuth.Text = "Hesab\u0131 Ba\u011fla";
             _btnGoogleAuth.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnGoogleAuth.Size = new System.Drawing.Size(160, 28);
-            _btnGoogleAuth.Location = new System.Drawing.Point(6, 84);
+            _btnGoogleAuth.Location = new System.Drawing.Point(6, 24);
             _btnGoogleAuth.Click += OnGoogleAuthClick;
 
             _lblAuthStatus.AutoSize = true;
-            _lblAuthStatus.Location = new System.Drawing.Point(174, 89);
+            _lblAuthStatus.Location = new System.Drawing.Point(174, 29);
             _lblAuthStatus.Text = "Hen\u00fcz do\u011frulanmad\u0131";
 
-            _grpOAuth.Controls.Add(_lblClientId);
-            _grpOAuth.Controls.Add(_txtClientId);
-            _grpOAuth.Controls.Add(_lblClientSecret);
-            _grpOAuth.Controls.Add(_txtClientSecret);
             _grpOAuth.Controls.Add(_btnGoogleAuth);
             _grpOAuth.Controls.Add(_lblAuthStatus);
 
@@ -301,10 +280,6 @@
 
         // OAuth
         private System.Windows.Forms.GroupBox _grpOAuth;
-        private System.Windows.Forms.Label _lblClientId;
-        private System.Windows.Forms.TextBox _txtClientId;
-        private System.Windows.Forms.Label _lblClientSecret;
-        private System.Windows.Forms.TextBox _txtClientSecret;
         private Theme.ModernButton _btnGoogleAuth;
         private System.Windows.Forms.Label _lblAuthStatus;
 

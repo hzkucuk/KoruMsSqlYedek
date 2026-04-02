@@ -115,27 +115,40 @@ namespace KoruMsSqlYedek.Engine.Retention
             int deletedCount = 0;
             int skippedCount = 0;
 
-            if (retention.Type == RetentionPolicyType.KeepLastN ||
-                retention.Type == RetentionPolicyType.Both)
+            if (retention.Type == RetentionPolicyType.GFS)
             {
-                var toDeleteByCount = allFiles.Skip(retention.KeepLastN).ToList();
-                foreach (var file in toDeleteByCount)
+                var protectedByGfs = BuildGfsProtectedSet(allFiles, retention);
+
+                foreach (var file in allFiles)
                 {
-                    TryDeleteFileWithCloudCheck(file, cloudProtectedFiles, ref deletedCount, ref skippedCount);
+                    if (!protectedByGfs.Contains(file.FullName))
+                        TryDeleteFileWithCloudCheck(file, cloudProtectedFiles, ref deletedCount, ref skippedCount);
                 }
             }
-
-            if (retention.Type == RetentionPolicyType.DeleteOlderThanDays ||
-                retention.Type == RetentionPolicyType.Both)
+            else
             {
-                DateTime cutoff = DateTime.Now.AddDays(-retention.DeleteOlderThanDays);
-                var toDeleteByAge = allFiles
-                    .Where(f => f.CreationTime < cutoff)
-                    .ToList();
-
-                foreach (var file in toDeleteByAge)
+                if (retention.Type == RetentionPolicyType.KeepLastN ||
+                    retention.Type == RetentionPolicyType.Both)
                 {
-                    TryDeleteFileWithCloudCheck(file, cloudProtectedFiles, ref deletedCount, ref skippedCount);
+                    var toDeleteByCount = allFiles.Skip(retention.KeepLastN).ToList();
+                    foreach (var file in toDeleteByCount)
+                    {
+                        TryDeleteFileWithCloudCheck(file, cloudProtectedFiles, ref deletedCount, ref skippedCount);
+                    }
+                }
+
+                if (retention.Type == RetentionPolicyType.DeleteOlderThanDays ||
+                    retention.Type == RetentionPolicyType.Both)
+                {
+                    DateTime cutoff = DateTime.Now.AddDays(-retention.DeleteOlderThanDays);
+                    var toDeleteByAge = allFiles
+                        .Where(f => f.CreationTime < cutoff)
+                        .ToList();
+
+                    foreach (var file in toDeleteByAge)
+                    {
+                        TryDeleteFileWithCloudCheck(file, cloudProtectedFiles, ref deletedCount, ref skippedCount);
+                    }
                 }
             }
 
@@ -145,6 +158,89 @@ namespace KoruMsSqlYedek.Engine.Retention
                     "Retention tamamlandı: {Database} — {Deleted} silindi, {Skipped} korundu (bulut bekliyor)",
                     databaseName, deletedCount, skippedCount);
             }
+        }
+
+        /// <summary>
+        /// GFS (Grandfather-Father-Son) politikasına göre korunacak dosyaları belirler.
+        /// Her periyot (gün/hafta/ay/yıl) için en yeni (en büyük) yedek seçilir.
+        /// </summary>
+        /// <remarks>Public for unit testing.</remarks>
+        public static HashSet<string> BuildGfsProtectedSet(List<FileInfo> files, RetentionPolicy retention)
+        {
+            var protectedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            DateTime now = DateTime.Now;
+
+            // Günlük: Son N günün her biri için en iyi yedeği koru
+            if (retention.GfsKeepDaily > 0)
+            {
+                SelectBestPerPeriod(files, retention.GfsKeepDaily,
+                    f => f.CreationTime.Date,
+                    now.Date.AddDays(-retention.GfsKeepDaily + 1),
+                    protectedFiles);
+            }
+
+            // Haftalık: Son N haftanın her biri için en iyi yedeği koru (ISO hafta başı: Pazartesi)
+            if (retention.GfsKeepWeekly > 0)
+            {
+                SelectBestPerPeriod(files, retention.GfsKeepWeekly,
+                    f => GetWeekStart(f.CreationTime),
+                    GetWeekStart(now).AddDays(-7 * (retention.GfsKeepWeekly - 1)),
+                    protectedFiles);
+            }
+
+            // Aylık: Son N ayın her biri için en iyi yedeği koru
+            if (retention.GfsKeepMonthly > 0)
+            {
+                SelectBestPerPeriod(files, retention.GfsKeepMonthly,
+                    f => new DateTime(f.CreationTime.Year, f.CreationTime.Month, 1),
+                    new DateTime(now.Year, now.Month, 1).AddMonths(-retention.GfsKeepMonthly + 1),
+                    protectedFiles);
+            }
+
+            // Yıllık: Son N yılın her biri için en iyi yedeği koru
+            if (retention.GfsKeepYearly > 0)
+            {
+                SelectBestPerPeriod(files, retention.GfsKeepYearly,
+                    f => new DateTime(f.CreationTime.Year, 1, 1),
+                    new DateTime(now.Year - retention.GfsKeepYearly + 1, 1, 1),
+                    protectedFiles);
+            }
+
+            return protectedFiles;
+        }
+
+        /// <summary>
+        /// Belirtilen periyot fonksiyonuna göre her dilimden en büyük dosyayı seçer.
+        /// </summary>
+        private static void SelectBestPerPeriod(
+            List<FileInfo> files,
+            int keepCount,
+            Func<FileInfo, DateTime> periodKeySelector,
+            DateTime cutoff,
+            HashSet<string> protectedFiles)
+        {
+            var eligible = files.Where(f => f.CreationTime >= cutoff);
+
+            var bestPerPeriod = eligible
+                .GroupBy(periodKeySelector)
+                .OrderByDescending(g => g.Key)
+                .Take(keepCount)
+                .Select(g => g.OrderByDescending(f => f.Length).ThenByDescending(f => f.CreationTime).First());
+
+            foreach (var file in bestPerPeriod)
+            {
+                protectedFiles.Add(file.FullName);
+            }
+        }
+
+        /// <summary>
+        /// ISO 8601 hafta başlangıcını (Pazartesi) döndürür.
+        /// </summary>
+        private static DateTime GetWeekStart(DateTime date)
+        {
+            int diff = ((int)date.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+
+            return date.Date.AddDays(-diff);
         }
 
         private void TryDeleteFileWithCloudCheck(

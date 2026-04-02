@@ -154,32 +154,25 @@ namespace KoruMsSqlYedek.Engine.Notification
 
         private string BuildEmailBody(BackupResult result, bool isSuccess)
         {
-            string color = isSuccess ? "#28a745" : "#dc3545";
             string statusText = isSuccess ? "Başarılı" : "Başarısız";
             string duration = result.Duration.HasValue
                 ? result.Duration.Value.ToString(@"hh\:mm\:ss")
                 : "-";
 
-            var sb = new StringBuilder();
-            sb.AppendLine($@"
-<div style='font-family: Segoe UI, Arial; max-width: 600px;'>
-    <h2 style='color: {color};'>Yedekleme {statusText}</h2>
-    <table style='border-collapse: collapse; width: 100%;'>
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Veritabanı</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.DatabaseName}</td></tr>
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Plan</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.PlanName}</td></tr>
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Yedek Türü</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.BackupType}</td></tr>
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Süre</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{duration}</td></tr>");
+            var tmpl = new EmailTemplateBuilder();
+            tmpl.WriteHeader("Koru MsSql Yedek — Yedekleme Bildirimi", $"{result.PlanName} · {result.DatabaseName}");
+            tmpl.WriteStatusBadge($"Yedekleme {statusText}", isSuccess);
 
-            // Dosya boyut bilgileri
+            tmpl.WriteSectionTitle("Yedekleme Özeti");
+            tmpl.BeginSummaryTable();
+            tmpl.WriteTableRow("Veritabanı", EmailTemplateBuilder.Encode(result.DatabaseName));
+            tmpl.WriteTableRow("Plan", EmailTemplateBuilder.Encode(result.PlanName));
+            tmpl.WriteTableRow("Yedek Türü", result.BackupType.ToString());
+            tmpl.WriteTableRow("Süre", duration);
+
             if (result.FileSizeBytes > 0)
             {
-                sb.AppendLine($@"
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Dosya Boyutu</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.FileSizeBytes / BytesPerMb:F1} MB</td></tr>");
+                tmpl.WriteTableRow("Dosya Boyutu", $"{result.FileSizeBytes / BytesPerMb:F1} MB");
             }
 
             if (result.CompressedSizeBytes > 0)
@@ -187,43 +180,61 @@ namespace KoruMsSqlYedek.Engine.Notification
                 double ratio = result.FileSizeBytes > 0
                     ? (1.0 - (double)result.CompressedSizeBytes / result.FileSizeBytes) * 100
                     : 0;
-                sb.AppendLine($@"
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Sıkıştırılmış</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{result.CompressedSizeBytes / BytesPerMb:F1} MB (%{ratio:F0} kazanç)</td></tr>");
+                tmpl.WriteTableRow("Sıkıştırılmış", $"{result.CompressedSizeBytes / BytesPerMb:F1} MB (%{ratio:F0} kazanç)");
             }
 
-            // Doğrulama sonucu
+            if (result.VssFileCopySizeBytes > 0)
+            {
+                tmpl.WriteTableRow("VSS Dosya Kopyası", $"{result.VssFileCopySizeBytes / BytesPerMb:F1} MB");
+            }
+
             if (result.VerifyResult.HasValue)
             {
-                string verifyColor = result.VerifyResult.Value ? "#28a745" : "#dc3545";
-                string verifyText = result.VerifyResult.Value ? "Geçerli ✓" : "Geçersiz ✗";
-                sb.AppendLine($@"
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Doğrulama</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd; color: {verifyColor};'>{verifyText}</td></tr>");
+                bool ok = result.VerifyResult.Value;
+                tmpl.WriteTableRow("SQL Doğrulama",
+                    ok ? "Geçerli ✓" : "Geçersiz ✗",
+                    EmailTemplateBuilder.GetStatusColor(ok));
             }
+
+            if (result.CompressionVerified.HasValue)
+            {
+                bool ok = result.CompressionVerified.Value;
+                tmpl.WriteTableRow("Arşiv Doğrulama",
+                    ok ? "Geçerli ✓" : "Geçersiz ✗",
+                    EmailTemplateBuilder.GetStatusColor(ok));
+            }
+
+            tmpl.WriteTableRow("Correlation ID", $"<code>{EmailTemplateBuilder.Encode(result.CorrelationId)}</code>");
+            tmpl.EndTable();
 
             // Bulut upload sonuçları
-            if (result.CloudUploadResults != null && result.CloudUploadResults.Count > 0)
+            if (result.CloudUploadResults is { Count: > 0 })
             {
+                tmpl.WriteSectionTitle("Bulut Yükleme");
+                tmpl.BeginDetailTable("Hedef", "Durum", "Detay");
+
+                int idx = 0;
                 foreach (var cloud in result.CloudUploadResults)
                 {
-                    string cloudColor = cloud.IsSuccess ? "#28a745" : "#dc3545";
-                    string cloudStatus = cloud.IsSuccess ? "✓" : "✗";
-                    sb.AppendLine($@"
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Bulut: {cloud.DisplayName}</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd; color: {cloudColor};'>{cloudStatus} {(cloud.IsSuccess ? "" : SanitizeForEmail(cloud.ErrorMessage))}</td></tr>");
+                    string statusIcon = cloud.IsSuccess ? "✓" : "✗";
+                    string color = EmailTemplateBuilder.GetStatusColor(cloud.IsSuccess);
+                    string detail = cloud.IsSuccess ? "-" : SanitizeForEmail(cloud.ErrorMessage);
+
+                    tmpl.WriteDetailRow(idx++,
+                        (EmailTemplateBuilder.Encode(cloud.DisplayName), null),
+                        ($"{statusIcon}", color),
+                        (detail, cloud.IsSuccess ? null : color));
                 }
+
+                tmpl.EndDetailTable();
             }
 
-            sb.AppendLine($@"
-        <tr><td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>Correlation ID</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'><code>{result.CorrelationId}</code></td></tr>
-    </table>
-    {(isSuccess ? "" : $"<p style='color: red;'><b>Hata:</b> {SanitizeForEmail(result.ErrorMessage)}</p>")}
-    <p style='color: #666; font-size: 12px;'>Bu e-posta Koru MsSql Yedek tarafından otomatik gönderilmiştir.</p>
-</div>");
+            if (!isSuccess)
+            {
+                tmpl.WriteErrorBlock(SanitizeForEmail(result.ErrorMessage));
+            }
 
-            return sb.ToString();
+            return tmpl.Build();
         }
 
         /// <summary>
@@ -244,11 +255,39 @@ namespace KoruMsSqlYedek.Engine.Notification
             if (!shouldNotify)
                 return;
 
+            SmtpProfile profile = ResolveProfile(plan.Notifications);
+            if (profile == null || string.IsNullOrWhiteSpace(profile.Host))
+            {
+                Log.Warning("Dosya yedek bildirimi atlandı: SMTP profili bulunamadı veya sunucu adresi boş. Plan: {PlanName}", plan.PlanName);
+                return;
+            }
+
             try
             {
+                string recipients = !string.IsNullOrWhiteSpace(plan.Notifications.EmailTo)
+                    ? plan.Notifications.EmailTo
+                    : profile.RecipientEmails;
+
+                if (string.IsNullOrWhiteSpace(recipients))
+                {
+                    Log.Warning("Dosya yedek bildirimi atlandı: Alıcı adresi tanımlanmamış. Plan: {PlanName}", plan.PlanName);
+                    return;
+                }
+
+                string senderEmail = !string.IsNullOrWhiteSpace(profile.SenderEmail)
+                    ? profile.SenderEmail
+                    : profile.Username;
+                string senderName = profile.SenderDisplayName ?? "Koru MsSql Yedek";
+
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress("Koru MsSql Yedek", plan.Notifications.SmtpUsername));
-                message.To.Add(MailboxAddress.Parse(plan.Notifications.EmailTo));
+                message.From.Add(new MailboxAddress(senderName, senderEmail));
+
+                foreach (string addr in recipients.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string trimmed = addr.Trim();
+                    if (!string.IsNullOrEmpty(trimmed))
+                        message.To.Add(MailboxAddress.Parse(trimmed));
+                }
 
                 string statusText = allSuccess ? "Başarılı ✓" : "Kısmi Başarı ⚠";
                 message.Subject = $"[Koru MsSql Yedek] Dosya Yedekleme — {statusText}";
@@ -262,24 +301,25 @@ namespace KoruMsSqlYedek.Engine.Notification
                 using (var client = new SmtpClient())
                 {
                     await client.ConnectAsync(
-                        plan.Notifications.SmtpServer,
-                        plan.Notifications.SmtpPort ?? 587,
-                        plan.Notifications.SmtpUseSsl == true
-                            ? MailKit.Security.SecureSocketOptions.StartTls
-                            : MailKit.Security.SecureSocketOptions.None,
+                        profile.Host,
+                        profile.Port,
+                        profile.UseSsl ? MailKit.Security.SecureSocketOptions.StartTls
+                                       : MailKit.Security.SecureSocketOptions.None,
                         cancellationToken);
 
-                    if (!string.IsNullOrEmpty(plan.Notifications.SmtpUsername))
+                    if (!string.IsNullOrEmpty(profile.Username))
                     {
-                        string password = PasswordProtector.Unprotect(plan.Notifications.SmtpPassword);
-                        await client.AuthenticateAsync(plan.Notifications.SmtpUsername, password, cancellationToken);
+                        string password = PasswordProtector.Unprotect(profile.Password);
+                        await client.AuthenticateAsync(profile.Username, password, cancellationToken);
                     }
 
                     await client.SendAsync(message, cancellationToken);
                     await client.DisconnectAsync(true, cancellationToken);
                 }
 
-                Log.Information("Dosya yedek bildirimi gönderildi: {PlanName}", plan.PlanName);
+                Log.Information(
+                    "Dosya yedek bildirimi gönderildi: {PlanName} → {Recipients} (Profil: {Profile})",
+                    plan.PlanName, recipients, profile.DisplayName);
             }
             catch (Exception ex)
             {
@@ -290,38 +330,41 @@ namespace KoruMsSqlYedek.Engine.Notification
         private string BuildFileBackupEmailBody(
             List<FileBackupResult> results, string planName, bool allSuccess)
         {
-            string color = allSuccess ? "#28a745" : "#e67e22";
             string statusText = allSuccess ? "Başarılı" : "Kısmi Başarı";
 
             int totalCopied = results.Sum(r => r.FilesCopied);
             int totalSkipped = results.Sum(r => r.FilesSkipped);
             long totalSize = results.Sum(r => r.TotalSizeBytes);
 
-            var sb = new StringBuilder();
-            sb.AppendLine($@"
-<div style='font-family: Segoe UI, Arial; max-width: 600px;'>
-    <h2 style='color: {color};'>Dosya Yedekleme {statusText}</h2>
-    <p><b>Plan:</b> {planName}</p>
-    <p><b>Toplam:</b> {totalCopied} dosya kopyalandı, {totalSkipped} atlandı [{totalSize / BytesPerMb:F1} MB]</p>
-    <table style='border-collapse: collapse; width: 100%;'>");
+            var tmpl = new EmailTemplateBuilder();
+            tmpl.WriteHeader("Koru MsSql Yedek — Dosya Yedekleme", planName);
+            tmpl.WriteStatusBadge($"Dosya Yedekleme {statusText}", allSuccess);
 
+            tmpl.WriteSectionTitle("Özet");
+            tmpl.BeginSummaryTable();
+            tmpl.WriteTableRow("Plan", EmailTemplateBuilder.Encode(planName));
+            tmpl.WriteTableRow("Kopyalanan Dosya", totalCopied.ToString());
+            tmpl.WriteTableRow("Atlanan Dosya", totalSkipped.ToString());
+            tmpl.WriteTableRow("Toplam Boyut", $"{totalSize / BytesPerMb:F1} MB");
+            tmpl.EndTable();
+
+            tmpl.WriteSectionTitle("Kaynak Detayları");
+            tmpl.BeginDetailTable("Kaynak", "Dosya", "Durum");
+
+            int idx = 0;
             foreach (var r in results)
             {
-                string rowColor = r.Status == BackupResultStatus.Success ? "#28a745" : "#dc3545";
-                sb.AppendLine($@"
-        <tr>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'><b>{r.SourceName}</b></td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd;'>{r.FilesCopied} dosya</td>
-            <td style='padding: 8px; border-bottom: 1px solid #ddd; color: {rowColor};'>{r.Status}</td>
-        </tr>");
+                string statusIcon = r.Status == BackupResultStatus.Success ? "✓" : "✗";
+                string color = EmailTemplateBuilder.GetStatusColor(r.Status == BackupResultStatus.Success);
+
+                tmpl.WriteDetailRow(idx++,
+                    (EmailTemplateBuilder.Encode(r.SourceName), null),
+                    ($"{r.FilesCopied} dosya", null),
+                    ($"{statusIcon} {r.Status}", color));
             }
 
-            sb.AppendLine(@"
-    </table>
-    <p style='color: #666; font-size: 12px;'>Bu e-posta Koru MsSql Yedek tarafından otomatik gönderilmiştir.</p>
-</div>");
-
-            return sb.ToString();
+            tmpl.EndDetailTable();
+            return tmpl.Build();
         }
 
         /// <summary>

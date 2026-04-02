@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MailKit.Net.Smtp;
@@ -220,96 +219,109 @@ namespace KoruMsSqlYedek.Engine.Notification
             long totalCompressed = results.Sum(r => r.CompressedSizeBytes);
 
             string periodLabel = GetPeriodLabel(frequency, from);
-            string rateColor = successRate >= 90 ? "#10b981" : successRate >= 70 ? "#f59e0b" : "#ef4444";
+            string rateColor = successRate >= 90
+                ? EmailTemplateBuilder.GetSuccessColor()
+                : successRate >= 70
+                    ? EmailTemplateBuilder.GetWarningColor()
+                    : EmailTemplateBuilder.GetFailureColor();
 
-            var sb = new StringBuilder();
-            sb.AppendLine($@"
-<div style='font-family: Segoe UI, Arial; max-width: 680px; color: #222;'>
-  <div style='background:#1a2e1a; padding:16px 24px; border-radius:6px 6px 0 0;'>
-    <h2 style='color:#10b981; margin:0; font-size:18px;'>Koru MsSql Yedek — Periyodik Rapor</h2>
-    <p style='color:#aaa; margin:4px 0 0; font-size:13px;'>{plan.PlanName} · {periodLabel}</p>
-  </div>
-  <div style='background:#f9f9f9; padding:20px 24px; border:1px solid #ddd;'>
-    <h3 style='margin:0 0 12px; font-size:15px;'>Özet</h3>
-    <table style='border-collapse:collapse; width:100%; font-size:13px;'>
-      <tr>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee; width:40%;'><b>Dönem</b></td>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'>{from:dd.MM.yyyy} – {to:dd.MM.yyyy}</td>
-      </tr>
-      <tr>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'><b>Toplam Yedekleme</b></td>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'>{total}</td>
-      </tr>
-      <tr>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'><b>Başarılı</b></td>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee; color:#10b981;'><b>{success}</b></td>
-      </tr>
-      <tr>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'><b>Başarısız</b></td>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee; color:#ef4444;'><b>{failed}</b></td>
-      </tr>");
+            var builder = new EmailTemplateBuilder();
+
+            // ── Header ──
+            builder.WriteHeader("Koru MsSql Yedek — Periyodik Rapor", $"{plan.PlanName} · {periodLabel}");
+
+            // ── Özet Tablosu ──
+            builder.WriteSectionTitle("Özet");
+            builder.BeginSummaryTable();
+            builder.WriteTableRow("Dönem", $"{from:dd.MM.yyyy} – {to:dd.MM.yyyy}");
+            builder.WriteTableRow("Toplam Yedekleme", total.ToString());
+            builder.WriteTableRow("Başarılı", success.ToString(), EmailTemplateBuilder.GetSuccessColor());
+            builder.WriteTableRow("Başarısız", failed.ToString(), failed > 0 ? EmailTemplateBuilder.GetFailureColor() : null);
 
             if (partial > 0)
-            {
-                sb.AppendLine($@"
-      <tr>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'><b>Kısmi Başarı</b></td>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee; color:#f59e0b;'><b>{partial}</b></td>
-      </tr>");
-            }
+                builder.WriteTableRow("Kısmi Başarı", partial.ToString(), EmailTemplateBuilder.GetWarningColor());
 
-            sb.AppendLine($@"
-      <tr>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'><b>Başarı Oranı</b></td>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee; color:{rateColor};'><b>%{successRate:F0}</b></td>
-      </tr>");
+            builder.WriteTableRow("Başarı Oranı", $"%{successRate:F0}", rateColor);
 
             if (totalBytes > 0)
-            {
-                sb.AppendLine($@"
-      <tr>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'><b>Toplam Veri</b></td>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'>{totalBytes / BytesPerMb:F1} MB</td>
-      </tr>");
-            }
+                builder.WriteTableRow("Toplam Veri", $"{totalBytes / BytesPerMb:F1} MB");
 
             if (totalCompressed > 0 && totalBytes > 0)
             {
-                double ratio = (1.0 - (double)totalCompressed / totalBytes) * 100;
-                sb.AppendLine($@"
-      <tr>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'><b>Sıkıştırılmış Toplam</b></td>
-        <td style='padding:6px 10px; background:#fff; border:1px solid #eee;'>{totalCompressed / BytesPerMb:F1} MB (%{ratio:F0} kazanç)</td>
-      </tr>");
+                double compressionRatio = (1.0 - (double)totalCompressed / totalBytes) * 100;
+                builder.WriteTableRow("Sıkıştırılmış Toplam",
+                    $"{totalCompressed / BytesPerMb:F1} MB (%{compressionRatio:F0} kazanç)");
             }
 
-            sb.AppendLine("    </table>");
+            // ── Ek İstatistikler ──
+            var successResults = results.Where(r => r.Status == BackupResultStatus.Success).ToList();
 
-            // Detay tablosu (en fazla 50 kayıt)
+            if (successResults.Count > 0)
+            {
+                var withDuration = successResults.Where(r => r.Duration.HasValue).ToList();
+                if (withDuration.Count > 0)
+                {
+                    double avgSeconds = withDuration.Average(r => r.Duration.Value.TotalSeconds);
+                    builder.WriteTableRow("Ortalama Süre", TimeSpan.FromSeconds(avgSeconds).ToString(@"mm\:ss"));
+                }
+
+                var largestDb = successResults.OrderByDescending(r => r.FileSizeBytes).First();
+                if (largestDb.FileSizeBytes > 0)
+                {
+                    builder.WriteTableRow("En Büyük Yedek",
+                        $"{EmailTemplateBuilder.Encode(largestDb.DatabaseName ?? "-")} ({largestDb.FileSizeBytes / BytesPerMb:F1} MB)");
+                }
+            }
+
+            builder.EndTable();
+
+            // ── Veritabanı Bazlı Özet ──
+            var dbGroups = results.GroupBy(r => r.DatabaseName ?? "-").OrderBy(g => g.Key).ToList();
+            if (dbGroups.Count > 1)
+            {
+                builder.WriteSectionTitle("Veritabanı Özeti");
+                builder.BeginDetailTable("Veritabanı", "Toplam", "Başarılı", "Başarısız", "Ort. Süre", "Toplam Boyut");
+
+                int dbRowIdx = 0;
+                foreach (var grp in dbGroups)
+                {
+                    int grpTotal = grp.Count();
+                    int grpSuccess = grp.Count(r => r.Status == BackupResultStatus.Success);
+                    int grpFailed = grp.Count(r => r.Status == BackupResultStatus.Failed);
+                    var grpWithDuration = grp.Where(r => r.Duration.HasValue).ToList();
+                    string grpAvgDuration = grpWithDuration.Count > 0
+                        ? TimeSpan.FromSeconds(grpWithDuration.Average(r => r.Duration.Value.TotalSeconds)).ToString(@"mm\:ss")
+                        : "-";
+                    long grpBytes = grp.Sum(r => r.FileSizeBytes);
+                    string grpSize = grpBytes > 0 ? $"{grpBytes / BytesPerMb:F1} MB" : "-";
+
+                    string failColor = grpFailed > 0 ? EmailTemplateBuilder.GetFailureColor() : null;
+                    builder.WriteDetailRow(dbRowIdx++,
+                        (EmailTemplateBuilder.Encode(grp.Key), null),
+                        (grpTotal.ToString(), null),
+                        (grpSuccess.ToString(), EmailTemplateBuilder.GetSuccessColor()),
+                        (grpFailed.ToString(), failColor),
+                        (grpAvgDuration, null),
+                        (grpSize, null));
+                }
+
+                builder.EndDetailTable();
+            }
+
+            // ── Detay Tablosu (en fazla 50 kayıt) ──
             if (results.Count > 0)
             {
-                sb.AppendLine(@"
-    <h3 style='margin:20px 0 10px; font-size:15px;'>Yedekleme Detayları</h3>
-    <table style='border-collapse:collapse; width:100%; font-size:12px;'>
-      <thead>
-        <tr style='background:#1a2e1a; color:#fff;'>
-          <th style='padding:6px 8px; text-align:left;'>Tarih</th>
-          <th style='padding:6px 8px; text-align:left;'>Veritabanı</th>
-          <th style='padding:6px 8px; text-align:left;'>Tür</th>
-          <th style='padding:6px 8px; text-align:left;'>Durum</th>
-          <th style='padding:6px 8px; text-align:right;'>Boyut</th>
-          <th style='padding:6px 8px; text-align:right;'>Süre</th>
-        </tr>
-      </thead>
-      <tbody>");
+                builder.WriteSectionTitle("Yedekleme Detayları");
+                builder.BeginDetailTable("Tarih", "Veritabanı", "Tür", "Durum", "Boyut", "Süre");
 
                 int rowIndex = 0;
                 foreach (var r in results.OrderByDescending(x => x.StartedAt).Take(50))
                 {
-                    string bg = rowIndex++ % 2 == 0 ? "#fff" : "#f5f5f5";
                     string statusColor = r.Status == BackupResultStatus.Success
-                        ? "#10b981"
-                        : r.Status == BackupResultStatus.Failed ? "#ef4444" : "#f59e0b";
+                        ? EmailTemplateBuilder.GetSuccessColor()
+                        : r.Status == BackupResultStatus.Failed
+                            ? EmailTemplateBuilder.GetFailureColor()
+                            : EmailTemplateBuilder.GetWarningColor();
                     string statusIcon = r.Status == BackupResultStatus.Success ? "✓"
                         : r.Status == BackupResultStatus.Failed ? "✗" : "⚠";
                     string sizeText = r.FileSizeBytes > 0
@@ -319,41 +331,26 @@ namespace KoruMsSqlYedek.Engine.Notification
                         ? r.Duration.Value.ToString(@"mm\:ss")
                         : "-";
 
-                    sb.AppendLine($@"
-        <tr style='background:{bg};'>
-          <td style='padding:5px 8px; border-bottom:1px solid #eee;'>{r.StartedAt:dd.MM.yy HH:mm}</td>
-          <td style='padding:5px 8px; border-bottom:1px solid #eee;'>{System.Security.SecurityElement.Escape(r.DatabaseName ?? "-")}</td>
-          <td style='padding:5px 8px; border-bottom:1px solid #eee;'>{r.BackupType}</td>
-          <td style='padding:5px 8px; border-bottom:1px solid #eee; color:{statusColor};'><b>{statusIcon}</b></td>
-          <td style='padding:5px 8px; border-bottom:1px solid #eee; text-align:right;'>{sizeText}</td>
-          <td style='padding:5px 8px; border-bottom:1px solid #eee; text-align:right;'>{durationText}</td>
-        </tr>");
+                    builder.WriteDetailRow(rowIndex++,
+                        ($"{r.StartedAt:dd.MM.yy HH:mm}", null),
+                        (EmailTemplateBuilder.Encode(r.DatabaseName ?? "-"), null),
+                        (r.BackupType.ToString(), null),
+                        ($"{statusIcon}", statusColor),
+                        (sizeText, null),
+                        (durationText, null));
                 }
 
-                sb.AppendLine(@"
-      </tbody>
-    </table>");
+                builder.EndDetailTable();
 
                 if (results.Count > 50)
-                {
-                    sb.AppendLine($@"
-    <p style='font-size:11px; color:#888; margin-top:6px;'>* Yalnızca son 50 kayıt gösterilmektedir (toplam {results.Count}).</p>");
-                }
+                    builder.WriteInfoBlock($"* Yalnızca son 50 kayıt gösterilmektedir (toplam {results.Count}).");
             }
             else
             {
-                sb.AppendLine(@"
-    <p style='color:#888; font-size:13px; margin-top:16px;'>Bu dönemde yedekleme kaydı bulunamadı.</p>");
+                builder.WriteInfoBlock("Bu dönemde yedekleme kaydı bulunamadı.");
             }
 
-            sb.AppendLine($@"
-    <p style='font-size:11px; color:#bbb; margin-top:20px; border-top:1px solid #eee; padding-top:8px;'>
-      Bu rapor Koru MsSql Yedek tarafından otomatik oluşturulmuştur. · {DateTime.Now:dd.MM.yyyy HH:mm}
-    </p>
-  </div>
-</div>");
-
-            return sb.ToString();
+            return builder.Build();
         }
     }
 }

@@ -1,0 +1,107 @@
+# ═══════════════════════════════════════════════════════════════════
+# GitHub Actions — Koru MsSql Yedek Release Workflow
+# ═══════════════════════════════════════════════════════════════════
+# Tetik: vX.Y.Z tag push (ör: git tag v0.63.0 && git push --tags)
+# Adımlar: dotnet publish → Inno Setup compile → GitHub Release + asset
+# ═══════════════════════════════════════════════════════════════════
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION_FILE: 'KoruMsSqlYedek.slnx'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+
+    # ── Checkout ──────────────────────────────────────────────────
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # ── .NET SDK ──────────────────────────────────────────────────
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    # ── Versiyon çıkar ────────────────────────────────────────────
+    - name: Extract version from tag
+      id: version
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $ver = $tag -replace '^v', ''
+        echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+        echo "Version: $ver"
+
+    # ── Restore + Build ───────────────────────────────────────────
+    - name: Restore
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+    - name: Build
+      run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore
+
+    # ── Test ──────────────────────────────────────────────────────
+    - name: Test
+      run: dotnet test ${{ env.SOLUTION_FILE }} -c Release --no-build --logger "trx;LogFileName=test-results.trx"
+      continue-on-error: true
+
+    # ── Publish Win ───────────────────────────────────────────────
+    - name: Publish Win
+      run: >
+        dotnet publish KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj
+        -c Release -o publish\win --self-contained false -p:PublishSingleFile=false
+
+    # ── Publish Service ───────────────────────────────────────────
+    - name: Publish Service
+      run: >
+        dotnet publish KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj
+        -c Release -o publish\service --self-contained false -p:PublishSingleFile=false
+
+    # ── Inno Setup ────────────────────────────────────────────────
+    - name: Install Inno Setup
+      shell: pwsh
+      run: |
+        choco install innosetup -y --no-progress
+        echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+    - name: Compile Installer
+      shell: pwsh
+      run: |
+        iscc /DMyAppVersion=${{ steps.version.outputs.VERSION }} installer\setup.iss
+
+    # ── GitHub Release ────────────────────────────────────────────
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: "Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}"
+        body: |
+          ## Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}
+
+          ### Kurulum
+          1. `KoruMsSqlYedek_Setup_v${{ steps.version.outputs.VERSION }}.exe` dosyasını indirin
+          2. Yönetici olarak çalıştırın
+          3. Kurulum sihirbazını takip edin
+
+          ### Gereksinimler
+          - Windows 10/11 (x64)
+          - .NET 10 Runtime
+
+          ### Notlar
+          - Güncelleme yapıyorsanız mevcut ayarlarınız korunur
+          - Değişiklikler için [CHANGELOG.md](https://github.com/hzkucuk/KoruMsSqlYedek/blob/master/CHANGELOG.md) dosyasına bakın
+        draft: false
+        prerelease: false
+        files: |
+          installer/output/KoruMsSqlYedek_Setup_v${{ steps.version.outputs.VERSION }}.exe

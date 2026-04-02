@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KoruMsSqlYedek.Core;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
@@ -31,6 +32,7 @@ namespace KoruMsSqlYedek.Win
         private readonly IPlanManager _planManager;
         private readonly IBackupHistoryManager _historyManager;
         private readonly ISqlBackupService _sqlBackupService;
+        private readonly ICompressionService _compressionService;
         private readonly IAppSettingsManager _settingsManager;
         private readonly ServicePipeClient _pipeClient;
 
@@ -52,31 +54,13 @@ namespace KoruMsSqlYedek.Win
         private readonly HashSet<string> _runningPlanIds = new HashSet<string>();
         private string _viewingPlanId;
 
-        // Per-plan log buffer (planId → satır listesi + renk)
-        private readonly Dictionary<string, List<(string Text, Color Color)>> _planLogs = new Dictionary<string, List<(string Text, Color Color)>>();
-
         // Per-plan grid progress (planId → yüzde 0-100)
         private readonly Dictionary<string, int> _planProgress = new Dictionary<string, int>();
 
         // Per-plan cumulative progress tracking
         private readonly Dictionary<string, PlanProgressTracker> _planProgressTracker = new Dictionary<string, PlanProgressTracker>();
 
-        /// <summary>
-        /// Plan bazında kümülatif ilerleme hesaplama durumunu tutar.
-        /// Her veritabanı toplam ilerlemenin eşit bir dilimini alır;
-        /// bulut yükleme, dilimin ikinci yarısına eşlenir.
-        /// </summary>
-        private sealed class PlanProgressTracker
-        {
-            public int DbIndex;           // 1 tabanlı, şu anki veritabanı sırası
-            public int DbTotal;           // toplam veritabanı sayısı (min 1)
-            public int SqlDbCount;        // Gerçek SQL veritabanı sayısı (0 = dosya-only plan)
-            public int MaxPercent;        // monoton artış garantisi — asla geriye gitmez
-            public bool HasVssUpload;     // "Express VSS" adımı algılandı — bu DB'de VSS dosyası var
-            public bool IsVssPhase;       // "VSS Bulut Yükleme" adımına girildi — şu an VSS upload aktif
-            public bool HasFileBackup;    // Plan dosya yedekleme fazı içeriyor
-            public bool IsFileBackupPhase; // Dosya yedekleme fazına girildi
-        }
+        // PlanProgressTracker artık standalone sınıf: PlanProgressTracker.cs
 
         // Scheduler'dan gelen sonraki çalışma zamanları (planId → lokal saat metni)
         private readonly Dictionary<string, string> _nextFireTimes = new Dictionary<string, string>();
@@ -94,18 +78,21 @@ namespace KoruMsSqlYedek.Win
             IPlanManager planManager,
             IBackupHistoryManager historyManager,
             ISqlBackupService sqlBackupService,
+            ICompressionService compressionService,
             IAppSettingsManager settingsManager,
             ServicePipeClient pipeClient)
         {
             if (planManager == null) throw new ArgumentNullException(nameof(planManager));
             if (historyManager == null) throw new ArgumentNullException(nameof(historyManager));
             if (sqlBackupService == null) throw new ArgumentNullException(nameof(sqlBackupService));
+            if (compressionService == null) throw new ArgumentNullException(nameof(compressionService));
             if (settingsManager == null) throw new ArgumentNullException(nameof(settingsManager));
             if (pipeClient == null) throw new ArgumentNullException(nameof(pipeClient));
 
             _planManager = planManager;
             _historyManager = historyManager;
             _sqlBackupService = sqlBackupService;
+            _compressionService = compressionService;
             _settingsManager = settingsManager;
             _pipeClient = pipeClient;
 
@@ -980,7 +967,7 @@ namespace KoruMsSqlYedek.Win
             BackupPlan plan = GetSelectedPlanSilent();
             if (plan == null) return;
 
-            using RestoreDialog dlg = new RestoreDialog(plan, _historyManager, _sqlBackupService);
+            using RestoreDialog dlg = new RestoreDialog(plan, _historyManager, _sqlBackupService, _compressionService);
             dlg.ShowDialog(this);
         }
 
@@ -1204,7 +1191,8 @@ namespace KoruMsSqlYedek.Win
                             DbTotal = e.TotalCount > 0 ? e.TotalCount : 1,
                             SqlDbCount = e.TotalCount,
                             MaxPercent = 0,
-                            HasFileBackup = e.HasFileBackup
+                            HasFileBackup = e.HasFileBackup,
+                            HasCloudTargets = e.HasCloudTargets
                         };
                     }
                     _viewingPlanId = e.PlanId;
@@ -1219,24 +1207,13 @@ namespace KoruMsSqlYedek.Win
                     {
                         string dbPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
 
-                        // Tracker güncelle
                         if (!_planProgressTracker.TryGetValue(dbPlanId, out PlanProgressTracker dbTracker))
                         {
                             dbTracker = new PlanProgressTracker { MaxPercent = 0 };
                             _planProgressTracker[dbPlanId] = dbTracker;
                         }
-                        dbTracker.DbIndex = e.CurrentIndex;  // 1 tabanlı
-                        dbTracker.DbTotal = e.TotalCount;
-                        dbTracker.HasVssUpload = false;
-                        dbTracker.IsVssPhase = false;
 
-                        // Kümülatif yüzde: önceki veritabanları tamamlandı
-                        // HasFileBackup varsa SQL fazı %80'e kadar; yoksa %100'e kadar
-                        int maxSqlRange = dbTracker.HasFileBackup ? 80 : 100;
-                        int pct = (int)(((e.CurrentIndex - 1.0) / e.TotalCount) * maxSqlRange);
-                        pct = Math.Max(pct, dbTracker.MaxPercent);
-                        pct = Math.Clamp(pct, 0, 100);
-                        dbTracker.MaxPercent = pct;
+                        int pct = dbTracker.CalculateDatabaseProgress(e.CurrentIndex, e.TotalCount);
 
                         if (dbPlanId == _viewingPlanId)
                         {
@@ -1252,42 +1229,35 @@ namespace KoruMsSqlYedek.Win
                         string stepPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
                         if (_planProgressTracker.TryGetValue(stepPlanId, out PlanProgressTracker stepTracker))
                         {
+                            int stepPct = -1;
+
                             if (e.StepName == "Express VSS")
                                 stepTracker.HasVssUpload = true;
                             else if (e.StepName == "VSS Bulut Yükleme")
                                 stepTracker.IsVssPhase = true;
                             else if (e.StepName == "Dosya Yedekleme" && !stepTracker.IsFileBackupPhase)
-                            {
-                                // Dosya yedekleme fazına geçiş
-                                stepTracker.IsFileBackupPhase = true;
-                                bool isFileOnly = stepTracker.SqlDbCount == 0;
-                                int fileBase = isFileOnly ? 0 : 80;
-                                int pct = Math.Max(fileBase, stepTracker.MaxPercent);
-                                pct = Math.Clamp(pct, 0, 100);
-                                stepTracker.MaxPercent = pct;
-                                if (stepPlanId == _viewingPlanId)
-                                {
-                                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
-                                    _progressBar.Value = pct;
-                                }
-                                UpdatePlanRowProgress(stepPlanId, pct);
-                            }
+                                stepPct = stepTracker.CalculateFileBackupPhaseStart();
                             else if (e.StepName == "Dosya Sıkıştırma" && stepTracker.IsFileBackupPhase)
+                                stepPct = stepTracker.CalculateFileCompressionProgress();
+
+                            if (stepPct >= 0 && stepPlanId == _viewingPlanId)
                             {
-                                // Dosya kopyalama + sıkıştırma tamamlandı — dosya fazının %25'i
-                                bool isFileOnly = stepTracker.SqlDbCount == 0;
-                                int fileBase = isFileOnly ? 0 : 80;
-                                int fileCopyWeight = isFileOnly ? 25 : 5;
-                                int pct = fileBase + fileCopyWeight;
-                                pct = Math.Max(pct, stepTracker.MaxPercent);
-                                pct = Math.Clamp(pct, 0, 100);
-                                stepTracker.MaxPercent = pct;
+                                _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                                _progressBar.Value = stepPct;
+                            }
+                            if (stepPct >= 0)
+                                UpdatePlanRowProgress(stepPlanId, stepPct);
+
+                            // Local-mode SQL adım bazlı ilerleme
+                            int localPct = stepTracker.CalculateLocalStepProgress(e.StepName);
+                            if (localPct >= 0)
+                            {
                                 if (stepPlanId == _viewingPlanId)
                                 {
                                     _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
-                                    _progressBar.Value = pct;
+                                    _progressBar.Value = localPct;
                                 }
-                                UpdatePlanRowProgress(stepPlanId, pct);
+                                UpdatePlanRowProgress(stepPlanId, localPct);
                             }
                         }
                     }
@@ -1301,59 +1271,12 @@ namespace KoruMsSqlYedek.Win
                         if (_planProgressTracker.TryGetValue(uploadPlanId, out PlanProgressTracker upTracker)
                             && upTracker.DbTotal > 0)
                         {
-                            // Çoklu hedef: hedef sırasını da ağırlıkla dahil et
-                            double overallCloudPct = e.ProgressPercent;
-                            if (e.CloudTargetTotal > 1)
-                                overallCloudPct = ((e.CloudTargetIndex - 1) * 100.0 + e.ProgressPercent) / e.CloudTargetTotal;
-
-                            if (upTracker.IsFileBackupPhase)
-                            {
-                                // Dosya yedekleme bulut yükleme fazı
-                                bool isFileOnly = upTracker.SqlDbCount == 0;
-                                int fileBase = isFileOnly ? 0 : 80;
-                                int fileCopyWeight = isFileOnly ? 25 : 5;
-                                int fileCloudWeight = isFileOnly ? 75 : 15;
-                                cumPct = fileBase + fileCopyWeight + (int)(overallCloudPct / 100.0 * fileCloudWeight);
-                            }
-                            else
-                            {
-                                // SQL veritabanı bulut yükleme fazı
-                                double totalSqlRange = upTracker.HasFileBackup ? 80.0 : 100.0;
-                                double slicePerDb = totalSqlRange / upTracker.DbTotal;
-                                double dbBase = (upTracker.DbIndex - 1) * slicePerDb;
-
-                                if (upTracker.HasVssUpload)
-                                {
-                                    // VSS dosyası var: SQL %20 + Ana bulut %50 + VSS bulut %30
-                                    double sqlPortion = slicePerDb * 0.20;
-                                    double mainCloudPortion = slicePerDb * 0.50;
-                                    double vssCloudPortion = slicePerDb * 0.30;
-
-                                    if (upTracker.IsVssPhase)
-                                        cumPct = (int)(dbBase + sqlPortion + mainCloudPortion + (overallCloudPct / 100.0) * vssCloudPortion);
-                                    else
-                                        cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * mainCloudPortion);
-                                }
-                                else
-                                {
-                                    // VSS yok: SQL %30 + Bulut %70
-                                    double sqlPortion = slicePerDb * 0.30;
-                                    double cloudPortion = slicePerDb * 0.70;
-                                    cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * cloudPortion);
-                                }
-                            }
+                            cumPct = upTracker.CalculateCloudUploadProgress(
+                                e.ProgressPercent, e.CloudTargetIndex, e.CloudTargetTotal);
                         }
                         else
                         {
                             cumPct = e.ProgressPercent;
-                        }
-
-                        // Monoton artış garantisi
-                        if (upTracker is not null)
-                        {
-                            cumPct = Math.Max(cumPct, upTracker.MaxPercent);
-                            cumPct = Math.Clamp(cumPct, 0, 100);
-                            upTracker.MaxPercent = cumPct;
                         }
 
                         if (uploadPlanId == _viewingPlanId)
@@ -1393,6 +1316,10 @@ namespace KoruMsSqlYedek.Win
                     UpdatePlanRowProgress(e.PlanId, 0);
                     UpdatePlanRowStatus(e.PlanId, e.ActivityType);
                     break;
+
+                default:
+                    Log.Warning("Unhandled BackupActivityType: {ActivityType} — OnBackupActivityChanged güncellenmelidir.", e.ActivityType);
+                    break;
             }
 
             UpdateBackupButtonStates();
@@ -1401,34 +1328,18 @@ namespace KoruMsSqlYedek.Win
             AppendBackupLog(e.PlanId, BuildActivityLogLine(e), logColor, isProgress);
         }
 
+        /// <summary>
+        /// Plan grid satırının durum hücresini günceller (ikon + renk).
+        /// ⚠️ Yeni terminal BackupActivityType eklendiğinde bu metot güncellenmelidir.
+        /// </summary>
         private void UpdatePlanRowStatus(string planId, BackupActivityType activityType)
         {
+            (string icon, Color color) = GetStatusDisplay(activityType);
+
             foreach (DataGridViewRow row in _dgvPlans.Rows)
             {
                 var plan = row.Tag as BackupPlan;
                 if (plan == null || plan.PlanId != planId) continue;
-
-                string icon;
-                Color color;
-                switch (activityType)
-                {
-                    case BackupActivityType.Completed:
-                        icon = "✓ " + DateTime.Now.ToString("HH:mm");
-                        color = Theme.ModernTheme.StatusSuccess;
-                        break;
-                    case BackupActivityType.Failed:
-                        icon = "✕ " + DateTime.Now.ToString("HH:mm");
-                        color = Theme.ModernTheme.StatusError;
-                        break;
-                    case BackupActivityType.Cancelled:
-                        icon = "■ " + DateTime.Now.ToString("HH:mm");
-                        color = Color.Gray;
-                        break;
-                    default:
-                        icon = "⟳ " + DateTime.Now.ToString("HH:mm");
-                        color = Theme.ModernTheme.AccentPrimary;
-                        break;
-                }
 
                 if (row.Cells[_colStatus.Index] != null)
                 {
@@ -1438,6 +1349,17 @@ namespace KoruMsSqlYedek.Win
                 break;
             }
         }
+
+        /// <summary>
+        /// BackupActivityType → grid durum ikonu ve rengi.
+        /// </summary>
+        private static (string Icon, Color Color) GetStatusDisplay(BackupActivityType activityType) => activityType switch
+        {
+            BackupActivityType.Completed => ("✓ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.StatusSuccess),
+            BackupActivityType.Failed    => ("✕ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.StatusError),
+            BackupActivityType.Cancelled => ("■ " + DateTime.Now.ToString("HH:mm"), Color.Gray),
+            _                            => ("⟳ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.AccentPrimary),
+        };
 
         private void UpdatePlanRowProgress(string planId, int percent)
         {
@@ -1453,146 +1375,74 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
-        // İlerleme satırı tespiti için önek sabiti
-        private const string ProgressLineMarker = "Yükleniyor ";
-
-        private void AppendBackupLog(string planId, string line, Color color, bool isProgressLine = false)
+        /// <summary>
+        /// BackupActivityEventArgs → kullanıcıya gösterilecek log satır metni.
+        /// ⚠️ Yeni BackupActivityType eklendiğinde bu metot + GetLogColor + UpdatePlanRowStatus
+        ///    + OnBackupActivityChanged switch bloğu birlikte güncellenmelidir.
+        /// </summary>
+        private string BuildActivityLogLine(BackupActivityEventArgs e) => e.ActivityType switch
         {
-            if (string.IsNullOrEmpty(line)) return;
+            BackupActivityType.Started
+                => string.Format("[{0}] Yedekleme başladı.", e.PlanName ?? e.PlanId),
 
-            if (InvokeRequired)
-            {
-                Invoke(new Action(() => AppendBackupLog(planId, line, color, isProgressLine)));
-                return;
-            }
+            BackupActivityType.DatabaseProgress
+                => string.Format("{0} ({1}/{2}) işleniyor.", e.DatabaseName, e.CurrentIndex, e.TotalCount),
 
-            // PlanId yoksa çalışan plan'ın id'sini kullan (fallback)
-            string effectivePlanId = !string.IsNullOrEmpty(planId) ? planId : _viewingPlanId;
+            BackupActivityType.StepChanged
+                => !string.IsNullOrEmpty(e.Message) ? e.Message : string.Format("Adım: {0}", e.StepName),
 
-            string formatted = "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + line;
+            BackupActivityType.CloudUploadStarted
+                => string.Format("Bulut yükleme başladı: {0}", e.CloudTargetName),
 
-            // Plan'a ait buffer'a ekle (ilerleme satırı ise son ilerleme satırını güncelle)
-            if (!string.IsNullOrEmpty(effectivePlanId))
-            {
-                if (!_planLogs.ContainsKey(effectivePlanId))
-                    _planLogs[effectivePlanId] = new List<(string, Color)>();
+            BackupActivityType.CloudUploadProgress
+                => BuildCloudUploadLogLine(e),
 
-                var logList = _planLogs[effectivePlanId];
-                if (isProgressLine && logList.Count > 0 && logList[logList.Count - 1].Text.Contains(ProgressLineMarker))
-                    logList[logList.Count - 1] = (formatted, color);
-                else
-                    logList.Add((formatted, color));
-            }
+            BackupActivityType.CloudUploadCompleted
+                => string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕"),
 
-            // Sadece seçili plan ile eşleşiyorsa UI'yi güncelle
-            var selected = GetSelectedPlanSilent();
-            if (selected != null && selected.PlanId == effectivePlanId)
-            {
-                if (isProgressLine)
-                    ReplaceLastProgressLine(formatted, color);
-                else
-                    AppendColoredLine(formatted, color);
-            }
-        }
+            BackupActivityType.Completed
+                => string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId),
+
+            BackupActivityType.Failed
+                => string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message),
+
+            BackupActivityType.Cancelled
+                => string.Format("[{0}] Yedekleme iptal edildi.", e.PlanName ?? e.PlanId),
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(e.ActivityType), e.ActivityType,
+                $"Unhandled BackupActivityType: {e.ActivityType}. Tüm 5 sorumluluk noktasını güncelleyin.")
+        };
 
         /// <summary>
-        /// RichTextBox'a renkli satır ekler.
+        /// CloudUploadProgress için detaylı log satırı oluşturur (hız/ETA dahil).
         /// </summary>
-        private void AppendColoredLine(string text, Color color)
+        private string BuildCloudUploadLogLine(BackupActivityEventArgs e)
         {
-            _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
-            _txtBackupLog.SelectionLength = 0;
-            _txtBackupLog.SelectionColor = color;
-            _txtBackupLog.AppendText(text + Environment.NewLine);
-            _txtBackupLog.SelectionColor = Theme.ModernTheme.LogDefault;
-            _txtBackupLog.ScrollToCaret();
-        }
-
-        /// <summary>
-        /// RichTextBox'taki son ilerleme satırını yenisiyle değiştirir (renkli).
-        /// RichTextBox dahili olarak \n kullanır; Select() ile Text indeksi uyumsuz olduğundan
-        /// Lines[] + GetFirstCharIndexFromLine() ile doğru pozisyon hesaplanır.
-        /// </summary>
-        private void ReplaceLastProgressLine(string newLine, Color color)
-        {
-            int lineCount = _txtBackupLog.Lines.Length;
-            if (lineCount == 0)
+            if (e.ProgressPercent >= 100) return string.Empty;
+            if (e.BytesTotal > 0)
             {
-                AppendColoredLine(newLine, color);
-                return;
+                long bytesRemaining = e.BytesTotal - e.BytesSent;
+                string etaStr = e.SpeedBytesPerSecond > 0
+                    ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
+                    : "";
+                string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
+                return string.Format("Yükleniyor {0}: %{1} | Gönderilen: {2}/{3} | Kalan: {4} | Hız: {5}/s{6}",
+                    e.CloudTargetName,
+                    e.ProgressPercent,
+                    FormatFileSize(e.BytesSent),
+                    FormatFileSize(e.BytesTotal),
+                    FormatFileSize(bytesRemaining),
+                    FormatFileSize(e.SpeedBytesPerSecond),
+                    etaPart);
             }
-
-            // Son boş olmayan satırı bul (RichTextBox.Lines sona boş eleman ekleyebilir)
-            int lastLineIdx = lineCount - 1;
-            if (lastLineIdx > 0 && string.IsNullOrEmpty(_txtBackupLog.Lines[lastLineIdx]))
-                lastLineIdx--;
-
-            string lastLine = _txtBackupLog.Lines[lastLineIdx];
-
-            if (lastLine.Contains(ProgressLineMarker))
-            {
-                int charIdx = _txtBackupLog.GetFirstCharIndexFromLine(lastLineIdx);
-                _txtBackupLog.Select(charIdx, _txtBackupLog.TextLength - charIdx);
-                _txtBackupLog.SelectionColor = color;
-                _txtBackupLog.SelectedText = newLine + Environment.NewLine;
-                _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
-                _txtBackupLog.ScrollToCaret();
-                return;
-            }
-
-            // Son satır ilerleme satırı değilse normal append
-            AppendColoredLine(newLine, color);
-        }
-
-        private string BuildActivityLogLine(BackupActivityEventArgs e)
-        {
-            switch (e.ActivityType)
-            {
-                case BackupActivityType.Started:
-                    return string.Format("[{0}] Yedekleme başladı.", e.PlanName ?? e.PlanId);
-                case BackupActivityType.DatabaseProgress:
-                    return string.Format("{0} ({1}/{2}) işleniyor.", e.DatabaseName, e.CurrentIndex, e.TotalCount);
-                case BackupActivityType.StepChanged:
-                    if (!string.IsNullOrEmpty(e.Message))
-                        return e.Message;
-                    return string.Format("Adım: {0}", e.StepName);
-                case BackupActivityType.CloudUploadStarted:
-                    return string.Format("Bulut yükleme başladı: {0}", e.CloudTargetName);
-                case BackupActivityType.CloudUploadProgress:
-                    if (e.ProgressPercent >= 100) return string.Empty;
-                    if (e.BytesTotal > 0)
-                    {
-                        long bytesRemaining = e.BytesTotal - e.BytesSent;
-                        string etaStr = e.SpeedBytesPerSecond > 0
-                            ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
-                            : "";
-                        string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
-                        return string.Format("Yükleniyor {0}: %{1} | Gönderilen: {2}/{3} | Kalan: {4} | Hız: {5}/s{6}",
-                            e.CloudTargetName,
-                            e.ProgressPercent,
-                            FormatFileSize(e.BytesSent),
-                            FormatFileSize(e.BytesTotal),
-                            FormatFileSize(bytesRemaining),
-                            FormatFileSize(e.SpeedBytesPerSecond),
-                            etaPart);
-                    }
-                    return string.Format("Yükleniyor {0}: %{1}", e.CloudTargetName, e.ProgressPercent);
-                case BackupActivityType.CloudUploadCompleted:
-                    return string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕");
-                case BackupActivityType.Completed:
-                    return string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId);
-                case BackupActivityType.Failed:
-                    return string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message);
-                case BackupActivityType.Cancelled:
-                    return string.Format("[{0}] Yedekleme iptal edildi.", e.PlanName ?? e.PlanId);
-                default:
-                    return e.Message ?? string.Empty;
-            }
+            return string.Format("Yükleniyor {0}: %{1}", e.CloudTargetName, e.ProgressPercent);
         }
 
         /// <summary>
         /// BackupActivityType → "Koru" temalı konsol rengi.
         /// Yeşil = güvenli/başarılı, Mavi = bilgi, Kırmızı = hata, Turkuaz = ilerleme.
+        /// ⚠️ Yeni BackupActivityType eklendiğinde bu metot güncellenmelidir.
         /// </summary>
         private static Color GetLogColor(BackupActivityType activityType) => activityType switch
         {
@@ -1605,7 +1455,9 @@ namespace KoruMsSqlYedek.Win
             BackupActivityType.CloudUploadStarted => Theme.ModernTheme.LogCloud,
             BackupActivityType.CloudUploadProgress => Theme.ModernTheme.LogProgress,
             BackupActivityType.CloudUploadCompleted => Theme.ModernTheme.LogCloud,
-            _ => Theme.ModernTheme.LogDefault,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(activityType), activityType,
+                $"Unhandled BackupActivityType: {activityType}. GetLogColor güncellenmelidir.")
         };
 
         #endregion
