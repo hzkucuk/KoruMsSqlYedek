@@ -57,11 +57,32 @@ namespace KoruMsSqlYedek.Win.Forms
             if (string.IsNullOrEmpty(_settings.SecurityQuestion) ||
                 string.IsNullOrEmpty(_settings.SecurityAnswerHash))
             {
-                ModernMessageBox.Show(
-                    "Güvenlik sorusu tanımlanmamış. Şifre sıfırlanamaz.\n" +
-                    "Yardım için uygulama yapılandırma dosyasını manuel olarak düzenleyebilirsiniz.",
+                string configPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "KoruMsSqlYedek", "Config", "appsettings.json");
+
+                var result = ModernMessageBox.Show(
+                    "Güvenlik sorusu tanımlanmamış. Şifre sıfırlanamaz.\n\n" +
+                    "Son çare olarak yapılandırma dosyasından şifre alanlarını\n" +
+                    "manuel olarak silebilirsiniz:\n\n" +
+                    configPath + "\n\n" +
+                    "Dosya yolu panoya kopyalansın mı?",
                     "Kurtarma Yok",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                if (result == DialogResult.Yes)
+                {
+                    Clipboard.SetText(configPath);
+                    ModernMessageBox.Show(
+                        "Dosya yolu panoya kopyalandı.\n\n" +
+                        "Dosyayı bir metin editöründe açıp şu satırları silin:\n" +
+                        "  • \"passwordHash\": \"...\"\n" +
+                        "  • \"securityQuestion\": \"...\"\n" +
+                        "  • \"securityAnswerHash\": \"...\"\n\n" +
+                        "Ardından uygulamayı yeniden başlatın.",
+                        "Talimatlar",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
                 return;
             }
 
