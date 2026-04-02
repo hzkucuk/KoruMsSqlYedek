@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.64.1 — Provider Listesi Sadeleştirme
+- Google Drive (Bireysel/Workspace) → tek "Google Drive ✓" satırı
+- OneDrive (Bireysel/Kurumsal) → tek "OneDrive" satırı
+- ProviderMap mapping sistemi (enum uyumluluğu korunur)
+- Test edilen provider'lara ✓ işareti
+
 ### v0.64.0 — Google Drive OAuth Sadeleştirme (Gömülü Credential)
 - Gömülü OAuth Credential: Client ID/Secret Base64-obfuscated olarak uygulamaya gömüldü
 - Parametresiz AuthorizeInteractiveAsync: tek tıkla Google hesabı bağlama
