@@ -16,6 +16,18 @@ namespace KoruMsSqlYedek.Win.Forms
         private readonly CloudTargetConfig _target;
         private readonly bool _isNew;
 
+        /// <summary>Combo box index → CloudProviderType eşlemesi.</summary>
+        private static readonly CloudProviderType[] ProviderMap =
+        {
+            CloudProviderType.GoogleDrivePersonal,  // 0: Google Drive ✓
+            CloudProviderType.OneDrivePersonal,      // 1: OneDrive
+            CloudProviderType.Ftp,                   // 2: FTP
+            CloudProviderType.Ftps,                  // 3: FTPS
+            CloudProviderType.Sftp,                  // 4: SFTP
+            CloudProviderType.LocalPath,             // 5: Yerel Yol
+            CloudProviderType.UncPath,               // 6: UNC Ağ Paylaşımı
+        };
+
         /// <summary>Düzenlenen/oluşturulan bulut hedef yapılandırması.</summary>
         public CloudTargetConfig Target => _target;
 
@@ -72,15 +84,38 @@ namespace KoruMsSqlYedek.Win.Forms
         private void PopulateProviderTypes()
         {
             _cmbProviderType.Items.Clear();
-            _cmbProviderType.Items.Add(Res.Get("CloudTarget_GooglePersonal"));
-            _cmbProviderType.Items.Add(Res.Get("CloudTarget_GoogleWorkspace"));
-            _cmbProviderType.Items.Add(Res.Get("CloudTarget_OneDrivePersonal"));
-            _cmbProviderType.Items.Add(Res.Get("CloudTarget_OneDriveBusiness"));
-            _cmbProviderType.Items.Add(Res.Get("CloudTarget_Ftp"));
-            _cmbProviderType.Items.Add(Res.Get("CloudTarget_Ftps"));
-            _cmbProviderType.Items.Add(Res.Get("CloudTarget_Sftp"));
+            _cmbProviderType.Items.Add("Google Drive  \u2713");
+            _cmbProviderType.Items.Add("OneDrive");
+            _cmbProviderType.Items.Add("FTP");
+            _cmbProviderType.Items.Add("FTPS");
+            _cmbProviderType.Items.Add("SFTP");
             _cmbProviderType.Items.Add(Res.Get("CloudTarget_LocalPath"));
             _cmbProviderType.Items.Add(Res.Get("CloudTarget_UncPath"));
+        }
+
+        /// <summary>Combo box seçili index'inden CloudProviderType döner.</summary>
+        private CloudProviderType GetSelectedProviderType()
+        {
+            int idx = _cmbProviderType.SelectedIndex;
+            if (idx < 0 || idx >= ProviderMap.Length)
+                return CloudProviderType.GoogleDrivePersonal;
+            return ProviderMap[idx];
+        }
+
+        /// <summary>CloudProviderType'a karşılık gelen combo box index'ini döner.</summary>
+        private int GetComboIndexForType(CloudProviderType type)
+        {
+            // Workspace/Business alt türlerini birleşik eşlemeye yönlendir
+            if (type == CloudProviderType.GoogleDriveWorkspace)
+                type = CloudProviderType.GoogleDrivePersonal;
+            if (type == CloudProviderType.OneDriveBusiness)
+                type = CloudProviderType.OneDrivePersonal;
+
+            for (int i = 0; i < ProviderMap.Length; i++)
+            {
+                if (ProviderMap[i] == type) return i;
+            }
+            return 0;
         }
 
         #endregion
@@ -90,7 +125,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void LoadTargetToUi()
         {
             _txtDisplayName.Text = _target.DisplayName ?? "";
-            _cmbProviderType.SelectedIndex = (int)_target.Type;
+            _cmbProviderType.SelectedIndex = GetComboIndexForType(_target.Type);
             _chkEnabled.Checked = _target.IsEnabled;
 
             // FTP/SFTP alanları
@@ -131,7 +166,7 @@ namespace KoruMsSqlYedek.Win.Forms
             }
 
             _target.DisplayName = _txtDisplayName.Text.Trim();
-            _target.Type = (CloudProviderType)_cmbProviderType.SelectedIndex;
+            _target.Type = GetSelectedProviderType();
             _target.IsEnabled = _chkEnabled.Checked;
             _target.RemoteFolderPath = _txtRemotePath.Text.Trim();
             _target.BandwidthLimitMbps = (int)_nudBandwidth.Value == 0 ? (int?)null : (int)_nudBandwidth.Value;
@@ -213,7 +248,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             try
             {
-                var providerType = (CloudProviderType)_cmbProviderType.SelectedIndex;
+                var providerType = GetSelectedProviderType();
                 if (providerType != CloudProviderType.GoogleDrivePersonal &&
                     providerType != CloudProviderType.GoogleDriveWorkspace)
                 {
@@ -265,7 +300,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void UpdateFieldVisibility()
         {
             if (_cmbProviderType.SelectedIndex < 0) return;
-            var type = (CloudProviderType)_cmbProviderType.SelectedIndex;
+            var type = GetSelectedProviderType();
             UpdateRemotePathTooltip(type);
 
             bool isFtp = IsFtpType(type);

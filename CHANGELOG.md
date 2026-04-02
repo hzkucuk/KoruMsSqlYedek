@@ -1,4 +1,18 @@
-﻿## [0.64.0] - 2025-07-25 — Google Drive OAuth Sadeleştirme (Gömülü Credential)
+﻿## [0.64.1] - 2026-04-02 — Provider Listesi Sadeleştirme
+
+### İyileştirme
+- **Provider listesi sadeleştirildi:** Google Drive (Bireysel/Workspace) → tek "Google Drive" satırı, OneDrive (Bireysel/Kurumsal) → tek "OneDrive" satırı.
+- **✓ işareti:** Test edilmiş/çalışan provider'ların yanına ✓ eklendi (Google Drive ✓).
+- **Mapping sistemi:** Combo box index → CloudProviderType enum eşlemesi (ProviderMap array + GetSelectedProviderType/GetComboIndexForType helper'ları). Mevcut config'lerdeki Workspace/Business türleri otomatik birleşik satıra yönlendirilir.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs` — ProviderMap, PopulateProviderTypes, mapping helpers
+- `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs` — versiyon
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — versiyon
+
+---
+
+## [0.64.0] - 2025-07-25 — Google Drive OAuth Sadeleştirme (Gömülü Credential)
 
 ### Yeni Özellik
 - **Gömülü OAuth Credential:** Google Drive OAuth2 Client ID/Secret uygulamaya Base64-obfuscated olarak gömüldü. Kullanıcıların Google Cloud Console'dan credential almasına gerek kalmadı.
