@@ -114,32 +114,38 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         // Dosya yedekleme tipi
                         if (backupType == "FileBackup")
                         {
-                            await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
+                            bool fileOk = await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
                             cleanupPaths.Clear();
                             BackupActivityHub.Raise(new BackupActivityEventArgs
                             {
                                 PlanId = plan.PlanId,
                                 PlanName = plan.PlanName,
-                                ActivityType = BackupActivityType.Completed
+                                ActivityType = BackupActivityType.Completed,
+                                IsSuccess = fileOk,
+                                Message = fileOk ? null : "Bulut yükleme başarısız"
                             });
                             return;
                         }
 
                         // SQL yedekleme tipi
-                        await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token, cleanupPaths);
+                        bool sqlCloudOk = await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token, cleanupPaths);
 
                         // Dosya yedekleme — ayrı zamanlama yoksa veya manuel tetikleme ise SQL yedek ile birlikte çalıştır
+                        bool fileCloudOk = true;
                         if (willRunFileBackup && backupType != "FileBackup")
                         {
-                            await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
+                            fileCloudOk = await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
                         }
 
+                        bool allCloudOk = sqlCloudOk && fileCloudOk;
                         cleanupPaths.Clear();
                         BackupActivityHub.Raise(new BackupActivityEventArgs
                         {
                             PlanId = plan.PlanId,
                             PlanName = plan.PlanName,
-                            ActivityType = BackupActivityType.Completed
+                            ActivityType = BackupActivityType.Completed,
+                            IsSuccess = allCloudOk,
+                            Message = allCloudOk ? null : "Bulut yükleme başarısız"
                         });
                     }
                     finally
@@ -182,10 +188,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             }
         }
 
-        private async Task ExecuteSqlBackupAsync(
+        private async Task<bool> ExecuteSqlBackupAsync(
             BackupPlan plan, string backupType, string correlationId, CancellationToken ct,
             List<string> cleanupPaths)
         {
+            bool cloudAllOk = true;
             SqlBackupType sqlType;
             switch (backupType)
             {
@@ -200,7 +207,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     break;
                 default:
                     Log.Error("Bilinmeyen yedek türü: {BackupType}", backupType);
-                    return;
+                    return true;
             }
 
             for (int i = 0; i < plan.Databases.Count; i++)
@@ -281,7 +288,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     Message = $"Yedekleme başarılı: {dbName} ({effectiveType}) ␦ {Path.GetFileName(result.BackupFilePath)} [{Fmt(result.FileSizeBytes)}]"
                 });
 
-                // 1b. Express VSS bilgisi
+                // 1b. VSS bilgisi
                 if (result.VssFileCopySizeBytes > 0 && !string.IsNullOrEmpty(result.VssFileCopyPath))
                 {
                     BackupActivityHub.Raise(new BackupActivityEventArgs
@@ -290,8 +297,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         PlanName = plan.PlanName,
                         DatabaseName = dbName,
                         ActivityType = BackupActivityType.StepChanged,
-                        StepName = "Express VSS",
-                        Message = $"Express VSS tamamlandı: {dbName} ␦ {Path.GetFileName(result.VssFileCopyPath)} [{Fmt(result.VssFileCopySizeBytes)}]"
+                        StepName = "VSS",
+                        Message = $"VSS tamamlandı: {dbName} ␦ {Path.GetFileName(result.VssFileCopyPath)} [{Fmt(result.VssFileCopySizeBytes)}]"
                     });
                 }
 
@@ -502,6 +509,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         Log.Error(
                             "Buluta hiçbir dosya yüklenemedi: {Database} — " +
                             "ne ana yedek ne de VSS kopyası başarılı olamadı.", dbName);
+                        cloudAllOk = false;
                     }
                 }
 
@@ -539,27 +547,29 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 if (cleanupPaths.Count > cleanupSnapshot)
                     cleanupPaths.RemoveRange(cleanupSnapshot, cleanupPaths.Count - cleanupSnapshot);
             }
+
+            return cloudAllOk;
         }
 
-        private async Task ExecuteFileBackupAsync(BackupPlan plan, string correlationId, CancellationToken ct,
+        private async Task<bool> ExecuteFileBackupAsync(BackupPlan plan, string correlationId, CancellationToken ct,
             List<string> cleanupPaths)
         {
             if (FileBackupService == null)
             {
                 Log.Error("Dosya yedekleme: FileBackupService null (Autofac inject başarısız). Plan={PlanName}", plan.PlanName);
-                return;
+                return true;
             }
 
             if (plan.FileBackup == null)
             {
                 Log.Warning("Dosya yedekleme: Plan.FileBackup yapılandırması null. Plan={PlanName}", plan.PlanName);
-                return;
+                return true;
             }
 
             if (!plan.FileBackup.IsEnabled)
             {
                 Log.Information("Dosya yedekleme: FileBackup devre dışı. Plan={PlanName}", plan.PlanName);
-                return;
+                return true;
             }
 
             int enabledSources = plan.FileBackup.Sources?.Count(s => s.IsEnabled) ?? 0;
@@ -600,7 +610,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                    r.FilesCopied > 0))
             {
                 Log.Warning("Dosya yedekleme: Hiçbir dosya kopyalanamadı, sıkıştırma atlanıyor. Plan={PlanName}", plan.PlanName);
-                return;
+                return true;
             }
 
             string filesDir = Path.Combine(plan.LocalPath, "Files");
@@ -612,13 +622,13 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             if (!Directory.Exists(filesDir))
             {
                 Log.Warning("Dosya yedekleme: Hedef dizin bulunamadı, sıkıştırma atlanıyor: {FilesDir}", filesDir);
-                return;
+                return true;
             }
 
             if (!Directory.EnumerateFiles(filesDir, "*.*", SearchOption.AllDirectories).Any())
             {
                 Log.Warning("Dosya yedekleme: Hedef dizinde dosya yok, sıkıştırma atlanıyor: {FilesDir}", filesDir);
-                return;
+                return true;
             }
 
             // Sıkıştır — yapılandırılmışsa o ayarları kullan, yoksa varsayılan (Level 3, şifresiz)
@@ -667,7 +677,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             if (archivePath == null || !File.Exists(archivePath))
             {
                 Log.Warning("Dosya yedekleme: Arşiv oluşturulamadı veya bulunamadı, bulut yüklemesi atlanıyor. Plan={PlanName}", plan.PlanName);
-                return;
+                return true;
             }
 
             // Arşiv başarılıysa ara Files klasörünü sil
@@ -701,24 +711,29 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             if (CloudOrchestrator == null)
             {
                 Log.Warning("Dosya yedekleme: CloudOrchestrator null, bulut yüklemesi atlanıyor. Plan={PlanName}", plan.PlanName);
-                return;
+                return true;
             }
 
             if (plan.CloudTargets == null || !plan.CloudTargets.Any(t => t.IsEnabled))
             {
                 Log.Information("Dosya yedekleme: Aktif bulut hedefi yok, yükleme atlanıyor. Plan={PlanName}", plan.PlanName);
-                return;
+                return true;
             }
 
             // Buluta gönder
+            bool fileCloudOk = false;
             int enabledTargetCount = plan.CloudTargets.Count(t => t.IsEnabled);
             Log.Information("Dosya yedek bulut yüklemesi başlıyor: {Archive} — {TargetCount} hedef",
                 archivePath, enabledTargetCount);
             try
             {
-                await CloudOrchestrator.UploadToAllAsync(
+                var uploadResults = await CloudOrchestrator.UploadToAllAsync(
                     archivePath, Path.GetFileName(archivePath),
                     plan.CloudTargets, null, ct, plan.PlanName, plan.PlanId);
+
+                int successCount = uploadResults.Count(r => r.IsSuccess);
+                fileCloudOk = successCount > 0;
+
                 Log.Information("Dosya yedek bulut yüklemesi tamamlandı. Plan={PlanName}", plan.PlanName);
 
                 long uploadSize = 0;
@@ -738,6 +753,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             {
                 Log.Error(ex, "Dosya yedek cloud upload hatası: Plan={PlanName}", plan.PlanName);
             }
+
+            return fileCloudOk;
         }
 
         /// <summary>

@@ -1,4 +1,23 @@
-﻿## [0.68.4] - 2026-04-04 — Mega Bağlantı Ön Kontrolü + Login Diagnostik
+﻿## [0.68.5] - 2026-04-04 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
+
+### Düzeltme
+- **"Express VSS" → "VSS":** Tüm log mesajlarında "Express VSS" etiketi "VSS" olarak güncellendi. VSS artık tüm SQL Server sürümlerinde çalıştığı için "Express" ifadesi kaldırıldı.
+- **Yanlış Başarı Durumu:** Bulut yükleme tamamen başarısız olduğunda bile "Yedekleme tamamlandı. ✓" gösteriliyordu. Artık bulut başarısızlığında "⚠ Yedekleme tamamlandı (bulut yükleme başarısız)" mesajı gösteriliyor.
+- **Grid Durum İkonu:** Bulut başarısızlığında grid’de ✓ yerine ⚠ uyarı ikonu gösteriliyor.
+- **Log Renkleri:** Bulut başarısız tamamlanma durumunda yeşil yerine uyarı rengi kullanılıyor.
+
+### Teknik
+- `ExecuteSqlBackupAsync` ve `ExecuteFileBackupAsync` artık `Task<bool>` dönüyor (bulut yükleme başarı durumu).
+- `BackupActivityType.Completed` event’inde `IsSuccess` ve `Message` alanları bulut sonucuna göre dolduruluyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Backup/SqlBackupService.cs` (~9 log mesajı güncellendi)
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` (Task<bool> dönüş + bulut izleme)
+- `KoruMsSqlYedek.Win/MainWindow.cs` (UI: log mesajı, renk, grid ikonu)
+
+---
+
+## [0.68.4] - 2026-04-04 — Mega Bağlantı Ön Kontrolü + Login Diagnostik
 
 ### İyileştirme
 - **Mega Bağlantı Ön Kontrolü:** Login denemesinden önce Mega API sunucusuna hızlı HTTP isteği (10 saniye) gönderiliyor. Sunucu erişilemezse 30 saniye login timeout beklemek yerine anında hata verilir.

@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.68.5 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
+- "Express VSS" → "VSS" tüm log mesajlarında güncellendi
+- Bulut yükleme başarısız olduğunda tamamlanma durumu doğru gösteriliyor (⚠ uyarı ikonu + mesaj)
+- Grid ve log panelinde bulut başarısızlığı renk ve ikon ile ayrışıyor
+
 ### v0.68.0 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
 - Mega.io bulut depolama: Email/şifre auth, upload (ilerleme), silme (çöp/kalıcı), klasör yönetimi
 - MegaApiClient v1.10.5 NuGet paketi

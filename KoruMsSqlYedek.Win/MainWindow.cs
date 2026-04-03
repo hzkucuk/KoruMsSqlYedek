@@ -1370,7 +1370,7 @@ namespace KoruMsSqlYedek.Win
                         {
                             int stepPct = -1;
 
-                            if (e.StepName == "Express VSS")
+                            if (e.StepName == "VSS")
                                 stepTracker.HasVssUpload = true;
                             else if (e.StepName == "VSS Bulut Yükleme")
                                 stepTracker.IsVssPhase = true;
@@ -1453,7 +1453,12 @@ namespace KoruMsSqlYedek.Win
                         _progressBar.Value = 0;
                     }
                     UpdatePlanRowProgress(e.PlanId, 0);
-                    UpdatePlanRowStatus(e.PlanId, e.ActivityType);
+
+                    // Bulut başarısızsa Completed ama uyarı ikonu göster
+                    if (e.ActivityType == BackupActivityType.Completed && !e.IsSuccess && !string.IsNullOrEmpty(e.Message))
+                        UpdatePlanRowStatusCustom(e.PlanId, "⚠ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.LogWarning);
+                    else
+                        UpdatePlanRowStatus(e.PlanId, e.ActivityType);
                     break;
 
                 default:
@@ -1464,6 +1469,11 @@ namespace KoruMsSqlYedek.Win
             UpdateBackupButtonStates();
             bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress;
             Color logColor = GetLogColor(e.ActivityType);
+
+            // Bulut yükleme başarısız ama yedekleme tamamlandıysa uyarı rengi kullan
+            if (e.ActivityType == BackupActivityType.Completed && !e.IsSuccess && !string.IsNullOrEmpty(e.Message))
+                logColor = Theme.ModernTheme.LogWarning;
+
             AppendBackupLog(e.PlanId, BuildActivityLogLine(e), logColor, isProgress);
         }
 
@@ -1474,7 +1484,14 @@ namespace KoruMsSqlYedek.Win
         private void UpdatePlanRowStatus(string planId, BackupActivityType activityType)
         {
             (string icon, Color color) = GetStatusDisplay(activityType);
+            UpdatePlanRowStatusCustom(planId, icon, color);
+        }
 
+        /// <summary>
+        /// Plan grid satırının durum hücresini özel ikon ve renkle günceller.
+        /// </summary>
+        private void UpdatePlanRowStatusCustom(string planId, string icon, Color color)
+        {
             foreach (DataGridViewRow row in _dgvPlans.Rows)
             {
                 var plan = row.Tag as BackupPlan;
@@ -1540,7 +1557,9 @@ namespace KoruMsSqlYedek.Win
                 => string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕"),
 
             BackupActivityType.Completed
-                => string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId),
+                => e.IsSuccess || string.IsNullOrEmpty(e.Message)
+                    ? string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId)
+                    : string.Format("[{0}] Yedekleme tamamlandı (bulut yükleme başarısız). ⚠", e.PlanName ?? e.PlanId),
 
             BackupActivityType.Failed
                 => string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message),

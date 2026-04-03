@@ -395,7 +395,7 @@ namespace KoruMsSqlYedek.Engine.Backup
         {
             if (_vssService == null || _compressionService == null)
             {
-                Log.Debug("Express extra backup atlandı: bağımlılıklar enjekte edilmemiş.");
+                Log.Debug("VSS extra backup atlandı: bağımlılıklar enjekte edilmemiş.");
                 return;
             }
 
@@ -423,7 +423,7 @@ namespace KoruMsSqlYedek.Engine.Backup
         {
             if (!_vssService.IsAvailable())
             {
-                Log.Warning("Express VSS: VSS servisi kullanılamıyor.");
+                Log.Warning("VSS: VSS servisi kullanılamıyor.");
                 return false;
             }
 
@@ -456,18 +456,18 @@ namespace KoruMsSqlYedek.Engine.Backup
                 catch (Exception ex)
                 {
                     Log.Warning(ex,
-                        "Express VSS: DB dosya yolları alınamadı — {Database}", databaseName);
+                        "VSS: DB dosya yolları alınamadı — {Database}", databaseName);
                     return false;
                 }
 
                 if (dbFiles.Count == 0)
                 {
-                    Log.Warning("Express VSS: SMO'dan dosya listesi boş — {Database}", databaseName);
+                    Log.Warning("VSS: SMO'dan dosya listesi boş — {Database}", databaseName);
                     return false;
                 }
 
                 Log.Information(
-                    "Express VSS başlıyor: {Database} — {FileCount} dosya tespit edildi",
+                    "VSS başlıyor: {Database} — {FileCount} dosya tespit edildi",
                     databaseName, dbFiles.Count);
 
                 foreach (string f in dbFiles)
@@ -506,7 +506,7 @@ namespace KoruMsSqlYedek.Engine.Backup
                 if (volumeSnapshots.Count == 0)
                 {
                     Log.Warning(
-                        "Express VSS: Hiçbir snapshot alınamadı — " +
+                        "VSS: Hiçbir snapshot alınamadı — " +
                         "SQL dosyaları kilitli olduğundan doğrudan kopyalama da başarısız olur. " +
                         "COPY_ONLY fallback'e geçiliyor.");
                     return false;
@@ -550,7 +550,7 @@ namespace KoruMsSqlYedek.Engine.Backup
                 if (copiedFiles.Count == 0)
                 {
                     Log.Warning(
-                        "Express VSS: Snapshot oluşturuldu ama hiçbir dosya kopyalanamadı — {Database}",
+                        "VSS: Snapshot oluşturuldu ama hiçbir dosya kopyalanamadı — {Database}",
                         databaseName);
                     return false;
                 }
@@ -577,7 +577,7 @@ namespace KoruMsSqlYedek.Engine.Backup
 
                 double comprRatio = rawTotal > 0 ? (double)archiveSize / rawTotal * 100.0 : 100.0;
                 Log.Information(
-                    "Express VSS tamamlandı: {Database} → {Archive} [{SizeMb:F1} MB] " +
+                    "VSS tamamlandı: {Database} → {Archive} [{SizeMb:F1} MB] " +
                     "(kaynak: {RawMb:F1} MB → oran: %{Ratio:F0}, {N}/{Total} dosya)",
                     databaseName, archiveName,
                     archiveSize / BytesPerMb, rawTotal / BytesPerMb, comprRatio,
@@ -592,7 +592,7 @@ namespace KoruMsSqlYedek.Engine.Backup
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Express VSS başarısız: {Database}", databaseName);
+                Log.Warning(ex, "VSS başarısız: {Database}", databaseName);
                 return false;
             }
             finally
