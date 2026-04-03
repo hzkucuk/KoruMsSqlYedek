@@ -142,14 +142,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
             CloudTargetConfig config,
             CancellationToken cancellationToken)
         {
-            // Öncelik: config'deki özel credential > gömülü credential
-            string clientId = !string.IsNullOrEmpty(config.OAuthClientId)
-                ? config.OAuthClientId
-                : GoogleOAuthCredentials.ClientId;
-
-            string clientSecret = !string.IsNullOrEmpty(config.OAuthClientSecret)
-                ? DecryptIfNeeded(config.OAuthClientSecret)
-                : GoogleOAuthCredentials.ClientSecret;
+            // Her zaman gömülü credential'ları kullan — config'deki eski özel değerler artık dikkate alınmaz
+            string clientId = GoogleOAuthCredentials.ClientId;
+            string clientSecret = GoogleOAuthCredentials.ClientSecret;
 
             string tokenJson = DecryptIfNeeded(config.OAuthTokenJson);
 

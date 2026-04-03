@@ -187,8 +187,9 @@ namespace KoruMsSqlYedek.Win.Forms
             }
             else if (IsOAuthType(providerType))
             {
-                // ClientId/Secret gömülü credential'lardan gelir, config'e kaydetmeye gerek yok.
-                // Mevcut özel credential varsa korunur (backward compat).
+                // Gömülü credential kullanılır; eski özel değerleri temizle
+                _target.OAuthClientId = null;
+                _target.OAuthClientSecret = null;
             }
             else if (IsLocalType(providerType))
             {
@@ -261,22 +262,15 @@ namespace KoruMsSqlYedek.Win.Forms
                 _lblAuthStatus.Text = "Taray\u0131c\u0131da onaylay\u0131n...";
                 _lblAuthStatus.ForeColor = Theme.ModernTheme.TextSecondary;
 
-                // G\u00f6m\u00fcl\u00fc credential'lar\u0131 kullan; config'de \u00f6zel de\u011fer varsa fallback
-                string tokenJson;
-                if (!string.IsNullOrEmpty(_target.OAuthClientId) &&
-                    !string.IsNullOrEmpty(_target.OAuthClientSecret))
-                {
-                    string rawSecret = PasswordProtector.Unprotect(_target.OAuthClientSecret);
-                    tokenJson = await GoogleDriveAuthHelper.AuthorizeInteractiveAsync(
-                        _target.OAuthClientId, rawSecret, System.Threading.CancellationToken.None);
-                }
-                else
-                {
-                    tokenJson = await GoogleDriveAuthHelper.AuthorizeInteractiveAsync(
-                        System.Threading.CancellationToken.None);
-                }
+                // Her zaman gömülü credential'ları kullan (güvenilir ve güncel)
+                string tokenJson = await GoogleDriveAuthHelper.AuthorizeInteractiveAsync(
+                    System.Threading.CancellationToken.None);
 
                 _target.OAuthTokenJson = tokenJson;
+
+                // Eski özel credential kalıntılarını temizle
+                _target.OAuthClientId = null;
+                _target.OAuthClientSecret = null;
                 _lblAuthStatus.Text = "\u2714 Ba\u011fl\u0131";
                 _lblAuthStatus.ForeColor = Theme.ModernTheme.AccentPrimary;
             }

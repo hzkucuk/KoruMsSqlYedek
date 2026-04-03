@@ -1,4 +1,18 @@
-﻿## [0.66.0] - 2026-04-03 — Şifre Koruması Aktif/Pasif Toggle
+﻿## [0.66.1] - 2026-04-03 — Google OAuth "invalid_client" Düzeltmesi
+
+### Düzeltme
+- **Google OAuth Hatası Çözüldü:** Eski plan yapılandırmalarında saklanan özel (custom) OAuthClientId/OAuthClientSecret değerleri, gömülü credential'lar yerine kullanılıyordu ve Google'dan "invalid_client" hatası alınıyordu.
+- `CloudTargetEditDialog`: Kimlik doğrulama artık her zaman gömülü (embedded) credential kullanır.
+- `GoogleDriveAuthHelper`: Token yenileme işlemi artık her zaman gömülü credential kullanır.
+- Kayıt sırasında eski özel OAuth değerleri otomatik temizlenir (backward compat cleanup).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs` — OnGoogleAuthClick sadeleştirildi, SaveUiToTarget eski değerleri temizler
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveAuthHelper.cs` — GetCredentialAsync sadeleştirildi
+
+---
+
+## [0.66.0] - 2026-04-03 — Şifre Koruması Aktif/Pasif Toggle
 
 ### Yeni Özellik
 - **Şifre Aktif/Pasif Toggle:** Şifre koruması tanımlandıktan sonra kaldırmaya gerek kalmadan aktif/pasif yapılabilir.
