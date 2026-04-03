@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using CG.Web.MegaApiClient;
@@ -24,6 +25,18 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>Logout temizliği için kısa zaman aşımı — takılırsa beklemeyi kes.</summary>
         private const int LogoutTimeoutSeconds = 10;
+
+        /// <summary>Bağlantı ön kontrolü zaman aşımı (saniye).</summary>
+        private const int ConnectivityCheckSeconds = 10;
+
+        /// <summary>Mega API endpoint — bağlantı ön kontrolü için.</summary>
+        private const string MegaApiUrl = "https://g.api.mega.co.nz/cs";
+
+        /// <summary>Singleton HttpClient — bağlantı ön kontrolü için.</summary>
+        private static readonly HttpClient _httpClient = new()
+        {
+            Timeout = TimeSpan.FromSeconds(ConnectivityCheckSeconds)
+        };
 
         public CloudProviderType ProviderType => CloudProviderType.Mega;
 
@@ -229,6 +242,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>
         /// Mega hesabına email/şifre ile giriş yapar.
+        /// Önce bağlantı ön kontrolü yapılır (10s), ardından login denenir (30s timeout).
         /// MegaApiClient.LoginAsync CancellationToken desteklemediği için timeout koruması uygulanır.
         /// </summary>
         private static async Task LoginWithTimeoutAsync(
@@ -241,6 +255,15 @@ namespace KoruMsSqlYedek.Engine.Cloud
             string email = config.Username;
             string password = PasswordProtector.Unprotect(config.Password);
 
+            Log.Debug("Mega kimlik bilgileri: email={Email}, şifre uzunluk={PasswordLength}",
+                email, password?.Length ?? 0);
+
+            // ── Bağlantı ön kontrolü ─────────────────────────────────
+            // Mega API sunucusuna hızlı HTTP isteği göndererek erişilebilirliği doğrula.
+            // Başarısızsa 30 saniye login timeout beklemek yerine anında hata verilir.
+            await CheckMegaConnectivityAsync(cancellationToken).ConfigureAwait(false);
+
+            // ── Login ────────────────────────────────────────────────
             var loginTask = client.LoginAsync(email, password);
             var completed = await Task.WhenAny(
                 loginTask,
@@ -252,10 +275,52 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 cancellationToken.ThrowIfCancellationRequested();
                 throw new TimeoutException(
                     $"Mega giriş zaman aşımına uğradı ({ApiTimeoutSeconds} saniye). " +
-                    "İnternet bağlantınızı ve Mega hesap bilgilerinizi kontrol edin.");
+                    "Sunucu erişilebilir ancak giriş yanıt vermiyor. " +
+                    "Email/şifre bilgilerinizi kontrol edin.");
             }
 
             await loginTask.ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Mega API sunucusuna hızlı HTTP isteği göndererek bağlantıyı doğrular.
+        /// DNS çözümleme veya firewall sorunu varsa anında bildirir.
+        /// </summary>
+        private static async Task CheckMegaConnectivityAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                Log.Debug("Mega bağlantı ön kontrolü: {Url}", MegaApiUrl);
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, MegaApiUrl);
+                request.Content = new StringContent("[]", System.Text.Encoding.UTF8, "application/json");
+
+                using var response = await _httpClient.SendAsync(
+                    request,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    cancellationToken).ConfigureAwait(false);
+
+                Log.Debug("Mega bağlantı ön kontrolü başarılı: HTTP {StatusCode}", (int)response.StatusCode);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (TaskCanceledException)
+            {
+                // HttpClient.Timeout aşıldı (CancellationToken'dan değil)
+                throw new TimeoutException(
+                    $"Mega API sunucusuna erişilemiyor ({ConnectivityCheckSeconds} saniye zaman aşımı). " +
+                    "İnternet bağlantınızı, DNS ayarlarınızı ve güvenlik duvarınızı kontrol edin. " +
+                    $"Endpoint: {MegaApiUrl}");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new TimeoutException(
+                    $"Mega API sunucusuna bağlantı başarısız: {ex.Message}. " +
+                    "İnternet bağlantınızı ve güvenlik duvarınızı kontrol edin. " +
+                    $"Endpoint: {MegaApiUrl}");
+            }
         }
 
         /// <summary>

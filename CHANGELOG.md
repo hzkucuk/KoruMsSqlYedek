@@ -1,4 +1,16 @@
-﻿## [0.68.3] - 2026-04-04 — VSS Tüm Edition’larda Aktif + Bulut Upload Bağımsızlığı
+﻿## [0.68.4] - 2026-04-04 — Mega Bağlantı Ön Kontrolü + Login Diagnostik
+
+### İyileştirme
+- **Mega Bağlantı Ön Kontrolü:** Login denemesinden önce Mega API sunucusuna hızlı HTTP isteği (10 saniye) gönderiliyor. Sunucu erişilemezse 30 saniye login timeout beklemek yerine anında hata verilir.
+- **Detaylı Diagnostik Loglama:** Email, şifre uzunluğu, HTTP status kodu loglanıyor. Bağlantı sorunlarının kök nedeni hızlıca teşhis edilebilir.
+- **İyileştirilmiş Hata Mesajları:** DNS/firewall/internet hataları için ayrı ayrı açıklayıcı Türkçe mesajlar. Endpoint bilgisi dahil.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs`
+
+---
+
+## [0.68.3] - 2026-04-04 — VSS Tüm Edition’larda Aktif + Bulut Upload Bağımsızlığı
 
 ### İyileştirme
 - **VSS Dosya Kopyası Tüm Edition’larda:** Express kısıtı kaldırıldı. MDF/LDF VSS kopyası artık tüm SQL Server sürümlerinde (Express, Developer, Standard, Enterprise) ek güvenlik olarak alınıyor. Başarısız olursa sessizce atlanır.
