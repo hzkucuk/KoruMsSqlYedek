@@ -98,6 +98,14 @@ namespace KoruMsSqlYedek.Service.IPC
                         new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
                         PipeAccessRights.FullControl,
                         AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new PipeAccessRule(
+                        new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+                        PipeAccessRights.FullControl,
+                        AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new PipeAccessRule(
+                        WindowsIdentity.GetCurrent().User!,
+                        PipeAccessRights.FullControl,
+                        AccessControlType.Allow));
 
                     pipe = NamedPipeServerStreamAcl.Create(
                         PipeName,
@@ -123,6 +131,20 @@ namespace KoruMsSqlYedek.Service.IPC
                 {
                     pipe?.Dispose();
                     break;
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    pipe?.Dispose();
+                    Log.Warning(
+                        "Pipe erişim hatası — muhtemelen başka bir servis instance'ı zaten çalışıyor. " +
+                        "10 saniye sonra tekrar denenecek. Detay: {Message}", ex.Message);
+                    await Task.Delay(10_000, ct).ConfigureAwait(false);
+                }
+                catch (IOException ex)
+                {
+                    pipe?.Dispose();
+                    Log.Warning(ex, "Pipe I/O hatası, 3 saniye sonra yeniden deneniyor...");
+                    await Task.Delay(3000, ct).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

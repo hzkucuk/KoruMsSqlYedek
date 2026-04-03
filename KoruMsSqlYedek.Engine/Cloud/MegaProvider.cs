@@ -19,6 +19,12 @@ namespace KoruMsSqlYedek.Engine.Cloud
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<MegaProvider>();
 
+        /// <summary>Login/Logout gibi CancellationToken almayan API çağrıları için zaman aşımı.</summary>
+        private const int ApiTimeoutSeconds = 30;
+
+        /// <summary>Logout temizliği için kısa zaman aşımı — takılırsa beklemeyi kes.</summary>
+        private const int LogoutTimeoutSeconds = 10;
+
         public CloudProviderType ProviderType => CloudProviderType.Mega;
 
         public string DisplayName => "Mega.io";
@@ -38,6 +44,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 DisplayName = DisplayName
             };
 
+            MegaApiClient client = null;
+
             try
             {
                 ValidateConfig(config);
@@ -45,46 +53,46 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 if (!File.Exists(localFilePath))
                     throw new FileNotFoundException("Kaynak dosya bulunamadı.", localFilePath);
 
-                var client = new MegaApiClient();
-                await LoginAsync(client, config).ConfigureAwait(false);
+                client = new MegaApiClient();
 
-                try
+                Log.Debug("Mega giriş yapılıyor: {Email}", config.Username);
+                await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
+                Log.Debug("Mega giriş başarılı.");
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                Log.Debug("Mega hedef klasör kontrol ediliyor: {Path}", config.RemoteFolderPath ?? "(kök)");
+                var targetFolder = await EnsureFolderExistsAsync(client, config.RemoteFolderPath, cancellationToken)
+                    .ConfigureAwait(false);
+                Log.Debug("Mega hedef klasör hazır: {FolderId}", targetFolder.Id);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                long fileSize = new FileInfo(localFilePath).Length;
+
+                // Progress adaptörü: MegaApiClient IProgress<double> (0.0-1.0) → IProgress<int> (0-100)
+                var megaProgress = progress is not null
+                    ? new Progress<double>(d => progress.Report((int)(d * 100)))
+                    : null;
+
+                Log.Debug("Mega upload başlıyor: {FileName} ({Size:N0} bytes)", remoteFileName, fileSize);
+
+                INode uploadedNode;
+                using (var stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    var targetFolder = await EnsureFolderExistsAsync(client, config.RemoteFolderPath, cancellationToken)
+                    uploadedNode = await UploadWithCancellationAsync(
+                        client, stream, remoteFileName, targetFolder, megaProgress, cancellationToken)
                         .ConfigureAwait(false);
-
-                    long fileSize = new FileInfo(localFilePath).Length;
-
-                    // Progress adaptörü: MegaApiClient IProgress<double> (0.0-1.0) → IProgress<int> (0-100)
-                    var megaProgress = progress is not null
-                        ? new Progress<double>(d => progress.Report((int)(d * 100)))
-                        : null;
-
-                    INode uploadedNode;
-                    using (var stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        uploadedNode = await client.UploadAsync(
-                            stream,
-                            remoteFileName,
-                            targetFolder,
-                            megaProgress,
-                            null,
-                            cancellationToken).ConfigureAwait(false);
-                    }
-
-                    result.IsSuccess = true;
-                    result.RemoteFilePath = uploadedNode.Id;
-                    result.RemoteFileSizeBytes = uploadedNode.Size;
-                    result.UploadedAt = DateTime.UtcNow;
-
-                    Log.Information(
-                        "Mega upload başarılı: {FileName} → {NodeId} ({Size:N0} bytes)",
-                        remoteFileName, uploadedNode.Id, fileSize);
                 }
-                finally
-                {
-                    await client.LogoutAsync().ConfigureAwait(false);
-                }
+
+                result.IsSuccess = true;
+                result.RemoteFilePath = uploadedNode.Id;
+                result.RemoteFileSizeBytes = uploadedNode.Size;
+                result.UploadedAt = DateTime.UtcNow;
+
+                Log.Information(
+                    "Mega upload başarılı: {FileName} → {NodeId} ({Size:N0} bytes)",
+                    remoteFileName, uploadedNode.Id, fileSize);
             }
             catch (OperationCanceledException)
             {
@@ -92,11 +100,22 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 result.ErrorMessage = "İşlem kullanıcı tarafından iptal edildi.";
                 Log.Warning("Mega upload iptal edildi: {FileName}", remoteFileName);
             }
+            catch (TimeoutException ex)
+            {
+                result.IsSuccess = false;
+                result.ErrorMessage = ex.Message;
+                Log.Error("Mega zaman aşımı: {FileName} — {Message}", remoteFileName, ex.Message);
+            }
             catch (Exception ex)
             {
                 result.IsSuccess = false;
                 result.ErrorMessage = ex.Message;
                 Log.Error(ex, "Mega upload başarısız: {FileName}", remoteFileName);
+            }
+            finally
+            {
+                if (client is not null)
+                    await LogoutSafeAsync(client).ConfigureAwait(false);
             }
 
             return result;
@@ -107,37 +126,32 @@ namespace KoruMsSqlYedek.Engine.Cloud
             CloudTargetConfig config,
             CancellationToken cancellationToken)
         {
+            MegaApiClient client = null;
+
             try
             {
-                var client = new MegaApiClient();
-                await LoginAsync(client, config).ConfigureAwait(false);
+                client = new MegaApiClient();
+                await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
 
-                try
+                var nodes = await client.GetNodesAsync().ConfigureAwait(false);
+                var targetNode = nodes.FirstOrDefault(n => n.Id == remoteFileIdentifier);
+
+                if (targetNode is null)
                 {
-                    var nodes = await client.GetNodesAsync().ConfigureAwait(false);
-                    var targetNode = nodes.FirstOrDefault(n => n.Id == remoteFileIdentifier);
-
-                    if (targetNode is null)
-                    {
-                        Log.Debug("Mega dosyası zaten mevcut değil: {NodeId}", remoteFileIdentifier);
-                        return true;
-                    }
-
-                    bool moveToTrash = !config.PermanentDeleteFromTrash;
-                    await client.DeleteAsync(targetNode, moveToTrash).ConfigureAwait(false);
-
-                    Log.Information(
-                        moveToTrash
-                            ? "Mega dosyası çöp kutusuna taşındı: {NodeId}"
-                            : "Mega dosyası kalıcı olarak silindi: {NodeId}",
-                        remoteFileIdentifier);
-
+                    Log.Debug("Mega dosyası zaten mevcut değil: {NodeId}", remoteFileIdentifier);
                     return true;
                 }
-                finally
-                {
-                    await client.LogoutAsync().ConfigureAwait(false);
-                }
+
+                bool moveToTrash = !config.PermanentDeleteFromTrash;
+                await client.DeleteAsync(targetNode, moveToTrash).ConfigureAwait(false);
+
+                Log.Information(
+                    moveToTrash
+                        ? "Mega dosyası çöp kutusuna taşındı: {NodeId}"
+                        : "Mega dosyası kalıcı olarak silindi: {NodeId}",
+                    remoteFileIdentifier);
+
+                return true;
             }
             catch (OperationCanceledException)
             {
@@ -149,36 +163,36 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 Log.Warning(ex, "Mega silme başarısız: {NodeId}", remoteFileIdentifier);
                 return false;
             }
+            finally
+            {
+                if (client is not null)
+                    await LogoutSafeAsync(client).ConfigureAwait(false);
+            }
         }
 
         public async Task<bool> TestConnectionAsync(
             CloudTargetConfig config,
             CancellationToken cancellationToken)
         {
+            MegaApiClient client = null;
+
             try
             {
                 ValidateConfig(config);
 
-                var client = new MegaApiClient();
-                await LoginAsync(client, config).ConfigureAwait(false);
+                client = new MegaApiClient();
+                await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
 
-                try
-                {
-                    var accountInfo = await client.GetAccountInformationAsync().ConfigureAwait(false);
+                var accountInfo = await client.GetAccountInformationAsync().ConfigureAwait(false);
 
-                    long usedMb = accountInfo.UsedQuota / (1024 * 1024);
-                    long totalMb = accountInfo.TotalQuota / (1024 * 1024);
+                long usedMb = accountInfo.UsedQuota / (1024 * 1024);
+                long totalMb = accountInfo.TotalQuota / (1024 * 1024);
 
-                    Log.Information(
-                        "Mega bağlantı testi başarılı — Kullanım: {Used:N0} MB / {Total:N0} MB",
-                        usedMb, totalMb);
+                Log.Information(
+                    "Mega bağlantı testi başarılı — Kullanım: {Used:N0} MB / {Total:N0} MB",
+                    usedMb, totalMb);
 
-                    return true;
-                }
-                finally
-                {
-                    await client.LogoutAsync().ConfigureAwait(false);
-                }
+                return true;
             }
             catch (OperationCanceledException)
             {
@@ -188,6 +202,11 @@ namespace KoruMsSqlYedek.Engine.Cloud
             {
                 Log.Warning(ex, "Mega bağlantı testi başarısız.");
                 return false;
+            }
+            finally
+            {
+                if (client is not null)
+                    await LogoutSafeAsync(client).ConfigureAwait(false);
             }
         }
 
@@ -210,14 +229,91 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>
         /// Mega hesabına email/şifre ile giriş yapar.
-        /// Şifre DPAPI ile korunmuş olarak saklanır, giriş öncesi çözülür.
+        /// MegaApiClient.LoginAsync CancellationToken desteklemediği için timeout koruması uygulanır.
         /// </summary>
-        private static async Task LoginAsync(MegaApiClient client, CloudTargetConfig config)
+        private static async Task LoginWithTimeoutAsync(
+            MegaApiClient client,
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             string email = config.Username;
             string password = PasswordProtector.Unprotect(config.Password);
 
-            await client.LoginAsync(email, password).ConfigureAwait(false);
+            var loginTask = client.LoginAsync(email, password);
+            var completed = await Task.WhenAny(
+                loginTask,
+                Task.Delay(TimeSpan.FromSeconds(ApiTimeoutSeconds), cancellationToken))
+                .ConfigureAwait(false);
+
+            if (completed != loginTask)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                throw new TimeoutException(
+                    $"Mega giriş zaman aşımına uğradı ({ApiTimeoutSeconds} saniye). " +
+                    "İnternet bağlantınızı ve Mega hesap bilgilerinizi kontrol edin.");
+            }
+
+            await loginTask.ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Upload işlemini CancellationToken ile korur.
+        /// MegaApiClient token'ı düzgün işlemezse WhenAny ile iptal garantilenir.
+        /// </summary>
+        private static async Task<INode> UploadWithCancellationAsync(
+            MegaApiClient client,
+            FileStream stream,
+            string remoteFileName,
+            INode targetFolder,
+            IProgress<double> megaProgress,
+            CancellationToken cancellationToken)
+        {
+            var uploadTask = client.UploadAsync(
+                stream,
+                remoteFileName,
+                targetFolder,
+                megaProgress,
+                null,
+                cancellationToken);
+
+            var completed = await Task.WhenAny(
+                uploadTask,
+                Task.Delay(Timeout.Infinite, cancellationToken))
+                .ConfigureAwait(false);
+
+            if (completed != uploadTask)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            return await uploadTask.ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Güvenli logout — takılırsa timeout ile keser, hata yutulur.
+        /// Upload/delete sonrası finally bloğunda çağrılır.
+        /// </summary>
+        private static async Task LogoutSafeAsync(MegaApiClient client)
+        {
+            try
+            {
+                var logoutTask = client.LogoutAsync();
+                var completed = await Task.WhenAny(
+                    logoutTask,
+                    Task.Delay(TimeSpan.FromSeconds(LogoutTimeoutSeconds)))
+                    .ConfigureAwait(false);
+
+                if (completed == logoutTask)
+                    await logoutTask.ConfigureAwait(false);
+                else
+                    Log.Debug("Mega logout zaman aşımına uğradı, oturum sunucu tarafında kapanacak.");
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Mega logout sırasında hata (önemsiz).");
+            }
         }
 
         /// <summary>

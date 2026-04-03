@@ -1,4 +1,23 @@
-﻿## [0.68.0] - 2026-04-04 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
+﻿## [0.68.1] - 2026-04-04 — Mega Upload Timeout Koruması + Pipe Güvenlik İyileştirmesi
+
+### Düzeltme
+- **Mega Upload Timeout Koruması:** LoginAsync CancellationToken desteklemediği için Task.WhenAny ile 30 saniyelik timeout eklendi
+- **Upload İptal Garantisi:** UploadAsync iptal sinyaline yanıt vermediğinde Task.WhenAny wrapper ile anında iptal
+- **Logout Güvenliği:** LogoutAsync 10 saniyelik timeout ile fire-and-forget, cleanup'ı asla bloklamaz
+- **TimeoutException Yakalama:** Kullanıcıya açıklayıcı Türkçe hata mesajı
+- **Adım Adım Debug Loglama:** Login, klasör kontrol, upload başlangıcı aşamalarında detaylı log
+
+### İyileştirme
+- **Pipe Güvenliği:** ServicePipeServer'a BuiltinAdministratorsSid ve mevcut kullanıcı SID'i eklendi
+- **Pipe Hata Yönetimi:** UnauthorizedAccessException (10s) ve IOException (3s) için özel retry mantığı
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` (tam yeniden yazım)
+- `KoruMsSqlYedek.Service/IPC/ServicePipeServer.cs`
+
+---
+
+## [0.68.0] - 2026-04-04 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
 
 ### Yeni Özellik
 - **Mega.io Bulut Desteği:** Email/şifre ile kimlik doğrulama, dosya yükleme (ilerleme bilgisi), silme (çöp kutusu/kalıcı), klasör yönetimi, kota bilgisi
