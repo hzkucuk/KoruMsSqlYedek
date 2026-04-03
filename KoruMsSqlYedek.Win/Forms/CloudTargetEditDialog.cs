@@ -1,6 +1,7 @@
 using System;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
+using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Engine.Cloud;
 using KoruMsSqlYedek.Win.Helpers;
@@ -15,6 +16,8 @@ namespace KoruMsSqlYedek.Win.Forms
     {
         private readonly CloudTargetConfig _target;
         private readonly bool _isNew;
+        private readonly AppSettings _appSettings;
+        private readonly IAppSettingsManager _settingsManager;
 
         /// <summary>Combo box index → CloudProviderType eşlemesi.</summary>
         private static readonly CloudProviderType[] ProviderMap =
@@ -32,11 +35,18 @@ namespace KoruMsSqlYedek.Win.Forms
         public CloudTargetConfig Target => _target;
 
         /// <summary>Yeni bulut hedef oluşturma.</summary>
-        public CloudTargetEditDialog() : this(null) { }
+        public CloudTargetEditDialog(AppSettings appSettings, IAppSettingsManager settingsManager)
+            : this(appSettings, settingsManager, null) { }
 
         /// <summary>Mevcut bulut hedefi düzenleme. null ise yeni hedef.</summary>
-        public CloudTargetEditDialog(CloudTargetConfig existing)
+        public CloudTargetEditDialog(AppSettings appSettings, IAppSettingsManager settingsManager, CloudTargetConfig existing)
         {
+            ArgumentNullException.ThrowIfNull(appSettings);
+            ArgumentNullException.ThrowIfNull(settingsManager);
+
+            _appSettings = appSettings;
+            _settingsManager = settingsManager;
+
             InitializeComponent();
             ApplyIcons();
 
@@ -70,6 +80,9 @@ namespace KoruMsSqlYedek.Win.Forms
 
             _btnGoogleAuth.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.ShieldCheck, System.Drawing.Color.White, sz);
             _btnGoogleAuth.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnOAuthSettings.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Gear, Theme.ModernTheme.TextSecondary, 14);
+            _btnOAuthSettings.Text = "";
         }
 
         protected override void OnLoad(EventArgs e)
@@ -262,13 +275,13 @@ namespace KoruMsSqlYedek.Win.Forms
                 _lblAuthStatus.Text = "Taray\u0131c\u0131da onaylay\u0131n...";
                 _lblAuthStatus.ForeColor = Theme.ModernTheme.TextSecondary;
 
-                // Her zaman gömülü credential'ları kullan (güvenilir ve güncel)
+                // ResolveCredentials otomatik olarak AppSettings özel > gömülü seçimi yapar
                 string tokenJson = await GoogleDriveAuthHelper.AuthorizeInteractiveAsync(
                     System.Threading.CancellationToken.None);
 
                 _target.OAuthTokenJson = tokenJson;
 
-                // Eski özel credential kalıntılarını temizle
+                // Eski per-target credential kalıntılarını temizle
                 _target.OAuthClientId = null;
                 _target.OAuthClientSecret = null;
                 _lblAuthStatus.Text = "\u2714 Ba\u011fl\u0131";
@@ -285,6 +298,12 @@ namespace KoruMsSqlYedek.Win.Forms
             {
                 _btnGoogleAuth.Enabled = true;
             }
+        }
+
+        private void OnOAuthSettingsClick(object sender, EventArgs e)
+        {
+            using var dialog = new GoogleOAuthSettingsDialog(_appSettings, _settingsManager);
+            dialog.ShowDialog(this);
         }
 
         #endregion

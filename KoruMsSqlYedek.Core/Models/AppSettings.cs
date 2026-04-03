@@ -80,6 +80,28 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonIgnore]
         public bool IsPasswordProtected => HasPassword && PasswordEnabled;
 
+        // ═══════════════ GOOGLE OAUTH ═══════════════
+
+        /// <summary>
+        /// Kullanıcının kendi Google Cloud Console Client ID değeri.
+        /// Boş ise gömülü (embedded) credential kullanılır.
+        /// </summary>
+        [JsonProperty("googleOAuthClientId", NullValueHandling = NullValueHandling.Ignore)]
+        public string GoogleOAuthClientId { get; set; }
+
+        /// <summary>
+        /// Kullanıcının kendi Google Cloud Console Client Secret değeri (DPAPI + Base64).
+        /// Boş ise gömülü (embedded) credential kullanılır.
+        /// </summary>
+        [JsonProperty("googleOAuthClientSecret", NullValueHandling = NullValueHandling.Ignore)]
+        public string GoogleOAuthClientSecret { get; set; }
+
+        /// <summary>Kullanıcının özel Google OAuth credential'ları tanımlı mı?</summary>
+        [JsonIgnore]
+        public bool HasCustomGoogleOAuth =>
+            !string.IsNullOrEmpty(GoogleOAuthClientId) &&
+            !string.IsNullOrEmpty(GoogleOAuthClientSecret);
+
         /// <summary>Ayar şeması versiyonu (geriye uyumluluk).</summary>
         [JsonProperty("schemaVersion")]
         public int SchemaVersion { get; set; } = 1;

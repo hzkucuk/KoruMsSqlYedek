@@ -679,7 +679,8 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnAddCloudTarget(object sender, EventArgs e)
         {
-            using (var dialog = new CloudTargetEditDialog())
+            var appSettings = _settingsManager.Load();
+            using (var dialog = new CloudTargetEditDialog(appSettings, _settingsManager))
             {
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
@@ -695,7 +696,8 @@ namespace KoruMsSqlYedek.Win.Forms
             var target = _lvCloudTargets.SelectedItems[0].Tag as CloudTargetConfig;
             if (target == null) return;
 
-            using (var dialog = new CloudTargetEditDialog(target))
+            var appSettings = _settingsManager.Load();
+            using (var dialog = new CloudTargetEditDialog(appSettings, _settingsManager, target))
             {
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {

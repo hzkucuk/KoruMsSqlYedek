@@ -1,4 +1,30 @@
-﻿## [0.66.1] - 2026-04-03 — Google OAuth "invalid_client" Düzeltmesi
+﻿## [0.67.0] - 2026-04-03 — Google OAuth Özel Credential Yönetimi
+
+### Yeni Özellik
+- **Google OAuth Ayarları Dialogu:** Kullanıcılar Google Cloud Console'dan aldıkları kendi Client ID/Secret değerlerini girebilir.
+- **⚙ Diyalog erişimi:** Bulut hedef düzenleme ekranında OAuth grubuna ⚙ (dişli) butonu eklendi.
+- **DPAPI şifreleme:** Client Secret değeri DPAPI ile şifrelenerek AppSettings'e kaydedilir.
+- **Statik credential override:** `GoogleDriveAuthHelper.SetCustomCredentials` ile uygulama genelinde özel credential kullanımı.
+- **Otomatik yükleme:** Uygulama başlangıcında AppSettings'teki özel credential otomatik yüklenir.
+
+### İyileştirme
+- `AppSettings`: `GoogleOAuthClientId`, `GoogleOAuthClientSecret`, `HasCustomGoogleOAuth` eklendi.
+- `GoogleDriveAuthHelper`: `ResolveCredentials()` ile özel > gömülü credential önceliklendirme.
+- Eski per-target `OAuthClientId`/`OAuthClientSecret` alanları kayıt sırasında temizlenir.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/AppSettings.cs`
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveAuthHelper.cs`
+- `KoruMsSqlYedek.Win/Forms/GoogleOAuthSettingsDialog.cs` (yeni)
+- `KoruMsSqlYedek.Win/Forms/GoogleOAuthSettingsDialog.Designer.cs` (yeni)
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs`
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.Designer.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs`
+- `KoruMsSqlYedek.Win/Program.cs`
+
+---
+
+## [0.66.1] - 2026-04-03 — Google OAuth "invalid_client" Düzeltmesi
 
 ### Düzeltme
 - **Google OAuth Hatası Çözüldü:** Eski plan yapılandırmalarında saklanan özel (custom) OAuthClientId/OAuthClientSecret değerleri, gömülü credential'lar yerine kullanılıyordu ve Google'dan "invalid_client" hatası alınıyordu.

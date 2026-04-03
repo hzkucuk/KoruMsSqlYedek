@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Autofac;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Engine;
+using KoruMsSqlYedek.Engine.Cloud;
 using KoruMsSqlYedek.Win.Helpers;
 using KoruMsSqlYedek.Win.IoC;
 using Serilog;
@@ -56,6 +57,7 @@ namespace KoruMsSqlYedek.Win
                 // Dil ve tema ayarlarını uygula (container'dan önce)
                 ApplyLanguageSetting();
                 ApplyThemeSetting();
+                ApplyGoogleOAuthOverride();
 
                 // .NET 10 native dark mode — tema ayarına göre
                 ApplyNativeColorMode();
@@ -165,6 +167,29 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Warning(ex, "Native color mode uygulanırken hata.");
+            }
+        }
+
+        /// <summary>
+        /// AppSettings'te özel Google OAuth credential varsa GoogleDriveAuthHelper'a yükler.
+        /// </summary>
+        private static void ApplyGoogleOAuthOverride()
+        {
+            try
+            {
+                var settingsManager = new AppSettingsManager();
+                var settings = settingsManager.Load();
+
+                if (settings.HasCustomGoogleOAuth)
+                {
+                    string secret = PasswordProtector.Unprotect(settings.GoogleOAuthClientSecret);
+                    GoogleDriveAuthHelper.SetCustomCredentials(settings.GoogleOAuthClientId, secret);
+                    Log.Information("Özel Google OAuth credential yüklendi.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Google OAuth override uygulanırken hata, gömülü credential kullanılacak.");
             }
         }
 
