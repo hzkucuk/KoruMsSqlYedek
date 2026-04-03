@@ -40,13 +40,10 @@
     public enum CloudProviderType
     {
         GoogleDrivePersonal = 0,
-        GoogleDriveWorkspace = 1,
-        OneDrivePersonal = 2,
-        OneDriveBusiness = 3,
+        Mega = 2,
         Ftp = 4,
         Ftps = 5,
         Sftp = 6,
-        LocalPath = 7,
         UncPath = 8
     }
 

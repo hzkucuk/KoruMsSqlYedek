@@ -33,7 +33,7 @@ namespace KoruMsSqlYedek.Core.Interfaces
             Action<string> sessionUriObtained = null);
 
         /// <summary>
-        /// Uzak dosyayı siler. Google Drive ve OneDrive için çöp kutusundan da temizler.
+        /// Uzak dosyayı siler. Google Drive ve Mega için çöp kutusuna taşıma seçeneği vardır.
         /// </summary>
         Task<bool> DeleteAsync(
             string remoteFileIdentifier,

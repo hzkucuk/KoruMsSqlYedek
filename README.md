@@ -17,10 +17,10 @@ KoruMsSqlYedek, SQL Server veritabanlarını ve dosya/klasörleri otomatik olara
 - **Dosya Yedekleme:** VSS (Volume Shadow Copy) ile açık/kilitli dosya desteği (Outlook PST/OST, SQL MDF/LDF vb.)
 
 ### Bulut Senkronizasyon
-- **Google Drive:** Bireysel ve Workspace hesapları, çöp kutusu temizleme
-- **OneDrive:** Bireysel (MSA) ve kurumsal (Entra ID), kalıcı silme
+- **Google Drive:** Bireysel hesap, OAuth kimlik doğrulama, çöp kutusu temizleme
+- **Mega.io:** Email/şifre ile kimlik doğrulama, klasör yönetimi, çöp kutusu/kalıcı silme
 - **FTP/SFTP:** FluentFTP ve SSH.NET ile güvenli transfer
-- **Yerel/UNC:** Ağ paylaşımı desteği
+- **UNC Ağ Paylaşımı:** Ağ paylaşımı desteği
 
 ### Zamanlama & Otomasyon
 - **Quartz.NET:** Cron tabanlı esnek zamanlama
@@ -106,7 +106,7 @@ KoruMsSqlYedek.Service.exe start
 | SevenZipSharp 1.6.2.24 | LZMA2 sıkıştırma |
 | AlphaVSS 1.4.0 | Volume Shadow Copy |
 | Google.Apis.Drive.v3 | Google Drive API |
-| Microsoft.Graph 5.62.0 | OneDrive API |
+| MegaApiClient 1.10.5 | Mega.io API |
 | FluentFTP 51.0.0 | FTP/FTPS |
 | SSH.NET 2024.1.0 | SFTP |
 | MailKit 4.3.0 | SMTP e-posta |

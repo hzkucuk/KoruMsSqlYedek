@@ -126,7 +126,7 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("displayName")]
         public string DisplayName { get; set; }
 
-        /// <summary>Google Drive veya OneDrive klasör ID/yolu.</summary>
+        /// <summary>Google Drive veya Mega klasör yolu.</summary>
         [JsonProperty("remoteFolderPath")]
         public string RemoteFolderPath { get; set; }
 
@@ -148,11 +148,11 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("localOrUncPath")]
         public string LocalOrUncPath { get; set; }
 
-        /// <summary>OAuth2 token JSON (Google Drive / OneDrive).</summary>
+        /// <summary>OAuth2 token JSON (Google Drive).</summary>
         [JsonProperty("oauthTokenJson")]
         public string OAuthTokenJson { get; set; }
 
-        /// <summary>OAuth2 Client ID (Google Cloud Console / Azure AD'den alınır).</summary>
+        /// <summary>OAuth2 Client ID (Google Cloud Console'dan alınır).</summary>
         [JsonProperty("oauthClientId")]
         public string OAuthClientId { get; set; }
 

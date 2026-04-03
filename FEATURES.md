@@ -2,6 +2,14 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.68.0 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
+- Mega.io bulut depolama: Email/şifre auth, upload (ilerleme), silme (çöp/kalıcı), klasör yönetimi
+- MegaApiClient v1.10.5 NuGet paketi
+- OneDrive desteği tamamen kaldırıldı (Microsoft.Graph, Azure.Identity, MSAL)
+- GoogleDriveWorkspace enum değeri kaldırıldı, Google Drive tek tip
+- CloudProviderType.LocalPath bulut hedeflerinden kaldırıldı (yerel yedekleme etkilenmedi)
+- CloudTargetEditDialog: Mega.io combobox, FTP grubu Mega için yeniden kullanım
+
 ### v0.66.0 — Şifre Koruması Aktif/Pasif Toggle
 - Şifre aktif/pasif toggle: Şifreyi kaldırmadan korumayı geçici olarak devre dışı bırakma
 - ToolStripSplitButton: Dropdown menü ile hızlı aktif/pasif geçişi
@@ -15,7 +23,6 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 
 ### v0.64.1 — Provider Listesi Sadeleştirme
 - Google Drive (Bireysel/Workspace) → tek "Google Drive ✓" satırı
-- OneDrive (Bireysel/Kurumsal) → tek "OneDrive" satırı
 - ProviderMap mapping sistemi (enum uyumluluğu korunur)
 - Test edilen provider'lara ✓ işareti
 

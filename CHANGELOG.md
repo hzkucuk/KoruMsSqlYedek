@@ -1,4 +1,38 @@
-﻿## [0.67.0] - 2026-04-03 — Google OAuth Özel Credential Yönetimi
+﻿## [0.68.0] - 2026-04-04 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
+
+### Yeni Özellik
+- **Mega.io Bulut Desteği:** Email/şifre ile kimlik doğrulama, dosya yükleme (ilerleme bilgisi), silme (çöp kutusu/kalıcı), klasör yönetimi, kota bilgisi
+- **MegaApiClient v1.10.5:** NuGet paketi eklendi (CG.Web.MegaApiClient)
+- **CloudTargetEditDialog:** Mega.io combobox'a eklendi, FTP grubu Mega için yeniden kullanılır (host/port gizli, "Email" etiketi)
+
+### Kaldırılan
+- **OneDrive Desteği:** Tüm OneDrive provider kodu, NuGet paketleri (Microsoft.Graph, Azure.Identity, MSAL) ve testler kaldırıldı
+- **GoogleDriveWorkspace:** Enum değeri ve ilgili branching kaldırıldı, Google Drive artık tek tip
+- **CloudProviderType.LocalPath:** Bulut hedeflerinden kaldırıldı (yerel yedekleme klasörü BackupPlanConfig.LocalPath etkilenmedi)
+
+### İyileştirme
+- GoogleDriveProvider: DisplayName sadeleştirildi → "Google Drive"
+- LocalNetworkProvider: Sadece UNC paylaşımı, DisplayName → "Ağ Paylaşımı (UNC)"
+- PlanEditForm: Bulut modu radio/hint metinleri güncellendi (Mega.io eklendi)
+- Tüm test dosyaları güncellendi (yeni Mega testleri, LocalPath→UncPath geçişleri)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` (yeni)
+- `KoruMsSqlYedek.Core/Models/Enums.cs`
+- `KoruMsSqlYedek.Engine/Cloud/CloudProviderFactory.cs`
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/LocalNetworkProvider.cs`
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs`
+- `KoruMsSqlYedek.Core/Interfaces/ICloudProvider.cs`
+- `KoruMsSqlYedek.Core/Models/ConfigModels.cs`
+- `KoruMsSqlYedek.Engine/KoruMsSqlYedek.Engine.csproj`
+- Silinen: `OneDriveProvider.cs`, `OneDriveAuthHelper.cs`, `OneDriveProviderTests.cs`
+- Test: `CloudProviderFactoryTests.cs`, `GoogleDriveProviderTests.cs`, `CloudUploadOrchestratorTests.cs`, `LocalNetworkProviderTests.cs`, `TestDataFactory.cs`
+
+---
+
+## [0.67.0] - 2026-04-03 — Google OAuth Özel Credential Yönetimi
 
 ### Yeni Özellik
 - **Google OAuth Ayarları Dialogu:** Kullanıcılar Google Cloud Console'dan aldıkları kendi Client ID/Secret değerlerini girebilir.

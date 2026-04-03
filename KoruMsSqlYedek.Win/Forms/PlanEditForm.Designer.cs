@@ -236,7 +236,7 @@
             _toolTip.SetToolTip(_rbModeLocal, "Yedek dosyalar\u0131 yaln\u0131zca yerel diske,\nharici diske veya a\u011f payla\u015f\u0131m\u0131na (UNC) kaydedilir.\nBulut y\u00fckleme ad\u0131m\u0131 atlan\u0131r.");
             step1.Controls.Add(_rbModeLocal);
             y += 22;
-            _rbModeCloud.Text = "Bulut (Google Drive / OneDrive / FTP / SFTP)";
+            _rbModeCloud.Text = "Bulut (Google Drive / Mega.io / FTP / SFTP)";
             _rbModeCloud.AutoSize = true;
             _rbModeCloud.Location = new System.Drawing.Point(tx, y);
             _toolTip.SetToolTip(_rbModeCloud, "Yedek dosyalar\u0131 \u00f6nce yerele kaydedilir,\nsonra bulut sa\u011flay\u0131c\u0131lar\u0131na y\u00fcklenir.\nHedef yap\u0131land\u0131rma ad\u0131m\u0131 g\u00f6sterilir.");
@@ -581,7 +581,7 @@
             step5.Controls.Add(_lblStep5Header);
             y += 26;
 
-            _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri yönetin.\nGoogle Drive, OneDrive, FTP/SFTP, yerel klas\u00f6r ve UNC a\u011f paylas\u0131m\u0131 desteklenir.";
+            _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri yönetin.\nGoogle Drive, Mega.io, FTP/SFTP ve UNC a\u011f paylas\u0131m\u0131 desteklenir.";
             _lblStep5Hint.AutoSize = true;
             _lblStep5Hint.ForeColor = Theme.ModernTheme.TextSecondary;
             _lblStep5Hint.Location = new System.Drawing.Point(lx, y);

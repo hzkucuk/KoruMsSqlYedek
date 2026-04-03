@@ -9,7 +9,7 @@ using KoruMsSqlYedek.Core.Models;
 namespace KoruMsSqlYedek.Engine.Cloud
 {
     /// <summary>
-    /// Yerel dizin veya UNC ağ paylaşımı provider'ı.
+    /// UNC ağ paylaşımı provider'ı.
     /// UNC kimlik bilgisi, buffered kopyalama, ilerleme raporlama ve boyut doğrulama destekler.
     /// </summary>
     public class LocalNetworkProvider : ICloudProvider
@@ -26,9 +26,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         public CloudProviderType ProviderType => _type;
-        public string DisplayName => _type == CloudProviderType.UncPath
-            ? "Ağ Paylaşımı (UNC)"
-            : "Yerel Dizin";
+        public string DisplayName => "Ağ Paylaşımı (UNC)";
 
         public async Task<CloudUploadResult> UploadAsync(
             string localFilePath,

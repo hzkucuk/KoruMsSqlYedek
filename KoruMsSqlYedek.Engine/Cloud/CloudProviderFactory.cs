@@ -7,7 +7,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
 {
     /// <summary>
     /// CloudProviderType'a göre uygun ICloudProvider örneği oluşturan fabrika.
-    /// Tüm provider türlerini destekler: Google Drive, OneDrive, FTP/SFTP, Local/UNC.
+    /// Tüm provider türlerini destekler: Google Drive, Mega.io, FTP/SFTP, UNC.
     /// </summary>
     public class CloudProviderFactory : ICloudProviderFactory
     {
@@ -18,19 +18,16 @@ namespace KoruMsSqlYedek.Engine.Cloud
             switch (type)
             {
                 case CloudProviderType.GoogleDrivePersonal:
-                case CloudProviderType.GoogleDriveWorkspace:
                     return new GoogleDriveProvider(type);
 
-                case CloudProviderType.OneDrivePersonal:
-                case CloudProviderType.OneDriveBusiness:
-                    return new OneDriveProvider(type);
+                case CloudProviderType.Mega:
+                    return new MegaProvider();
 
                 case CloudProviderType.Ftp:
                 case CloudProviderType.Ftps:
                 case CloudProviderType.Sftp:
                     return new FtpSftpProvider(type);
 
-                case CloudProviderType.LocalPath:
                 case CloudProviderType.UncPath:
                     return new LocalNetworkProvider(type);
 
@@ -48,13 +45,10 @@ namespace KoruMsSqlYedek.Engine.Cloud
             switch (type)
             {
                 case CloudProviderType.GoogleDrivePersonal:
-                case CloudProviderType.GoogleDriveWorkspace:
-                case CloudProviderType.OneDrivePersonal:
-                case CloudProviderType.OneDriveBusiness:
+                case CloudProviderType.Mega:
                 case CloudProviderType.Ftp:
                 case CloudProviderType.Ftps:
                 case CloudProviderType.Sftp:
-                case CloudProviderType.LocalPath:
                 case CloudProviderType.UncPath:
                     return true;
                 default:

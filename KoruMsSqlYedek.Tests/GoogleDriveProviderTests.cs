@@ -18,16 +18,15 @@ namespace KoruMsSqlYedek.Tests
         public void Constructor_PersonalType_SetsDisplayNameCorrectly()
         {
             var provider = new GoogleDriveProvider(CloudProviderType.GoogleDrivePersonal);
-            provider.DisplayName.Should().Be("Google Drive (Bireysel)");
+            provider.DisplayName.Should().Be("Google Drive");
             provider.ProviderType.Should().Be(CloudProviderType.GoogleDrivePersonal);
         }
 
         [TestMethod]
-        public void Constructor_WorkspaceType_SetsDisplayNameCorrectly()
+        public void Constructor_MegaType_ThrowsArgumentException()
         {
-            var provider = new GoogleDriveProvider(CloudProviderType.GoogleDriveWorkspace);
-            provider.DisplayName.Should().Be("Google Drive (Workspace)");
-            provider.ProviderType.Should().Be(CloudProviderType.GoogleDriveWorkspace);
+            Action act = () => new GoogleDriveProvider(CloudProviderType.Mega);
+            act.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
@@ -39,9 +38,9 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
-        public void Constructor_LocalPathType_ThrowsArgumentException()
+        public void Constructor_SftpType_ThrowsArgumentException()
         {
-            Action act = () => new GoogleDriveProvider(CloudProviderType.LocalPath);
+            Action act = () => new GoogleDriveProvider(CloudProviderType.Sftp);
             act.Should().Throw<ArgumentException>();
         }
 

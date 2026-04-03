@@ -43,9 +43,8 @@
     <!-- Cloud: Google Drive -->
     <PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3568" />
 
-    <!-- Cloud: OneDrive (Microsoft Graph) -->
-    <PackageReference Include="Microsoft.Graph" Version="5.62.0" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.83.3" />
+    <!-- Cloud: Mega.io -->
+    <PackageReference Include="MegaApiClient" Version="1.10.5" />
 
     <!-- Cloud: FTP/SFTP -->
     <PackageReference Include="FluentFTP" Version="51.0.0" />

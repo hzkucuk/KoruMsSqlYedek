@@ -16,7 +16,6 @@ namespace KoruMsSqlYedek.Engine.Cloud
     /// <summary>
     /// Google Drive cloud provider.
     /// OAuth2 ile kimlik doğrulama, resumable upload, klasör yönetimi ve çöp kutusu temizleme.
-    /// Bireysel ve Google Workspace hesaplarını destekler.
     /// </summary>
     public class GoogleDriveProvider : ICloudProvider
     {
@@ -30,17 +29,15 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         public GoogleDriveProvider(CloudProviderType type)
         {
-            if (type != CloudProviderType.GoogleDrivePersonal && type != CloudProviderType.GoogleDriveWorkspace)
-                throw new ArgumentException($"Geçersiz provider türü: {type}. GoogleDrivePersonal veya GoogleDriveWorkspace olmalıdır.");
+            if (type != CloudProviderType.GoogleDrivePersonal)
+                throw new ArgumentException($"Geçersiz provider türü: {type}. GoogleDrivePersonal olmalıdır.");
 
             _type = type;
         }
 
         public CloudProviderType ProviderType => _type;
 
-        public string DisplayName => _type == CloudProviderType.GoogleDriveWorkspace
-            ? "Google Drive (Workspace)"
-            : "Google Drive (Bireysel)";
+        public string DisplayName => "Google Drive";
 
         public async Task<CloudUploadResult> UploadAsync(
             string localFilePath,

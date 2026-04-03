@@ -230,7 +230,7 @@ namespace KoruMsSqlYedek.Tests
                 TotalCount = 5,
                 Message = "Tamamlandı",
                 StepName = "Bulut Yükleme",
-                CloudTargetName = "OneDrive",
+                CloudTargetName = "Google Drive",
                 CloudTargetIndex = 1,
                 CloudTargetTotal = 1,
                 ProgressPercent = 100,
@@ -251,7 +251,7 @@ namespace KoruMsSqlYedek.Tests
             args.TotalCount.Should().Be(5);
             args.Message.Should().Be("Tamamlandı");
             args.StepName.Should().Be("Bulut Yükleme");
-            args.CloudTargetName.Should().Be("OneDrive");
+            args.CloudTargetName.Should().Be("Google Drive");
             args.CloudTargetIndex.Should().Be(1);
             args.CloudTargetTotal.Should().Be(1);
             args.ProgressPercent.Should().Be(100);
