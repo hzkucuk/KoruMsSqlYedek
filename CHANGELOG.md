@@ -1,4 +1,15 @@
-﻿## [0.68.1] - 2026-04-04 — Mega Upload Timeout Koruması + Pipe Güvenlik İyileştirmesi
+﻿## [0.68.2] - 2026-04-04 — Şifre Koruması Null Fix
+
+### Düzeltme
+- **PasswordSetupDialog ArgumentNullException:** `_settings` null olduğunda şifre ayarları dialogu açılırken `ArgumentNullException` hatası oluşuyordu. `_settings ??= _settingsManager.Load()` ile lazy-load eklendi.
+- **OnPasswordToggleClick:** Aynı null koruma tutarlılık için eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs`
+
+---
+
+## [0.68.1] - 2026-04-04 — Mega Upload Timeout Koruması + Pipe Güvenlik İyileştirmesi
 
 ### Düzeltme
 - **Mega Upload Timeout Koruması:** LoginAsync CancellationToken desteklemediği için Task.WhenAny ile 30 saniyelik timeout eklendi

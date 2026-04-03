@@ -837,8 +837,11 @@ namespace KoruMsSqlYedek.Win
         /// <summary>Şifre koruması ayarları dialogunu açar.</summary>
         private void OnPasswordSetupClick(object sender, EventArgs e)
         {
+            // _settings henüz yüklenmediyse yükle
+            _settings ??= _settingsManager.Load();
+
             // Mevcut şifre varsa önce doğrula
-            if (_settings != null && _settings.HasPassword)
+            if (_settings.HasPassword)
             {
                 if (!CheckPlanPassword()) return;
             }
@@ -856,7 +859,9 @@ namespace KoruMsSqlYedek.Win
         /// <summary>Şifre korumasını aktif/pasif yapar.</summary>
         private void OnPasswordToggleClick(object sender, EventArgs e)
         {
-            if (_settings == null || !_settings.HasPassword)
+            _settings ??= _settingsManager.Load();
+
+            if (!_settings.HasPassword)
             {
                 Theme.ModernMessageBox.Show(
                     "Önce bir şifre tanımlamanız gerekiyor.",
