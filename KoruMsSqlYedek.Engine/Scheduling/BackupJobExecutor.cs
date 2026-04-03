@@ -408,10 +408,15 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     }
                 }
 
-                // 4. Cloud Upload
+                // 4. Cloud Upload — ana dosya (.bak/.7z) ve VSS dosyası bağımsız yüklenir.
+                //    İkisinden biri başarısız olsa bile diğeri denenir; en az biri buluta gitmelidir.
                 if (CloudOrchestrator != null && plan.CloudTargets != null &&
                     plan.CloudTargets.Any(t => t.IsEnabled))
                 {
+                    bool mainUploadOk = false;
+                    bool vssUploadOk = false;
+
+                    // 4a. Ana dosya yükleme (.bak veya .7z)
                     try
                     {
                         string fileToUpload = !string.IsNullOrEmpty(result.CompressedFilePath)
@@ -426,6 +431,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
                         int successCount = result.CloudUploadResults.Count(r => r.IsSuccess);
                         int totalCount = result.CloudUploadResults.Count;
+                        mainUploadOk = successCount > 0;
+
                         Log.Information(
                             "Bulut upload tamamlandı: {Database} — {Success}/{Total} başarılı",
                             dbName, successCount, totalCount);
@@ -439,9 +446,17 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             StepName = "Bulut Yükleme",
                             Message = $"Bulut yükleme tamamlandı: {dbName} — {successCount}/{totalCount} başarılı [{Fmt(new FileInfo(fileToUpload).Length)}]"
                         });
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Ana dosya bulut upload hatası: {Database}", dbName);
+                    }
 
-                        // 4b. VSS dosyasını da buluta yükle
-                        if (!string.IsNullOrEmpty(result.VssFileCopyPath) && File.Exists(result.VssFileCopyPath))
+                    // 4b. VSS dosyasını da buluta yükle (ana upload sonucundan bağımsız)
+                    if (!string.IsNullOrEmpty(result.VssFileCopyPath) && File.Exists(result.VssFileCopyPath))
+                    {
+                        try
                         {
                             string vssRemoteName = Path.GetFileName(result.VssFileCopyPath);
                             Log.Information("VSS dosyası buluta yükleniyor: {VssFile}", vssRemoteName);
@@ -462,6 +477,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
                             int vssSuccess = vssResults.Count(r => r.IsSuccess);
                             int vssTotal = vssResults.Count;
+                            vssUploadOk = vssSuccess > 0;
 
                             BackupActivityHub.Raise(new BackupActivityEventArgs
                             {
@@ -473,11 +489,19 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                 Message = $"VSS bulut yükleme tamamlandı: {dbName} — {vssSuccess}/{vssTotal} başarılı [{Fmt(result.VssFileCopySizeBytes)}]"
                             });
                         }
+                        catch (OperationCanceledException) { throw; }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "VSS dosyası bulut upload hatası: {Database}", dbName);
+                        }
                     }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception ex)
+
+                    // Her iki upload da başarısızsa uyarı
+                    if (!mainUploadOk && !vssUploadOk)
                     {
-                        Log.Error(ex, "Bulut upload hatası: {Database}", dbName);
+                        Log.Error(
+                            "Buluta hiçbir dosya yüklenemedi: {Database} — " +
+                            "ne ana yedek ne de VSS kopyası başarılı olamadı.", dbName);
                     }
                 }
 

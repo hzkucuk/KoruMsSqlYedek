@@ -1,4 +1,17 @@
-﻿## [0.68.2] - 2026-04-04 — Şifre Koruması Null Fix
+﻿## [0.68.3] - 2026-04-04 — VSS Tüm Edition’larda Aktif + Bulut Upload Bağımsızlığı
+
+### İyileştirme
+- **VSS Dosya Kopyası Tüm Edition’larda:** Express kısıtı kaldırıldı. MDF/LDF VSS kopyası artık tüm SQL Server sürümlerinde (Express, Developer, Standard, Enterprise) ek güvenlik olarak alınıyor. Başarısız olursa sessizce atlanır.
+- **Bağımsız Bulut Yükleme:** Ana dosya (.bak/.7z) ve VSS dosyası ayrı try bloklarda yükleniyor. Biri başarısız olsa bile diğeri denenir — en az bir yedeğin buluta ulaşması garanti edilir.
+- **Hata Loglama:** Her iki upload da başarısızsa Error seviyesinde log yazılır.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Backup/SqlBackupService.cs` (Express kısıtı kaldırıldı)
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` (bulut upload bağımsızlığı)
+
+---
+
+## [0.68.2] - 2026-04-04 — Şifre Koruması Null Fix
 
 ### Düzeltme
 - **PasswordSetupDialog ArgumentNullException:** `_settings` null olduğunda şifre ayarları dialogu açılırken `ArgumentNullException` hatası oluşuyordu. `_settings ??= _settingsManager.Load()` ile lazy-load eklendi.

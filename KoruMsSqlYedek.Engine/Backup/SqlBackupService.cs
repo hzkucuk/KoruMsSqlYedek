@@ -160,12 +160,10 @@ namespace KoruMsSqlYedek.Engine.Backup
                     "Yedekleme başarılı: {Database} ({BackupType}) → {FilePath} [{SizeMb:F1} MB]",
                     databaseName, effectiveBackupType, fullPath, fileInfo.Length / BytesPerMb);
 
-                // Express Edition: ek güvenlik olarak VSS üzerinden dosya kopyası al
-                if (isExpress)
-                {
-                    await TryExpressVssBackupAsync(
-                        server, dbObj, databaseName, destinationPath, result, cancellationToken);
-                }
+                // Tüm edition'larda ek güvenlik olarak VSS üzerinden MDF/LDF dosya kopyası al.
+                // Başarısız olursa sessizce atlanır; .bak yedek zaten mevcut.
+                await TryExpressVssBackupAsync(
+                    server, dbObj, databaseName, destinationPath, result, cancellationToken);
             }
             catch (OperationCanceledException)
             {
