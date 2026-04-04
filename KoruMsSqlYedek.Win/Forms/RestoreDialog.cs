@@ -225,7 +225,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 return;
             }
 
-            var confirm = MessageBox.Show(
+            var confirm = Theme.ModernMessageBox.Show(
                 Res.Format("Restore_Confirm", targetDb),
                 Res.Get("Restore_ConfirmTitle"),
                 MessageBoxButtons.YesNo,
@@ -317,7 +317,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             if (_isBusy)
             {
-                var result = MessageBox.Show(
+                var result = Theme.ModernMessageBox.Show(
                     Res.Get("Restore_CancelConfirm"),
                     Res.Get("Restore_CancelConfirmTitle"),
                     MessageBoxButtons.YesNo,

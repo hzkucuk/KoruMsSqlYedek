@@ -39,6 +39,7 @@
             _grpOAuth = new System.Windows.Forms.GroupBox();
             _btnGoogleAuth = new Theme.ModernButton();
             _lblAuthStatus = new System.Windows.Forms.Label();
+            _btnOAuthSettings = new Theme.ModernButton();
 
             // Yerel/UNC grubu
             _grpLocal = new System.Windows.Forms.GroupBox();
@@ -147,8 +148,14 @@
             _lblAuthStatus.Location = new System.Drawing.Point(174, 29);
             _lblAuthStatus.Text = "Hen\u00fcz do\u011frulanmad\u0131";
 
+            _btnOAuthSettings.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnOAuthSettings.Size = new System.Drawing.Size(30, 28);
+            _btnOAuthSettings.Location = new System.Drawing.Point(380, 24);
+            _btnOAuthSettings.Click += OnOAuthSettingsClick;
+
             _grpOAuth.Controls.Add(_btnGoogleAuth);
             _grpOAuth.Controls.Add(_lblAuthStatus);
+            _grpOAuth.Controls.Add(_btnOAuthSettings);
 
             // === Yerel/UNC Grubu ===
             _grpLocal.Text = "Yerel / Ağ Yolu";
@@ -282,6 +289,7 @@
         private System.Windows.Forms.GroupBox _grpOAuth;
         private Theme.ModernButton _btnGoogleAuth;
         private System.Windows.Forms.Label _lblAuthStatus;
+        private Theme.ModernButton _btnOAuthSettings;
 
         // Yerel/UNC
         private System.Windows.Forms.GroupBox _grpLocal;

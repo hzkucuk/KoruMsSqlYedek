@@ -146,9 +146,9 @@ namespace KoruMsSqlYedek.Tests.Helpers
                 },
                 new CloudTargetConfig
                 {
-                    Type = CloudProviderType.LocalPath,
+                    Type = CloudProviderType.UncPath,
                     IsEnabled = true,
-                    DisplayName = "Local Backup",
+                    DisplayName = "UNC Backup",
                     LocalOrUncPath = @"\\server\share\backups"
                 }
             };
@@ -280,8 +280,8 @@ namespace KoruMsSqlYedek.Tests.Helpers
                 },
                 new CloudUploadResult
                 {
-                    ProviderType = CloudProviderType.LocalPath,
-                    DisplayName = "Local Backup",
+                    ProviderType = CloudProviderType.UncPath,
+                    DisplayName = "UNC Backup",
                     IsSuccess = allSuccess,
                     RemoteFilePath = @"\\server\share\backups\test.7z",
                     UploadedAt = allSuccess ? DateTime.UtcNow : (DateTime?)null,

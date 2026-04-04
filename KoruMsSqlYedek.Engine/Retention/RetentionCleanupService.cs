@@ -30,11 +30,12 @@ namespace KoruMsSqlYedek.Engine.Retention
             if (plan?.Retention == null || string.IsNullOrEmpty(plan.LocalPath))
                 return;
 
-            Log.Information("Retention temizliği başlıyor: Plan={PlanName}, Mod={Mode}", plan.PlanName, plan.Mode);
+            Log.Information("Retention temizliği başlıyor: Plan={PlanName}, BulutHedef={HasCloud}",
+                plan.PlanName, plan.HasCloudTargets);
 
-            // Bulut modda geçmiş kayıtlarını yükle — upload durumunu kontrol etmek için
+            // Aktif bulut hedefi varsa geçmiş kayıtlarını yükle — upload durumunu kontrol etmek için
             HashSet<string> cloudProtectedFiles = null;
-            if (plan.Mode == BackupMode.Cloud)
+            if (plan.HasCloudTargets)
             {
                 cloudProtectedFiles = BuildCloudProtectedFileSet(plan);
             }
@@ -45,6 +46,13 @@ namespace KoruMsSqlYedek.Engine.Retention
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     CleanupForDatabase(plan.LocalPath, dbName, plan.Retention, cloudProtectedFiles);
+                }
+
+                // Dosya yedekleme arşivlerini de temizle (Files_*.7z)
+                if (plan.FileBackup?.IsEnabled == true)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    CleanupFileBackupArchives(plan.LocalPath, plan.Retention, cloudProtectedFiles);
                 }
             }, cancellationToken);
         }
@@ -241,6 +249,73 @@ namespace KoruMsSqlYedek.Engine.Retention
             int diff = ((int)date.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
 
             return date.Date.AddDays(-diff);
+        }
+
+        /// <summary>
+        /// Dosya yedekleme arşivlerini (Files_*.7z) retention politikasına göre temizler.
+        /// </summary>
+        private void CleanupFileBackupArchives(
+            string localPath,
+            RetentionPolicy retention,
+            HashSet<string> cloudProtectedFiles)
+        {
+            if (!Directory.Exists(localPath))
+                return;
+
+            var allFiles = Directory.GetFiles(localPath, "Files_*.7z")
+                .Select(f => new FileInfo(f))
+                .OrderByDescending(f => f.CreationTime)
+                .ToList();
+
+            if (allFiles.Count == 0)
+                return;
+
+            int deletedCount = 0;
+            int skippedCount = 0;
+
+            if (retention.Type == RetentionPolicyType.GFS)
+            {
+                var protectedByGfs = BuildGfsProtectedSet(allFiles, retention);
+
+                foreach (var file in allFiles)
+                {
+                    if (!protectedByGfs.Contains(file.FullName))
+                        TryDeleteFileWithCloudCheck(file, cloudProtectedFiles, ref deletedCount, ref skippedCount);
+                }
+            }
+            else
+            {
+                if (retention.Type == RetentionPolicyType.KeepLastN ||
+                    retention.Type == RetentionPolicyType.Both)
+                {
+                    var toDeleteByCount = allFiles.Skip(retention.KeepLastN).ToList();
+                    foreach (var file in toDeleteByCount)
+                    {
+                        TryDeleteFileWithCloudCheck(file, cloudProtectedFiles, ref deletedCount, ref skippedCount);
+                    }
+                }
+
+                if (retention.Type == RetentionPolicyType.DeleteOlderThanDays ||
+                    retention.Type == RetentionPolicyType.Both)
+                {
+                    DateTime cutoff = DateTime.Now.AddDays(-retention.DeleteOlderThanDays);
+                    var toDeleteByAge = allFiles
+                        .Where(f => f.CreationTime < cutoff)
+                        .ToList();
+
+                    foreach (var file in toDeleteByAge)
+                    {
+                        TryDeleteFileWithCloudCheck(file, cloudProtectedFiles, ref deletedCount, ref skippedCount);
+                    }
+                }
+            }
+
+            if (deletedCount > 0 || skippedCount > 0)
+            {
+                Log.Information(
+                    "Dosya arşiv retention tamamlandı: {Deleted} silindi, {Skipped} korundu (bulut bekliyor)",
+                    deletedCount, skippedCount);
+            }
         }
 
         private void TryDeleteFileWithCloudCheck(

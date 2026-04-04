@@ -123,6 +123,9 @@ namespace KoruMsSqlYedek.Win.Theme
 
         private void PositionInnerTextBox()
         {
+            if (_innerTextBox is null)
+                return;
+
             int x = _radius + 6;
             int y = (Height - _innerTextBox.PreferredHeight) / 2;
             _innerTextBox.Location = new Point(x, Math.Max(2, y));

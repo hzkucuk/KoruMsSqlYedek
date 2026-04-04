@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -43,6 +43,8 @@ namespace KoruMsSqlYedek.Win
         // Log viewer state
         private readonly string _logDirectory;
         private List<LogEntry> _allLogEntries = new List<LogEntry>();
+        private List<LogEntry> _filteredLogEntries = new List<LogEntry>();
+        private const int MaxLogEntries = 10000;
         private static readonly Regex LogLineRegex = new Regex(
             @"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})[^\[]*\[(\w{3})\]\s+(.*)",
             RegexOptions.Compiled);
@@ -116,6 +118,10 @@ namespace KoruMsSqlYedek.Win
 
             _tabControl.SelectedIndexChanged += OnTabChanged;
             _splitPlans.Resize += OnSplitPlansResize;
+
+            // VirtualMode event — log grid
+            _dgvLogs.CellValueNeeded += OnLogCellValueNeeded;
+            _dgvLogs.CellFormatting += OnLogCellFormatting;
 
             BackupActivityHub.ActivityChanged   += OnBackupActivityChanged;
             _pipeClient.ConnectionChanged       += OnPipeConnectionChanged;
@@ -218,6 +224,10 @@ namespace KoruMsSqlYedek.Win
             _tsbRefreshPlans.Text = "Yenile";
             _tsbRefreshPlans.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
             _tsbRefreshPlans.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _tsbPassword.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
+            _tsbPassword.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            UpdatePasswordButtonIcon();
         }
 
         /// <summary>
@@ -678,7 +688,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Error(ex, "Plan listesi yüklenirken hata oluştu.");
-                MessageBox.Show(Res.Format("PlanList_LoadError", ex.Message),
+                Theme.ModernMessageBox.Show(Res.Format("PlanList_LoadError", ex.Message),
                     Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -809,8 +819,140 @@ namespace KoruMsSqlYedek.Win
             public bool LastBackupFailed;
         }
 
+        /// <summary>
+        /// Şifre koruması etkinse doğrulama dialogu gösterir.
+        /// Global (master) ve/veya plan bazlı şifre varsa dialog açılır.
+        /// Hiçbir şifre tanımlı değilse true döner.
+        /// </summary>
+        /// <param name="plan">Düzenlenecek/silinecek plan. Yeni plan için null.</param>
+        private bool CheckPlanPassword(BackupPlan plan = null)
+        {
+            bool hasMaster = _settings != null && _settings.IsPasswordProtected;
+            bool hasPlanPw = plan != null && plan.HasPlanPassword;
+
+            if (!hasMaster && !hasPlanPw)
+                return true;
+
+            string planHash = hasPlanPw ? plan.PasswordHash : null;
+
+            using (var dlg = new PasswordDialog(_settings ?? new AppSettings(), _settingsManager, planHash))
+            {
+                return dlg.ShowDialog(this) == DialogResult.OK;
+            }
+        }
+
+        /// <summary>Şifre koruması ayarları dialogunu açar.</summary>
+        private void OnPasswordSetupClick(object sender, EventArgs e)
+        {
+            // _settings henüz yüklenmediyse yükle
+            _settings ??= _settingsManager.Load();
+
+            // Mevcut şifre varsa önce doğrula
+            if (_settings.HasPassword)
+            {
+                if (!CheckPlanPassword()) return;
+            }
+
+            using (var dlg = new PasswordSetupDialog(_settings, _settingsManager))
+            {
+                dlg.ShowDialog(this);
+            }
+
+            // Ayarları yeniden yükle (şifre değişmiş olabilir)
+            _settings = _settingsManager.Load();
+            UpdatePasswordButtonIcon();
+        }
+
+        /// <summary>Şifre korumasını aktif/pasif yapar.</summary>
+        private void OnPasswordToggleClick(object sender, EventArgs e)
+        {
+            _settings ??= _settingsManager.Load();
+
+            if (!_settings.HasPassword)
+            {
+                Theme.ModernMessageBox.Show(
+                    "Önce bir şifre tanımlamanız gerekiyor.",
+                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // Pasif yapılacaksa şifre doğrulama iste
+            if (_settings.PasswordEnabled)
+            {
+                if (!CheckPlanPassword()) return;
+
+                _settings.PasswordEnabled = false;
+                _settingsManager.Save(_settings);
+
+                Theme.ModernMessageBox.Show(
+                    "Şifre koruması pasif yapıldı.\nGörev işlemleri şifresiz yapılabilir.",
+                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                // Aktif yapılacaksa da şifreyi doğrula
+                using (var dlg = new PasswordDialog(_settings, _settingsManager))
+                {
+                    if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                }
+
+                _settings.PasswordEnabled = true;
+                _settingsManager.Save(_settings);
+
+                Theme.ModernMessageBox.Show(
+                    "Şifre koruması aktif yapıldı.\nGörev işlemleri artık şifre ile korunuyor.",
+                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
+            UpdatePasswordButtonIcon();
+        }
+
+        /// <summary>Şifre buton ikonunu duruma göre günceller (3 durum: yok/aktif/pasif).</summary>
+        private void UpdatePasswordButtonIcon()
+        {
+            bool hasPassword = _settings != null && _settings.HasPassword;
+            bool isActive = _settings != null && _settings.IsPasswordProtected;
+
+            char icon;
+            Color color;
+            string tooltip;
+
+            if (!hasPassword)
+            {
+                icon = Theme.PhosphorIcons.ShieldCheck;
+                color = Theme.ModernTheme.TextSecondary;
+                tooltip = "Şifre Koruması Ayarla";
+            }
+            else if (isActive)
+            {
+                icon = Theme.PhosphorIcons.ShieldCheck;
+                color = Theme.ModernTheme.StatusSuccess;
+                tooltip = "Şifre Koruması Aktif";
+            }
+            else
+            {
+                icon = Theme.PhosphorIcons.ShieldSlash;
+                color = Theme.ModernTheme.StatusWarning;
+                tooltip = "Şifre Koruması Pasif";
+            }
+
+            _tsbPassword.Image = Theme.PhosphorIcons.Render(icon, color, 18);
+            _tsbPassword.ToolTipText = tooltip;
+
+            // Dropdown menü metnini güncelle
+            if (_tsmiPasswordToggle != null)
+            {
+                _tsmiPasswordToggle.Text = isActive
+                    ? "🔓 Şifre Korumasını Pasif Yap"
+                    : "🔒 Şifre Korumasını Aktif Yap";
+                _tsmiPasswordToggle.Enabled = hasPassword;
+            }
+        }
+
         private async void OnNewPlanClick(object sender, EventArgs e)
         {
+            if (!CheckPlanPassword()) return;
+
             using (var form = new PlanEditForm(_planManager, _sqlBackupService, _settingsManager))
             {
                 if (form.ShowDialog(this) == DialogResult.OK)
@@ -824,6 +966,8 @@ namespace KoruMsSqlYedek.Win
         {
             var plan = GetSelectedPlan();
             if (plan == null) return;
+
+            if (!CheckPlanPassword(plan)) return;
 
             using (var form = new PlanEditForm(_planManager, _sqlBackupService, _settingsManager, plan))
             {
@@ -839,7 +983,9 @@ namespace KoruMsSqlYedek.Win
             var plan = GetSelectedPlan();
             if (plan == null) return;
 
-            var result = MessageBox.Show(
+            if (!CheckPlanPassword(plan)) return;
+
+            var result = Theme.ModernMessageBox.Show(
                 Res.Format("PlanList_DeleteConfirm", plan.PlanName),
                 Res.Get("PlanList_DeleteTitle"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
@@ -855,7 +1001,7 @@ namespace KoruMsSqlYedek.Win
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Plan silinirken hata: {PlanId}", plan.PlanId);
-                    MessageBox.Show(Res.Format("PlanList_DeleteError", ex.Message),
+                    Theme.ModernMessageBox.Show(Res.Format("PlanList_DeleteError", ex.Message),
                         Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -877,13 +1023,13 @@ namespace KoruMsSqlYedek.Win
                     try
                     {
                         _planManager.ExportPlan(plan.PlanId, sfd.FileName);
-                        MessageBox.Show(Res.Get("PlanList_ExportSuccess"), Res.Get("Info"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanList_ExportSuccess"), Res.Get("Info"),
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Plan export hatası: {PlanId}", plan.PlanId);
-                        MessageBox.Show(Res.Format("PlanList_ExportError", ex.Message),
+                        Theme.ModernMessageBox.Show(Res.Format("PlanList_ExportError", ex.Message),
                             Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -904,13 +1050,13 @@ namespace KoruMsSqlYedek.Win
                         var plan = _planManager.ImportPlan(ofd.FileName);
                         Log.Information("Plan içe aktarıldı: {PlanName} ({PlanId})", plan.PlanName, plan.PlanId);
                         RefreshPlanList();
-                        MessageBox.Show(Res.Format("PlanList_ImportSuccess", plan.PlanName), Res.Get("Info"),
+                        Theme.ModernMessageBox.Show(Res.Format("PlanList_ImportSuccess", plan.PlanName), Res.Get("Info"),
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Plan import hatası: {FilePath}", ofd.FileName);
-                        MessageBox.Show(Res.Format("PlanList_ImportError", ex.Message),
+                        Theme.ModernMessageBox.Show(Res.Format("PlanList_ImportError", ex.Message),
                             Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -926,7 +1072,7 @@ namespace KoruMsSqlYedek.Win
         {
             var plan = GetSelectedPlanSilent();
             if (plan == null)
-                MessageBox.Show(Res.Get("ManualBackup_PleaseSelectPlan"), Res.Get("Warning"),
+                Theme.ModernMessageBox.Show(Res.Get("ManualBackup_PleaseSelectPlan"), Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return plan;
         }
@@ -1014,7 +1160,7 @@ namespace KoruMsSqlYedek.Win
 
             if (!_pipeClient.IsConnected)
             {
-                MessageBox.Show(Res.Get("Backup_ServiceNotConnected"), Res.Get("Warning"),
+                Theme.ModernMessageBox.Show(Res.Get("Backup_ServiceNotConnected"), Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -1231,7 +1377,7 @@ namespace KoruMsSqlYedek.Win
                         {
                             int stepPct = -1;
 
-                            if (e.StepName == "Express VSS")
+                            if (e.StepName == "VSS")
                                 stepTracker.HasVssUpload = true;
                             else if (e.StepName == "VSS Bulut Yükleme")
                                 stepTracker.IsVssPhase = true;
@@ -1296,6 +1442,11 @@ namespace KoruMsSqlYedek.Win
                     }
                     break;
 
+                case BackupActivityType.CloudUploadStarted:
+                case BackupActivityType.CloudUploadCompleted:
+                    // Log satırı ve renk switch sonrasında BuildActivityLogLine + GetLogColor ile işlenir.
+                    break;
+
                 case BackupActivityType.Completed:
                 case BackupActivityType.Failed:
                 case BackupActivityType.Cancelled:
@@ -1314,7 +1465,12 @@ namespace KoruMsSqlYedek.Win
                         _progressBar.Value = 0;
                     }
                     UpdatePlanRowProgress(e.PlanId, 0);
-                    UpdatePlanRowStatus(e.PlanId, e.ActivityType);
+
+                    // Bulut başarısızsa Completed ama uyarı ikonu göster
+                    if (e.ActivityType == BackupActivityType.Completed && !e.IsSuccess && !string.IsNullOrEmpty(e.Message))
+                        UpdatePlanRowStatusCustom(e.PlanId, "⚠ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.LogWarning);
+                    else
+                        UpdatePlanRowStatus(e.PlanId, e.ActivityType);
                     break;
 
                 default:
@@ -1325,6 +1481,11 @@ namespace KoruMsSqlYedek.Win
             UpdateBackupButtonStates();
             bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress;
             Color logColor = GetLogColor(e.ActivityType);
+
+            // Bulut yükleme başarısız ama yedekleme tamamlandıysa uyarı rengi kullan
+            if (e.ActivityType == BackupActivityType.Completed && !e.IsSuccess && !string.IsNullOrEmpty(e.Message))
+                logColor = Theme.ModernTheme.LogWarning;
+
             AppendBackupLog(e.PlanId, BuildActivityLogLine(e), logColor, isProgress);
         }
 
@@ -1335,7 +1496,14 @@ namespace KoruMsSqlYedek.Win
         private void UpdatePlanRowStatus(string planId, BackupActivityType activityType)
         {
             (string icon, Color color) = GetStatusDisplay(activityType);
+            UpdatePlanRowStatusCustom(planId, icon, color);
+        }
 
+        /// <summary>
+        /// Plan grid satırının durum hücresini özel ikon ve renkle günceller.
+        /// </summary>
+        private void UpdatePlanRowStatusCustom(string planId, string icon, Color color)
+        {
             foreach (DataGridViewRow row in _dgvPlans.Rows)
             {
                 var plan = row.Tag as BackupPlan;
@@ -1398,10 +1566,14 @@ namespace KoruMsSqlYedek.Win
                 => BuildCloudUploadLogLine(e),
 
             BackupActivityType.CloudUploadCompleted
-                => string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕"),
+                => e.IsSuccess
+                    ? string.Format("Bulut {0}: Başarılı ✓", e.CloudTargetName)
+                    : string.Format("Bulut {0}: Başarısız ✕ — {1}", e.CloudTargetName, e.Message ?? "Bilinmeyen hata"),
 
             BackupActivityType.Completed
-                => string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId),
+                => e.IsSuccess || string.IsNullOrEmpty(e.Message)
+                    ? string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId)
+                    : string.Format("[{0}] Yedekleme tamamlandı (bulut yükleme başarısız). ⚠", e.PlanName ?? e.PlanId),
 
             BackupActivityType.Failed
                 => string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message),
@@ -1518,7 +1690,8 @@ namespace KoruMsSqlYedek.Win
         private void LoadSelectedLogFile()
         {
             _allLogEntries.Clear();
-            _dgvLogs.Rows.Clear();
+            _filteredLogEntries.Clear();
+            _dgvLogs.RowCount = 0;
 
             if (_cmbLogFile.SelectedIndex < 0) return;
             var fileName = _cmbLogFile.SelectedItem?.ToString();
@@ -1575,12 +1748,12 @@ namespace KoruMsSqlYedek.Win
 
         private void ApplyLogFilter()
         {
-            _dgvLogs.Rows.Clear();
-
             string levelFilter = GetSelectedLevelCode();
             string searchText = _txtLogSearch.Text.Trim();
             string planFilter = _cmbLogPlan.SelectedIndex > 0 ? _cmbLogPlan.SelectedItem?.ToString() : null;
             bool hasSearch = !string.IsNullOrEmpty(searchText);
+
+            _filteredLogEntries.Clear();
 
             foreach (var entry in _allLogEntries)
             {
@@ -1593,11 +1766,47 @@ namespace KoruMsSqlYedek.Win
                 if (planFilter != null && entry.Message.IndexOf(planFilter, StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
 
-                int idx = _dgvLogs.Rows.Add(entry.Timestamp, entry.Level, entry.Message);
-                ColorizeLogRow(_dgvLogs.Rows[idx], entry.Level);
+                _filteredLogEntries.Add(entry);
             }
 
-            _tslLogFiltered.Text = Res.Format("LogViewer_FilteredCount", _dgvLogs.Rows.Count);
+            _dgvLogs.RowCount = 0;
+            _dgvLogs.RowCount = _filteredLogEntries.Count;
+
+            _tslLogFiltered.Text = Res.Format("LogViewer_FilteredCount", _filteredLogEntries.Count);
+        }
+
+        /// <summary>VirtualMode: Hücre verisini filtrelenmiş listeden sağlar.</summary>
+        private void OnLogCellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.RowIndex >= _filteredLogEntries.Count) return;
+            var entry = _filteredLogEntries[e.RowIndex];
+            switch (e.ColumnIndex)
+            {
+                case 0: e.Value = entry.Timestamp; break;
+                case 1: e.Value = entry.Level; break;
+                case 2: e.Value = entry.Message; break;
+            }
+        }
+
+        /// <summary>VirtualMode: Seviyeye göre satır rengini belirler.</summary>
+        private void OnLogCellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.RowIndex >= _filteredLogEntries.Count) return;
+            var level = _filteredLogEntries[e.RowIndex].Level;
+            switch (level)
+            {
+                case "ERR":
+                case "FTL":
+                    e.CellStyle.ForeColor = Color.Red;
+                    break;
+                case "WRN":
+                    e.CellStyle.ForeColor = Color.DarkOrange;
+                    break;
+                case "DBG":
+                case "VRB":
+                    e.CellStyle.ForeColor = SystemColors.GrayText;
+                    break;
+            }
         }
 
         private string GetSelectedLevelCode()
@@ -1612,24 +1821,6 @@ namespace KoruMsSqlYedek.Win
                 case 5: return "ERR";
                 case 6: return "FTL";
                 default: return null;
-            }
-        }
-
-        private static void ColorizeLogRow(DataGridViewRow row, string level)
-        {
-            switch (level)
-            {
-                case "ERR":
-                case "FTL":
-                    row.DefaultCellStyle.ForeColor = Color.Red;
-                    break;
-                case "WRN":
-                    row.DefaultCellStyle.ForeColor = Color.DarkOrange;
-                    break;
-                case "DBG":
-                case "VRB":
-                    row.DefaultCellStyle.ForeColor = SystemColors.GrayText;
-                    break;
             }
         }
 
@@ -1676,14 +1867,14 @@ namespace KoruMsSqlYedek.Win
                             }
                         }
 
-                        MessageBox.Show(
+                        Theme.ModernMessageBox.Show(
                             Res.Format("LogViewer_ExportSuccessFormat", _dgvLogs.Rows.Count),
                             Res.Get("LogViewer_ExportSuccessTitle"),
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show(Res.Format("LogViewer_ExportError", ex.Message),
+                        Theme.ModernMessageBox.Show(Res.Format("LogViewer_ExportError", ex.Message),
                             Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1719,7 +1910,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Error(ex, "Ayarlar yüklenemedi.");
-                MessageBox.Show(Res.Format("Settings_LoadError", ex.Message),
+                Theme.ModernMessageBox.Show(Res.Format("Settings_LoadError", ex.Message),
                     Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -1777,7 +1968,7 @@ namespace KoruMsSqlYedek.Win
         {
             if (string.IsNullOrWhiteSpace(_txtDefaultBackupPath.Text))
             {
-                MessageBox.Show(Res.Get("Settings_BackupPathRequired"), Res.Get("ValidationError"),
+                Theme.ModernMessageBox.Show(Res.Get("Settings_BackupPathRequired"), Res.Get("ValidationError"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtDefaultBackupPath.Focus();
                 return false;
@@ -1814,13 +2005,13 @@ namespace KoruMsSqlYedek.Win
                 _txtBackupLog.BackColor = Theme.ModernTheme.LogConsoleBg;
 
                 Log.Information("Ayarlar kaydedildi.");
-                MessageBox.Show(Res.Get("Settings_SavedMessage"),
+                Theme.ModernMessageBox.Show(Res.Get("Settings_SavedMessage"),
                     Res.Get("Settings_SavedTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Ayarlar kaydedilemedi.");
-                MessageBox.Show(Res.Format("Settings_SaveError", ex.Message),
+                Theme.ModernMessageBox.Show(Res.Format("Settings_SaveError", ex.Message),
                     Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -1885,7 +2076,7 @@ namespace KoruMsSqlYedek.Win
             string profileId = _dgvSmtpProfiles.SelectedRows[0].Cells["colId"].Value?.ToString() ?? string.Empty;
             string profileName = _dgvSmtpProfiles.SelectedRows[0].Cells["colName"].Value?.ToString() ?? profileId;
 
-            if (MessageBox.Show(Res.Format("Settings_SmtpDeleteConfirm", profileName),
+            if (Theme.ModernMessageBox.Show(Res.Format("Settings_SmtpDeleteConfirm", profileName),
                     Res.Get("Confirm"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
 
@@ -1898,7 +2089,7 @@ namespace KoruMsSqlYedek.Win
         {
             if (_dgvSmtpProfiles.SelectedRows.Count == 0)
             {
-                MessageBox.Show(Res.Get("Settings_SmtpSelectProfileFirst"), Res.Get("Warning"),
+                Theme.ModernMessageBox.Show(Res.Get("Settings_SmtpSelectProfileFirst"), Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -1909,14 +2100,14 @@ namespace KoruMsSqlYedek.Win
 
             if (string.IsNullOrWhiteSpace(profile.Host))
             {
-                MessageBox.Show(Res.Get("Settings_SmtpServerRequired"), Res.Get("Warning"),
+                Theme.ModernMessageBox.Show(Res.Get("Settings_SmtpServerRequired"), Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(profile.RecipientEmails))
             {
-                MessageBox.Show(Res.Get("Settings_SmtpRecipientTestRequired"), Res.Get("Warning"),
+                Theme.ModernMessageBox.Show(Res.Get("Settings_SmtpRecipientTestRequired"), Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -1959,13 +2150,13 @@ namespace KoruMsSqlYedek.Win
                 client.Send(message);
                 client.Disconnect(true);
 
-                MessageBox.Show(Res.Get("Settings_SmtpTestSuccess"), Res.Get("Success"),
+                Theme.ModernMessageBox.Show(Res.Get("Settings_SmtpTestSuccess"), Res.Get("Success"),
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
-                MessageBox.Show(Res.Format("Settings_SmtpTestError", SanitizeErrorMessage(ex.Message)),
+                Theme.ModernMessageBox.Show(Res.Format("Settings_SmtpTestError", SanitizeErrorMessage(ex.Message)),
                     Res.Get("Settings_SmtpTestErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally

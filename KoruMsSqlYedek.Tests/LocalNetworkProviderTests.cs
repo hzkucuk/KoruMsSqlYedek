@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,14 +35,6 @@ namespace KoruMsSqlYedek.Tests
         #region Constructor & Properties
 
         [TestMethod]
-        public void Constructor_LocalPathType_DisplayNameIsYerelDizin()
-        {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
-            provider.DisplayName.Should().Be("Yerel Dizin");
-            provider.ProviderType.Should().Be(CloudProviderType.LocalPath);
-        }
-
-        [TestMethod]
         public void Constructor_UncPathType_DisplayNameIsAgPaylasimiUNC()
         {
             var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
@@ -58,12 +50,12 @@ namespace KoruMsSqlYedek.Tests
         public async Task UploadAsync_ValidLocalPath_CopiesFileSuccessfully()
         {
             // Arrange
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             string sourceFile = CreateTestFile("test_upload.dat", 1024);
             string destDir = Path.Combine(_testDir, "dest");
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = destDir
             };
 
@@ -86,13 +78,13 @@ namespace KoruMsSqlYedek.Tests
         public async Task UploadAsync_LargeFile_ReportsProgressCorrectly()
         {
             // Arrange
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             int fileSizeBytes = 500_000; // ~500 KB — birden fazla buffer okuma gerektirir
             string sourceFile = CreateTestFile("progress_test.dat", fileSizeBytes);
             string destDir = Path.Combine(_testDir, "progress_dest");
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = destDir
             };
 
@@ -120,7 +112,7 @@ namespace KoruMsSqlYedek.Tests
         public async Task UploadAsync_OverwriteExistingFile_Succeeds()
         {
             // Arrange
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             string sourceFile = CreateTestFile("overwrite_test.dat", 512);
             string destDir = Path.Combine(_testDir, "overwrite_dest");
             Directory.CreateDirectory(destDir);
@@ -128,7 +120,7 @@ namespace KoruMsSqlYedek.Tests
 
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = destDir
             };
 
@@ -146,10 +138,10 @@ namespace KoruMsSqlYedek.Tests
         public async Task UploadAsync_MissingSourceFile_ReturnsFailure()
         {
             // Arrange
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = Path.Combine(_testDir, "dest_missing")
             };
 
@@ -166,7 +158,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task UploadAsync_NullConfig_ReturnsFailure()
         {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
 
             var result = await provider.UploadAsync(
                 "somefile.bak", "file.bak", null,
@@ -179,10 +171,10 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task UploadAsync_EmptyLocalOrUncPath_ReturnsFailure()
         {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = "" // boş yol
             };
 
@@ -198,11 +190,11 @@ namespace KoruMsSqlYedek.Tests
         public async Task UploadAsync_CancellationRequested_ReturnsCancelled()
         {
             // Arrange
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             string sourceFile = CreateTestFile("cancel_test.dat", 1024);
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = Path.Combine(_testDir, "cancel_dest")
             };
 
@@ -223,12 +215,12 @@ namespace KoruMsSqlYedek.Tests
         public async Task UploadAsync_CreatesDestinationDirectory()
         {
             // Arrange
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             string sourceFile = CreateTestFile("dir_create.dat", 256);
             string deepDir = Path.Combine(_testDir, "a", "b", "c");
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = deepDir
             };
 
@@ -250,10 +242,10 @@ namespace KoruMsSqlYedek.Tests
         public async Task DeleteAsync_ExistingFile_DeletesSuccessfully()
         {
             // Arrange
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             string filePath = Path.Combine(_testDir, "to_delete.dat");
             File.WriteAllBytes(filePath, new byte[128]);
-            var config = new CloudTargetConfig { Type = CloudProviderType.LocalPath };
+            var config = new CloudTargetConfig { Type = CloudProviderType.UncPath };
 
             // Act
             bool deleted = await provider.DeleteAsync(filePath, config, CancellationToken.None);
@@ -266,9 +258,9 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task DeleteAsync_NonExistentFile_ReturnsTrue()
         {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             string filePath = Path.Combine(_testDir, "nonexistent.dat");
-            var config = new CloudTargetConfig { Type = CloudProviderType.LocalPath };
+            var config = new CloudTargetConfig { Type = CloudProviderType.UncPath };
 
             bool deleted = await provider.DeleteAsync(filePath, config, CancellationToken.None);
 
@@ -282,10 +274,10 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task TestConnectionAsync_ExistingDirectory_ReturnsTrue()
         {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = _testDir
             };
 
@@ -297,11 +289,11 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task TestConnectionAsync_NewDirectory_CreatesAndReturnsTrue()
         {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             string newDir = Path.Combine(_testDir, "new_test_dir");
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = newDir
             };
 
@@ -314,10 +306,10 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task TestConnectionAsync_EmptyPath_ReturnsFalse()
         {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 LocalOrUncPath = ""
             };
 
@@ -329,7 +321,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task TestConnectionAsync_NullConfig_ReturnsFalse()
         {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
 
             bool connected = await provider.TestConnectionAsync(null, CancellationToken.None);
 
@@ -339,10 +331,10 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task TestConnectionAsync_InvalidPath_ReturnsFalse()
         {
-            var provider = new LocalNetworkProvider(CloudProviderType.LocalPath);
+            var provider = new LocalNetworkProvider(CloudProviderType.UncPath);
             var config = new CloudTargetConfig
             {
-                Type = CloudProviderType.LocalPath,
+                Type = CloudProviderType.UncPath,
                 // Geçersiz karakterli yol — UNC yerine yerel geçersiz yol (timeout önlenir)
                 LocalOrUncPath = @"Z:\nonexistent_drive_xyz_" + Guid.NewGuid().ToString("N")
             };

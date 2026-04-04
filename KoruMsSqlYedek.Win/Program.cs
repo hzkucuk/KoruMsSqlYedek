@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Threading;
 using System.Windows.Forms;
 using Autofac;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Engine;
+using KoruMsSqlYedek.Engine.Cloud;
 using KoruMsSqlYedek.Win.Helpers;
 using KoruMsSqlYedek.Win.IoC;
 using Serilog;
@@ -56,6 +57,7 @@ namespace KoruMsSqlYedek.Win
                 // Dil ve tema ayarlarını uygula (container'dan önce)
                 ApplyLanguageSetting();
                 ApplyThemeSetting();
+                ApplyGoogleOAuthOverride();
 
                 // .NET 10 native dark mode — tema ayarına göre
                 ApplyNativeColorMode();
@@ -74,7 +76,7 @@ namespace KoruMsSqlYedek.Win
                 catch (Exception ex)
                 {
                     Log.Fatal(ex, "Uygulama beklenmeyen bir hata ile sonlandı.");
-                    MessageBox.Show(
+                    Theme.ModernMessageBox.Show(
                         Res.Get("Program_CriticalErrorMessage"),
                         Res.Get("Program_CriticalErrorTitle"),
                         MessageBoxButtons.OK,
@@ -168,11 +170,34 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
+        /// <summary>
+        /// AppSettings'te özel Google OAuth credential varsa GoogleDriveAuthHelper'a yükler.
+        /// </summary>
+        private static void ApplyGoogleOAuthOverride()
+        {
+            try
+            {
+                var settingsManager = new AppSettingsManager();
+                var settings = settingsManager.Load();
+
+                if (settings.HasCustomGoogleOAuth)
+                {
+                    string secret = PasswordProtector.Unprotect(settings.GoogleOAuthClientSecret);
+                    GoogleDriveAuthHelper.SetCustomCredentials(settings.GoogleOAuthClientId, secret);
+                    Log.Information("Özel Google OAuth credential yüklendi.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Google OAuth override uygulanırken hata, gömülü credential kullanılacak.");
+            }
+        }
+
         private static void OnThreadException(object sender, ThreadExceptionEventArgs e)
         {
             Log.Error(e.Exception, "UI thread'de yakalanmamış hata.");
 
-            MessageBox.Show(
+            Theme.ModernMessageBox.Show(
                 Res.Get("Program_ThreadErrorMessage"),
                 Res.Get("Program_ThreadErrorTitle"),
                 MessageBoxButtons.OK,

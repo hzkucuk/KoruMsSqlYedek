@@ -1,4 +1,385 @@
-﻿## [0.64.1] - 2026-04-02 — Provider Listesi Sadeleştirme
+﻿## [0.75.0] - 2026-04-06 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
+
+### Yeni
+- **FileBackupSourceEditDialog:** Daha geniş pencere (510px), GroupBox ile bölümlendirilmiş alan, tüm kontrollere ToolTip eklendi
+- **PlanEditForm Step 3:** "Görev" terminolojisi uygulandı (Tam Yedek Görevi, Fark Yedek Görevi vb.), iyileştirilmiş tooltip'ler (öneriler + kurtarma bilgileri), SQL/Dosya bölümleri arasına ayırıcı çizgi eklendi
+
+### Düzeltme
+- **RetentionCleanupService:** `Files_*.7z` dosya yedekleme arşivleri artık retention politikasına göre temizleniyor (KeepLastN, DeleteOlderThanDays, GFS dahil)
+  - Kök neden: Eski kod sadece `{databaseName}_*.*` pattern'i ile arama yapıyordu, `Files_*.7z` hiçbir zaman eşleşmiyordu
+
+### Test
+- Dosya arşiv retention için 6 yeni test: KeepLastN, DeleteOlderThanDays, FileBackupDisabled, FileBackupNull, MixedDbAndFile, GfsPolicy
+
+## [0.74.1] - 2026-04-06 — Kapsamlı Çapraz Özellik Kombinasyon Testleri
+
+### Yeni
+- **CrossFeatureCombinationTests.cs:** 644 yeni test — tüm BackupPlan özelliklerinin çapraz kombinasyonlarını doğrular.
+  - MegaMatrix: Strategy(3) × Retention(4) × Cloud(2) × Password(2) × FileBackup(2) × ArchivePw(2) × Verify(2) = 384 JSON round-trip testi
+  - SqlAuth × Compression: AuthMode(2) × Strategy(3) × Algorithm(4) × Level(5) = 120 kombinasyon
+  - CloudTarget: 6 provider tipi için tüm provider-specific alanlar (FtpsSkipCertValidation, SftpFingerprint, BandwidthLimit, PermanentDeleteFromTrash)
+  - Notification: SmtpProfile vs Legacy × OnSuccess × OnFailure × Email × Toast = 32 kombinasyon
+  - Reporting: Frequency(3) × Enabled(2) × EmailTo(2) = 12 kombinasyon
+  - FileBackup: Recursive × VSS × Enabled = 8 kombinasyon + çoklu kaynak + edge case
+  - GFS Retention: 5 parametre kombinasyonu
+  - Triple Password System: PlanPw × ArchivePw × SqlPw = 8 kombinasyon
+  - Edge Cases: Maximum config (tüm özellikler açık) + Minimum config (tüm özellikler kapalı)
+  - Backward Compatibility: v0.72 öncesi JSON format doğrulaması
+
+### Düzeltme
+- **FTP Null Config Test Discovery:** MSTest DataRow enum serileştirme sorunu düzeltildi — `CloudProviderType` enum yerine `int` değerler kullanılarak 3 test [None] durumundan çıkarıldı.
+
+### Test İstatistikleri
+- Toplam test: 521 → 1168 (+647 yeni test)
+- Başarılı: 1165/1168 (3 pre-existing failure — GoogleDrive, FileBackup)
+- Yeni regresyon: **0**
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Tests/CrossFeatureCombinationTests.cs` (yeni)
+- `KoruMsSqlYedek.Tests/PlanPasswordIntegrationTests.cs` (FTP DataRow fix)
+
+## [0.74.0] - 2026-04-05 — Plan Bazlı Şifre Koruması
+
+### Yeni Özellik
+- **Plan Şifresi:** Her plan için ayrı şifre belirlenebilir. Plan düzenleme ve silme işlemlerinde hem master şifre hem plan şifresi kabul edilir.
+- **İki Katmanlı Doğrulama:** Master şifre tüm planlara evrensel erişim sağlarken, plan şifresi sadece o plana özeldir.
+- **Sihirbaz Entegrasyonu:** Plan düzenleme sihirbazının Sıkıştırma adımına (Step 4) plan şifre yönetim bölümü eklendi.
+
+### Teknik
+- `BackupPlan.cs`: `PasswordHash` ve `HasPlanPassword` property eklendi.
+- `PasswordDialog.cs`: Opsiyonel `planPasswordHash` parametresi — master VEYA plan şifresi kabul ediyor.
+- `MainWindow.cs`: `CheckPlanPassword(BackupPlan plan = null)` — düzenleme/silme plan şifresini kontrol ediyor, yeni plan oluşturma kontrolsüz.
+- `PlanEditForm.cs` / `PlanEditForm.Designer.cs`: Plan şifre durum göstergesi, yeni şifre alanı ve şifre kaldırma butonu eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/BackupPlan.cs`
+- `KoruMsSqlYedek.Win/Forms/PasswordDialog.cs`
+- `KoruMsSqlYedek.Win/MainWindow.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs`
+
+## [0.73.0] - 2026-04-05 — Yerel/Bulut Mod Ayrımı Kaldırıldı
+
+### İyileştirme
+- **Yedekleme Modu Kaldırıldı:** Plan oluşturma sihirbazından "Yerel" / "Bulut" mod seçimi kaldırıldı. Artık tüm planlar her zaman 6 adımı (Bağlantı → Kaynaklar → Zamanlama → Sıkıştırma → Hedefler → Bildirim) gösteriyor.
+- **Otomatik Algılama:** Bulut hedef varlığı `BackupPlan.HasCloudTargets` computed property ile otomatik belirleniyor.
+- **Geriye Dönük Uyumluluk:** `BackupMode` enum ve `Mode` property JSON uyumluluğu için `[Obsolete]` olarak korunuyor.
+
+### Teknik
+- `Enums.cs`: `BackupMode` enum `[Obsolete]` işaretlendi.
+- `BackupPlan.cs`: `Mode` property `[Obsolete]`, `HasCloudTargets` computed property eklendi.
+- `RetentionCleanupService.cs`: `plan.Mode == BackupMode.Cloud` → `plan.HasCloudTargets` olarak değiştirildi.
+- `PlanEditForm.cs`: Radio button mantığı, `OnBackupModeChanged` handler kaldırıldı, `RebuildActiveSteps` her zaman 6 adım döndürüyor.
+- `PlanEditForm.Designer.cs`: `_lblBackupMode`, `_rbModeLocal`, `_rbModeCloud` kontrolleri kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/Enums.cs`
+- `KoruMsSqlYedek.Core/Models/BackupPlan.cs`
+- `KoruMsSqlYedek.Engine/Retention/RetentionCleanupService.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs`
+
+## [0.72.0] - 2026-04-05 — Mega Oturum Önbellekleme Yeniden Eklendi
+
+### Düzeltme
+- **Mega Session Caching Kaybı Giderildi:** v0.71.x çöp kutusu özelliği eklenirken v0.70.0'da eklenen oturum önbellekleme kaybolmuştu. Her upload/delete/trash işleminde ayrı login/logout yapılıyordu → Mega rate limiting tetikleniyordu.
+- **Oturum Yeniden Kullanımı:** Aynı email ile 15 dakika içindeki tüm Mega API çağrıları mevcut oturumu yeniden kullanıyor.
+- **SemaphoreSlim Serializasyon:** Tüm Mega API çağrıları (Upload, Delete, EmptyTrash) sıralı işleniyor — eşzamanlı erişim ve rate limiting önleniyor.
+- **Hata Sonrası Oturum Geçersizleştirme:** Timeout veya API hatasında oturum önbelleği temizleniyor, sonraki çağrı yeni oturum açıyor.
+
+### Teknik
+- `MegaProvider.cs`: `_cachedClient`, `_cachedEmail`, `_sessionLastUsedUtc`, `_sessionSemaphore` statik alanları eklendi.
+- `GetOrCreateSessionAsync()`: 15dk önbellek + email değişikliği kontrolü + otomatik geçersizleştirme.
+- `InvalidateSessionInternalAsync()`: Güvenli logout + önbellek temizleme.
+- `UploadAsync`, `DeleteAsync`, `EmptyTrashAsync`: Semaphore + session caching entegrasyonu.
+- `TestConnectionAsync`: Taze bağlantı (kimlik doğrulama testi için önbellek kullanmıyor).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs`
+
+---
+
+## [0.71.1] - 2026-04-05 — Çöp Kutusu Güvenlik Düzeltmesi: Sadece Bizim Dosyalarımız
+
+### Düzeltme
+- **Google Drive:** `Files.EmptyTrash()` (tüm çöpü boşaltan) API yerine, sadece bizim klasörümüzde (`RemoteFolderPath`) bulunan çöp dosyaları tek tek kalıcı siliniyor. Kullanıcının kişisel çöp dosyalarına dokunulmuyor.
+- **Mega:** Tüm trash children yerine, yalnızca yedek dosya adı desenine uyan (`*_Full_*.bak/7z`, `*_Differential_*`, `*_Incremental_*`, `Files_*.7z`) dosyalar siliniyor.
+- **ICloudProvider.EmptyTrashAsync:** Dokümantasyon güncellendi — "tüm dosyaları" değil, "sadece bizim dosyalarımızı" sildiği belirtildi.
+
+### Teknik
+- `GoogleDriveProvider.cs`: Klasör bazlı sorgu (`trashed=true and '{folderId}' in parents`) + pagination + tek tek `Files.Delete(fileId)`. Yeni `FindFolderIdAsync` helper (klasörü bul ama oluşturma).
+- `MegaProvider.cs`: `IsOurBackupFile(fileName)` helper — `.bak`/`.7z` uzantısı + yedek isim deseni kontrolü.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Interfaces/ICloudProvider.cs` (dokümantasyon)
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs` (EmptyTrashAsync + FindFolderIdAsync)
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` (EmptyTrashAsync + IsOurBackupFile)
+
+---
+
+## [0.71.0] - 2026-04-05 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
+
+### Yeni Özellik
+- **Çöp Kutusu Otomatik Temizleme:** `PermanentDeleteFromTrash=false` (çöp kutusuna taşı) ayarındaki Mega ve Google Drive hedeflerinde, yedekleme tamamlandıktan sonra birikmiş çöp öğeleri otomatik olarak kalıcı siliniyor.
+- **Mega:** Çöp düğümü altındaki tüm öğeler tek tek kalıcı siliniyor (`NodeType.Trash` → children → `DeleteAsync(node, false)`).
+- **Google Drive:** Yerel `Files.EmptyTrash()` API ile tek çağrıda tüm çöp kutusu temizleniyor.
+- **FTP/SFTP/UNC:** Çöp kutusu konsepti yok — `SupportsTrash=false`, no-op stub.
+- **Orkestrasyon:** `CloudUploadOrchestrator.EmptyTrashForAllAsync` — yalnızca `PermanentDeleteFromTrash=false` VE `SupportsTrash=true` hedefleri filtreler.
+- **Pipeline Entegrasyonu:** Her yedekleme görevi tamamlandığında (SQL ve/veya Dosya), `EmptyTrashIfNeededAsync` çağrılıyor. Hata durumunda yedekleme başarısını etkilemez.
+
+### Teknik
+- `ICloudProvider`: `bool SupportsTrash` property + `Task<int> EmptyTrashAsync(config, ct)` metodu eklendi.
+- `ICloudUploadOrchestrator`: `Task<int> EmptyTrashForAllAsync(targets, ct)` metodu eklendi.
+- `MegaProvider.cs`: `SupportsTrash => true`, `EmptyTrashAsync` implementasyonu.
+- `GoogleDriveProvider.cs`: `SupportsTrash => true`, `EmptyTrashAsync` implementasyonu.
+- `FtpSftpProvider.cs`, `LocalNetworkProvider.cs`: `SupportsTrash => false`, no-op.
+- `CloudUploadOrchestrator.cs`: `EmptyTrashForAllAsync` implementasyonu.
+- `BackupJobExecutor.cs`: `EmptyTrashIfNeededAsync` helper metodu + her iki yedekleme akışına hook.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Interfaces/ICloudProvider.cs`
+- `KoruMsSqlYedek.Core/Interfaces/ICloudUploadOrchestrator.cs`
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/FtpSftpProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/LocalNetworkProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.cs`
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs`
+
+---
+
+## [0.70.0] - 2026-04-05 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
+
+### İyileştirme
+- **Mega Oturum Önbellekleme:** Her dosya yüklemesinde yeni login/logout yerine, mevcut oturum 15 dakikaya kadar yeniden kullanılıyor. VSS ile dosya sayısı ikiye katlandığında bile Mega rate limiting tetiklenmiyor.
+- **SemaphoreSlim Serializasyon:** Eşzamanlı upload istekleri sıralı işleniyor, oturum yarış koşulları önleniyor.
+- **Diagnostik Log Seviyesi:** MegaProvider'ın tüm kritik logları (login denemesi, bağlantı kontrolü, oturum yeniden kullanımı/süresi dolması) `Log.Information` seviyesine yükseltildi — Service loglarında artık görünür.
+- **DPAPI Null Kontrolü:** Şifre çözme başarısız olursa açık hata mesajı fırlatılıyor.
+- **Rate Limiting İpucu:** Timeout hatalarında Mega hesap bazlı rate limiting olasılığı kullanıcıya bildiriliyor.
+- **MainWindow Switch:** `CloudUploadStarted` ve `CloudUploadCompleted` event'leri artık açık case olarak işleniyor — "Unhandled BackupActivityType" uyarı logları kaldırıldı.
+
+### Teknik
+- `MegaProvider.cs`: Tamamen yeniden yazıldı — statik `_cachedClient`, `_cachedEmail`, `_sessionLastUsedUtc`, `GetOrCreateSessionAsync()`, `InvalidateSession()`. Upload/Delete sonrası logout yok.
+- `MainWindow.cs`: `OnBackupActivityChanged` switch'ine `CloudUploadStarted` ve `CloudUploadCompleted` case'leri eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` (oturum önbellekleme, diagnostik loglar)
+- `KoruMsSqlYedek.Win/MainWindow.cs` (switch case düzeltmesi)
+
+---
+
+## [0.69.0] - 2026-04-04 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
+
+### Düzeltme
+- **Mega Retry Gecikmesi:** `CloudUploadOrchestrator.UploadWithRetryAsync` içinde, provider exception fırlatmadan `IsSuccess=false` döndüğünde (örn. Mega login timeout) retry döngüsü gecikme olmadan devam ediyordu. Artık non-exception başarısızlıklarda da exponential backoff (2s/4s/8s) uygulanıyor.
+- **Hata Mesajı Görünürlüğü:** Bulut yükleme başarısız olduğunda log panelinde sadece "Başarısız ✕" yerine "Başarısız ✕ — {hata detayı}" gösteriliyor. Kullanıcı başarısızlığın nedenini (timeout, bağlantı hatası vb.) doğrudan görebilir.
+- **Hızlı Retry Engelleme:** VSS eklenmesiyle dosya sayısı ikiye katlandığında, gecikmesiz retry'lar Mega rate limiting'i tetikliyordu. Exponential backoff bu sorunu çözüyor.
+
+### Teknik
+- `UploadWithRetryAsync`: `if (result.IsSuccess)` bloğundan sonra `else` bloğu eklendi — hata mesajı loglanıp retry delay uygulanıyor, son başarısız sonuç korunuyor.
+- `BuildActivityLogLine` (`CloudUploadCompleted`): Başarısız durumda `e.Message` hata detayı gösteriliyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.cs` (retry delay + hata korunması)
+- `KoruMsSqlYedek.Win/MainWindow.cs` (hata mesajı görünürlüğü)
+
+---
+
+## [0.68.5] - 2026-04-04 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
+
+### Düzeltme
+- **"Express VSS" → "VSS":** Tüm log mesajlarında "Express VSS" etiketi "VSS" olarak güncellendi. VSS artık tüm SQL Server sürümlerinde çalıştığı için "Express" ifadesi kaldırıldı.
+- **Yanlış Başarı Durumu:** Bulut yükleme tamamen başarısız olduğunda bile "Yedekleme tamamlandı. ✓" gösteriliyordu. Artık bulut başarısızlığında "⚠ Yedekleme tamamlandı (bulut yükleme başarısız)" mesajı gösteriliyor.
+- **Grid Durum İkonu:** Bulut başarısızlığında grid’de ✓ yerine ⚠ uyarı ikonu gösteriliyor.
+- **Log Renkleri:** Bulut başarısız tamamlanma durumunda yeşil yerine uyarı rengi kullanılıyor.
+
+### Teknik
+- `ExecuteSqlBackupAsync` ve `ExecuteFileBackupAsync` artık `Task<bool>` dönüyor (bulut yükleme başarı durumu).
+- `BackupActivityType.Completed` event’inde `IsSuccess` ve `Message` alanları bulut sonucuna göre dolduruluyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Backup/SqlBackupService.cs` (~9 log mesajı güncellendi)
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` (Task<bool> dönüş + bulut izleme)
+- `KoruMsSqlYedek.Win/MainWindow.cs` (UI: log mesajı, renk, grid ikonu)
+
+---
+
+## [0.68.4] - 2026-04-04 — Mega Bağlantı Ön Kontrolü + Login Diagnostik
+
+### İyileştirme
+- **Mega Bağlantı Ön Kontrolü:** Login denemesinden önce Mega API sunucusuna hızlı HTTP isteği (10 saniye) gönderiliyor. Sunucu erişilemezse 30 saniye login timeout beklemek yerine anında hata verilir.
+- **Detaylı Diagnostik Loglama:** Email, şifre uzunluğu, HTTP status kodu loglanıyor. Bağlantı sorunlarının kök nedeni hızlıca teşhis edilebilir.
+- **İyileştirilmiş Hata Mesajları:** DNS/firewall/internet hataları için ayrı ayrı açıklayıcı Türkçe mesajlar. Endpoint bilgisi dahil.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs`
+
+---
+
+## [0.68.3] - 2026-04-04 — VSS Tüm Edition’larda Aktif + Bulut Upload Bağımsızlığı
+
+### İyileştirme
+- **VSS Dosya Kopyası Tüm Edition’larda:** Express kısıtı kaldırıldı. MDF/LDF VSS kopyası artık tüm SQL Server sürümlerinde (Express, Developer, Standard, Enterprise) ek güvenlik olarak alınıyor. Başarısız olursa sessizce atlanır.
+- **Bağımsız Bulut Yükleme:** Ana dosya (.bak/.7z) ve VSS dosyası ayrı try bloklarda yükleniyor. Biri başarısız olsa bile diğeri denenir — en az bir yedeğin buluta ulaşması garanti edilir.
+- **Hata Loglama:** Her iki upload da başarısızsa Error seviyesinde log yazılır.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Backup/SqlBackupService.cs` (Express kısıtı kaldırıldı)
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` (bulut upload bağımsızlığı)
+
+---
+
+## [0.68.2] - 2026-04-04 — Şifre Koruması Null Fix
+
+### Düzeltme
+- **PasswordSetupDialog ArgumentNullException:** `_settings` null olduğunda şifre ayarları dialogu açılırken `ArgumentNullException` hatası oluşuyordu. `_settings ??= _settingsManager.Load()` ile lazy-load eklendi.
+- **OnPasswordToggleClick:** Aynı null koruma tutarlılık için eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs`
+
+---
+
+## [0.68.1] - 2026-04-04 — Mega Upload Timeout Koruması + Pipe Güvenlik İyileştirmesi
+
+### Düzeltme
+- **Mega Upload Timeout Koruması:** LoginAsync CancellationToken desteklemediği için Task.WhenAny ile 30 saniyelik timeout eklendi
+- **Upload İptal Garantisi:** UploadAsync iptal sinyaline yanıt vermediğinde Task.WhenAny wrapper ile anında iptal
+- **Logout Güvenliği:** LogoutAsync 10 saniyelik timeout ile fire-and-forget, cleanup'ı asla bloklamaz
+- **TimeoutException Yakalama:** Kullanıcıya açıklayıcı Türkçe hata mesajı
+- **Adım Adım Debug Loglama:** Login, klasör kontrol, upload başlangıcı aşamalarında detaylı log
+
+### İyileştirme
+- **Pipe Güvenliği:** ServicePipeServer'a BuiltinAdministratorsSid ve mevcut kullanıcı SID'i eklendi
+- **Pipe Hata Yönetimi:** UnauthorizedAccessException (10s) ve IOException (3s) için özel retry mantığı
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` (tam yeniden yazım)
+- `KoruMsSqlYedek.Service/IPC/ServicePipeServer.cs`
+
+---
+
+## [0.68.0] - 2026-04-04 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
+
+### Yeni Özellik
+- **Mega.io Bulut Desteği:** Email/şifre ile kimlik doğrulama, dosya yükleme (ilerleme bilgisi), silme (çöp kutusu/kalıcı), klasör yönetimi, kota bilgisi
+- **MegaApiClient v1.10.5:** NuGet paketi eklendi (CG.Web.MegaApiClient)
+- **CloudTargetEditDialog:** Mega.io combobox'a eklendi, FTP grubu Mega için yeniden kullanılır (host/port gizli, "Email" etiketi)
+
+### Kaldırılan
+- **OneDrive Desteği:** Tüm OneDrive provider kodu, NuGet paketleri (Microsoft.Graph, Azure.Identity, MSAL) ve testler kaldırıldı
+- **GoogleDriveWorkspace:** Enum değeri ve ilgili branching kaldırıldı, Google Drive artık tek tip
+- **CloudProviderType.LocalPath:** Bulut hedeflerinden kaldırıldı (yerel yedekleme klasörü BackupPlanConfig.LocalPath etkilenmedi)
+
+### İyileştirme
+- GoogleDriveProvider: DisplayName sadeleştirildi → "Google Drive"
+- LocalNetworkProvider: Sadece UNC paylaşımı, DisplayName → "Ağ Paylaşımı (UNC)"
+- PlanEditForm: Bulut modu radio/hint metinleri güncellendi (Mega.io eklendi)
+- Tüm test dosyaları güncellendi (yeni Mega testleri, LocalPath→UncPath geçişleri)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` (yeni)
+- `KoruMsSqlYedek.Core/Models/Enums.cs`
+- `KoruMsSqlYedek.Engine/Cloud/CloudProviderFactory.cs`
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/LocalNetworkProvider.cs`
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs`
+- `KoruMsSqlYedek.Core/Interfaces/ICloudProvider.cs`
+- `KoruMsSqlYedek.Core/Models/ConfigModels.cs`
+- `KoruMsSqlYedek.Engine/KoruMsSqlYedek.Engine.csproj`
+- Silinen: `OneDriveProvider.cs`, `OneDriveAuthHelper.cs`, `OneDriveProviderTests.cs`
+- Test: `CloudProviderFactoryTests.cs`, `GoogleDriveProviderTests.cs`, `CloudUploadOrchestratorTests.cs`, `LocalNetworkProviderTests.cs`, `TestDataFactory.cs`
+
+---
+
+## [0.67.0] - 2026-04-03 — Google OAuth Özel Credential Yönetimi
+
+### Yeni Özellik
+- **Google OAuth Ayarları Dialogu:** Kullanıcılar Google Cloud Console'dan aldıkları kendi Client ID/Secret değerlerini girebilir.
+- **⚙ Diyalog erişimi:** Bulut hedef düzenleme ekranında OAuth grubuna ⚙ (dişli) butonu eklendi.
+- **DPAPI şifreleme:** Client Secret değeri DPAPI ile şifrelenerek AppSettings'e kaydedilir.
+- **Statik credential override:** `GoogleDriveAuthHelper.SetCustomCredentials` ile uygulama genelinde özel credential kullanımı.
+- **Otomatik yükleme:** Uygulama başlangıcında AppSettings'teki özel credential otomatik yüklenir.
+
+### İyileştirme
+- `AppSettings`: `GoogleOAuthClientId`, `GoogleOAuthClientSecret`, `HasCustomGoogleOAuth` eklendi.
+- `GoogleDriveAuthHelper`: `ResolveCredentials()` ile özel > gömülü credential önceliklendirme.
+- Eski per-target `OAuthClientId`/`OAuthClientSecret` alanları kayıt sırasında temizlenir.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/AppSettings.cs`
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveAuthHelper.cs`
+- `KoruMsSqlYedek.Win/Forms/GoogleOAuthSettingsDialog.cs` (yeni)
+- `KoruMsSqlYedek.Win/Forms/GoogleOAuthSettingsDialog.Designer.cs` (yeni)
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs`
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.Designer.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs`
+- `KoruMsSqlYedek.Win/Program.cs`
+
+---
+
+## [0.66.1] - 2026-04-03 — Google OAuth "invalid_client" Düzeltmesi
+
+### Düzeltme
+- **Google OAuth Hatası Çözüldü:** Eski plan yapılandırmalarında saklanan özel (custom) OAuthClientId/OAuthClientSecret değerleri, gömülü credential'lar yerine kullanılıyordu ve Google'dan "invalid_client" hatası alınıyordu.
+- `CloudTargetEditDialog`: Kimlik doğrulama artık her zaman gömülü (embedded) credential kullanır.
+- `GoogleDriveAuthHelper`: Token yenileme işlemi artık her zaman gömülü credential kullanır.
+- Kayıt sırasında eski özel OAuth değerleri otomatik temizlenir (backward compat cleanup).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs` — OnGoogleAuthClick sadeleştirildi, SaveUiToTarget eski değerleri temizler
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveAuthHelper.cs` — GetCredentialAsync sadeleştirildi
+
+---
+
+## [0.66.0] - 2026-04-03 — Şifre Koruması Aktif/Pasif Toggle
+
+### Yeni Özellik
+- **Şifre Aktif/Pasif Toggle:** Şifre koruması tanımlandıktan sonra kaldırmaya gerek kalmadan aktif/pasif yapılabilir.
+- **ToolStripSplitButton:** Şifre butonu dropdown menü ile genişletildi (Aktif/Pasif Yap + Şifre Ayarları).
+- **3 Durumlu İkon:** Kalkan ikonu — yeşil (aktif), turuncu/çizgili (pasif), gri (tanımsız).
+
+### İyileştirme
+- `AppSettings`: `PasswordEnabled` (JSON persisted) ve `HasPassword` (computed) property eklendi.
+- `IsPasswordProtected` artık `HasPassword && PasswordEnabled` kontrolü yapar.
+- `PasswordSetupDialog`: Şifre kaldırma artık `PasswordEnabled` değerini de sıfırlar.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/AppSettings.cs` — PasswordEnabled, HasPassword
+- `KoruMsSqlYedek.Win/MainWindow.cs` — OnPasswordToggleClick, UpdatePasswordButtonIcon (3 durum)
+- `KoruMsSqlYedek.Win/MainWindow.Designer.cs` — ToolStripSplitButton, dropdown items
+- `KoruMsSqlYedek.Win/Forms/PasswordSetupDialog.cs` — PasswordEnabled set/reset
+- `KoruMsSqlYedek.Win/Theme/PhosphorIcons.cs` — ShieldSlash ikonu
+
+---
+
+## [0.65.0] - 2026-04-03 — Log Performansı, Dark Dialog, Şifre Koruması, Tray Sadeleştirme
+
+### Yeni Özellik
+- **Şifre Koruması:** Görev ekleme/düzenleme/silme işlemleri için şifre koruması. SHA256+DPAPI hash, güvenlik sorusu ile kurtarma.
+- **ModernMessageBox:** Standart MessageBox yerine dark temalı özel dialog. Windows 10’da da tutarlı dark görünüm.
+- **Şifre Dialogları:** PasswordDialog (doğrulama + güvenlik sorusu kurtarma), PasswordSetupDialog (oluşturma/değiştirme/kaldırma).
+
+### İyileştirme
+- **Log VirtualMode:** DataGridView VirtualMode ile büyük log dosyaları artık UI’yı dondurmaz. CellValueNeeded/CellFormatting pattern, AutoSizeRowsMode=DisplayedCells.
+- **Tray Menü Sadeleştirme:** Planlar, Manuel Yedekleme, Log Görüntüle kaldırıldı (Dashboard’dan erişilebilir).
+- **Plan toolbar:** Şifre koruması butonu eklendi (kalkan ikonu, durum rengi).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Theme/ModernMessageBox.cs` — yeni: dark temalı MessageBox
+- `KoruMsSqlYedek.Win/Forms/PasswordDialog.cs/.Designer.cs` — yeni: şifre doğrulama
+- `KoruMsSqlYedek.Win/Forms/PasswordSetupDialog.cs/.Designer.cs` — yeni: şifre kurulum
+- `KoruMsSqlYedek.Core/Helpers/PlanPasswordHelper.cs` — yeni: SHA256+DPAPI hash/verify
+- `KoruMsSqlYedek.Core/Models/AppSettings.cs` — PasswordHash, SecurityQuestion, SecurityAnswerHash
+- `KoruMsSqlYedek.Win/MainWindow.cs` — VirtualMode, CheckPlanPassword, OnPasswordSetupClick
+- `KoruMsSqlYedek.Win/MainWindow.Designer.cs` — VirtualMode, şifre butonu
+- `KoruMsSqlYedek.Win/TrayApplicationContext.cs` — menü sadeleştirme
+- Tüm form dosyaları — MessageBox → ModernMessageBox
+
+---
+
+## [0.64.1] - 2026-04-02 — Provider Listesi Sadeleştirme
 
 ### İyileştirme
 - **Provider listesi sadeleştirildi:** Google Drive (Bireysel/Workspace) → tek "Google Drive" satırı, OneDrive (Bireysel/Kurumsal) → tek "OneDrive" satırı.

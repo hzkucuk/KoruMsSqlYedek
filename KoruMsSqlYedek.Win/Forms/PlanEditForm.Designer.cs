@@ -71,11 +71,8 @@
             _chkTrustCert = new System.Windows.Forms.CheckBox();
             _btnTestSql = new Theme.ModernButton();
             _lblStep1SqlHeader = new System.Windows.Forms.Label();
-            _lblBackupMode = new System.Windows.Forms.Label();
-            _rbModeLocal = new System.Windows.Forms.RadioButton();
-            _rbModeCloud = new System.Windows.Forms.RadioButton();
 
-            // ========== STEP 2: Kaynaklar (Veritabanları + Dosya) ==========
+            // ========== STEP 2: Kaynaklar
             _lblStep2Header = new System.Windows.Forms.Label();
             _lblStep2Hint = new System.Windows.Forms.Label();
             _clbDatabases = new System.Windows.Forms.CheckedListBox();
@@ -107,6 +104,7 @@
             _nudAutoPromote = new Theme.ModernNumericUpDown();
             _chkVerify = new System.Windows.Forms.CheckBox();
             _lblStep3FileSchedHeader = new System.Windows.Forms.Label();
+            _lblStep3FileSep = new System.Windows.Forms.Label();
             _lblFileSchedule = new System.Windows.Forms.Label();
             _cronFileSchedule = new Controls.CronBuilderPanel();
 
@@ -125,6 +123,11 @@
             _nudKeepLastN = new Theme.ModernNumericUpDown();
             _lblDeleteDays = new System.Windows.Forms.Label();
             _nudDeleteDays = new Theme.ModernNumericUpDown();
+            _lblStep4PwHeader = new System.Windows.Forms.Label();
+            _lblPlanPasswordStatus = new System.Windows.Forms.Label();
+            _lblPlanPassword = new System.Windows.Forms.Label();
+            _txtPlanPassword = new System.Windows.Forms.TextBox();
+            _btnRemovePlanPassword = new Theme.ModernButton();
 
             // ========== STEP 5: Hedefler (Bulut/Uzak) ==========
             _lblStep5Header = new System.Windows.Forms.Label();
@@ -223,29 +226,9 @@
             step1.Controls.Add(_chkEnabled);
             y += 32;
 
-            _lblBackupMode.Text = "Yedekleme Modu:";
-            _lblBackupMode.AutoSize = true;
-            _lblBackupMode.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            _lblBackupMode.Location = new System.Drawing.Point(lx, y + 3);
-            step1.Controls.Add(_lblBackupMode);
-            _rbModeLocal.Text = "Yerel (Disk / UNC / A\u011f Payla\u015f\u0131m\u0131)";
-            _rbModeLocal.AutoSize = true;
-            _rbModeLocal.Checked = true;
-            _rbModeLocal.Location = new System.Drawing.Point(tx, y);
-            _rbModeLocal.CheckedChanged += OnBackupModeChanged;
-            _toolTip.SetToolTip(_rbModeLocal, "Yedek dosyalar\u0131 yaln\u0131zca yerel diske,\nharici diske veya a\u011f payla\u015f\u0131m\u0131na (UNC) kaydedilir.\nBulut y\u00fckleme ad\u0131m\u0131 atlan\u0131r.");
-            step1.Controls.Add(_rbModeLocal);
-            y += 22;
-            _rbModeCloud.Text = "Bulut (Google Drive / OneDrive / FTP / SFTP)";
-            _rbModeCloud.AutoSize = true;
-            _rbModeCloud.Location = new System.Drawing.Point(tx, y);
-            _toolTip.SetToolTip(_rbModeCloud, "Yedek dosyalar\u0131 \u00f6nce yerele kaydedilir,\nsonra bulut sa\u011flay\u0131c\u0131lar\u0131na y\u00fcklenir.\nHedef yap\u0131land\u0131rma ad\u0131m\u0131 g\u00f6sterilir.");
-            step1.Controls.Add(_rbModeCloud);
-            y += 30;
-
             ConfigLabel(_lblLocalPath, "Yerel Yedek Klas\u00f6r\u00fc:", lx, y, step1);
             ConfigTextBox(_txtLocalPath, tx, y, tw - 36, step1);
-            _toolTip.SetToolTip(_txtLocalPath, "Yedek dosyalar\u0131n\u0131n kaydedilece\u011fi yerel dizin.\n\u00d6rnek: D:\\Backups\\KoruMsSqlYedek\nNot: Yeterli disk alan\u0131 oldu\u011fundan emin olun.");
+            _toolTip.SetToolTip(_txtLocalPath, "Yedek dosyalar\u0131n\u0131n kaydedilece\u011fi yerel dizin.\n\u00d6rnek: D:\\Backups\\KoruMsSqlYedek\nBulut hedef eklerseniz dosyalar \u00f6nce buraya kaydedilir, sonra buluta y\u00fcklenir.\nNot: Yeterli disk alan\u0131 oldu\u011fundan emin olun.");
             _btnBrowseLocal.Text = "...";
             _btnBrowseLocal.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnBrowseLocal.Size = new System.Drawing.Size(30, 26);
@@ -417,12 +400,12 @@
             step2.Controls.Add(_pnlFileBackup);
 
             // ===================================================================
-            // STEP 3: Yedekleme Stratejisi & Zamanlama
+            // STEP 3: Görev Zamanlama & Strateji
             // ===================================================================
             var step3 = _stepPanels[2];
             y = 5;
 
-            _lblStep3Header.Text = "\u2464 Yedekleme Stratejisi";
+            _lblStep3Header.Text = "\u2464 Görev Zamanlama";
             _lblStep3Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep3Header.ForeColor = Theme.ModernTheme.AccentPrimary;
             _lblStep3Header.AutoSize = true;
@@ -430,56 +413,62 @@
             step3.Controls.Add(_lblStep3Header);
             y += 30;
 
-            ConfigLabel(_lblStrategy, "Yedek T\u00fcr\u00fc:", lx, y, step3);
+            ConfigLabel(_lblStrategy, "Yedekleme Stratejisi:", lx, y, step3);
             _cmbStrategy.Location = new System.Drawing.Point(tx, y);
             _cmbStrategy.Size = new System.Drawing.Size(tw, 23);
             _cmbStrategy.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbStrategy.SelectedIndexChanged += OnStrategyChanged;
-            _toolTip.SetToolTip(_cmbStrategy, "Yaln\u0131zca Tam: Her seferinde t\u00fcm veriyi yedekler.\nTam + Fark: D\u00fczenli tam + aradaki de\u011fi\u015fiklikler.\nTam + Fark + Art\u0131r\u0131ml\u0131: En verimli ama en karma\u015f\u0131k.");
+            _toolTip.SetToolTip(_cmbStrategy, "Yalnızca Tam: Her seferinde tüm veriyi yedekler. Basit ama büyük.\nTam + Fark: Düzenli tam + aradaki değişiklikler. Dengeli çözüm.\nTam + Fark + Artırımlı: En az alan, en hızlı — kurumsal önerimiz.");
             step3.Controls.Add(_cmbStrategy);
             y += 34;
 
-            ConfigLabel(_lblFullCron, "Tam Yedek Zamanlamas\u0131:", lx, y, step3);
+            ConfigLabel(_lblFullCron, "Tam Yedek Görevi:", lx, y, step3);
             _cronFull.Location = new System.Drawing.Point(tx, y);
             _cronFull.Size = new System.Drawing.Size(tw, 100);
-            _toolTip.SetToolTip(_cronFull, "Tam yede\u011fin ne zaman al\u0131naca\u011f\u0131n\u0131 belirleyin.\nTam yedek t\u00fcm veritaban\u0131 verisini i\u00e7erir.");
+            _toolTip.SetToolTip(_cronFull, "Tam yedeğin çalışacağı zamanı belirleyin.\nTüm veritabanı verisini içerir — geri yüklemede tek başına yeterli.\nÖneri: Haftada 1 (örn. Pazar gece 02:00)");
             step3.Controls.Add(_cronFull);
             y += 90;
 
-            ConfigLabel(_lblDiffCron, "Fark Yedek Zamanlamas\u0131:", lx, y, step3);
+            ConfigLabel(_lblDiffCron, "Fark Yedek Görevi:", lx, y, step3);
             _cronDiff.Location = new System.Drawing.Point(tx, y);
             _cronDiff.Size = new System.Drawing.Size(tw, 100);
-            _toolTip.SetToolTip(_cronDiff, "Fark yedek, son tam yedekten bu yana\nde\u011fi\u015fen verileri yedekler. Daha h\u0131zl\u0131 ve k\u00fc\u00e7\u00fck.");
+            _toolTip.SetToolTip(_cronDiff, "Son tam yedekten bu yana değişen verileri yedekler.\nGeri yüklemede: Tam + son Fark yedek gerekir.\nÖneri: Günde 1 (örn. her gece 02:00)");
             step3.Controls.Add(_cronDiff);
             y += 90;
 
-            ConfigLabel(_lblIncrCron, "Art\u0131r\u0131ml\u0131 Zamanlama:", lx, y, step3);
+            ConfigLabel(_lblIncrCron, "Artırımlı Görevi:", lx, y, step3);
             _cronIncr.Location = new System.Drawing.Point(tx, y);
             _cronIncr.Size = new System.Drawing.Size(tw, 100);
-            _toolTip.SetToolTip(_cronIncr, "Art\u0131r\u0131ml\u0131 yedek, son yedekten (tam veya art\u0131r\u0131ml\u0131)\nbu yana de\u011fi\u015fen verileri yedekler. En k\u00fc\u00e7\u00fck boyut.");
+            _toolTip.SetToolTip(_cronIncr, "Son yedekten (tam veya artırımlı) bu yana\ndeğişen verileri yedekler. En küçük boyut.\nGeri yüklemede: Tam + Fark + tüm Artırımlı zincir gerekir.\nÖneri: Saatte 1 (örn. mesai saatleri 09-18)");
             step3.Controls.Add(_cronIncr);
             y += 96;
 
-            ConfigLabel(_lblAutoPromote, "Otomatik Tam Yedek E\u015fi\u011fi:", lx, y, step3);
+            ConfigLabel(_lblAutoPromote, "Oto. Tam Yedek Eşiği:", lx, y, step3);
             _nudAutoPromote.Location = new System.Drawing.Point(tx, y);
             _nudAutoPromote.Size = new System.Drawing.Size(80, 23);
             _nudAutoPromote.Minimum = 1;
             _nudAutoPromote.Maximum = 100;
             _nudAutoPromote.Value = 7;
-            _toolTip.SetToolTip(_nudAutoPromote, "Bu say\u0131da fark yedekten sonra otomatik\ntam yedek tetiklenir.\nVarsay\u0131lan: 7 (haftada bir tam yedek)");
+            _toolTip.SetToolTip(_nudAutoPromote, "Bu sayıda fark/artırımlı yedekten sonra\notomatik olarak tam yedek tetiklenir.\nZincir kırılmasını önler, geri yükleme güvenilirliğini artırır.\nVarsayılan: 7 (haftada bir tam yedek otomatik alınır)");
             step3.Controls.Add(_nudAutoPromote);
             y += 32;
 
-            _chkVerify.Text = "Yedek sonras\u0131 do\u011frulama yap (RESTORE VERIFYONLY)";
+            _chkVerify.Text = "Yedek sonrası bütünlük doğrulaması yap (RESTORE VERIFYONLY)";
             _chkVerify.Location = new System.Drawing.Point(lx, y);
             _chkVerify.AutoSize = true;
             _chkVerify.Checked = true;
-            _toolTip.SetToolTip(_chkVerify, "Her yedek sonras\u0131 SQL Server\u2019\u0131n RESTORE VERIFYONLY\nkomutuyla dosya b\u00fct\u00fcnl\u00fc\u011f\u00fc do\u011frulan\u0131r.\nBa\u015far\u0131s\u0131zl\u0131kta bildirim g\u00f6nderilir.");
+            _toolTip.SetToolTip(_chkVerify, "Her yedek görevinden sonra SQL Server'ın RESTORE VERIFYONLY\nkomutuyla dosya bütünlüğü doğrulanır.\nBozuk yedek tespit edilirse hemen bildirim gönderilir.\nÖneri: Her zaman açık tutun.");
             step3.Controls.Add(_chkVerify);
-            y += 32;
+            y += 36;
 
-            // --- Dosya zamanlama (file backup enabled ise görünür) ---
-            _lblStep3FileSchedHeader.Text = "Dosya Yedekleme Zamanlamas\u0131";
+            // --- Dosya Yedekleme Görevi (file backup enabled ise görünür) ---
+            _lblStep3FileSep.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            _lblStep3FileSep.Location = new System.Drawing.Point(lx, y);
+            _lblStep3FileSep.Size = new System.Drawing.Size(tw + tx - lx, 2);
+            step3.Controls.Add(_lblStep3FileSep);
+            y += 10;
+
+            _lblStep3FileSchedHeader.Text = "\U0001f4c1 Dosya Yedekleme Görevi";
             _lblStep3FileSchedHeader.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             _lblStep3FileSchedHeader.ForeColor = Theme.ModernTheme.AccentPrimary;
             _lblStep3FileSchedHeader.AutoSize = true;
@@ -487,10 +476,10 @@
             step3.Controls.Add(_lblStep3FileSchedHeader);
             y += 26;
 
-            ConfigLabel(_lblFileSchedule, "Dosya Zamanlamas\u0131:", lx, y, step3);
+            ConfigLabel(_lblFileSchedule, "Dosya Görevi:", lx, y, step3);
             _cronFileSchedule.Location = new System.Drawing.Point(tx, y);
             _cronFileSchedule.Size = new System.Drawing.Size(tw, 100);
-            _toolTip.SetToolTip(_cronFileSchedule, "Dosya yedeklemenin zamanlamas\u0131.\nSQL yedekten ba\u011f\u0131ms\u0131z \u00e7al\u0131\u015f\u0131r.");
+            _toolTip.SetToolTip(_cronFileSchedule, "Dosya yedekleme görevinin çalışacağı zamanı belirleyin.\nSQL yedek görevinden bağımsız çalışır.\nAdım 2'de tanımlanan dosya kaynakları bu zamanda yedeklenir.\nÖneri: Günde 1 (örn. her gece 03:00)");
             step3.Controls.Add(_cronFileSchedule);
 
             // ===================================================================
@@ -566,6 +555,35 @@
             _nudDeleteDays.Value = 90;
             _toolTip.SetToolTip(_nudDeleteDays, "Bu g\u00fcn say\u0131s\u0131ndan eski yedekler silinir.\nVarsay\u0131lan: 90 g\u00fcn (3 ay)");
             step4.Controls.Add(_nudDeleteDays);
+            y += 48;
+
+            _lblStep4PwHeader.Text = "\U0001f512 Plan \u015eifre Korumas\u0131";
+            _lblStep4PwHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
+            _lblStep4PwHeader.ForeColor = Theme.ModernTheme.AccentPrimary;
+            _lblStep4PwHeader.AutoSize = true;
+            _lblStep4PwHeader.Location = new System.Drawing.Point(lx, y);
+            step4.Controls.Add(_lblStep4PwHeader);
+            y += 28;
+
+            _lblPlanPasswordStatus.AutoSize = true;
+            _lblPlanPasswordStatus.Location = new System.Drawing.Point(lx, y);
+            _lblPlanPasswordStatus.ForeColor = Theme.ModernTheme.TextSecondary;
+            step4.Controls.Add(_lblPlanPasswordStatus);
+            y += 28;
+
+            ConfigLabel(_lblPlanPassword, "Yeni \u015eifre:", lx, y, step4);
+            _txtPlanPassword.Location = new System.Drawing.Point(tx, y);
+            _txtPlanPassword.Size = new System.Drawing.Size(tw - 120, 23);
+            _txtPlanPassword.UseSystemPasswordChar = true;
+            _toolTip.SetToolTip(_txtPlanPassword, "Bu plana \u00f6zel \u015fifre belirleyin.\nPlan d\u00fczenleme ve silme i\u015flemlerinde sorulur.\nBo\u015f b\u0131rak\u0131rsan\u0131z mevcut \u015fifre korunur.");
+            step4.Controls.Add(_txtPlanPassword);
+
+            _btnRemovePlanPassword.Location = new System.Drawing.Point(tx + tw - 110, y);
+            _btnRemovePlanPassword.Size = new System.Drawing.Size(110, 26);
+            _btnRemovePlanPassword.Text = "\u015eifreyi Kald\u0131r";
+            _btnRemovePlanPassword.Click += OnRemovePlanPasswordClick;
+            _toolTip.SetToolTip(_btnRemovePlanPassword, "Mevcut plan \u015fifresini kald\u0131r\u0131r.");
+            step4.Controls.Add(_btnRemovePlanPassword);
 
             // ===================================================================
             // STEP 5: Hedefler (Bulut / Uzak)
@@ -581,7 +599,7 @@
             step5.Controls.Add(_lblStep5Header);
             y += 26;
 
-            _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri yönetin.\nGoogle Drive, OneDrive, FTP/SFTP, yerel klas\u00f6r ve UNC a\u011f paylas\u0131m\u0131 desteklenir.";
+            _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri yönetin.\nGoogle Drive, Mega.io, FTP/SFTP ve UNC a\u011f paylas\u0131m\u0131 desteklenir.";
             _lblStep5Hint.AutoSize = true;
             _lblStep5Hint.ForeColor = Theme.ModernTheme.TextSecondary;
             _lblStep5Hint.Location = new System.Drawing.Point(lx, y);
@@ -822,10 +840,6 @@
         private Theme.ModernButton _btnSave;
         private Theme.ModernButton _btnCancel;
 
-        // Backup mode selection
-        private System.Windows.Forms.Label _lblBackupMode;
-        private System.Windows.Forms.RadioButton _rbModeLocal;
-        private System.Windows.Forms.RadioButton _rbModeCloud;
         private System.Collections.Generic.List<int> _activeSteps;
 
         // Step 1: Plan + SQL
@@ -882,6 +896,7 @@
         private Theme.ModernNumericUpDown _nudAutoPromote;
         private System.Windows.Forms.CheckBox _chkVerify;
         private System.Windows.Forms.Label _lblStep3FileSchedHeader;
+        private System.Windows.Forms.Label _lblStep3FileSep;
         private System.Windows.Forms.Label _lblFileSchedule;
         private Controls.CronBuilderPanel _cronFileSchedule;
 
@@ -900,6 +915,11 @@
         private Theme.ModernNumericUpDown _nudKeepLastN;
         private System.Windows.Forms.Label _lblDeleteDays;
         private Theme.ModernNumericUpDown _nudDeleteDays;
+        private System.Windows.Forms.Label _lblStep4PwHeader;
+        private System.Windows.Forms.Label _lblPlanPasswordStatus;
+        private System.Windows.Forms.Label _lblPlanPassword;
+        private System.Windows.Forms.TextBox _txtPlanPassword;
+        private Theme.ModernButton _btnRemovePlanPassword;
 
         // Step 5: Hedefler
         private System.Windows.Forms.Label _lblStep5Header;

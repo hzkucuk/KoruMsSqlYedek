@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 
 namespace KoruMsSqlYedek.Core.Models
@@ -20,11 +21,19 @@ namespace KoruMsSqlYedek.Core.Models
         public bool IsEnabled { get; set; } = true;
 
         /// <summary>
-        /// Yedekleme modu: Yerel (disk/UNC) veya Bulut (Google Drive/OneDrive/FTP).
-        /// Wizard adımları bu seçime göre dinamik olarak yapılandırılır.
+        /// [KALDIRILDI v0.73.0] Artık kullanılmıyor — JSON geriye uyumluluk için korunuyor.
+        /// Bulut hedef olup olmadığını <see cref="HasCloudTargets"/> ile kontrol edin.
         /// </summary>
+        [Obsolete("Mode artık kullanılmıyor. HasCloudTargets property'sini kullanın.")]
         [JsonProperty("backupMode")]
         public BackupMode Mode { get; set; } = BackupMode.Local;
+
+        /// <summary>
+        /// Plan en az bir aktif bulut hedefine sahip mi?
+        /// Mode enum'u yerine bu property kullanılmalıdır.
+        /// </summary>
+        [JsonIgnore]
+        public bool HasCloudTargets => CloudTargets != null && CloudTargets.Any(t => t.IsEnabled);
 
         [JsonProperty("sqlConnection")]
         public SqlConnectionInfo SqlConnection { get; set; } = new SqlConnectionInfo();
@@ -85,5 +94,19 @@ namespace KoruMsSqlYedek.Core.Models
         /// <summary>Plan şeması versiyonu (geriye uyumluluk için).</summary>
         [JsonProperty("schemaVersion")]
         public int SchemaVersion { get; set; } = 1;
+
+        // ═══════════════ PLAN ŞİFRE KORUMASI ═══════════════
+
+        /// <summary>
+        /// Plan bazlı şifre (SHA256 hash, DPAPI ile korumalı).
+        /// Boş ise plan bazlı koruma yok — yalnızca global şifre geçerli.
+        /// Tanımlıysa plan düzenleme/silme için global VEYA plan şifresi gerekir.
+        /// </summary>
+        [JsonProperty("passwordHash", NullValueHandling = NullValueHandling.Ignore)]
+        public string PasswordHash { get; set; }
+
+        /// <summary>Plan bazlı şifre tanımlı mı?</summary>
+        [JsonIgnore]
+        public bool HasPlanPassword => !string.IsNullOrEmpty(PasswordHash);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +20,7 @@ namespace KoruMsSqlYedek.Tests
         {
             // Arrange
             var mockFtp = CreateMockProvider(CloudProviderType.Ftp, "FTP", true);
-            var mockLocal = CreateMockProvider(CloudProviderType.LocalPath, "Local", true);
+            var mockLocal = CreateMockProvider(CloudProviderType.UncPath, "Local", true);
 
             var orchestrator = new CloudUploadOrchestrator(
                 new ICloudProvider[] { mockFtp.Object, mockLocal.Object });
@@ -28,7 +28,7 @@ namespace KoruMsSqlYedek.Tests
             var targets = new List<CloudTargetConfig>
             {
                 new CloudTargetConfig { Type = CloudProviderType.Ftp, IsEnabled = true, DisplayName = "FTP" },
-                new CloudTargetConfig { Type = CloudProviderType.LocalPath, IsEnabled = true, DisplayName = "Local" }
+                new CloudTargetConfig { Type = CloudProviderType.UncPath, IsEnabled = true, DisplayName = "Local" }
             };
 
             // Act
@@ -265,16 +265,16 @@ namespace KoruMsSqlYedek.Tests
         public async Task UploadToAllAsync_FactoryCachesProvider_SecondCallDoesNotRecreate()
         {
             // Arrange
-            var mockProvider = CreateMockProvider(CloudProviderType.LocalPath, "Local", true);
+            var mockProvider = CreateMockProvider(CloudProviderType.UncPath, "Local", true);
             var mockFactory = new Mock<ICloudProviderFactory>();
-            mockFactory.Setup(f => f.IsSupported(CloudProviderType.LocalPath)).Returns(true);
-            mockFactory.Setup(f => f.CreateProvider(CloudProviderType.LocalPath)).Returns(mockProvider.Object);
+            mockFactory.Setup(f => f.IsSupported(CloudProviderType.UncPath)).Returns(true);
+            mockFactory.Setup(f => f.CreateProvider(CloudProviderType.UncPath)).Returns(mockProvider.Object);
 
             var orchestrator = new CloudUploadOrchestrator(mockFactory.Object);
 
             var targets = new List<CloudTargetConfig>
             {
-                new CloudTargetConfig { Type = CloudProviderType.LocalPath, IsEnabled = true, DisplayName = "Local" }
+                new CloudTargetConfig { Type = CloudProviderType.UncPath, IsEnabled = true, DisplayName = "Local" }
             };
 
             // Act — iki kez upload
@@ -282,7 +282,7 @@ namespace KoruMsSqlYedek.Tests
             await orchestrator.UploadToAllAsync(@"C:\b.7z", "b.7z", targets, null, CancellationToken.None);
 
             // Assert — factory yalnızca 1 kez çağrılmalı (cache)
-            mockFactory.Verify(f => f.CreateProvider(CloudProviderType.LocalPath), Times.Once);
+            mockFactory.Verify(f => f.CreateProvider(CloudProviderType.UncPath), Times.Once);
         }
 
         // ── DeleteFromAllAsync Tests ──
@@ -382,7 +382,7 @@ namespace KoruMsSqlYedek.Tests
         public async Task TestAllConnectionsAsync_Success_ReturnsConnected()
         {
             var mockProvider = new Mock<ICloudProvider>();
-            mockProvider.Setup(p => p.ProviderType).Returns(CloudProviderType.LocalPath);
+            mockProvider.Setup(p => p.ProviderType).Returns(CloudProviderType.UncPath);
             mockProvider.Setup(p => p.TestConnectionAsync(
                     It.IsAny<CloudTargetConfig>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
@@ -391,14 +391,14 @@ namespace KoruMsSqlYedek.Tests
 
             var targets = new List<CloudTargetConfig>
             {
-                new CloudTargetConfig { Type = CloudProviderType.LocalPath, IsEnabled = true, DisplayName = "Local" }
+                new CloudTargetConfig { Type = CloudProviderType.UncPath, IsEnabled = true, DisplayName = "Local" }
             };
 
             var results = await orchestrator.TestAllConnectionsAsync(targets, CancellationToken.None);
 
             results.Should().HaveCount(1);
             results[0].IsConnected.Should().BeTrue();
-            results[0].ProviderType.Should().Be(CloudProviderType.LocalPath);
+            results[0].ProviderType.Should().Be(CloudProviderType.UncPath);
         }
 
         [TestMethod]
@@ -471,7 +471,7 @@ namespace KoruMsSqlYedek.Tests
                 .ReturnsAsync(true);
 
             var mockLocal = new Mock<ICloudProvider>();
-            mockLocal.Setup(p => p.ProviderType).Returns(CloudProviderType.LocalPath);
+            mockLocal.Setup(p => p.ProviderType).Returns(CloudProviderType.UncPath);
             mockLocal.Setup(p => p.TestConnectionAsync(
                     It.IsAny<CloudTargetConfig>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
@@ -482,7 +482,7 @@ namespace KoruMsSqlYedek.Tests
             var targets = new List<CloudTargetConfig>
             {
                 new CloudTargetConfig { Type = CloudProviderType.Ftp, IsEnabled = true, DisplayName = "FTP" },
-                new CloudTargetConfig { Type = CloudProviderType.LocalPath, IsEnabled = true, DisplayName = "Local" }
+                new CloudTargetConfig { Type = CloudProviderType.UncPath, IsEnabled = true, DisplayName = "Local" }
             };
 
             var results = await orchestrator.TestAllConnectionsAsync(targets, CancellationToken.None);

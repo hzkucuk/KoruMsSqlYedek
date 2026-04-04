@@ -26,9 +26,39 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         private const string ApplicationName = "KoruMsSqlYedek";
 
+        // Uygulama genelinde özel credential override (AppSettings'ten yüklenir)
+        private static string _customClientId;
+        private static string _customClientSecret;
+
+        /// <summary>
+        /// AppSettings'ten okunan özel credential'ları ayarlar.
+        /// Uygulama başlangıcında veya ayar değişikliğinde çağrılmalıdır.
+        /// null geçilirse gömülü credential'lara dönülür.
+        /// </summary>
+        public static void SetCustomCredentials(string clientId, string clientSecret)
+        {
+            _customClientId = clientId;
+            _customClientSecret = clientSecret;
+            Log.Debug("Google OAuth özel credential {Status}.",
+                !string.IsNullOrEmpty(clientId) ? "ayarlandı" : "temizlendi");
+        }
+
+        /// <summary>Aktif credential çiftini döner (özel > gömülü).</summary>
+        internal static (string ClientId, string ClientSecret) ResolveCredentials()
+        {
+            string id = !string.IsNullOrEmpty(_customClientId)
+                ? _customClientId
+                : GoogleOAuthCredentials.ClientId;
+            string secret = !string.IsNullOrEmpty(_customClientSecret)
+                ? _customClientSecret
+                : GoogleOAuthCredentials.ClientSecret;
+            return (id, secret);
+        }
+
         /// <summary>
         /// CloudTargetConfig'den DriveService oluşturur.
         /// Token bilgisi OAuthTokenJson'dan yüklenir.
+        /// AppSettings'te özel credential varsa onu kullanır, yoksa gömülü.
         /// </summary>
         public static async Task<DriveService> CreateDriveServiceAsync(
             CloudTargetConfig config,
@@ -53,10 +83,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
         public static Task<string> AuthorizeInteractiveAsync(
             CancellationToken cancellationToken)
         {
-            string clientId = GoogleOAuthCredentials.ClientId;
-            string clientSecret = GoogleOAuthCredentials.ClientSecret;
+            var (clientId, clientSecret) = ResolveCredentials();
 
-            if (!GoogleOAuthCredentials.IsConfigured)
+            if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
                 throw new InvalidOperationException(
                     "Google OAuth kimlik bilgileri yapılandırılmamış. " +
                     "Lütfen geliştiriciye başvurun veya kendi Client ID/Secret değerlerinizi girin.");
@@ -142,14 +171,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
             CloudTargetConfig config,
             CancellationToken cancellationToken)
         {
-            // Öncelik: config'deki özel credential > gömülü credential
-            string clientId = !string.IsNullOrEmpty(config.OAuthClientId)
-                ? config.OAuthClientId
-                : GoogleOAuthCredentials.ClientId;
-
-            string clientSecret = !string.IsNullOrEmpty(config.OAuthClientSecret)
-                ? DecryptIfNeeded(config.OAuthClientSecret)
-                : GoogleOAuthCredentials.ClientSecret;
+            var (clientId, clientSecret) = ResolveCredentials();
 
             string tokenJson = DecryptIfNeeded(config.OAuthTokenJson);
 

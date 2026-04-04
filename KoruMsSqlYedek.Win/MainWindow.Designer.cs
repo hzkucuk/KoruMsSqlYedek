@@ -65,6 +65,8 @@
             _tsSep3 = new System.Windows.Forms.ToolStripSeparator();
             _tslSearchLabel = new System.Windows.Forms.ToolStripLabel();
             _tstSearch = new System.Windows.Forms.ToolStripTextBox();
+            _tsSep4 = new System.Windows.Forms.ToolStripSeparator();
+            _tsbPassword = new System.Windows.Forms.ToolStripSplitButton();
             _dgvPlans = new System.Windows.Forms.DataGridView();
             _ctxPlan = new System.Windows.Forms.ContextMenuStrip(components);
             _ctxBackupNow = new System.Windows.Forms.ToolStripMenuItem();
@@ -339,7 +341,7 @@
             _tabPlans.Controls.Add(_toolStrip);
 
             _toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                _tsbNew, _tsbEdit, _tsbDelete, _tsSep1, _tsbExport, _tsbImport, _tsSep2, _tsbRefreshPlans, _tsSep3, _tslSearchLabel, _tstSearch });
+                _tsbNew, _tsbEdit, _tsbDelete, _tsSep1, _tsbExport, _tsbImport, _tsSep2, _tsbRefreshPlans, _tsSep3, _tslSearchLabel, _tstSearch, _tsSep4, _tsbPassword });
             _toolStrip.BackColor = Theme.ModernTheme.SurfaceColor;
             _toolStrip.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
             _toolStrip.Padding = new System.Windows.Forms.Padding(12, 6, 12, 6);
@@ -352,6 +354,15 @@
             _tsbExport.Text = "Dışa Aktar"; _tsbExport.Click += OnExportPlanClick;
             _tsbImport.Text = "İçe Aktar"; _tsbImport.Click += OnImportPlanClick;
             _tsbRefreshPlans.Text = "Yenile"; _tsbRefreshPlans.Click += OnRefreshPlansClick;
+            _tsbPassword.Text = "Şifre";
+            _tsbPassword.ButtonClick += OnPasswordSetupClick;
+            _tsmiPasswordToggle = new System.Windows.Forms.ToolStripMenuItem();
+            _tsmiPasswordToggle.Text = "Şifre Korumasını Pasif Yap";
+            _tsmiPasswordToggle.Click += OnPasswordToggleClick;
+            _tsmiPasswordSetup = new System.Windows.Forms.ToolStripMenuItem();
+            _tsmiPasswordSetup.Text = "Şifre Ayarları...";
+            _tsmiPasswordSetup.Click += OnPasswordSetupClick;
+            _tsbPassword.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { _tsmiPasswordToggle, _tsmiPasswordSetup });
 
             _tslSearchLabel.Text = "Ara:";
             _tslSearchLabel.ForeColor = Theme.ModernTheme.TextSecondary;
@@ -637,7 +648,8 @@
 
             _dgvLogs.AllowUserToAddRows = false;
             _dgvLogs.AllowUserToDeleteRows = false;
-            _dgvLogs.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
+            _dgvLogs.VirtualMode = true;
+            _dgvLogs.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.DisplayedCells;
             _dgvLogs.EnableHeadersVisualStyles = false;
             _dgvLogs.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             _dgvLogs.ColumnHeadersHeight = 36;
@@ -1033,6 +1045,10 @@
         private System.Windows.Forms.ToolStripSeparator _tsSep3;
         private System.Windows.Forms.ToolStripLabel _tslSearchLabel;
         private System.Windows.Forms.ToolStripTextBox _tstSearch;
+        private System.Windows.Forms.ToolStripSeparator _tsSep4;
+        private System.Windows.Forms.ToolStripSplitButton _tsbPassword;
+        private System.Windows.Forms.ToolStripMenuItem _tsmiPasswordToggle;
+        private System.Windows.Forms.ToolStripMenuItem _tsmiPasswordSetup;
         private System.Windows.Forms.DataGridView _dgvPlans;
         private System.Windows.Forms.ContextMenuStrip _ctxPlan;
         private System.Windows.Forms.ToolStripMenuItem _ctxBackupNow;

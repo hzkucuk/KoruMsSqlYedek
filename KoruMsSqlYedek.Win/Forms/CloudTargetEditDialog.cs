@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
+using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Engine.Cloud;
 using KoruMsSqlYedek.Win.Helpers;
@@ -15,28 +16,36 @@ namespace KoruMsSqlYedek.Win.Forms
     {
         private readonly CloudTargetConfig _target;
         private readonly bool _isNew;
+        private readonly AppSettings _appSettings;
+        private readonly IAppSettingsManager _settingsManager;
 
         /// <summary>Combo box index → CloudProviderType eşlemesi.</summary>
         private static readonly CloudProviderType[] ProviderMap =
         {
             CloudProviderType.GoogleDrivePersonal,  // 0: Google Drive ✓
-            CloudProviderType.OneDrivePersonal,      // 1: OneDrive
+            CloudProviderType.Mega,                  // 1: Mega.io
             CloudProviderType.Ftp,                   // 2: FTP
             CloudProviderType.Ftps,                  // 3: FTPS
             CloudProviderType.Sftp,                  // 4: SFTP
-            CloudProviderType.LocalPath,             // 5: Yerel Yol
-            CloudProviderType.UncPath,               // 6: UNC Ağ Paylaşımı
+            CloudProviderType.UncPath,               // 5: UNC Ağ Paylaşımı
         };
 
         /// <summary>Düzenlenen/oluşturulan bulut hedef yapılandırması.</summary>
         public CloudTargetConfig Target => _target;
 
         /// <summary>Yeni bulut hedef oluşturma.</summary>
-        public CloudTargetEditDialog() : this(null) { }
+        public CloudTargetEditDialog(AppSettings appSettings, IAppSettingsManager settingsManager)
+            : this(appSettings, settingsManager, null) { }
 
         /// <summary>Mevcut bulut hedefi düzenleme. null ise yeni hedef.</summary>
-        public CloudTargetEditDialog(CloudTargetConfig existing)
+        public CloudTargetEditDialog(AppSettings appSettings, IAppSettingsManager settingsManager, CloudTargetConfig existing)
         {
+            ArgumentNullException.ThrowIfNull(appSettings);
+            ArgumentNullException.ThrowIfNull(settingsManager);
+
+            _appSettings = appSettings;
+            _settingsManager = settingsManager;
+
             InitializeComponent();
             ApplyIcons();
 
@@ -70,6 +79,9 @@ namespace KoruMsSqlYedek.Win.Forms
 
             _btnGoogleAuth.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.ShieldCheck, System.Drawing.Color.White, sz);
             _btnGoogleAuth.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+
+            _btnOAuthSettings.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Gear, Theme.ModernTheme.TextSecondary, 14);
+            _btnOAuthSettings.Text = "";
         }
 
         protected override void OnLoad(EventArgs e)
@@ -85,11 +97,10 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             _cmbProviderType.Items.Clear();
             _cmbProviderType.Items.Add("Google Drive  \u2713");
-            _cmbProviderType.Items.Add("OneDrive");
+            _cmbProviderType.Items.Add("Mega.io");
             _cmbProviderType.Items.Add("FTP");
             _cmbProviderType.Items.Add("FTPS");
             _cmbProviderType.Items.Add("SFTP");
-            _cmbProviderType.Items.Add(Res.Get("CloudTarget_LocalPath"));
             _cmbProviderType.Items.Add(Res.Get("CloudTarget_UncPath"));
         }
 
@@ -105,12 +116,6 @@ namespace KoruMsSqlYedek.Win.Forms
         /// <summary>CloudProviderType'a karşılık gelen combo box index'ini döner.</summary>
         private int GetComboIndexForType(CloudProviderType type)
         {
-            // Workspace/Business alt türlerini birleşik eşlemeye yönlendir
-            if (type == CloudProviderType.GoogleDriveWorkspace)
-                type = CloudProviderType.GoogleDrivePersonal;
-            if (type == CloudProviderType.OneDriveBusiness)
-                type = CloudProviderType.OneDrivePersonal;
-
             for (int i = 0; i < ProviderMap.Length; i++)
             {
                 if (ProviderMap[i] == type) return i;
@@ -159,7 +164,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             if (string.IsNullOrWhiteSpace(_txtDisplayName.Text))
             {
-                MessageBox.Show(Res.Get("CloudTarget_NameRequired"), Res.Get("ValidationError"),
+                Theme.ModernMessageBox.Show(Res.Get("CloudTarget_NameRequired"), Res.Get("ValidationError"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtDisplayName.Focus();
                 return false;
@@ -185,10 +190,20 @@ namespace KoruMsSqlYedek.Win.Forms
                     _target.Password = PasswordProtector.Protect(_txtPassword.Text);
                 }
             }
+            else if (IsMegaType(providerType))
+            {
+                _target.Username = _txtUsername.Text.Trim();
+
+                if (!string.IsNullOrEmpty(_txtPassword.Text))
+                {
+                    _target.Password = PasswordProtector.Protect(_txtPassword.Text);
+                }
+            }
             else if (IsOAuthType(providerType))
             {
-                // ClientId/Secret gömülü credential'lardan gelir, config'e kaydetmeye gerek yok.
-                // Mevcut özel credential varsa korunur (backward compat).
+                // Gömülü credential kullanılır; eski özel değerleri temizle
+                _target.OAuthClientId = null;
+                _target.OAuthClientSecret = null;
             }
             else if (IsLocalType(providerType))
             {
@@ -249,10 +264,9 @@ namespace KoruMsSqlYedek.Win.Forms
             try
             {
                 var providerType = GetSelectedProviderType();
-                if (providerType != CloudProviderType.GoogleDrivePersonal &&
-                    providerType != CloudProviderType.GoogleDriveWorkspace)
+                if (providerType != CloudProviderType.GoogleDrivePersonal)
                 {
-                    MessageBox.Show("Bu sa\u011flay\u0131c\u0131 i\u00e7in hesap ba\u011flama hen\u00fcz desteklenmiyor.",
+                    Theme.ModernMessageBox.Show("Bu sa\u011flay\u0131c\u0131 i\u00e7in hesap ba\u011flama hen\u00fcz desteklenmiyor.",
                         "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
@@ -261,22 +275,15 @@ namespace KoruMsSqlYedek.Win.Forms
                 _lblAuthStatus.Text = "Taray\u0131c\u0131da onaylay\u0131n...";
                 _lblAuthStatus.ForeColor = Theme.ModernTheme.TextSecondary;
 
-                // G\u00f6m\u00fcl\u00fc credential'lar\u0131 kullan; config'de \u00f6zel de\u011fer varsa fallback
-                string tokenJson;
-                if (!string.IsNullOrEmpty(_target.OAuthClientId) &&
-                    !string.IsNullOrEmpty(_target.OAuthClientSecret))
-                {
-                    string rawSecret = PasswordProtector.Unprotect(_target.OAuthClientSecret);
-                    tokenJson = await GoogleDriveAuthHelper.AuthorizeInteractiveAsync(
-                        _target.OAuthClientId, rawSecret, System.Threading.CancellationToken.None);
-                }
-                else
-                {
-                    tokenJson = await GoogleDriveAuthHelper.AuthorizeInteractiveAsync(
-                        System.Threading.CancellationToken.None);
-                }
+                // ResolveCredentials otomatik olarak AppSettings özel > gömülü seçimi yapar
+                string tokenJson = await GoogleDriveAuthHelper.AuthorizeInteractiveAsync(
+                    System.Threading.CancellationToken.None);
 
                 _target.OAuthTokenJson = tokenJson;
+
+                // Eski per-target credential kalıntılarını temizle
+                _target.OAuthClientId = null;
+                _target.OAuthClientSecret = null;
                 _lblAuthStatus.Text = "\u2714 Ba\u011fl\u0131";
                 _lblAuthStatus.ForeColor = Theme.ModernTheme.AccentPrimary;
             }
@@ -284,13 +291,19 @@ namespace KoruMsSqlYedek.Win.Forms
             {
                 _lblAuthStatus.Text = "\u2718 Ba\u015far\u0131s\u0131z";
                 _lblAuthStatus.ForeColor = System.Drawing.Color.Red;
-                MessageBox.Show($"Kimlik do\u011frulama ba\u015far\u0131s\u0131z:\n{ex.Message}",
+                Theme.ModernMessageBox.Show($"Kimlik do\u011frulama ba\u015far\u0131s\u0131z:\n{ex.Message}",
                     "OAuth Hatas\u0131", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
                 _btnGoogleAuth.Enabled = true;
             }
+        }
+
+        private void OnOAuthSettingsClick(object sender, EventArgs e)
+        {
+            using var dialog = new GoogleOAuthSettingsDialog(_appSettings, _settingsManager);
+            dialog.ShowDialog(this);
         }
 
         #endregion
@@ -304,33 +317,41 @@ namespace KoruMsSqlYedek.Win.Forms
             UpdateRemotePathTooltip(type);
 
             bool isFtp = IsFtpType(type);
+            bool isMega = IsMegaType(type);
             bool isOAuth = IsOAuthType(type);
             bool isLocal = IsLocalType(type);
             bool isUnc = type == CloudProviderType.UncPath;
-            bool hasTrash = isOAuth; // Google Drive ve OneDrive çöp kutusu desteği
+            bool hasTrash = isOAuth || isMega; // Google Drive ve Mega çöp kutusu desteği
 
-            // FTP/SFTP grubu
-            _grpFtp.Visible = isFtp;
+            // FTP/SFTP grubu (Mega için de kullanılır: email/şifre alanları)
+            _grpFtp.Visible = isFtp || isMega;
+
+            // Mega seçilince Host/Port gizle, Username etiketini "Email" yap
+            _lblHost.Visible = isFtp;
+            _txtHost.Visible = isFtp;
+            _lblPort.Visible = isFtp;
+            _nudPort.Visible = isFtp;
+            _lblUsername.Text = isMega ? "Email:" : "Kullanıcı Adı:";
 
             // OAuth grubu
             _grpOAuth.Visible = isOAuth;
 
-            // Yerel/UNC grubu
+            // UNC grubu
             _grpLocal.Visible = isLocal;
 
-            // UNC kimlik bilgileri (Yerel yol'da gizli, UNC'da görünür)
+            // UNC kimlik bilgileri
             _lblUncUser.Visible = isUnc;
             _txtUncUser.Visible = isUnc;
             _lblUncPassword.Visible = isUnc;
             _txtUncPassword.Visible = isUnc;
 
-            // Ortak: RemotePath (FTP + OAuth), Trash (OAuth), Bandwidth (hepsi)
-            _lblRemotePath.Visible = isFtp || isOAuth;
-            _txtRemotePath.Visible = isFtp || isOAuth;
+            // Ortak: RemotePath (FTP + OAuth + Mega), Trash (OAuth + Mega), Bandwidth (hepsi)
+            _lblRemotePath.Visible = isFtp || isOAuth || isMega;
+            _txtRemotePath.Visible = isFtp || isOAuth || isMega;
             _chkPermanentDelete.Visible = hasTrash;
 
             // Port varsayılan değeri
-            if (!_isNew || _nudPort.Value == 0)
+            if (isFtp && (!_isNew || _nudPort.Value == 0))
             {
                 _nudPort.Value = GetDefaultPort(type);
             }
@@ -351,16 +372,17 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private static bool IsOAuthType(CloudProviderType type)
         {
-            return type == CloudProviderType.GoogleDrivePersonal
-                || type == CloudProviderType.GoogleDriveWorkspace
-                || type == CloudProviderType.OneDrivePersonal
-                || type == CloudProviderType.OneDriveBusiness;
+            return type == CloudProviderType.GoogleDrivePersonal;
+        }
+
+        private static bool IsMegaType(CloudProviderType type)
+        {
+            return type == CloudProviderType.Mega;
         }
 
         private static bool IsLocalType(CloudProviderType type)
         {
-            return type == CloudProviderType.LocalPath
-                || type == CloudProviderType.UncPath;
+            return type == CloudProviderType.UncPath;
         }
 
         private static int GetDefaultPort(CloudProviderType type)
@@ -376,20 +398,21 @@ namespace KoruMsSqlYedek.Win.Forms
 
         /// <summary>
         /// Provider türüne göre "Uzak Klasör Yolu" alanının tooltip metnini günceller.
-        /// Google Drive / OneDrive: slash (/) ayırıcı, başına slash konmaz.
+        /// Google Drive / Mega: slash (/) ayırıcı, başına slash konmaz.
         /// FTP / FTPS / SFTP: Unix yolu, başında slash olmalı.
         /// </summary>
         private void UpdateRemotePathTooltip(CloudProviderType type)
         {
             string tip;
 
-            if (IsOAuthType(type))
+            if (IsOAuthType(type) || IsMegaType(type))
             {
+                string providerName = IsMegaType(type) ? "Mega" : "Drive";
                 tip = "Dosyaların yükleneceği klasör adını girin.\r\n"
                     + "• Alt klasör eklemek için \"/\" ayırıcısını kullanın.\r\n"
                     + "• Başına \"/\" veya \"\\\" koymayın.\r\n"
-                    + "Örnek:  Yedekler            → Drive'ın kökünde\r\n"
-                    + "Örnek:  Yedekler/Plan1      → Yedekler altında Plan1 klasörü";
+                    + $"Örnek:  Yedekler            → {providerName}'ın kökünde\r\n"
+                    + $"Örnek:  Yedekler/Plan1      → Yedekler altında Plan1 klasörü";
             }
             else if (IsFtpType(type))
             {

@@ -1,4 +1,6 @@
-﻿namespace KoruMsSqlYedek.Core.Models
+﻿using System;
+
+namespace KoruMsSqlYedek.Core.Models
 {
     /// <summary>
     /// Yedekleme stratejisi türlerini tanımlar.
@@ -40,13 +42,10 @@
     public enum CloudProviderType
     {
         GoogleDrivePersonal = 0,
-        GoogleDriveWorkspace = 1,
-        OneDrivePersonal = 2,
-        OneDriveBusiness = 3,
+        Mega = 2,
         Ftp = 4,
         Ftps = 5,
         Sftp = 6,
-        LocalPath = 7,
         UncPath = 8
     }
 
@@ -113,9 +112,11 @@
     }
 
     /// <summary>
-    /// Yedekleme modu — hedefin yerel mi yoksa bulut mu olduğunu belirler.
-    /// Wizard adımları bu seçime göre dinamik olarak yapılandırılır.
+    /// [KALDIRILDI v0.73.0] Yedekleme modu artık kullanılmıyor.
+    /// Bulut hedef eklenip eklenmediğine göre otomatik belirlenir.
+    /// JSON geriye uyumluluk için korunmaktadır.
     /// </summary>
+    [Obsolete("BackupMode artık kullanılmıyor. Bulut hedef varlığına göre otomatik belirlenir.")]
     public enum BackupMode
     {
         /// <summary>Yerel yedekleme: Disk, UNC, ağ paylaşımı, harici disk.</summary>

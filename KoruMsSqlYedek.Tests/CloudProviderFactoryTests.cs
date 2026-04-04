@@ -30,32 +30,12 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
-        public void CreateProvider_GoogleDriveWorkspace_ReturnsGoogleDriveProvider()
+        public void CreateProvider_Mega_ReturnsMegaProvider()
         {
-            var provider = _factory.CreateProvider(CloudProviderType.GoogleDriveWorkspace);
+            var provider = _factory.CreateProvider(CloudProviderType.Mega);
 
-            provider.Should().BeOfType<GoogleDriveProvider>();
-            provider.ProviderType.Should().Be(CloudProviderType.GoogleDriveWorkspace);
-        }
-
-        // ── CreateProvider — OneDrive ──
-
-        [TestMethod]
-        public void CreateProvider_OneDrivePersonal_ReturnsOneDriveProvider()
-        {
-            var provider = _factory.CreateProvider(CloudProviderType.OneDrivePersonal);
-
-            provider.Should().BeOfType<OneDriveProvider>();
-            provider.ProviderType.Should().Be(CloudProviderType.OneDrivePersonal);
-        }
-
-        [TestMethod]
-        public void CreateProvider_OneDriveBusiness_ReturnsOneDriveProvider()
-        {
-            var provider = _factory.CreateProvider(CloudProviderType.OneDriveBusiness);
-
-            provider.Should().BeOfType<OneDriveProvider>();
-            provider.ProviderType.Should().Be(CloudProviderType.OneDriveBusiness);
+            provider.Should().BeOfType<MegaProvider>();
+            provider.ProviderType.Should().Be(CloudProviderType.Mega);
         }
 
         // ── CreateProvider — FTP/SFTP ──
@@ -87,16 +67,7 @@ namespace KoruMsSqlYedek.Tests
             provider.ProviderType.Should().Be(CloudProviderType.Sftp);
         }
 
-        // ── CreateProvider — Local/UNC ──
-
-        [TestMethod]
-        public void CreateProvider_LocalPath_ReturnsLocalNetworkProvider()
-        {
-            var provider = _factory.CreateProvider(CloudProviderType.LocalPath);
-
-            provider.Should().BeOfType<LocalNetworkProvider>();
-            provider.ProviderType.Should().Be(CloudProviderType.LocalPath);
-        }
+        // ── CreateProvider — UNC ──
 
         [TestMethod]
         public void CreateProvider_UncPath_ReturnsLocalNetworkProvider()
@@ -126,13 +97,10 @@ namespace KoruMsSqlYedek.Tests
         public void IsSupported_AllValidTypes_ReturnsTrue()
         {
             _factory.IsSupported(CloudProviderType.GoogleDrivePersonal).Should().BeTrue();
-            _factory.IsSupported(CloudProviderType.GoogleDriveWorkspace).Should().BeTrue();
-            _factory.IsSupported(CloudProviderType.OneDrivePersonal).Should().BeTrue();
-            _factory.IsSupported(CloudProviderType.OneDriveBusiness).Should().BeTrue();
+            _factory.IsSupported(CloudProviderType.Mega).Should().BeTrue();
             _factory.IsSupported(CloudProviderType.Ftp).Should().BeTrue();
             _factory.IsSupported(CloudProviderType.Ftps).Should().BeTrue();
             _factory.IsSupported(CloudProviderType.Sftp).Should().BeTrue();
-            _factory.IsSupported(CloudProviderType.LocalPath).Should().BeTrue();
             _factory.IsSupported(CloudProviderType.UncPath).Should().BeTrue();
         }
 

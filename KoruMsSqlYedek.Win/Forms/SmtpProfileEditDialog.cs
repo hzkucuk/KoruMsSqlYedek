@@ -65,7 +65,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             if (string.IsNullOrWhiteSpace(_txtDisplayName.Text))
             {
-                MessageBox.Show("Profil adı boş bırakılamaz.", "Doğrulama Hatası",
+                Theme.ModernMessageBox.Show("Profil adı boş bırakılamaz.", "Doğrulama Hatası",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtDisplayName.Focus();
                 return false;
@@ -73,7 +73,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
             if (string.IsNullOrWhiteSpace(_txtHost.Text))
             {
-                MessageBox.Show("SMTP sunucu adresi boş bırakılamaz.", "Doğrulama Hatası",
+                Theme.ModernMessageBox.Show("SMTP sunucu adresi boş bırakılamaz.", "Doğrulama Hatası",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtHost.Focus();
                 return false;
@@ -112,14 +112,14 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             if (string.IsNullOrWhiteSpace(_txtHost.Text))
             {
-                MessageBox.Show("SMTP sunucu adresi giriniz.", "Uyarı",
+                Theme.ModernMessageBox.Show("SMTP sunucu adresi giriniz.", "Uyarı",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(_txtRecipients.Text))
             {
-                MessageBox.Show("Test e-postası için en az bir alıcı adresi giriniz.", "Uyarı",
+                Theme.ModernMessageBox.Show("Test e-postası için en az bir alıcı adresi giriniz.", "Uyarı",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -161,14 +161,14 @@ namespace KoruMsSqlYedek.Win.Forms
                 client.Send(message);
                 client.Disconnect(true);
 
-                MessageBox.Show("Test e-postası başarıyla gönderildi.", "Başarılı",
+                Theme.ModernMessageBox.Show("Test e-postası başarıyla gönderildi.", "Başarılı",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
                 string safeMessage = ex.Message.Length > 200 ? ex.Message[..200] + "..." : ex.Message;
-                MessageBox.Show($"SMTP bağlantısı kurulamadı:\n{safeMessage}", "SMTP Test Hatası",
+                Theme.ModernMessageBox.Show($"SMTP bağlantısı kurulamadı:\n{safeMessage}", "SMTP Test Hatası",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally

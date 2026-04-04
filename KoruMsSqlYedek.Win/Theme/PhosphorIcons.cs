@@ -50,6 +50,7 @@ namespace KoruMsSqlYedek.Win.Theme
         public const char Funnel = '\ue266';
         public const char FileText = '\ue23a';
         public const char ShieldCheck = '\ue40c';
+        public const char ShieldSlash = '\ue412';
         public const char Download = '\ue20a';
         public const char Upload = '\ue4be';
         public const char Bell = '\ue0ce';

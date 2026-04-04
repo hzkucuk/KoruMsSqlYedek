@@ -2,9 +2,80 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.75.0 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
+- Dosya kaynak düzenleme diyaloğu yeniden tasarlandı: 510px genişlik, GroupBox bölümleri, kapsamlı ToolTip'ler
+- Zamanlama adımında "Görev" terminolojisi: "Tam Yedek Görevi", "Fark Yedek Görevi" vb. ile anlaşılır etiketler
+- Tooltip'lere geri yükleme bilgileri ve öneriler eklendi
+- SQL ve Dosya zamanlama bölümleri arasına görsel ayırıcı eklendi
+- **Bug fix:** `Files_*.7z` dosya arşivleri artık retention politikasıyla temizleniyor (daha önce hiç temizlenmiyordu)
+
+### v0.74.0 — Plan Bazlı Şifre Koruması
+- Her plan için ayrı şifre (SHA256+DPAPI) belirlenebilir
+- Plan düzenleme/silme sırasında master VEYA plan şifresi kabul edilir
+- Sihirbaz Step 4'te plan şifre yönetim paneli: durum göstergesi + şifre belirleme + şifre kaldırma
+- Yeni plan oluşturmada şifre sorulmaz, tetikleme (trigger) sırasında da sorulmaz
+
+### v0.73.0 — Yerel/Bulut Mod Ayrımı Kaldırıldı
+- Plan sihirbazından "Yerel" / "Bulut" mod seçimi kaldırıldı — tüm planlar 6 adımı her zaman gösteriyor
+- Bulut hedef varlığı `BackupPlan.HasCloudTargets` computed property ile otomatik algılanıyor
+- `BackupMode` enum ve `Mode` property geriye dönük JSON uyumluluğu için `[Obsolete]` korunuyor
+- Wizard UX sadeleştirildi: Kullanıcı doğrudan hedef ekleyerek bulut depolama kullanabilir
+
+### v0.72.0
+- Mega oturum önbellekleme geri eklendi: 15 dakika boyunca aynı oturum yeniden kullanılıyor
+- SemaphoreSlim ile tüm Mega API çağrıları sıralı işleniyor (rate limiting önleme)
+- Hata sonrası oturum otomatik geçersizleştirme + yeni oturum açma
+- Her upload/delete/trash işleminde ayrı login/logout sorunu giderildi
+
+### v0.71.1 — Çöp Kutusu Güvenlik Düzeltmesi
+- Google Drive: Sadece bizim klasörümüzdeki çöp dosyaları temizlenir, kullanıcının kişisel çöpüne dokunulmaz
+- Mega: Yedek dosya isim desenine uyan dosyalar filtrelenir (`.bak`/`.7z` + `_Full_/_Differential_/_Incremental_/Files_`)
+
+### v0.71.0 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
+- Mega çöp kutusu: Yedekleme sonrası birikmiş çöp öğeleri otomatik kalıcı siliniyor
+- Google Drive çöp kutusu: Files.EmptyTrash() API ile tek çağrıda temizleniyor
+- ICloudProvider: SupportsTrash + EmptyTrashAsync arayüzü
+- Orkestrasyon: EmptyTrashForAllAsync — sadece uygun hedefleri filtreler
+- Pipeline: Her yedekleme sonrası otomatik çöp temizliği (hata güvenli)
+
+### v0.70.0 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
+- Mega oturum önbellekleme: Login/logout her dosyada değil, 15 dakika boyunca yeniden kullanılıyor
+- SemaphoreSlim ile eşzamanlı upload serializasyonu
+- MegaProvider diagnostik logları Information seviyesine yükseltildi (Service loglarında görünür)
+- DPAPI şifre çözme null kontrolü + rate limiting ipucu mesajı
+- MainWindow: CloudUploadStarted/CloudUploadCompleted switch case'leri eklendi (uyarı logları kaldırıldı)
+
+### v0.69.0 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
+- Mega retry: Non-exception başarısızlıklarda exponential backoff (2s/4s/8s) eklendi
+- Bulut yükleme hata detayı log panelinde görünür ("Başarısız ✕ — {neden}")
+- VSS kaynaklı hızlı retry → rate limiting sorunu çözüldü
+
+### v0.68.5 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
+- "Express VSS" → "VSS" tüm log mesajlarında güncellendi
+- Bulut yükleme başarısız olduğunda tamamlanma durumu doğru gösteriliyor (⚠ uyarı ikonu + mesaj)
+- Grid ve log panelinde bulut başarısızlığı renk ve ikon ile ayrışıyor
+
+### v0.68.0 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
+- Mega.io bulut depolama: Email/şifre auth, upload (ilerleme), silme (çöp/kalıcı), klasör yönetimi
+- MegaApiClient v1.10.5 NuGet paketi
+- OneDrive desteği tamamen kaldırıldı (Microsoft.Graph, Azure.Identity, MSAL)
+- GoogleDriveWorkspace enum değeri kaldırıldı, Google Drive tek tip
+- CloudProviderType.LocalPath bulut hedeflerinden kaldırıldı (yerel yedekleme etkilenmedi)
+- CloudTargetEditDialog: Mega.io combobox, FTP grubu Mega için yeniden kullanım
+
+### v0.66.0 — Şifre Koruması Aktif/Pasif Toggle
+- Şifre aktif/pasif toggle: Şifreyi kaldırmadan korumayı geçici olarak devre dışı bırakma
+- ToolStripSplitButton: Dropdown menü ile hızlı aktif/pasif geçişi
+- 3 durumlu kalkan ikonu: yeşil (aktif), turuncu (pasif), gri (tanımsız)
+
+### v0.65.0 — Log Performansı, Dark Dialog, Şifre Koruması
+- Log viewer VirtualMode: Büyük log dosyaları artık UI’yı dondurmaz
+- ModernMessageBox: Tüm dialog’lar dark tema ile tutarlı
+- Şifre koruması: Görev işlemleri şifre ile korunur, güvenlik sorusu ile kurtarma
+- Tray menü sadeleştirme: Gereksiz öğeler kaldırıldı
+
 ### v0.64.1 — Provider Listesi Sadeleştirme
 - Google Drive (Bireysel/Workspace) → tek "Google Drive ✓" satırı
-- OneDrive (Bireysel/Kurumsal) → tek "OneDrive" satırı
 - ProviderMap mapping sistemi (enum uyumluluğu korunur)
 - Test edilen provider'lara ✓ işareti
 

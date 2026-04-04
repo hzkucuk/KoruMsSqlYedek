@@ -54,6 +54,54 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("logColorScheme")]
         public string LogColorScheme { get; set; } = "koru";
 
+        // ═══════════════ ŞİFRE KORUMASI ═══════════════
+
+        /// <summary>Görev şifresi (SHA256 hash, DPAPI ile korumalı). Boş ise koruma yok.</summary>
+        [JsonProperty("passwordHash", NullValueHandling = NullValueHandling.Ignore)]
+        public string PasswordHash { get; set; }
+
+        /// <summary>Şifre kurtarma güvenlik sorusu.</summary>
+        [JsonProperty("securityQuestion", NullValueHandling = NullValueHandling.Ignore)]
+        public string SecurityQuestion { get; set; }
+
+        /// <summary>Güvenlik sorusu cevabı (SHA256 hash, DPAPI ile korumalı).</summary>
+        [JsonProperty("securityAnswerHash", NullValueHandling = NullValueHandling.Ignore)]
+        public string SecurityAnswerHash { get; set; }
+
+        /// <summary>Şifre koruması aktif/pasif durumu. true ise şifre sorulur.</summary>
+        [JsonProperty("passwordEnabled")]
+        public bool PasswordEnabled { get; set; } = true;
+
+        /// <summary>Şifre tanımlı mı? (hash var mı)</summary>
+        [JsonIgnore]
+        public bool HasPassword => !string.IsNullOrEmpty(PasswordHash);
+
+        /// <summary>Şifre koruması etkin mi? (tanımlı + aktif)</summary>
+        [JsonIgnore]
+        public bool IsPasswordProtected => HasPassword && PasswordEnabled;
+
+        // ═══════════════ GOOGLE OAUTH ═══════════════
+
+        /// <summary>
+        /// Kullanıcının kendi Google Cloud Console Client ID değeri.
+        /// Boş ise gömülü (embedded) credential kullanılır.
+        /// </summary>
+        [JsonProperty("googleOAuthClientId", NullValueHandling = NullValueHandling.Ignore)]
+        public string GoogleOAuthClientId { get; set; }
+
+        /// <summary>
+        /// Kullanıcının kendi Google Cloud Console Client Secret değeri (DPAPI + Base64).
+        /// Boş ise gömülü (embedded) credential kullanılır.
+        /// </summary>
+        [JsonProperty("googleOAuthClientSecret", NullValueHandling = NullValueHandling.Ignore)]
+        public string GoogleOAuthClientSecret { get; set; }
+
+        /// <summary>Kullanıcının özel Google OAuth credential'ları tanımlı mı?</summary>
+        [JsonIgnore]
+        public bool HasCustomGoogleOAuth =>
+            !string.IsNullOrEmpty(GoogleOAuthClientId) &&
+            !string.IsNullOrEmpty(GoogleOAuthClientSecret);
+
         /// <summary>Ayar şeması versiyonu (geriye uyumluluk).</summary>
         [JsonProperty("schemaVersion")]
         public int SchemaVersion { get; set; } = 1;

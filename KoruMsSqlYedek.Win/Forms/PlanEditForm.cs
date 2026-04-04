@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -44,6 +44,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private readonly bool _isNew;
         private int _currentStep;
         private bool _connectionTested;
+        private bool _planPasswordRemoved;
 
         /// <summary>Yeni plan oluşturma.</summary>
         public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, IAppSettingsManager settingsManager)
@@ -138,14 +139,10 @@ namespace KoruMsSqlYedek.Win.Forms
             _btnSave.Text = isLastStep ? "Kaydet" : "Kaydet & Çık";
         }
 
-        /// <summary>Yedekleme moduna göre aktif adımları yeniden hesaplar.</summary>
+        /// <summary>Aktif adımları hesaplar. Hedefler adımı her zaman dahildir.</summary>
         private void RebuildActiveSteps()
         {
-            bool isCloud = _rbModeCloud.Checked;
-            _activeSteps = new System.Collections.Generic.List<int> { 0, 1, 2, 3 };
-            if (isCloud)
-                _activeSteps.Add(4); // Hedefler adımı
-            _activeSteps.Add(5); // Bildirim her zaman son
+            _activeSteps = new System.Collections.Generic.List<int> { 0, 1, 2, 3, 4, 5 };
         }
 
         /// <summary>Aktif adımlara göre üst bar göstergesini yeniden çizer.</summary>
@@ -230,14 +227,14 @@ namespace KoruMsSqlYedek.Win.Forms
                 case 0:
                     if (string.IsNullOrWhiteSpace(_txtPlanName.Text))
                     {
-                        MessageBox.Show(Res.Get("PlanEdit_NameRequired"), Res.Get("ValidationError"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_NameRequired"), Res.Get("ValidationError"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         _txtPlanName.Focus();
                         return false;
                     }
                     if (string.IsNullOrWhiteSpace(_txtServer.Text))
                     {
-                        MessageBox.Show(Res.Get("PlanEdit_ServerRequired"), Res.Get("ValidationError"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ServerRequired"), Res.Get("ValidationError"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         _txtServer.Focus();
                         return false;
@@ -267,7 +264,7 @@ namespace KoruMsSqlYedek.Win.Forms
                     }
                     else
                     {
-                        MessageBox.Show(Res.Get("PlanEdit_ConnFailed"), Res.Get("Warning"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ConnFailed"), Res.Get("Warning"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
@@ -382,8 +379,6 @@ namespace KoruMsSqlYedek.Win.Forms
             // Adım 1: Plan Bilgileri + SQL Bağlantı
             _txtPlanName.Text = _plan.PlanName ?? "";
             _chkEnabled.Checked = _plan.IsEnabled;
-            _rbModeLocal.Checked = _plan.Mode == BackupMode.Local;
-            _rbModeCloud.Checked = _plan.Mode == BackupMode.Cloud;
             _txtLocalPath.Text = _plan.LocalPath ?? @"D:\Backups\KoruMsSqlYedek";
             _txtServer.Text = _plan.SqlConnection?.Server ?? "";
             _cmbAuthMode.SelectedIndex = (_plan.SqlConnection?.AuthMode ?? SqlAuthMode.Windows) == SqlAuthMode.Windows ? 0 : 1;
@@ -425,6 +420,9 @@ namespace KoruMsSqlYedek.Win.Forms
             _nudKeepLastN.Value = _plan.Retention?.KeepLastN ?? 30;
             _nudDeleteDays.Value = _plan.Retention?.DeleteOlderThanDays ?? 90;
             UpdateRetentionFieldsVisibility();
+            _planPasswordRemoved = false;
+            _txtPlanPassword.Text = "";
+            UpdatePlanPasswordStatus();
 
             // Adım 5: Hedefler
             RefreshCloudTargetList();
@@ -464,7 +462,7 @@ namespace KoruMsSqlYedek.Win.Forms
             if (string.IsNullOrWhiteSpace(_txtPlanName.Text))
             {
                 ShowStep(0);
-                MessageBox.Show(Res.Get("PlanEdit_NameRequired"), Res.Get("ValidationError"),
+                Theme.ModernMessageBox.Show(Res.Get("PlanEdit_NameRequired"), Res.Get("ValidationError"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 _txtPlanName.Focus();
                 return false;
@@ -473,7 +471,6 @@ namespace KoruMsSqlYedek.Win.Forms
             // Adım 1: Bağlantı
             _plan.PlanName = _txtPlanName.Text.Trim();
             _plan.IsEnabled = _chkEnabled.Checked;
-            _plan.Mode = _rbModeCloud.Checked ? BackupMode.Cloud : BackupMode.Local;
             _plan.LocalPath = _txtLocalPath.Text.Trim();
             _plan.SqlConnection.Server = _txtServer.Text.Trim();
             _plan.SqlConnection.AuthMode = _cmbAuthMode.SelectedIndex == 0
@@ -521,6 +518,16 @@ namespace KoruMsSqlYedek.Win.Forms
             _plan.Retention.KeepLastN = (int)_nudKeepLastN.Value;
             _plan.Retention.DeleteOlderThanDays = (int)_nudDeleteDays.Value;
 
+            // Plan şifresi
+            if (_planPasswordRemoved)
+            {
+                _plan.PasswordHash = null;
+            }
+            else if (!string.IsNullOrWhiteSpace(_txtPlanPassword.Text))
+            {
+                _plan.PasswordHash = PlanPasswordHelper.HashPassword(_txtPlanPassword.Text);
+            }
+
             // Adım 5: Hedefler — zaten _plan.CloudTargets üzerinde çalışılıyor
 
             // Adım 6: Bildirim + Rapor
@@ -565,7 +572,7 @@ namespace KoruMsSqlYedek.Win.Forms
             catch (Exception ex)
             {
                 Log.Error(ex, "Plan kaydedilirken hata: {PlanId}", _plan.PlanId);
-                MessageBox.Show(Res.Format("PlanEdit_SaveError", ex.Message),
+                Theme.ModernMessageBox.Show(Res.Format("PlanEdit_SaveError", ex.Message),
                     Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -592,14 +599,14 @@ namespace KoruMsSqlYedek.Win.Forms
                     if (isConnected)
                     {
                         _connectionTested = true;
-                        MessageBox.Show(Res.Get("PlanEdit_ConnSuccess"), Res.Get("PlanEdit_ConnSuccessTitle"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ConnSuccess"), Res.Get("PlanEdit_ConnSuccessTitle"),
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                         await LoadDatabaseListAsync(connInfo);
                     }
                     else
                     {
-                        MessageBox.Show(Res.Get("PlanEdit_ConnFailed"), Res.Get("PlanEdit_ConnSuccessTitle"),
+                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ConnFailed"), Res.Get("PlanEdit_ConnSuccessTitle"),
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
@@ -607,7 +614,7 @@ namespace KoruMsSqlYedek.Win.Forms
             catch (Exception ex)
             {
                 Log.Error(ex, "SQL bağlantı testi hatası.");
-                MessageBox.Show(Res.Format("PlanEdit_ConnError", ex.Message), Res.Get("Error"),
+                Theme.ModernMessageBox.Show(Res.Format("PlanEdit_ConnError", ex.Message), Res.Get("Error"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -679,7 +686,8 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnAddCloudTarget(object sender, EventArgs e)
         {
-            using (var dialog = new CloudTargetEditDialog())
+            var appSettings = _settingsManager.Load();
+            using (var dialog = new CloudTargetEditDialog(appSettings, _settingsManager))
             {
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
@@ -695,7 +703,8 @@ namespace KoruMsSqlYedek.Win.Forms
             var target = _lvCloudTargets.SelectedItems[0].Tag as CloudTargetConfig;
             if (target == null) return;
 
-            using (var dialog = new CloudTargetEditDialog(target))
+            var appSettings = _settingsManager.Load();
+            using (var dialog = new CloudTargetEditDialog(appSettings, _settingsManager, target))
             {
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
@@ -715,7 +724,7 @@ namespace KoruMsSqlYedek.Win.Forms
             var target = _lvCloudTargets.SelectedItems[0].Tag as CloudTargetConfig;
             if (target == null) return;
 
-            var result = MessageBox.Show(
+            var result = Theme.ModernMessageBox.Show(
                 Res.Format("PlanEdit_RemoveTargetConfirm", target.DisplayName),
                 Res.Get("PlanEdit_RemoveTargetTitle"), MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
@@ -804,7 +813,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnOpenSmtpSettingsClick(object sender, System.Windows.Forms.LinkLabelLinkClickedEventArgs e)
         {
-            MessageBox.Show(
+            Theme.ModernMessageBox.Show(
                 Res.Get("PlanEdit_SmtpGoToSettings") ?? "SMTP profillerini yönetmek için ana pencereden\nAyarlar \u003e E-posta (SMTP) sekmesini açın.",
                 Res.Get("Info") ?? "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -813,17 +822,6 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             UpdateFileBackupFieldsVisibility();
             UpdateFileScheduleVisibility();
-        }
-
-        private void OnBackupModeChanged(object sender, EventArgs e)
-        {
-            if (_activeSteps == null) return;
-            int prevPanelIndex = _activeSteps.Count > _currentStep ? _activeSteps[_currentStep] : 0;
-            RebuildActiveSteps();
-            // Mevcut panel hâlâ aktifse aynı konumda kal
-            int newActiveIndex = _activeSteps.IndexOf(prevPanelIndex);
-            if (newActiveIndex < 0) newActiveIndex = 0;
-            ShowStep(newActiveIndex);
         }
 
         private void UpdateAuthFieldsVisibility()
@@ -851,6 +849,33 @@ namespace KoruMsSqlYedek.Win.Forms
             _nudKeepLastN.Visible = idx == 0 || idx == 2;
             _lblDeleteDays.Visible = idx == 1 || idx == 2;
             _nudDeleteDays.Visible = idx == 1 || idx == 2;
+        }
+
+        private void UpdatePlanPasswordStatus()
+        {
+            bool hasPassword = !_planPasswordRemoved && _plan.HasPlanPassword;
+            _lblPlanPasswordStatus.Text = hasPassword
+                ? "\U0001f512 Bu plan şifre ile korunuyor"
+                : "\U0001f513 Plan şifresi ayarlı değil";
+            _lblPlanPasswordStatus.ForeColor = hasPassword
+                ? Theme.ModernTheme.AccentPrimary
+                : Theme.ModernTheme.TextSecondary;
+            _btnRemovePlanPassword.Visible = hasPassword;
+        }
+
+        private void OnRemovePlanPasswordClick(object? sender, EventArgs e)
+        {
+            var result = Theme.ModernMessageBox.Show(
+                "Bu planın şifre korumasını kaldırmak istediğinize emin misiniz?",
+                "Şifre Kaldır",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+
+            if (result == DialogResult.Yes)
+            {
+                _planPasswordRemoved = true;
+                _txtPlanPassword.Text = "";
+                UpdatePlanPasswordStatus();
+            }
         }
 
         private void UpdateEmailFieldsVisibility()
@@ -883,6 +908,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void UpdateFileScheduleVisibility()
         {
             bool enabled = _chkFileBackupEnabled.Checked;
+            _lblStep3FileSep.Visible = enabled;
             _lblStep3FileSchedHeader.Visible = enabled;
             _lblFileSchedule.Visible = enabled;
             _cronFileSchedule.Visible = enabled;
