@@ -19,6 +19,12 @@ namespace KoruMsSqlYedek.Win.Forms
         private readonly IAppSettingsManager _settingsManager;
         private readonly string _planPasswordHash;
 
+        /// <summary>
+        /// Güvenlik sorusu ile kurtarma yapıldığında plan şifresinin de sıfırlanması gerektiğini belirtir.
+        /// Çağıran taraf bu flag'i kontrol ederek plan.PasswordHash'i temizlemelidir.
+        /// </summary>
+        public bool PlanPasswordReset { get; private set; }
+
         /// <param name="settings">Global uygulama ayarları (master şifre).</param>
         /// <param name="settingsManager">Ayar kaydetme servisi.</param>
         /// <param name="planPasswordHash">Plan bazlı şifre hash'i. Null ise yalnızca master geçerli.</param>
@@ -46,13 +52,20 @@ namespace KoruMsSqlYedek.Win.Forms
 
             string input = _txtPassword.Text;
 
-            // Master VEYA plan şifresi kabul edilir
-            bool masterMatch = !string.IsNullOrEmpty(_settings.PasswordHash) &&
-                               PlanPasswordHelper.VerifyPassword(input, _settings.PasswordHash);
-            bool planMatch = !string.IsNullOrEmpty(_planPasswordHash) &&
-                             PlanPasswordHelper.VerifyPassword(input, _planPasswordHash);
+            // Plan şifresi tanımlıysa SADECE plan şifresini kabul et (izolasyon).
+            // Plan şifresi yoksa global (master) şifreyi kontrol et.
+            bool accepted;
+            if (!string.IsNullOrEmpty(_planPasswordHash))
+            {
+                accepted = PlanPasswordHelper.VerifyPassword(input, _planPasswordHash);
+            }
+            else
+            {
+                accepted = !string.IsNullOrEmpty(_settings.PasswordHash) &&
+                           PlanPasswordHelper.VerifyPassword(input, _settings.PasswordHash);
+            }
 
-            if (masterMatch || planMatch)
+            if (accepted)
             {
                 DialogResult = DialogResult.OK;
                 Close();
@@ -72,7 +85,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 string.IsNullOrEmpty(_settings.SecurityAnswerHash))
             {
                 string configPath = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
                     "KoruMsSqlYedek", "Config", "appsettings.json");
 
                 var result = ModernMessageBox.Show(
@@ -137,6 +150,12 @@ namespace KoruMsSqlYedek.Win.Forms
                     _settings.SecurityQuestion = null;
                     _settings.SecurityAnswerHash = null;
                     _settingsManager.Save(_settings);
+
+                    // Plan şifresi varsa onu da sıfırla
+                    if (!string.IsNullOrEmpty(_planPasswordHash))
+                    {
+                        PlanPasswordReset = true;
+                    }
 
                     ModernMessageBox.Show(
                         "Şifre koruması kaldırıldı. Görevlere erişim serbest.",

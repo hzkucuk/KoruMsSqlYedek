@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.77.1 — Plan Bazlı Şifre İzolasyonu
+- [x] Plan şifresi tanımlı planlarda yalnızca plan şifresi kabul edilir (global override kaldırıldı)
+- [x] Güvenlik sorusu kurtarma → plan şifresi de otomatik sıfırlanır
+- [x] Şifremi Unuttum config yolu ProgramData ile uyumlu
+
 ### v0.77.0 — Post-Install Düzeltmeleri & Modern Tray İkonları
 - ✅ Error 740 admin hatası çözüldü (asInvoker + sc.exe UAC)
 - ✅ Tray ikonu görünmüyor: native icon handle sızıntısı düzeltildi

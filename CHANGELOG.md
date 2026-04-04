@@ -1,4 +1,17 @@
-﻿## [0.77.0] - 2026-04-06 — Post-Install Düzeltmeleri & Modern Tray İkonları
+﻿## [0.77.1] - 2026-04-06 — Plan Bazlı Şifre İzolasyonu
+
+### Düzeltme
+- **Plan bazlı şifre artık gerçekten izole çalışıyor** — Plan şifresi tanımlı planlarda artık yalnızca plan şifresi kabul edilir; global (master) şifre plan bazlı korumayı geçersiz kılamaz.
+- **Güvenlik sorusu kurtarma akışı iyileştirildi** — Plan şifresi olan bir görevde güvenlik sorusu ile kurtarma yapıldığında, plan şifresi de otomatik sıfırlanır.
+- **Şifremi Unuttum config yolu düzeltildi** — `%AppData%` → `%ProgramData%` (v0.76.0 migrasyonu ile uyumlu hale getirildi).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Forms/PasswordDialog.cs` — İzole doğrulama + PlanPasswordReset flag
+- `KoruMsSqlYedek.Win/MainWindow.cs` — CheckPlanPassword kurtarma akışı
+
+---
+
+## [0.77.0] - 2026-04-06 — Post-Install Düzeltmeleri & Modern Tray İkonları
 
 ### Düzeltme
 - **Error 740 (admin yetki hatası) çözüldü** — app.manifest `requireAdministrator` → `asInvoker` olarak değiştirildi. Tray uygulaması artık normal kullanıcı olarak çalışır, servis kontrolü (başlat/durdur) sc.exe + UAC ile yükseltilir.

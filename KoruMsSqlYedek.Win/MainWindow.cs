@@ -821,7 +821,8 @@ namespace KoruMsSqlYedek.Win
 
         /// <summary>
         /// Şifre koruması etkinse doğrulama dialogu gösterir.
-        /// Global (master) ve/veya plan bazlı şifre varsa dialog açılır.
+        /// Plan bazlı şifre tanımlıysa yalnızca plan şifresini kabul eder (izolasyon).
+        /// Plan şifresi yoksa global (master) şifreyi kontrol eder.
         /// Hiçbir şifre tanımlı değilse true döner.
         /// </summary>
         /// <param name="plan">Düzenlenecek/silinecek plan. Yeni plan için null.</param>
@@ -837,7 +838,17 @@ namespace KoruMsSqlYedek.Win
 
             using (var dlg = new PasswordDialog(_settings ?? new AppSettings(), _settingsManager, planHash))
             {
-                return dlg.ShowDialog(this) == DialogResult.OK;
+                if (dlg.ShowDialog(this) != DialogResult.OK)
+                    return false;
+
+                // Güvenlik sorusu ile kurtarma yapıldıysa plan şifresini de sıfırla
+                if (dlg.PlanPasswordReset && plan != null)
+                {
+                    plan.PasswordHash = null;
+                    _planManager.SavePlan(plan);
+                }
+
+                return true;
             }
         }
 
