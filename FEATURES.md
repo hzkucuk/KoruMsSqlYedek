@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.70.0 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
+- Mega oturum önbellekleme: Login/logout her dosyada değil, 15 dakika boyunca yeniden kullanılıyor
+- SemaphoreSlim ile eşzamanlı upload serializasyonu
+- MegaProvider diagnostik logları Information seviyesine yükseltildi (Service loglarında görünür)
+- DPAPI şifre çözme null kontrolü + rate limiting ipucu mesajı
+- MainWindow: CloudUploadStarted/CloudUploadCompleted switch case'leri eklendi (uyarı logları kaldırıldı)
+
 ### v0.69.0 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
 - Mega retry: Non-exception başarısızlıklarda exponential backoff (2s/4s/8s) eklendi
 - Bulut yükleme hata detayı log panelinde görünür ("Başarısız ✕ — {neden}")

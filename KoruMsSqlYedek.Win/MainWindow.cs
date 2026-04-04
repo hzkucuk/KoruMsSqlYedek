@@ -1435,6 +1435,11 @@ namespace KoruMsSqlYedek.Win
                     }
                     break;
 
+                case BackupActivityType.CloudUploadStarted:
+                case BackupActivityType.CloudUploadCompleted:
+                    // Log satırı ve renk switch sonrasında BuildActivityLogLine + GetLogColor ile işlenir.
+                    break;
+
                 case BackupActivityType.Completed:
                 case BackupActivityType.Failed:
                 case BackupActivityType.Cancelled:

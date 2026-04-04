@@ -1,4 +1,24 @@
-﻿## [0.69.0] - 2026-04-04 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
+﻿## [0.70.0] - 2026-04-05 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
+
+### İyileştirme
+- **Mega Oturum Önbellekleme:** Her dosya yüklemesinde yeni login/logout yerine, mevcut oturum 15 dakikaya kadar yeniden kullanılıyor. VSS ile dosya sayısı ikiye katlandığında bile Mega rate limiting tetiklenmiyor.
+- **SemaphoreSlim Serializasyon:** Eşzamanlı upload istekleri sıralı işleniyor, oturum yarış koşulları önleniyor.
+- **Diagnostik Log Seviyesi:** MegaProvider'ın tüm kritik logları (login denemesi, bağlantı kontrolü, oturum yeniden kullanımı/süresi dolması) `Log.Information` seviyesine yükseltildi — Service loglarında artık görünür.
+- **DPAPI Null Kontrolü:** Şifre çözme başarısız olursa açık hata mesajı fırlatılıyor.
+- **Rate Limiting İpucu:** Timeout hatalarında Mega hesap bazlı rate limiting olasılığı kullanıcıya bildiriliyor.
+- **MainWindow Switch:** `CloudUploadStarted` ve `CloudUploadCompleted` event'leri artık açık case olarak işleniyor — "Unhandled BackupActivityType" uyarı logları kaldırıldı.
+
+### Teknik
+- `MegaProvider.cs`: Tamamen yeniden yazıldı — statik `_cachedClient`, `_cachedEmail`, `_sessionLastUsedUtc`, `GetOrCreateSessionAsync()`, `InvalidateSession()`. Upload/Delete sonrası logout yok.
+- `MainWindow.cs`: `OnBackupActivityChanged` switch'ine `CloudUploadStarted` ve `CloudUploadCompleted` case'leri eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` (oturum önbellekleme, diagnostik loglar)
+- `KoruMsSqlYedek.Win/MainWindow.cs` (switch case düzeltmesi)
+
+---
+
+## [0.69.0] - 2026-04-04 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
 
 ### Düzeltme
 - **Mega Retry Gecikmesi:** `CloudUploadOrchestrator.UploadWithRetryAsync` içinde, provider exception fırlatmadan `IsSuccess=false` döndüğünde (örn. Mega login timeout) retry döngüsü gecikme olmadan devam ediyordu. Artık non-exception başarısızlıklarda da exponential backoff (2s/4s/8s) uygulanıyor.
