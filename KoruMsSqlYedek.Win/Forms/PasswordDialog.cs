@@ -18,6 +18,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private readonly AppSettings _settings;
         private readonly IAppSettingsManager _settingsManager;
         private readonly string _planPasswordHash;
+        private readonly string _planRecoveryHash;
 
         /// <summary>
         /// Güvenlik sorusu ile kurtarma yapıldığında plan şifresinin de sıfırlanması gerektiğini belirtir.
@@ -28,7 +29,8 @@ namespace KoruMsSqlYedek.Win.Forms
         /// <param name="settings">Global uygulama ayarları (master şifre).</param>
         /// <param name="settingsManager">Ayar kaydetme servisi.</param>
         /// <param name="planPasswordHash">Plan bazlı şifre hash'i. Null ise yalnızca master geçerli.</param>
-        public PasswordDialog(AppSettings settings, IAppSettingsManager settingsManager, string planPasswordHash = null)
+        /// <param name="planRecoveryHash">Plan bazlı kurtarma şifresi hash'i.</param>
+        public PasswordDialog(AppSettings settings, IAppSettingsManager settingsManager, string planPasswordHash = null, string planRecoveryHash = null)
         {
             ArgumentNullException.ThrowIfNull(settings);
             ArgumentNullException.ThrowIfNull(settingsManager);
@@ -36,6 +38,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _settings = settings;
             _settingsManager = settingsManager;
             _planPasswordHash = planPasswordHash;
+            _planRecoveryHash = planRecoveryHash;
 
             InitializeComponent();
         }
@@ -52,12 +55,18 @@ namespace KoruMsSqlYedek.Win.Forms
 
             string input = _txtPassword.Text;
 
-            // Plan şifresi tanımlıysa SADECE plan şifresini kabul et (izolasyon).
+            // Plan şifresi tanımlıysa plan şifresini veya kurtarma şifresini kabul et (izolasyon).
             // Plan şifresi yoksa global (master) şifreyi kontrol et.
             bool accepted;
             if (!string.IsNullOrEmpty(_planPasswordHash))
             {
                 accepted = PlanPasswordHelper.VerifyPassword(input, _planPasswordHash);
+
+                // Plan şifresi eşleşmediyse kurtarma şifresini dene
+                if (!accepted && !string.IsNullOrEmpty(_planRecoveryHash))
+                {
+                    accepted = PlanPasswordHelper.VerifyPassword(input, _planRecoveryHash);
+                }
             }
             else
             {

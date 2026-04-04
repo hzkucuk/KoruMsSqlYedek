@@ -125,6 +125,7 @@
             _nudDeleteDays = new Theme.ModernNumericUpDown();
             _chkProtectPlan = new System.Windows.Forms.CheckBox();
             _txtPlanPassword = new System.Windows.Forms.TextBox();
+            _txtRecoveryPassword = new System.Windows.Forms.TextBox();
 
             // ========== STEP 5: Hedefler (Bulut/Uzak) ==========
             _lblStep5Header = new System.Windows.Forms.Label();
@@ -571,6 +572,15 @@
             _txtPlanPassword.Visible = false;
             _toolTip.SetToolTip(_txtPlanPassword, "Plan d\u00fczenleme ve silme i\u015flemlerinde sorulacak \u015fifre.");
             step4.Controls.Add(_txtPlanPassword);
+            y += 28;
+
+            _txtRecoveryPassword.Location = new System.Drawing.Point(lx + 24, y);
+            _txtRecoveryPassword.Size = new System.Drawing.Size(tw, 23);
+            _txtRecoveryPassword.UseSystemPasswordChar = true;
+            _txtRecoveryPassword.PlaceholderText = "Kurtarma \u015fifresi (iste\u011fe ba\u011fl\u0131)...";
+            _txtRecoveryPassword.Visible = false;
+            _toolTip.SetToolTip(_txtRecoveryPassword, "Plan \u015fifresini unutursan\u0131z bu \u015fifre ile eri\u015fim sa\u011flayabilirsiniz.");
+            step4.Controls.Add(_txtRecoveryPassword);
 
             // ===================================================================
             // STEP 5: Hedefler (Bulut / Uzak)
@@ -905,6 +915,7 @@
         private Theme.ModernNumericUpDown _nudDeleteDays;
         private System.Windows.Forms.CheckBox _chkProtectPlan;
         private System.Windows.Forms.TextBox _txtPlanPassword;
+        private System.Windows.Forms.TextBox _txtRecoveryPassword;
 
         // Step 5: Hedefler
         private System.Windows.Forms.Label _lblStep5Header;

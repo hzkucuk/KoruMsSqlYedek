@@ -1,4 +1,22 @@
-﻿## [0.77.2] - 2026-04-06 — Plan Şifre UX Sadeleştirme
+﻿## [0.77.3] - 2026-04-06 — Kurtarma Şifresi (Recovery Password)
+
+### Yeni Özellik
+- **Plan bazlı kurtarma şifresi** — Plan şifresini unutan kullanıcılar, önceden tanımladıkları kurtarma şifresiyle erişim sağlayabilir.
+- `BackupPlan.RecoveryPasswordHash` modele eklendi (JSON: `recoveryPasswordHash`)
+- Plan düzenleme formunda checkbox aktifken ikinci bir "Kurtarma şifresi" alanı gösterilir
+- Şifre doğrulama dialogu önce plan şifresini, eşleşmezse kurtarma şifresini dener
+- Güvenlik sorusu ile sıfırlamada kurtarma şifresi de temizlenir
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/BackupPlan.cs` — RecoveryPasswordHash + HasRecoveryPassword
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs` — _txtRecoveryPassword kontrolü
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs` — Load/Save/Toggle mantığı
+- `KoruMsSqlYedek.Win/Forms/PasswordDialog.cs` — Kurtarma şifresi doğrulama
+- `KoruMsSqlYedek.Win/MainWindow.cs` — RecoveryHash aktarımı
+
+---
+
+## [0.77.2] - 2026-04-06 — Plan Şifre UX Sadeleştirme
 
 ### İyileştirme
 - **Plan şifre koruması basitleştirildi** — Karmaşık durum etiketi + kaldır butonu yerine tek bir **"🔒 Bu görevi şifre ile koru"** checkbox'u eklendi. Tikle, şifre gir, kaydet — bu kadar.

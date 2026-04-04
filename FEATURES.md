@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.77.3 — Kurtarma Şifresi (Recovery Password)
+- [x] Plan bazlı kurtarma şifresi desteği
+- [x] Plan şifresi unutulduğunda kurtarma şifresi ile erişim
+- [x] Güvenlik sorusu sıfırlamasında kurtarma şifresi de temizlenir
+
 ### v0.77.2 — Plan Şifre UX Sadeleştirme
 - [x] Checkbox tabanlı plan şifre koruması ("🔒 Bu görevi şifre ile koru")
 - [x] Tikle → şifre gir → kaydet — bitti

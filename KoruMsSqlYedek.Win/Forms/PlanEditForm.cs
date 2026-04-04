@@ -422,6 +422,8 @@ namespace KoruMsSqlYedek.Win.Forms
             _chkProtectPlan.Checked = _plan.HasPlanPassword;
             _txtPlanPassword.Text = "";
             _txtPlanPassword.Visible = _plan.HasPlanPassword;
+            _txtRecoveryPassword.Text = "";
+            _txtRecoveryPassword.Visible = _plan.HasPlanPassword;
 
             // Adım 5: Hedefler
             RefreshCloudTargetList();
@@ -521,12 +523,22 @@ namespace KoruMsSqlYedek.Win.Forms
             if (!_chkProtectPlan.Checked)
             {
                 _plan.PasswordHash = null;
+                _plan.RecoveryPasswordHash = null;
             }
-            else if (!string.IsNullOrWhiteSpace(_txtPlanPassword.Text))
+            else
             {
-                _plan.PasswordHash = PlanPasswordHelper.HashPassword(_txtPlanPassword.Text);
+                if (!string.IsNullOrWhiteSpace(_txtPlanPassword.Text))
+                {
+                    _plan.PasswordHash = PlanPasswordHelper.HashPassword(_txtPlanPassword.Text);
+                }
+                // checkbox işaretli ama alan boş → mevcut hash korunur
+
+                if (!string.IsNullOrWhiteSpace(_txtRecoveryPassword.Text))
+                {
+                    _plan.RecoveryPasswordHash = PlanPasswordHelper.HashPassword(_txtRecoveryPassword.Text);
+                }
+                // kurtarma alanı boş → mevcut recovery hash korunur
             }
-            // checkbox işaretli ama alan boş → mevcut hash korunur
 
             // Adım 5: Hedefler — zaten _plan.CloudTargets üzerinde çalışılıyor
 
@@ -854,6 +866,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void OnProtectPlanChanged(object? sender, EventArgs e)
         {
             _txtPlanPassword.Visible = _chkProtectPlan.Checked;
+            _txtRecoveryPassword.Visible = _chkProtectPlan.Checked;
             if (_chkProtectPlan.Checked)
             {
                 _txtPlanPassword.Focus();
@@ -861,6 +874,7 @@ namespace KoruMsSqlYedek.Win.Forms
             else
             {
                 _txtPlanPassword.Text = "";
+                _txtRecoveryPassword.Text = "";
             }
         }
 

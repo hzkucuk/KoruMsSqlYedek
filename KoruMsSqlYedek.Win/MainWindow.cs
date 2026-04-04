@@ -835,8 +835,9 @@ namespace KoruMsSqlYedek.Win
                 return true;
 
             string planHash = hasPlanPw ? plan.PasswordHash : null;
+            string recoveryHash = hasPlanPw ? plan.RecoveryPasswordHash : null;
 
-            using (var dlg = new PasswordDialog(_settings ?? new AppSettings(), _settingsManager, planHash))
+            using (var dlg = new PasswordDialog(_settings ?? new AppSettings(), _settingsManager, planHash, recoveryHash))
             {
                 if (dlg.ShowDialog(this) != DialogResult.OK)
                     return false;
@@ -845,6 +846,7 @@ namespace KoruMsSqlYedek.Win
                 if (dlg.PlanPasswordReset && plan != null)
                 {
                     plan.PasswordHash = null;
+                    plan.RecoveryPasswordHash = null;
                     _planManager.SavePlan(plan);
                 }
 
