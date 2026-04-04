@@ -1,4 +1,24 @@
-﻿## [0.71.1] - 2026-04-05 — Çöp Kutusu Güvenlik Düzeltmesi: Sadece Bizim Dosyalarımız
+﻿## [0.72.0] - 2026-04-05 — Mega Oturum Önbellekleme Yeniden Eklendi
+
+### Düzeltme
+- **Mega Session Caching Kaybı Giderildi:** v0.71.x çöp kutusu özelliği eklenirken v0.70.0'da eklenen oturum önbellekleme kaybolmuştu. Her upload/delete/trash işleminde ayrı login/logout yapılıyordu → Mega rate limiting tetikleniyordu.
+- **Oturum Yeniden Kullanımı:** Aynı email ile 15 dakika içindeki tüm Mega API çağrıları mevcut oturumu yeniden kullanıyor.
+- **SemaphoreSlim Serializasyon:** Tüm Mega API çağrıları (Upload, Delete, EmptyTrash) sıralı işleniyor — eşzamanlı erişim ve rate limiting önleniyor.
+- **Hata Sonrası Oturum Geçersizleştirme:** Timeout veya API hatasında oturum önbelleği temizleniyor, sonraki çağrı yeni oturum açıyor.
+
+### Teknik
+- `MegaProvider.cs`: `_cachedClient`, `_cachedEmail`, `_sessionLastUsedUtc`, `_sessionSemaphore` statik alanları eklendi.
+- `GetOrCreateSessionAsync()`: 15dk önbellek + email değişikliği kontrolü + otomatik geçersizleştirme.
+- `InvalidateSessionInternalAsync()`: Güvenli logout + önbellek temizleme.
+- `UploadAsync`, `DeleteAsync`, `EmptyTrashAsync`: Semaphore + session caching entegrasyonu.
+- `TestConnectionAsync`: Taze bağlantı (kimlik doğrulama testi için önbellek kullanmıyor).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs`
+
+---
+
+## [0.71.1] - 2026-04-05 — Çöp Kutusu Güvenlik Düzeltmesi: Sadece Bizim Dosyalarımız
 
 ### Düzeltme
 - **Google Drive:** `Files.EmptyTrash()` (tüm çöpü boşaltan) API yerine, sadece bizim klasörümüzde (`RemoteFolderPath`) bulunan çöp dosyaları tek tek kalıcı siliniyor. Kullanıcının kişisel çöp dosyalarına dokunulmuyor.

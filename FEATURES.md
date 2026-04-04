@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.72.0 — Mega Oturum Önbellekleme Yeniden Eklendi
+- Mega oturum önbellekleme geri eklendi: 15 dakika boyunca aynı oturum yeniden kullanılıyor
+- SemaphoreSlim ile tüm Mega API çağrıları sıralı işleniyor (rate limiting önleme)
+- Hata sonrası oturum otomatik geçersizleştirme + yeni oturum açma
+- Her upload/delete/trash işleminde ayrı login/logout sorunu giderildi
+
 ### v0.71.1 — Çöp Kutusu Güvenlik Düzeltmesi
 - Google Drive: Sadece bizim klasörümüzdeki çöp dosyaları temizlenir, kullanıcının kişisel çöpüne dokunulmaz
 - Mega: Yedek dosya isim desenine uyan dosyalar filtrelenir (`.bak`/`.7z` + `_Full_/_Differential_/_Incremental_/Files_`)

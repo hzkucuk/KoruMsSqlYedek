@@ -29,6 +29,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
         /// <summary>Bağlantı ön kontrolü zaman aşımı (saniye).</summary>
         private const int ConnectivityCheckSeconds = 10;
 
+        /// <summary>Oturum önbellek süresi (dakika). Bu süre boyunca aynı oturum yeniden kullanılır.</summary>
+        private const int SessionExpiryMinutes = 15;
+
         /// <summary>Mega API endpoint — bağlantı ön kontrolü için.</summary>
         private const string MegaApiUrl = "https://g.api.mega.co.nz/cs";
 
@@ -37,6 +40,14 @@ namespace KoruMsSqlYedek.Engine.Cloud
         {
             Timeout = TimeSpan.FromSeconds(ConnectivityCheckSeconds)
         };
+
+        // ── Session Caching ──────────────────────────────────────────
+        // Aynı oturum 15 dakikaya kadar yeniden kullanılır.
+        // SemaphoreSlim ile tüm Mega API çağrıları sıralı işlenir — rate limiting önlenir.
+        private static MegaApiClient _cachedClient;
+        private static string _cachedEmail;
+        private static DateTime _sessionLastUsedUtc;
+        private static readonly SemaphoreSlim _sessionSemaphore = new(1, 1);
 
         public CloudProviderType ProviderType => CloudProviderType.Mega;
 
@@ -59,8 +70,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 DisplayName = DisplayName
             };
 
-            MegaApiClient client = null;
-
+            await _sessionSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 ValidateConfig(config);
@@ -68,11 +78,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 if (!File.Exists(localFilePath))
                     throw new FileNotFoundException("Kaynak dosya bulunamadı.", localFilePath);
 
-                client = new MegaApiClient();
-
-                Log.Debug("Mega giriş yapılıyor: {Email}", config.Username);
-                await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
-                Log.Debug("Mega giriş başarılı.");
+                var client = await GetOrCreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -100,6 +106,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         .ConfigureAwait(false);
                 }
 
+                _sessionLastUsedUtc = DateTime.UtcNow;
+
                 result.IsSuccess = true;
                 result.RemoteFilePath = uploadedNode.Id;
                 result.RemoteFileSizeBytes = uploadedNode.Size;
@@ -120,17 +128,18 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 result.IsSuccess = false;
                 result.ErrorMessage = ex.Message;
                 Log.Error("Mega zaman aşımı: {FileName} — {Message}", remoteFileName, ex.Message);
+                await InvalidateSessionInternalAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 result.IsSuccess = false;
                 result.ErrorMessage = ex.Message;
                 Log.Error(ex, "Mega upload başarısız: {FileName}", remoteFileName);
+                await InvalidateSessionInternalAsync().ConfigureAwait(false);
             }
             finally
             {
-                if (client is not null)
-                    await LogoutSafeAsync(client).ConfigureAwait(false);
+                _sessionSemaphore.Release();
             }
 
             return result;
@@ -141,12 +150,10 @@ namespace KoruMsSqlYedek.Engine.Cloud
             CloudTargetConfig config,
             CancellationToken cancellationToken)
         {
-            MegaApiClient client = null;
-
+            await _sessionSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                client = new MegaApiClient();
-                await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
+                var client = await GetOrCreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
 
                 var nodes = await client.GetNodesAsync().ConfigureAwait(false);
                 var targetNode = nodes.FirstOrDefault(n => n.Id == remoteFileIdentifier);
@@ -159,6 +166,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                 bool moveToTrash = !config.PermanentDeleteFromTrash;
                 await client.DeleteAsync(targetNode, moveToTrash).ConfigureAwait(false);
+
+                _sessionLastUsedUtc = DateTime.UtcNow;
 
                 Log.Information(
                     moveToTrash
@@ -176,12 +185,12 @@ namespace KoruMsSqlYedek.Engine.Cloud
             catch (Exception ex)
             {
                 Log.Warning(ex, "Mega silme başarısız: {NodeId}", remoteFileIdentifier);
+                await InvalidateSessionInternalAsync().ConfigureAwait(false);
                 return false;
             }
             finally
             {
-                if (client is not null)
-                    await LogoutSafeAsync(client).ConfigureAwait(false);
+                _sessionSemaphore.Release();
             }
         }
 
@@ -240,6 +249,65 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
             if (string.IsNullOrWhiteSpace(config.Password))
                 throw new InvalidOperationException("Mega şifresi belirtilmemiş.");
+        }
+
+        /// <summary>
+        /// Önbelleğe alınmış Mega oturumunu döndürür veya yeni oturum oluşturur.
+        /// Aynı email ile 15 dakika içinde yapılan çağrılar mevcut oturumu yeniden kullanır.
+        /// Semaphore dışından ÇAĞRILMAMALI — caller semaphore'u tutmalı.
+        /// </summary>
+        private static async Task<MegaApiClient> GetOrCreateSessionAsync(
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
+        {
+            string email = config.Username;
+
+            // Önbellek geçerli mi kontrol et
+            if (_cachedClient is not null
+                && string.Equals(_cachedEmail, email, StringComparison.OrdinalIgnoreCase)
+                && (DateTime.UtcNow - _sessionLastUsedUtc).TotalMinutes < SessionExpiryMinutes)
+            {
+                Log.Information("Mega oturum yeniden kullanılıyor: {Email} (son kullanım: {Age:N0}s önce)",
+                    email, (DateTime.UtcNow - _sessionLastUsedUtc).TotalSeconds);
+                _sessionLastUsedUtc = DateTime.UtcNow;
+                return _cachedClient;
+            }
+
+            // Eski oturum varsa kapat
+            if (_cachedClient is not null)
+            {
+                string reason = !string.Equals(_cachedEmail, email, StringComparison.OrdinalIgnoreCase)
+                    ? "email değişti"
+                    : "süre doldu";
+                Log.Information("Mega oturumu kapatılıyor ({Reason}), yeni oturum açılacak.", reason);
+                await InvalidateSessionInternalAsync().ConfigureAwait(false);
+            }
+
+            // Yeni oturum aç
+            var client = new MegaApiClient();
+            await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
+
+            _cachedClient = client;
+            _cachedEmail = email;
+            _sessionLastUsedUtc = DateTime.UtcNow;
+
+            Log.Information("Mega yeni oturum açıldı: {Email}", email);
+            return client;
+        }
+
+        /// <summary>
+        /// Önbelleğe alınmış oturumu kapatır ve temizler.
+        /// Semaphore dışından ÇAĞRILMAMALI — caller semaphore'u tutmalı.
+        /// </summary>
+        private static async Task InvalidateSessionInternalAsync()
+        {
+            if (_cachedClient is not null)
+            {
+                await LogoutSafeAsync(_cachedClient).ConfigureAwait(false);
+                _cachedClient = null;
+                _cachedEmail = null;
+                Log.Debug("Mega oturum önbelleği temizlendi.");
+            }
         }
 
         /// <summary>
@@ -439,12 +507,10 @@ namespace KoruMsSqlYedek.Engine.Cloud
             CloudTargetConfig config,
             CancellationToken cancellationToken)
         {
-            MegaApiClient client = null;
-
+            await _sessionSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                client = new MegaApiClient();
-                await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
+                var client = await GetOrCreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
 
                 var nodes = await client.GetNodesAsync().ConfigureAwait(false);
                 var trashNode = nodes.FirstOrDefault(n => n.Type == NodeType.Trash);
@@ -490,6 +556,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     }
                 }
 
+                _sessionLastUsedUtc = DateTime.UtcNow;
+
                 Log.Information("Mega çöp kutusu temizlendi: {Deleted}/{Total} yedek dosyası silindi",
                     deletedCount, ourTrashFiles.Count);
 
@@ -503,12 +571,12 @@ namespace KoruMsSqlYedek.Engine.Cloud
             catch (Exception ex)
             {
                 Log.Warning(ex, "Mega çöp kutusu boşaltılamadı.");
+                await InvalidateSessionInternalAsync().ConfigureAwait(false);
                 return 0;
             }
             finally
             {
-                if (client is not null)
-                    await LogoutSafeAsync(client).ConfigureAwait(false);
+                _sessionSemaphore.Release();
             }
         }
 
