@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.75.0 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
+- Dosya kaynak düzenleme diyaloğu yeniden tasarlandı: 510px genişlik, GroupBox bölümleri, kapsamlı ToolTip'ler
+- Zamanlama adımında "Görev" terminolojisi: "Tam Yedek Görevi", "Fark Yedek Görevi" vb. ile anlaşılır etiketler
+- Tooltip'lere geri yükleme bilgileri ve öneriler eklendi
+- SQL ve Dosya zamanlama bölümleri arasına görsel ayırıcı eklendi
+- **Bug fix:** `Files_*.7z` dosya arşivleri artık retention politikasıyla temizleniyor (daha önce hiç temizlenmiyordu)
+
 ### v0.74.0 — Plan Bazlı Şifre Koruması
 - Her plan için ayrı şifre (SHA256+DPAPI) belirlenebilir
 - Plan düzenleme/silme sırasında master VEYA plan şifresi kabul edilir

@@ -1,4 +1,17 @@
-﻿## [0.74.1] - 2026-04-06 — Kapsamlı Çapraz Özellik Kombinasyon Testleri
+﻿## [0.75.0] - 2026-04-06 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
+
+### Yeni
+- **FileBackupSourceEditDialog:** Daha geniş pencere (510px), GroupBox ile bölümlendirilmiş alan, tüm kontrollere ToolTip eklendi
+- **PlanEditForm Step 3:** "Görev" terminolojisi uygulandı (Tam Yedek Görevi, Fark Yedek Görevi vb.), iyileştirilmiş tooltip'ler (öneriler + kurtarma bilgileri), SQL/Dosya bölümleri arasına ayırıcı çizgi eklendi
+
+### Düzeltme
+- **RetentionCleanupService:** `Files_*.7z` dosya yedekleme arşivleri artık retention politikasına göre temizleniyor (KeepLastN, DeleteOlderThanDays, GFS dahil)
+  - Kök neden: Eski kod sadece `{databaseName}_*.*` pattern'i ile arama yapıyordu, `Files_*.7z` hiçbir zaman eşleşmiyordu
+
+### Test
+- Dosya arşiv retention için 6 yeni test: KeepLastN, DeleteOlderThanDays, FileBackupDisabled, FileBackupNull, MixedDbAndFile, GfsPolicy
+
+## [0.74.1] - 2026-04-06 — Kapsamlı Çapraz Özellik Kombinasyon Testleri
 
 ### Yeni
 - **CrossFeatureCombinationTests.cs:** 644 yeni test — tüm BackupPlan özelliklerinin çapraz kombinasyonlarını doğrular.

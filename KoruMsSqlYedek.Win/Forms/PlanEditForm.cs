@@ -908,6 +908,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void UpdateFileScheduleVisibility()
         {
             bool enabled = _chkFileBackupEnabled.Checked;
+            _lblStep3FileSep.Visible = enabled;
             _lblStep3FileSchedHeader.Visible = enabled;
             _lblFileSchedule.Visible = enabled;
             _cronFileSchedule.Visible = enabled;

@@ -248,6 +248,194 @@ namespace KoruMsSqlYedek.Tests
             Directory.GetFiles(_testDir, "DB_B_*.bak").Should().HaveCount(2);
         }
 
+        [TestMethod]
+        public async Task CleanupAsync_FileBackupArchives_KeepLastN_DeletesOldArchives()
+        {
+            // Arrange — 5 dosya arşivi, KeepLastN=2
+            for (int i = 0; i < 5; i++)
+            {
+                string file = CreateBackupFile($"Files_2025010{i + 1}_020000.7z");
+                File.SetCreationTime(file, DateTime.Now.AddDays(-10 + i));
+            }
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                FileBackup = new FileBackupConfig { IsEnabled = true },
+                Retention = new RetentionPolicy
+                {
+                    Type = RetentionPolicyType.KeepLastN,
+                    KeepLastN = 2
+                }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert — 2 dosya arşivi kalmalı
+            var remaining = Directory.GetFiles(_testDir, "Files_*.7z");
+            remaining.Should().HaveCount(2);
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_FileBackupArchives_DeleteOlderThanDays_DeletesExpired()
+        {
+            // Arrange
+            string oldArchive = CreateBackupFile("Files_20240101_020000.7z");
+            File.SetCreationTime(oldArchive, DateTime.Now.AddDays(-100));
+
+            string recentArchive = CreateBackupFile("Files_20250601_020000.7z");
+            File.SetCreationTime(recentArchive, DateTime.Now.AddDays(-5));
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                FileBackup = new FileBackupConfig { IsEnabled = true },
+                Retention = new RetentionPolicy
+                {
+                    Type = RetentionPolicyType.DeleteOlderThanDays,
+                    DeleteOlderThanDays = 30
+                }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert
+            File.Exists(oldArchive).Should().BeFalse("eski arşiv silinmeli");
+            File.Exists(recentArchive).Should().BeTrue("yeni arşiv kalmalı");
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_FileBackupDisabled_DoesNotCleanArchives()
+        {
+            // Arrange — arşivler var ama FileBackup devre dışı
+            string archive = CreateBackupFile("Files_20240101_020000.7z");
+            File.SetCreationTime(archive, DateTime.Now.AddDays(-100));
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                FileBackup = new FileBackupConfig { IsEnabled = false },
+                Retention = new RetentionPolicy
+                {
+                    Type = RetentionPolicyType.DeleteOlderThanDays,
+                    DeleteOlderThanDays = 30
+                }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert — dosya arşivi silinmemeli (FileBackup devre dışı)
+            File.Exists(archive).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_FileBackupNull_DoesNotCleanArchives()
+        {
+            // Arrange — FileBackup null
+            string archive = CreateBackupFile("Files_20240101_020000.7z");
+            File.SetCreationTime(archive, DateTime.Now.AddDays(-100));
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                FileBackup = null,
+                Retention = new RetentionPolicy
+                {
+                    Type = RetentionPolicyType.DeleteOlderThanDays,
+                    DeleteOlderThanDays = 30
+                }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert
+            File.Exists(archive).Should().BeTrue();
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_MixedDbAndFileArchives_CleansBothIndependently()
+        {
+            // Arrange — hem DB dosyaları hem dosya arşivleri
+            for (int i = 0; i < 4; i++)
+            {
+                string dbFile = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
+                File.SetCreationTime(dbFile, DateTime.Now.AddDays(-10 + i));
+
+                string archiveFile = CreateBackupFile($"Files_2025010{i + 1}_020000.7z");
+                File.SetCreationTime(archiveFile, DateTime.Now.AddDays(-10 + i));
+            }
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                FileBackup = new FileBackupConfig { IsEnabled = true },
+                Retention = new RetentionPolicy
+                {
+                    Type = RetentionPolicyType.KeepLastN,
+                    KeepLastN = 2
+                }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert — her ikisinden de 2'şer dosya kalmalı
+            Directory.GetFiles(_testDir, "TestDB_*.bak").Should().HaveCount(2);
+            Directory.GetFiles(_testDir, "Files_*.7z").Should().HaveCount(2);
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_FileBackupArchives_GfsPolicy_ProtectsCorrectFiles()
+        {
+            // Arrange
+            var mockHistory = new Mock<IBackupHistoryManager>();
+            var service = new RetentionCleanupService(mockHistory.Object);
+
+            string today = Path.Combine(_testDir, "Files_today.7z");
+            File.WriteAllBytes(today, new byte[500]);
+            File.SetCreationTime(today, DateTime.Now);
+
+            string yesterday = Path.Combine(_testDir, "Files_yesterday.7z");
+            File.WriteAllBytes(yesterday, new byte[400]);
+            File.SetCreationTime(yesterday, DateTime.Now.AddDays(-1));
+
+            string old = Path.Combine(_testDir, "Files_old.7z");
+            File.WriteAllBytes(old, new byte[300]);
+            File.SetCreationTime(old, DateTime.Now.AddDays(-30));
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                FileBackup = new FileBackupConfig { IsEnabled = true },
+                Retention = new RetentionPolicy
+                {
+                    Type = RetentionPolicyType.GFS,
+                    GfsKeepDaily = 2,
+                    GfsKeepWeekly = 0,
+                    GfsKeepMonthly = 0,
+                    GfsKeepYearly = 0
+                }
+            };
+
+            // Act
+            await service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert
+            File.Exists(today).Should().BeTrue("bugünkü arşiv korunmalı");
+            File.Exists(yesterday).Should().BeTrue("dünkü arşiv korunmalı");
+            File.Exists(old).Should().BeFalse("30 gün önceki arşiv silinmeli");
+        }
+
         private string CreateBackupFile(string fileName)
         {
             string filePath = Path.Combine(_testDir, fileName);

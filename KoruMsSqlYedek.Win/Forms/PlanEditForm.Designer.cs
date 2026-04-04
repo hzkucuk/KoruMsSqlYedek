@@ -104,6 +104,7 @@
             _nudAutoPromote = new Theme.ModernNumericUpDown();
             _chkVerify = new System.Windows.Forms.CheckBox();
             _lblStep3FileSchedHeader = new System.Windows.Forms.Label();
+            _lblStep3FileSep = new System.Windows.Forms.Label();
             _lblFileSchedule = new System.Windows.Forms.Label();
             _cronFileSchedule = new Controls.CronBuilderPanel();
 
@@ -399,12 +400,12 @@
             step2.Controls.Add(_pnlFileBackup);
 
             // ===================================================================
-            // STEP 3: Yedekleme Stratejisi & Zamanlama
+            // STEP 3: Görev Zamanlama & Strateji
             // ===================================================================
             var step3 = _stepPanels[2];
             y = 5;
 
-            _lblStep3Header.Text = "\u2464 Yedekleme Stratejisi";
+            _lblStep3Header.Text = "\u2464 Görev Zamanlama";
             _lblStep3Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep3Header.ForeColor = Theme.ModernTheme.AccentPrimary;
             _lblStep3Header.AutoSize = true;
@@ -412,56 +413,62 @@
             step3.Controls.Add(_lblStep3Header);
             y += 30;
 
-            ConfigLabel(_lblStrategy, "Yedek T\u00fcr\u00fc:", lx, y, step3);
+            ConfigLabel(_lblStrategy, "Yedekleme Stratejisi:", lx, y, step3);
             _cmbStrategy.Location = new System.Drawing.Point(tx, y);
             _cmbStrategy.Size = new System.Drawing.Size(tw, 23);
             _cmbStrategy.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbStrategy.SelectedIndexChanged += OnStrategyChanged;
-            _toolTip.SetToolTip(_cmbStrategy, "Yaln\u0131zca Tam: Her seferinde t\u00fcm veriyi yedekler.\nTam + Fark: D\u00fczenli tam + aradaki de\u011fi\u015fiklikler.\nTam + Fark + Art\u0131r\u0131ml\u0131: En verimli ama en karma\u015f\u0131k.");
+            _toolTip.SetToolTip(_cmbStrategy, "Yalnızca Tam: Her seferinde tüm veriyi yedekler. Basit ama büyük.\nTam + Fark: Düzenli tam + aradaki değişiklikler. Dengeli çözüm.\nTam + Fark + Artırımlı: En az alan, en hızlı — kurumsal önerimiz.");
             step3.Controls.Add(_cmbStrategy);
             y += 34;
 
-            ConfigLabel(_lblFullCron, "Tam Yedek Zamanlamas\u0131:", lx, y, step3);
+            ConfigLabel(_lblFullCron, "Tam Yedek Görevi:", lx, y, step3);
             _cronFull.Location = new System.Drawing.Point(tx, y);
             _cronFull.Size = new System.Drawing.Size(tw, 100);
-            _toolTip.SetToolTip(_cronFull, "Tam yede\u011fin ne zaman al\u0131naca\u011f\u0131n\u0131 belirleyin.\nTam yedek t\u00fcm veritaban\u0131 verisini i\u00e7erir.");
+            _toolTip.SetToolTip(_cronFull, "Tam yedeğin çalışacağı zamanı belirleyin.\nTüm veritabanı verisini içerir — geri yüklemede tek başına yeterli.\nÖneri: Haftada 1 (örn. Pazar gece 02:00)");
             step3.Controls.Add(_cronFull);
             y += 90;
 
-            ConfigLabel(_lblDiffCron, "Fark Yedek Zamanlamas\u0131:", lx, y, step3);
+            ConfigLabel(_lblDiffCron, "Fark Yedek Görevi:", lx, y, step3);
             _cronDiff.Location = new System.Drawing.Point(tx, y);
             _cronDiff.Size = new System.Drawing.Size(tw, 100);
-            _toolTip.SetToolTip(_cronDiff, "Fark yedek, son tam yedekten bu yana\nde\u011fi\u015fen verileri yedekler. Daha h\u0131zl\u0131 ve k\u00fc\u00e7\u00fck.");
+            _toolTip.SetToolTip(_cronDiff, "Son tam yedekten bu yana değişen verileri yedekler.\nGeri yüklemede: Tam + son Fark yedek gerekir.\nÖneri: Günde 1 (örn. her gece 02:00)");
             step3.Controls.Add(_cronDiff);
             y += 90;
 
-            ConfigLabel(_lblIncrCron, "Art\u0131r\u0131ml\u0131 Zamanlama:", lx, y, step3);
+            ConfigLabel(_lblIncrCron, "Artırımlı Görevi:", lx, y, step3);
             _cronIncr.Location = new System.Drawing.Point(tx, y);
             _cronIncr.Size = new System.Drawing.Size(tw, 100);
-            _toolTip.SetToolTip(_cronIncr, "Art\u0131r\u0131ml\u0131 yedek, son yedekten (tam veya art\u0131r\u0131ml\u0131)\nbu yana de\u011fi\u015fen verileri yedekler. En k\u00fc\u00e7\u00fck boyut.");
+            _toolTip.SetToolTip(_cronIncr, "Son yedekten (tam veya artırımlı) bu yana\ndeğişen verileri yedekler. En küçük boyut.\nGeri yüklemede: Tam + Fark + tüm Artırımlı zincir gerekir.\nÖneri: Saatte 1 (örn. mesai saatleri 09-18)");
             step3.Controls.Add(_cronIncr);
             y += 96;
 
-            ConfigLabel(_lblAutoPromote, "Otomatik Tam Yedek E\u015fi\u011fi:", lx, y, step3);
+            ConfigLabel(_lblAutoPromote, "Oto. Tam Yedek Eşiği:", lx, y, step3);
             _nudAutoPromote.Location = new System.Drawing.Point(tx, y);
             _nudAutoPromote.Size = new System.Drawing.Size(80, 23);
             _nudAutoPromote.Minimum = 1;
             _nudAutoPromote.Maximum = 100;
             _nudAutoPromote.Value = 7;
-            _toolTip.SetToolTip(_nudAutoPromote, "Bu say\u0131da fark yedekten sonra otomatik\ntam yedek tetiklenir.\nVarsay\u0131lan: 7 (haftada bir tam yedek)");
+            _toolTip.SetToolTip(_nudAutoPromote, "Bu sayıda fark/artırımlı yedekten sonra\notomatik olarak tam yedek tetiklenir.\nZincir kırılmasını önler, geri yükleme güvenilirliğini artırır.\nVarsayılan: 7 (haftada bir tam yedek otomatik alınır)");
             step3.Controls.Add(_nudAutoPromote);
             y += 32;
 
-            _chkVerify.Text = "Yedek sonras\u0131 do\u011frulama yap (RESTORE VERIFYONLY)";
+            _chkVerify.Text = "Yedek sonrası bütünlük doğrulaması yap (RESTORE VERIFYONLY)";
             _chkVerify.Location = new System.Drawing.Point(lx, y);
             _chkVerify.AutoSize = true;
             _chkVerify.Checked = true;
-            _toolTip.SetToolTip(_chkVerify, "Her yedek sonras\u0131 SQL Server\u2019\u0131n RESTORE VERIFYONLY\nkomutuyla dosya b\u00fct\u00fcnl\u00fc\u011f\u00fc do\u011frulan\u0131r.\nBa\u015far\u0131s\u0131zl\u0131kta bildirim g\u00f6nderilir.");
+            _toolTip.SetToolTip(_chkVerify, "Her yedek görevinden sonra SQL Server'ın RESTORE VERIFYONLY\nkomutuyla dosya bütünlüğü doğrulanır.\nBozuk yedek tespit edilirse hemen bildirim gönderilir.\nÖneri: Her zaman açık tutun.");
             step3.Controls.Add(_chkVerify);
-            y += 32;
+            y += 36;
 
-            // --- Dosya zamanlama (file backup enabled ise görünür) ---
-            _lblStep3FileSchedHeader.Text = "Dosya Yedekleme Zamanlamas\u0131";
+            // --- Dosya Yedekleme Görevi (file backup enabled ise görünür) ---
+            _lblStep3FileSep.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            _lblStep3FileSep.Location = new System.Drawing.Point(lx, y);
+            _lblStep3FileSep.Size = new System.Drawing.Size(tw + tx - lx, 2);
+            step3.Controls.Add(_lblStep3FileSep);
+            y += 10;
+
+            _lblStep3FileSchedHeader.Text = "\U0001f4c1 Dosya Yedekleme Görevi";
             _lblStep3FileSchedHeader.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             _lblStep3FileSchedHeader.ForeColor = Theme.ModernTheme.AccentPrimary;
             _lblStep3FileSchedHeader.AutoSize = true;
@@ -469,10 +476,10 @@
             step3.Controls.Add(_lblStep3FileSchedHeader);
             y += 26;
 
-            ConfigLabel(_lblFileSchedule, "Dosya Zamanlamas\u0131:", lx, y, step3);
+            ConfigLabel(_lblFileSchedule, "Dosya Görevi:", lx, y, step3);
             _cronFileSchedule.Location = new System.Drawing.Point(tx, y);
             _cronFileSchedule.Size = new System.Drawing.Size(tw, 100);
-            _toolTip.SetToolTip(_cronFileSchedule, "Dosya yedeklemenin zamanlamas\u0131.\nSQL yedekten ba\u011f\u0131ms\u0131z \u00e7al\u0131\u015f\u0131r.");
+            _toolTip.SetToolTip(_cronFileSchedule, "Dosya yedekleme görevinin çalışacağı zamanı belirleyin.\nSQL yedek görevinden bağımsız çalışır.\nAdım 2'de tanımlanan dosya kaynakları bu zamanda yedeklenir.\nÖneri: Günde 1 (örn. her gece 03:00)");
             step3.Controls.Add(_cronFileSchedule);
 
             // ===================================================================
@@ -889,6 +896,7 @@
         private Theme.ModernNumericUpDown _nudAutoPromote;
         private System.Windows.Forms.CheckBox _chkVerify;
         private System.Windows.Forms.Label _lblStep3FileSchedHeader;
+        private System.Windows.Forms.Label _lblStep3FileSep;
         private System.Windows.Forms.Label _lblFileSchedule;
         private Controls.CronBuilderPanel _cronFileSchedule;
 
