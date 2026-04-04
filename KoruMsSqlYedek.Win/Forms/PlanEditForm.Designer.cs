@@ -122,6 +122,11 @@
             _nudKeepLastN = new Theme.ModernNumericUpDown();
             _lblDeleteDays = new System.Windows.Forms.Label();
             _nudDeleteDays = new Theme.ModernNumericUpDown();
+            _lblStep4PwHeader = new System.Windows.Forms.Label();
+            _lblPlanPasswordStatus = new System.Windows.Forms.Label();
+            _lblPlanPassword = new System.Windows.Forms.Label();
+            _txtPlanPassword = new System.Windows.Forms.TextBox();
+            _btnRemovePlanPassword = new Theme.ModernButton();
 
             // ========== STEP 5: Hedefler (Bulut/Uzak) ==========
             _lblStep5Header = new System.Windows.Forms.Label();
@@ -543,6 +548,35 @@
             _nudDeleteDays.Value = 90;
             _toolTip.SetToolTip(_nudDeleteDays, "Bu g\u00fcn say\u0131s\u0131ndan eski yedekler silinir.\nVarsay\u0131lan: 90 g\u00fcn (3 ay)");
             step4.Controls.Add(_nudDeleteDays);
+            y += 48;
+
+            _lblStep4PwHeader.Text = "\U0001f512 Plan \u015eifre Korumas\u0131";
+            _lblStep4PwHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
+            _lblStep4PwHeader.ForeColor = Theme.ModernTheme.AccentPrimary;
+            _lblStep4PwHeader.AutoSize = true;
+            _lblStep4PwHeader.Location = new System.Drawing.Point(lx, y);
+            step4.Controls.Add(_lblStep4PwHeader);
+            y += 28;
+
+            _lblPlanPasswordStatus.AutoSize = true;
+            _lblPlanPasswordStatus.Location = new System.Drawing.Point(lx, y);
+            _lblPlanPasswordStatus.ForeColor = Theme.ModernTheme.TextSecondary;
+            step4.Controls.Add(_lblPlanPasswordStatus);
+            y += 28;
+
+            ConfigLabel(_lblPlanPassword, "Yeni \u015eifre:", lx, y, step4);
+            _txtPlanPassword.Location = new System.Drawing.Point(tx, y);
+            _txtPlanPassword.Size = new System.Drawing.Size(tw - 120, 23);
+            _txtPlanPassword.UseSystemPasswordChar = true;
+            _toolTip.SetToolTip(_txtPlanPassword, "Bu plana \u00f6zel \u015fifre belirleyin.\nPlan d\u00fczenleme ve silme i\u015flemlerinde sorulur.\nBo\u015f b\u0131rak\u0131rsan\u0131z mevcut \u015fifre korunur.");
+            step4.Controls.Add(_txtPlanPassword);
+
+            _btnRemovePlanPassword.Location = new System.Drawing.Point(tx + tw - 110, y);
+            _btnRemovePlanPassword.Size = new System.Drawing.Size(110, 26);
+            _btnRemovePlanPassword.Text = "\u015eifreyi Kald\u0131r";
+            _btnRemovePlanPassword.Click += OnRemovePlanPasswordClick;
+            _toolTip.SetToolTip(_btnRemovePlanPassword, "Mevcut plan \u015fifresini kald\u0131r\u0131r.");
+            step4.Controls.Add(_btnRemovePlanPassword);
 
             // ===================================================================
             // STEP 5: Hedefler (Bulut / Uzak)
@@ -873,6 +907,11 @@
         private Theme.ModernNumericUpDown _nudKeepLastN;
         private System.Windows.Forms.Label _lblDeleteDays;
         private Theme.ModernNumericUpDown _nudDeleteDays;
+        private System.Windows.Forms.Label _lblStep4PwHeader;
+        private System.Windows.Forms.Label _lblPlanPasswordStatus;
+        private System.Windows.Forms.Label _lblPlanPassword;
+        private System.Windows.Forms.TextBox _txtPlanPassword;
+        private Theme.ModernButton _btnRemovePlanPassword;
 
         // Step 5: Hedefler
         private System.Windows.Forms.Label _lblStep5Header;

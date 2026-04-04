@@ -44,6 +44,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private readonly bool _isNew;
         private int _currentStep;
         private bool _connectionTested;
+        private bool _planPasswordRemoved;
 
         /// <summary>Yeni plan oluşturma.</summary>
         public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, IAppSettingsManager settingsManager)
@@ -419,6 +420,9 @@ namespace KoruMsSqlYedek.Win.Forms
             _nudKeepLastN.Value = _plan.Retention?.KeepLastN ?? 30;
             _nudDeleteDays.Value = _plan.Retention?.DeleteOlderThanDays ?? 90;
             UpdateRetentionFieldsVisibility();
+            _planPasswordRemoved = false;
+            _txtPlanPassword.Text = "";
+            UpdatePlanPasswordStatus();
 
             // Adım 5: Hedefler
             RefreshCloudTargetList();
@@ -513,6 +517,16 @@ namespace KoruMsSqlYedek.Win.Forms
             _plan.Retention.Type = (RetentionPolicyType)_cmbRetention.SelectedIndex;
             _plan.Retention.KeepLastN = (int)_nudKeepLastN.Value;
             _plan.Retention.DeleteOlderThanDays = (int)_nudDeleteDays.Value;
+
+            // Plan şifresi
+            if (_planPasswordRemoved)
+            {
+                _plan.PasswordHash = null;
+            }
+            else if (!string.IsNullOrWhiteSpace(_txtPlanPassword.Text))
+            {
+                _plan.PasswordHash = PlanPasswordHelper.HashPassword(_txtPlanPassword.Text);
+            }
 
             // Adım 5: Hedefler — zaten _plan.CloudTargets üzerinde çalışılıyor
 
@@ -835,6 +849,33 @@ namespace KoruMsSqlYedek.Win.Forms
             _nudKeepLastN.Visible = idx == 0 || idx == 2;
             _lblDeleteDays.Visible = idx == 1 || idx == 2;
             _nudDeleteDays.Visible = idx == 1 || idx == 2;
+        }
+
+        private void UpdatePlanPasswordStatus()
+        {
+            bool hasPassword = !_planPasswordRemoved && _plan.HasPlanPassword;
+            _lblPlanPasswordStatus.Text = hasPassword
+                ? "\U0001f512 Bu plan şifre ile korunuyor"
+                : "\U0001f513 Plan şifresi ayarlı değil";
+            _lblPlanPasswordStatus.ForeColor = hasPassword
+                ? Theme.ModernTheme.AccentPrimary
+                : Theme.ModernTheme.TextSecondary;
+            _btnRemovePlanPassword.Visible = hasPassword;
+        }
+
+        private void OnRemovePlanPasswordClick(object? sender, EventArgs e)
+        {
+            var result = Theme.ModernMessageBox.Show(
+                "Bu planın şifre korumasını kaldırmak istediğinize emin misiniz?",
+                "Şifre Kaldır",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+
+            if (result == DialogResult.Yes)
+            {
+                _planPasswordRemoved = true;
+                _txtPlanPassword.Text = "";
+                UpdatePlanPasswordStatus();
+            }
         }
 
         private void UpdateEmailFieldsVisibility()

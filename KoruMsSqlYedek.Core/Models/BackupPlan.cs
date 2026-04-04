@@ -94,5 +94,19 @@ namespace KoruMsSqlYedek.Core.Models
         /// <summary>Plan şeması versiyonu (geriye uyumluluk için).</summary>
         [JsonProperty("schemaVersion")]
         public int SchemaVersion { get; set; } = 1;
+
+        // ═══════════════ PLAN ŞİFRE KORUMASI ═══════════════
+
+        /// <summary>
+        /// Plan bazlı şifre (SHA256 hash, DPAPI ile korumalı).
+        /// Boş ise plan bazlı koruma yok — yalnızca global şifre geçerli.
+        /// Tanımlıysa plan düzenleme/silme için global VEYA plan şifresi gerekir.
+        /// </summary>
+        [JsonProperty("passwordHash", NullValueHandling = NullValueHandling.Ignore)]
+        public string PasswordHash { get; set; }
+
+        /// <summary>Plan bazlı şifre tanımlı mı?</summary>
+        [JsonIgnore]
+        public bool HasPlanPassword => !string.IsNullOrEmpty(PasswordHash);
     }
 }

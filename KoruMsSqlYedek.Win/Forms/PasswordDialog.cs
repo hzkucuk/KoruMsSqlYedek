@@ -10,20 +10,26 @@ namespace KoruMsSqlYedek.Win.Forms
 {
     /// <summary>
     /// Şifre doğrulama dialogu — görev düzenleme/silme öncesi kullanıcıdan şifre ister.
+    /// Global (master) şifre ve/veya plan bazlı şifreyi kabul eder.
     /// "Şifremi Unuttum" bağlantısı güvenlik sorusu akışını başlatır.
     /// </summary>
     internal sealed partial class PasswordDialog : ModernFormBase
     {
         private readonly AppSettings _settings;
         private readonly IAppSettingsManager _settingsManager;
+        private readonly string _planPasswordHash;
 
-        public PasswordDialog(AppSettings settings, IAppSettingsManager settingsManager)
+        /// <param name="settings">Global uygulama ayarları (master şifre).</param>
+        /// <param name="settingsManager">Ayar kaydetme servisi.</param>
+        /// <param name="planPasswordHash">Plan bazlı şifre hash'i. Null ise yalnızca master geçerli.</param>
+        public PasswordDialog(AppSettings settings, IAppSettingsManager settingsManager, string planPasswordHash = null)
         {
             ArgumentNullException.ThrowIfNull(settings);
             ArgumentNullException.ThrowIfNull(settingsManager);
 
             _settings = settings;
             _settingsManager = settingsManager;
+            _planPasswordHash = planPasswordHash;
 
             InitializeComponent();
         }
@@ -38,7 +44,15 @@ namespace KoruMsSqlYedek.Win.Forms
                 return;
             }
 
-            if (PlanPasswordHelper.VerifyPassword(_txtPassword.Text, _settings.PasswordHash))
+            string input = _txtPassword.Text;
+
+            // Master VEYA plan şifresi kabul edilir
+            bool masterMatch = !string.IsNullOrEmpty(_settings.PasswordHash) &&
+                               PlanPasswordHelper.VerifyPassword(input, _settings.PasswordHash);
+            bool planMatch = !string.IsNullOrEmpty(_planPasswordHash) &&
+                             PlanPasswordHelper.VerifyPassword(input, _planPasswordHash);
+
+            if (masterMatch || planMatch)
             {
                 DialogResult = DialogResult.OK;
                 Close();

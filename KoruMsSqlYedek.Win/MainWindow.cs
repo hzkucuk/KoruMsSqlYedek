@@ -821,14 +821,21 @@ namespace KoruMsSqlYedek.Win
 
         /// <summary>
         /// Şifre koruması etkinse doğrulama dialogu gösterir.
-        /// Şifre yoksa veya doğrulanırsa true döner.
+        /// Global (master) ve/veya plan bazlı şifre varsa dialog açılır.
+        /// Hiçbir şifre tanımlı değilse true döner.
         /// </summary>
-        private bool CheckPlanPassword()
+        /// <param name="plan">Düzenlenecek/silinecek plan. Yeni plan için null.</param>
+        private bool CheckPlanPassword(BackupPlan plan = null)
         {
-            if (_settings == null || !_settings.IsPasswordProtected)
+            bool hasMaster = _settings != null && _settings.IsPasswordProtected;
+            bool hasPlanPw = plan != null && plan.HasPlanPassword;
+
+            if (!hasMaster && !hasPlanPw)
                 return true;
 
-            using (var dlg = new PasswordDialog(_settings, _settingsManager))
+            string planHash = hasPlanPw ? plan.PasswordHash : null;
+
+            using (var dlg = new PasswordDialog(_settings ?? new AppSettings(), _settingsManager, planHash))
             {
                 return dlg.ShowDialog(this) == DialogResult.OK;
             }
@@ -960,7 +967,7 @@ namespace KoruMsSqlYedek.Win
             var plan = GetSelectedPlan();
             if (plan == null) return;
 
-            if (!CheckPlanPassword()) return;
+            if (!CheckPlanPassword(plan)) return;
 
             using (var form = new PlanEditForm(_planManager, _sqlBackupService, _settingsManager, plan))
             {
@@ -976,7 +983,7 @@ namespace KoruMsSqlYedek.Win
             var plan = GetSelectedPlan();
             if (plan == null) return;
 
-            if (!CheckPlanPassword()) return;
+            if (!CheckPlanPassword(plan)) return;
 
             var result = Theme.ModernMessageBox.Show(
                 Res.Format("PlanList_DeleteConfirm", plan.PlanName),

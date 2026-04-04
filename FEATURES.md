@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.74.0 — Plan Bazlı Şifre Koruması
+- Her plan için ayrı şifre (SHA256+DPAPI) belirlenebilir
+- Plan düzenleme/silme sırasında master VEYA plan şifresi kabul edilir
+- Sihirbaz Step 4'te plan şifre yönetim paneli: durum göstergesi + şifre belirleme + şifre kaldırma
+- Yeni plan oluşturmada şifre sorulmaz, tetikleme (trigger) sırasında da sorulmaz
+
 ### v0.73.0 — Yerel/Bulut Mod Ayrımı Kaldırıldı
 - Plan sihirbazından "Yerel" / "Bulut" mod seçimi kaldırıldı — tüm planlar 6 adımı her zaman gösteriyor
 - Bulut hedef varlığı `BackupPlan.HasCloudTargets` computed property ile otomatik algılanıyor

@@ -1,4 +1,24 @@
-﻿## [0.73.0] - 2026-04-05 — Yerel/Bulut Mod Ayrımı Kaldırıldı
+﻿## [0.74.0] - 2026-04-05 — Plan Bazlı Şifre Koruması
+
+### Yeni Özellik
+- **Plan Şifresi:** Her plan için ayrı şifre belirlenebilir. Plan düzenleme ve silme işlemlerinde hem master şifre hem plan şifresi kabul edilir.
+- **İki Katmanlı Doğrulama:** Master şifre tüm planlara evrensel erişim sağlarken, plan şifresi sadece o plana özeldir.
+- **Sihirbaz Entegrasyonu:** Plan düzenleme sihirbazının Sıkıştırma adımına (Step 4) plan şifre yönetim bölümü eklendi.
+
+### Teknik
+- `BackupPlan.cs`: `PasswordHash` ve `HasPlanPassword` property eklendi.
+- `PasswordDialog.cs`: Opsiyonel `planPasswordHash` parametresi — master VEYA plan şifresi kabul ediyor.
+- `MainWindow.cs`: `CheckPlanPassword(BackupPlan plan = null)` — düzenleme/silme plan şifresini kontrol ediyor, yeni plan oluşturma kontrolsüz.
+- `PlanEditForm.cs` / `PlanEditForm.Designer.cs`: Plan şifre durum göstergesi, yeni şifre alanı ve şifre kaldırma butonu eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/BackupPlan.cs`
+- `KoruMsSqlYedek.Win/Forms/PasswordDialog.cs`
+- `KoruMsSqlYedek.Win/MainWindow.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs`
+
+## [0.73.0] - 2026-04-05 — Yerel/Bulut Mod Ayrımı Kaldırıldı
 
 ### İyileştirme
 - **Yedekleme Modu Kaldırıldı:** Plan oluşturma sihirbazından "Yerel" / "Bulut" mod seçimi kaldırıldı. Artık tüm planlar her zaman 6 adımı (Bağlantı → Kaynaklar → Zamanlama → Sıkıştırma → Hedefler → Bildirim) gösteriyor.
