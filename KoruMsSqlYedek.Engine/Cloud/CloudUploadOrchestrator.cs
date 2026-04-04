@@ -424,6 +424,18 @@ namespace KoruMsSqlYedek.Engine.Cloud
                             return result;
                         }
                     }
+                    else
+                    {
+                        // Provider hata döndürdü (exception fırlatmadan) — retry uygula
+                        Log.Warning(
+                            "Bulut upload deneme {Attempt}/{Max} başarısız (provider): {Provider} — {Error}",
+                            attempt + 1, MaxRetries + 1, target.DisplayName, result.ErrorMessage);
+
+                        if (attempt >= MaxRetries)
+                            return result;
+
+                        await Task.Delay(RetryDelaysMs[attempt], cancellationToken);
+                    }
                 }
                 catch (OperationCanceledException)
                 {

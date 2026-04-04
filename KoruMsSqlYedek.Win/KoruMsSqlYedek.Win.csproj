@@ -7,7 +7,7 @@
     <AssemblyName>KoruMsSqlYedek.Win</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ApplicationVersion>0.68.5.0</ApplicationVersion>
+    <ApplicationVersion>0.69.0.0</ApplicationVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <NoWarn>$(NoWarn);WFO1000;CA1416</NoWarn>
   </PropertyGroup>

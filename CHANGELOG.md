@@ -1,4 +1,21 @@
-﻿## [0.68.5] - 2026-04-04 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
+﻿## [0.69.0] - 2026-04-04 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
+
+### Düzeltme
+- **Mega Retry Gecikmesi:** `CloudUploadOrchestrator.UploadWithRetryAsync` içinde, provider exception fırlatmadan `IsSuccess=false` döndüğünde (örn. Mega login timeout) retry döngüsü gecikme olmadan devam ediyordu. Artık non-exception başarısızlıklarda da exponential backoff (2s/4s/8s) uygulanıyor.
+- **Hata Mesajı Görünürlüğü:** Bulut yükleme başarısız olduğunda log panelinde sadece "Başarısız ✕" yerine "Başarısız ✕ — {hata detayı}" gösteriliyor. Kullanıcı başarısızlığın nedenini (timeout, bağlantı hatası vb.) doğrudan görebilir.
+- **Hızlı Retry Engelleme:** VSS eklenmesiyle dosya sayısı ikiye katlandığında, gecikmesiz retry'lar Mega rate limiting'i tetikliyordu. Exponential backoff bu sorunu çözüyor.
+
+### Teknik
+- `UploadWithRetryAsync`: `if (result.IsSuccess)` bloğundan sonra `else` bloğu eklendi — hata mesajı loglanıp retry delay uygulanıyor, son başarısız sonuç korunuyor.
+- `BuildActivityLogLine` (`CloudUploadCompleted`): Başarısız durumda `e.Message` hata detayı gösteriliyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.cs` (retry delay + hata korunması)
+- `KoruMsSqlYedek.Win/MainWindow.cs` (hata mesajı görünürlüğü)
+
+---
+
+## [0.68.5] - 2026-04-04 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
 
 ### Düzeltme
 - **"Express VSS" → "VSS":** Tüm log mesajlarında "Express VSS" etiketi "VSS" olarak güncellendi. VSS artık tüm SQL Server sürümlerinde çalıştığı için "Express" ifadesi kaldırıldı.

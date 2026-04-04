@@ -1554,7 +1554,9 @@ namespace KoruMsSqlYedek.Win
                 => BuildCloudUploadLogLine(e),
 
             BackupActivityType.CloudUploadCompleted
-                => string.Format("Bulut {0}: {1}", e.CloudTargetName, e.IsSuccess ? "Başarılı ✓" : "Başarısız ✕"),
+                => e.IsSuccess
+                    ? string.Format("Bulut {0}: Başarılı ✓", e.CloudTargetName)
+                    : string.Format("Bulut {0}: Başarısız ✕ — {1}", e.CloudTargetName, e.Message ?? "Bilinmeyen hata"),
 
             BackupActivityType.Completed
                 => e.IsSuccess || string.IsNullOrEmpty(e.Message)

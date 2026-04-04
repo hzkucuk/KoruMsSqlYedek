@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.69.0 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
+- Mega retry: Non-exception başarısızlıklarda exponential backoff (2s/4s/8s) eklendi
+- Bulut yükleme hata detayı log panelinde görünür ("Başarısız ✕ — {neden}")
+- VSS kaynaklı hızlı retry → rate limiting sorunu çözüldü
+
 ### v0.68.5 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
 - "Express VSS" → "VSS" tüm log mesajlarında güncellendi
 - Bulut yükleme başarısız olduğunda tamamlanma durumu doğru gösteriliyor (⚠ uyarı ikonu + mesaj)
