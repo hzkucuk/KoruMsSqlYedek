@@ -1,4 +1,16 @@
-﻿## [0.77.1] - 2026-04-06 — Plan Bazlı Şifre İzolasyonu
+﻿## [0.77.2] - 2026-04-06 — Plan Şifre UX Sadeleştirme
+
+### İyileştirme
+- **Plan şifre koruması basitleştirildi** — Karmaşık durum etiketi + kaldır butonu yerine tek bir **"🔒 Bu görevi şifre ile koru"** checkbox'u eklendi. Tikle, şifre gir, kaydet — bu kadar.
+- 5 kontrol (header, status, label, textbox, button) yerine 2 kontrol (checkbox + textbox)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs` — Checkbox tabanlı layout
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs` — Checkbox olay mantığı
+
+---
+
+## [0.77.1] - 2026-04-06 — Plan Bazlı Şifre İzolasyonu
 
 ### Düzeltme
 - **Plan bazlı şifre artık gerçekten izole çalışıyor** — Plan şifresi tanımlı planlarda artık yalnızca plan şifresi kabul edilir; global (master) şifre plan bazlı korumayı geçersiz kılamaz.

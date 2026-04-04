@@ -2,6 +2,10 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.77.2 — Plan Şifre UX Sadeleştirme
+- [x] Checkbox tabanlı plan şifre koruması ("🔒 Bu görevi şifre ile koru")
+- [x] Tikle → şifre gir → kaydet — bitti
+
 ### v0.77.1 — Plan Bazlı Şifre İzolasyonu
 - [x] Plan şifresi tanımlı planlarda yalnızca plan şifresi kabul edilir (global override kaldırıldı)
 - [x] Güvenlik sorusu kurtarma → plan şifresi de otomatik sıfırlanır
