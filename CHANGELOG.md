@@ -1,4 +1,22 @@
-﻿## [0.71.0] - 2026-04-05 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
+﻿## [0.71.1] - 2026-04-05 — Çöp Kutusu Güvenlik Düzeltmesi: Sadece Bizim Dosyalarımız
+
+### Düzeltme
+- **Google Drive:** `Files.EmptyTrash()` (tüm çöpü boşaltan) API yerine, sadece bizim klasörümüzde (`RemoteFolderPath`) bulunan çöp dosyaları tek tek kalıcı siliniyor. Kullanıcının kişisel çöp dosyalarına dokunulmuyor.
+- **Mega:** Tüm trash children yerine, yalnızca yedek dosya adı desenine uyan (`*_Full_*.bak/7z`, `*_Differential_*`, `*_Incremental_*`, `Files_*.7z`) dosyalar siliniyor.
+- **ICloudProvider.EmptyTrashAsync:** Dokümantasyon güncellendi — "tüm dosyaları" değil, "sadece bizim dosyalarımızı" sildiği belirtildi.
+
+### Teknik
+- `GoogleDriveProvider.cs`: Klasör bazlı sorgu (`trashed=true and '{folderId}' in parents`) + pagination + tek tek `Files.Delete(fileId)`. Yeni `FindFolderIdAsync` helper (klasörü bul ama oluşturma).
+- `MegaProvider.cs`: `IsOurBackupFile(fileName)` helper — `.bak`/`.7z` uzantısı + yedek isim deseni kontrolü.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Interfaces/ICloudProvider.cs` (dokümantasyon)
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs` (EmptyTrashAsync + FindFolderIdAsync)
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` (EmptyTrashAsync + IsOurBackupFile)
+
+---
+
+## [0.71.0] - 2026-04-05 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
 
 ### Yeni Özellik
 - **Çöp Kutusu Otomatik Temizleme:** `PermanentDeleteFromTrash=false` (çöp kutusuna taşı) ayarındaki Mega ve Google Drive hedeflerinde, yedekleme tamamlandıktan sonra birikmiş çöp öğeleri otomatik olarak kalıcı siliniyor.

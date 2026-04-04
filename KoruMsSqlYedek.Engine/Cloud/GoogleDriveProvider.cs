@@ -449,8 +449,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
         #endregion
 
         /// <summary>
-        /// Google Drive çöp kutusundaki tüm dosyaları kalıcı olarak siler.
-        /// Google Drive API'nin files.emptyTrash endpoint'ini kullanır.
+        /// Google Drive çöp kutusundaki YALNIZCA bizim klasörümüze ait dosyaları kalıcı olarak siler.
+        /// Kullanıcının diğer çöp öğelerine dokunmaz.
         /// </summary>
         public async Task<int> EmptyTrashAsync(
             CloudTargetConfig config,
@@ -463,36 +463,90 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 using (var driveService = await GoogleDriveAuthHelper.CreateDriveServiceAsync(config, cancellationToken)
                     .ConfigureAwait(false))
                 {
-                    // Önce çöpteki dosya sayısını öğren (bilgilendirme için)
-                    int trashCount = 0;
-                    try
+                    // Bizim klasörümüzün ID'sini bul
+                    string folderId = null;
+                    if (!string.IsNullOrEmpty(config.RemoteFolderPath))
                     {
-                        var listRequest = driveService.Files.List();
-                        listRequest.Q = "trashed = true";
-                        listRequest.Fields = "files(id)";
-                        listRequest.PageSize = 1000;
-                        var trashFiles = await listRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-                        trashCount = trashFiles.Files?.Count ?? 0;
-                    }
-                    catch
-                    {
-                        // Sayım başarısız olursa devam et
+                        try
+                        {
+                            folderId = await FindFolderIdAsync(driveService, config.RemoteFolderPath, cancellationToken)
+                                .ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            // Klasör bulunamazsa root'tan arayacağız
+                        }
                     }
 
-                    if (trashCount == 0)
+                    // Sadece bizim klasörümüzdeki çöp dosyalarını listele
+                    string query = folderId is not null
+                        ? $"trashed = true and '{folderId}' in parents"
+                        : "trashed = true";
+
+                    var allTrashedFiles = new System.Collections.Generic.List<string>();
+                    string pageToken = null;
+
+                    do
                     {
-                        Log.Information("Google Drive çöp kutusu zaten boş.");
+                        var listRequest = driveService.Files.List();
+                        listRequest.Q = query;
+                        listRequest.Fields = "nextPageToken, files(id, name)";
+                        listRequest.PageSize = 100;
+                        if (pageToken is not null)
+                            listRequest.PageToken = pageToken;
+
+                        var result = await listRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+                        if (result.Files is not null)
+                        {
+                            foreach (var file in result.Files)
+                                allTrashedFiles.Add(file.Id);
+                        }
+
+                        pageToken = result.NextPageToken;
+                    }
+                    while (pageToken is not null);
+
+                    if (allTrashedFiles.Count == 0)
+                    {
+                        Log.Information("Google Drive çöp kutusunda bizim dosyamız yok.");
                         return 0;
                     }
 
-                    Log.Information("Google Drive çöp kutusu boşaltılıyor: {Count} öğe", trashCount);
+                    Log.Information(
+                        "Google Drive çöp kutusundan {Count} dosya kalıcı siliniyor (klasör: {Folder})",
+                        allTrashedFiles.Count,
+                        config.RemoteFolderPath ?? "root");
 
-                    // Google Drive API: tek çağrıda tüm çöpü boşaltır
-                    var emptyTrashRequest = driveService.Files.EmptyTrash();
-                    await emptyTrashRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+                    int deletedCount = 0;
 
-                    Log.Information("Google Drive çöp kutusu boşaltıldı: {Count} öğe silindi", trashCount);
-                    return trashCount;
+                    foreach (string fileId in allTrashedFiles)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        try
+                        {
+                            await driveService.Files.Delete(fileId)
+                                .ExecuteAsync(cancellationToken).ConfigureAwait(false);
+                            deletedCount++;
+                        }
+                        catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+                        {
+                            // Zaten silinmiş — sorun değil
+                            deletedCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "Google Drive çöp öğesi silinemedi: {FileId}", fileId);
+                        }
+                    }
+
+                    Log.Information(
+                        "Google Drive çöp kutusu temizlendi: {Deleted}/{Total} dosya silindi (klasör: {Folder})",
+                        deletedCount, allTrashedFiles.Count,
+                        config.RemoteFolderPath ?? "root");
+
+                    return deletedCount;
                 }
             }
             catch (OperationCanceledException)
@@ -505,6 +559,50 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 Log.Warning(ex, "Google Drive çöp kutusu boşaltılamadı.");
                 return 0;
             }
+        }
+
+        /// <summary>
+        /// Klasör yolundan ID bulur (oluşturmaz). Bulamazsa null döner.
+        /// </summary>
+        private static async Task<string> FindFolderIdAsync(
+            DriveService driveService,
+            string folderPath,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(folderPath))
+                return null;
+
+            // Klasör ID gibi görünüyorsa doğrudan doğrula
+            if (IsLikelyFolderId(folderPath))
+            {
+                try
+                {
+                    var getRequest = driveService.Files.Get(folderPath);
+                    getRequest.Fields = "id,mimeType,trashed";
+                    var existing = await getRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+                    if (existing.MimeType == "application/vnd.google-apps.folder" && existing.Trashed != true)
+                        return existing.Id;
+                }
+                catch (Google.GoogleApiException) { }
+            }
+
+            // Yol olarak iç içe klasörleri ara
+            string[] parts = folderPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+            string parentId = "root";
+
+            foreach (string folderName in parts)
+            {
+                string folderId = await FindFolderAsync(driveService, folderName, parentId, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (folderId is null)
+                    return null; // Klasör bulunamadı
+
+                parentId = folderId;
+            }
+
+            return parentId;
         }
     }
 }

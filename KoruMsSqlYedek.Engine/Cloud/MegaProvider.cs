@@ -431,8 +431,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
         #endregion
 
         /// <summary>
-        /// Mega çöp kutusundaki tüm dosyaları kalıcı olarak siler.
-        /// Trash node'un doğrudan çocuklarını bulup her birini permanent delete yapar.
+        /// Mega çöp kutusundaki YALNIZCA bizim yedek dosyalarımızı kalıcı olarak siler.
+        /// Dosya adı desenine göre filtreler — kullanıcının kişisel dosyalarına dokunmaz.
+        /// Yedek desenleri: *_Full_*.bak/7z, *_Differential_*, *_Incremental_*, Files_*.7z
         /// </summary>
         public async Task<int> EmptyTrashAsync(
             CloudTargetConfig config,
@@ -454,22 +455,26 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     return 0;
                 }
 
-                // Trash'ın doğrudan çocuklarını bul
-                var trashChildren = nodes
-                    .Where(n => n.ParentId == trashNode.Id)
+                // Trash'ın doğrudan çocuklarından sadece bizim yedek dosyalarımızı filtrele
+                var ourTrashFiles = nodes
+                    .Where(n => n.ParentId == trashNode.Id && IsOurBackupFile(n.Name))
                     .ToList();
 
-                if (trashChildren.Count == 0)
+                int totalTrashCount = nodes.Count(n => n.ParentId == trashNode.Id);
+
+                if (ourTrashFiles.Count == 0)
                 {
-                    Log.Information("Mega çöp kutusu zaten boş.");
+                    Log.Information("Mega çöp kutusunda bizim yedek dosyamız yok (toplam çöp: {Total}).", totalTrashCount);
                     return 0;
                 }
 
-                Log.Information("Mega çöp kutusu boşaltılıyor: {Count} öğe", trashChildren.Count);
+                Log.Information(
+                    "Mega çöp kutusundan {OurCount}/{TotalCount} yedek dosyası kalıcı siliniyor",
+                    ourTrashFiles.Count, totalTrashCount);
 
                 int deletedCount = 0;
 
-                foreach (var node in trashChildren)
+                foreach (var node in ourTrashFiles)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -477,7 +482,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     {
                         await client.DeleteAsync(node, moveToTrash: false).ConfigureAwait(false);
                         deletedCount++;
-                        Log.Debug("Mega çöp öğesi kalıcı silindi: {NodeName} ({NodeId})", node.Name, node.Id);
+                        Log.Debug("Mega çöp yedek dosyası kalıcı silindi: {NodeName} ({NodeId})", node.Name, node.Id);
                     }
                     catch (Exception ex)
                     {
@@ -485,8 +490,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     }
                 }
 
-                Log.Information("Mega çöp kutusu boşaltıldı: {Deleted}/{Total} öğe silindi",
-                    deletedCount, trashChildren.Count);
+                Log.Information("Mega çöp kutusu temizlendi: {Deleted}/{Total} yedek dosyası silindi",
+                    deletedCount, ourTrashFiles.Count);
 
                 return deletedCount;
             }
@@ -505,6 +510,30 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 if (client is not null)
                     await LogoutSafeAsync(client).ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Dosya adının bizim yedek dosya desenimize uyup uymadığını kontrol eder.
+        /// SQL yedek: DbName_Full_20260405_123456.bak/.7z (Full/Differential/Incremental)
+        /// Dosya yedek: Files_20260405_123456.7z
+        /// </summary>
+        private static bool IsOurBackupFile(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return false;
+
+            string ext = Path.GetExtension(fileName);
+            bool isBak = string.Equals(ext, ".bak", StringComparison.OrdinalIgnoreCase);
+            bool is7z = string.Equals(ext, ".7z", StringComparison.OrdinalIgnoreCase);
+
+            if (!isBak && !is7z)
+                return false;
+
+            // Yedek dosya adı desenleri — SQL backup veya dosya backup
+            return fileName.Contains("_Full_", StringComparison.OrdinalIgnoreCase)
+                || fileName.Contains("_Differential_", StringComparison.OrdinalIgnoreCase)
+                || fileName.Contains("_Incremental_", StringComparison.OrdinalIgnoreCase)
+                || fileName.StartsWith("Files_", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -2,6 +2,10 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.71.1 — Çöp Kutusu Güvenlik Düzeltmesi
+- Google Drive: Sadece bizim klasörümüzdeki çöp dosyaları temizlenir, kullanıcının kişisel çöpüne dokunulmaz
+- Mega: Yedek dosya isim desenine uyan dosyalar filtrelenir (`.bak`/`.7z` + `_Full_/_Differential_/_Incremental_/Files_`)
+
 ### v0.71.0 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
 - Mega çöp kutusu: Yedekleme sonrası birikmiş çöp öğeleri otomatik kalıcı siliniyor
 - Google Drive çöp kutusu: Files.EmptyTrash() API ile tek çağrıda temizleniyor

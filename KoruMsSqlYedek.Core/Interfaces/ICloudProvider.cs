@@ -54,9 +54,10 @@ namespace KoruMsSqlYedek.Core.Interfaces
         bool SupportsTrash { get; }
 
         /// <summary>
-        /// Çöp kutusundaki tüm dosyaları kalıcı olarak siler.
-        /// Retention sonrası otomatik çağrılır (PermanentDeleteFromTrash=false ise).
-        /// SupportsTrash=false olan provider'lar hiçbir şey yapmaz.
+        /// Çöp kutusundaki YALNIZCA bizim yedek dosyalarımızı kalıcı olarak siler.
+        /// Google Drive: Bizim klasörümüzdeki (RemoteFolderPath) çöp dosyalarını siler.
+        /// Mega: Yedek dosya deseniyle eşleşen (*_Full_*, *_Differential_*, Files_*.7z vb.) çöp dosyalarını siler.
+        /// Kullanıcının kişisel dosyalarına dokunmaz.
         /// </summary>
         /// <returns>Silinen dosya sayısı.</returns>
         Task<int> EmptyTrashAsync(
