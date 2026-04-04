@@ -278,6 +278,54 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         /// <summary>
+        /// Çöp kutusu destekleyen tüm aktif bulut hedeflerinin çöp kutusunu boşaltır.
+        /// PermanentDeleteFromTrash=false olan hedefler için retention sonrası çağrılır.
+        /// </summary>
+        public async Task<int> EmptyTrashForAllAsync(
+            List<CloudTargetConfig> targets,
+            CancellationToken cancellationToken)
+        {
+            int totalDeleted = 0;
+
+            // Sadece çöp kutusu kullanan hedefleri filtrele (PermanentDeleteFromTrash=false)
+            var trashTargets = targets
+                .Where(t => t.IsEnabled && !t.PermanentDeleteFromTrash)
+                .ToList();
+
+            if (trashTargets.Count == 0)
+                return 0;
+
+            foreach (var target in trashTargets)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var provider = GetProvider(target.Type);
+                    if (provider is null || !provider.SupportsTrash)
+                        continue;
+
+                    int deleted = await provider.EmptyTrashAsync(target, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    totalDeleted += deleted;
+
+                    if (deleted > 0)
+                    {
+                        Log.Information("Çöp kutusu boşaltıldı: {Provider} — {Count} öğe silindi",
+                            target.DisplayName, deleted);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Çöp kutusu boşaltma hatası: {Provider}", target.DisplayName);
+                }
+            }
+
+            return totalDeleted;
+        }
+
+        /// <summary>
         /// Tüm aktif bulut hedeflerinin bağlantısını test eder.
         /// </summary>
         public async Task<List<CloudConnectionTestResult>> TestAllConnectionsAsync(

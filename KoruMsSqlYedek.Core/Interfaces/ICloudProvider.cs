@@ -46,5 +46,21 @@ namespace KoruMsSqlYedek.Core.Interfaces
         Task<bool> TestConnectionAsync(
             CloudTargetConfig config,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Provider'ın çöp kutusu desteği olup olmadığını belirtir.
+        /// Google Drive ve Mega için true, diğerleri için false.
+        /// </summary>
+        bool SupportsTrash { get; }
+
+        /// <summary>
+        /// Çöp kutusundaki tüm dosyaları kalıcı olarak siler.
+        /// Retention sonrası otomatik çağrılır (PermanentDeleteFromTrash=false ise).
+        /// SupportsTrash=false olan provider'lar hiçbir şey yapmaz.
+        /// </summary>
+        /// <returns>Silinen dosya sayısı.</returns>
+        Task<int> EmptyTrashAsync(
+            CloudTargetConfig config,
+            CancellationToken cancellationToken);
     }
 }

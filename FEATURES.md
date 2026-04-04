@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.71.0 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
+- Mega çöp kutusu: Yedekleme sonrası birikmiş çöp öğeleri otomatik kalıcı siliniyor
+- Google Drive çöp kutusu: Files.EmptyTrash() API ile tek çağrıda temizleniyor
+- ICloudProvider: SupportsTrash + EmptyTrashAsync arayüzü
+- Orkestrasyon: EmptyTrashForAllAsync — sadece uygun hedefleri filtreler
+- Pipeline: Her yedekleme sonrası otomatik çöp temizliği (hata güvenli)
+
 ### v0.70.0 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
 - Mega oturum önbellekleme: Login/logout her dosyada değil, 15 dakika boyunca yeniden kullanılıyor
 - SemaphoreSlim ile eşzamanlı upload serializasyonu

@@ -39,6 +39,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         public string DisplayName => "Google Drive";
 
+        public bool SupportsTrash => true;
+
         public async Task<CloudUploadResult> UploadAsync(
             string localFilePath,
             string remoteFileName,
@@ -445,5 +447,64 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         #endregion
+
+        /// <summary>
+        /// Google Drive çöp kutusundaki tüm dosyaları kalıcı olarak siler.
+        /// Google Drive API'nin files.emptyTrash endpoint'ini kullanır.
+        /// </summary>
+        public async Task<int> EmptyTrashAsync(
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                ValidateConfig(config);
+
+                using (var driveService = await GoogleDriveAuthHelper.CreateDriveServiceAsync(config, cancellationToken)
+                    .ConfigureAwait(false))
+                {
+                    // Önce çöpteki dosya sayısını öğren (bilgilendirme için)
+                    int trashCount = 0;
+                    try
+                    {
+                        var listRequest = driveService.Files.List();
+                        listRequest.Q = "trashed = true";
+                        listRequest.Fields = "files(id)";
+                        listRequest.PageSize = 1000;
+                        var trashFiles = await listRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+                        trashCount = trashFiles.Files?.Count ?? 0;
+                    }
+                    catch
+                    {
+                        // Sayım başarısız olursa devam et
+                    }
+
+                    if (trashCount == 0)
+                    {
+                        Log.Information("Google Drive çöp kutusu zaten boş.");
+                        return 0;
+                    }
+
+                    Log.Information("Google Drive çöp kutusu boşaltılıyor: {Count} öğe", trashCount);
+
+                    // Google Drive API: tek çağrıda tüm çöpü boşaltır
+                    var emptyTrashRequest = driveService.Files.EmptyTrash();
+                    await emptyTrashRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+                    Log.Information("Google Drive çöp kutusu boşaltıldı: {Count} öğe silindi", trashCount);
+                    return trashCount;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Log.Warning("Google Drive çöp boşaltma iptal edildi.");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Google Drive çöp kutusu boşaltılamadı.");
+                return 0;
+            }
+        }
     }
 }

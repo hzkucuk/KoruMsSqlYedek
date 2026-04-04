@@ -46,6 +46,12 @@ namespace KoruMsSqlYedek.Engine.Cloud
             }
         }
 
+        public bool SupportsTrash => false;
+
+        /// <summary>FTP/SFTP çöp kutusu desteklemez — no-op.</summary>
+        public Task<int> EmptyTrashAsync(CloudTargetConfig config, CancellationToken cancellationToken)
+            => Task.FromResult(0);
+
         public async Task<CloudUploadResult> UploadAsync(
             string localFilePath,
             string remoteFileName,

@@ -1,4 +1,35 @@
-﻿## [0.70.0] - 2026-04-05 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
+﻿## [0.71.0] - 2026-04-05 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
+
+### Yeni Özellik
+- **Çöp Kutusu Otomatik Temizleme:** `PermanentDeleteFromTrash=false` (çöp kutusuna taşı) ayarındaki Mega ve Google Drive hedeflerinde, yedekleme tamamlandıktan sonra birikmiş çöp öğeleri otomatik olarak kalıcı siliniyor.
+- **Mega:** Çöp düğümü altındaki tüm öğeler tek tek kalıcı siliniyor (`NodeType.Trash` → children → `DeleteAsync(node, false)`).
+- **Google Drive:** Yerel `Files.EmptyTrash()` API ile tek çağrıda tüm çöp kutusu temizleniyor.
+- **FTP/SFTP/UNC:** Çöp kutusu konsepti yok — `SupportsTrash=false`, no-op stub.
+- **Orkestrasyon:** `CloudUploadOrchestrator.EmptyTrashForAllAsync` — yalnızca `PermanentDeleteFromTrash=false` VE `SupportsTrash=true` hedefleri filtreler.
+- **Pipeline Entegrasyonu:** Her yedekleme görevi tamamlandığında (SQL ve/veya Dosya), `EmptyTrashIfNeededAsync` çağrılıyor. Hata durumunda yedekleme başarısını etkilemez.
+
+### Teknik
+- `ICloudProvider`: `bool SupportsTrash` property + `Task<int> EmptyTrashAsync(config, ct)` metodu eklendi.
+- `ICloudUploadOrchestrator`: `Task<int> EmptyTrashForAllAsync(targets, ct)` metodu eklendi.
+- `MegaProvider.cs`: `SupportsTrash => true`, `EmptyTrashAsync` implementasyonu.
+- `GoogleDriveProvider.cs`: `SupportsTrash => true`, `EmptyTrashAsync` implementasyonu.
+- `FtpSftpProvider.cs`, `LocalNetworkProvider.cs`: `SupportsTrash => false`, no-op.
+- `CloudUploadOrchestrator.cs`: `EmptyTrashForAllAsync` implementasyonu.
+- `BackupJobExecutor.cs`: `EmptyTrashIfNeededAsync` helper metodu + her iki yedekleme akışına hook.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Interfaces/ICloudProvider.cs`
+- `KoruMsSqlYedek.Core/Interfaces/ICloudUploadOrchestrator.cs`
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/FtpSftpProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/LocalNetworkProvider.cs`
+- `KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.cs`
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs`
+
+---
+
+## [0.70.0] - 2026-04-05 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
 
 ### İyileştirme
 - **Mega Oturum Önbellekleme:** Her dosya yüklemesinde yeni login/logout yerine, mevcut oturum 15 dakikaya kadar yeniden kullanılıyor. VSS ile dosya sayısı ikiye katlandığında bile Mega rate limiting tetiklenmiyor.

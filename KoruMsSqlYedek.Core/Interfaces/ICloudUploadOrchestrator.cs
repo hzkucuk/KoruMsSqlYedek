@@ -49,6 +49,15 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// </summary>
         /// <returns>Başarıyla tamamlanan recovery sayısı.</returns>
         Task<int> RecoverPendingUploadsAsync(CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Çöp kutusu destekleyen tüm aktif bulut hedeflerinin çöp kutusunu boşaltır.
+        /// Retention sonrası PermanentDeleteFromTrash=false olan hedefler için çağrılır.
+        /// </summary>
+        /// <returns>Toplam silinen öğe sayısı.</returns>
+        Task<int> EmptyTrashForAllAsync(
+            List<CloudTargetConfig> targets,
+            CancellationToken cancellationToken);
     }
 
     /// <summary>

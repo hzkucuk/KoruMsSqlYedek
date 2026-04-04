@@ -115,6 +115,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         if (backupType == "FileBackup")
                         {
                             bool fileOk = await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
+                            await EmptyTrashIfNeededAsync(plan, cts.Token);
                             cleanupPaths.Clear();
                             BackupActivityHub.Raise(new BackupActivityEventArgs
                             {
@@ -138,6 +139,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         }
 
                         bool allCloudOk = sqlCloudOk && fileCloudOk;
+                        await EmptyTrashIfNeededAsync(plan, cts.Token);
                         cleanupPaths.Clear();
                         BackupActivityHub.Raise(new BackupActivityEventArgs
                         {
@@ -755,6 +757,40 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             }
 
             return fileCloudOk;
+        }
+
+        /// <summary>
+        /// Bulut hedeflerinde çöp kutusu temizliği yapar.
+        /// PermanentDeleteFromTrash=false olan ve çöp kutusu destekleyen hedeflerde birikmiş çöp öğelerini kalıcı olarak siler.
+        /// </summary>
+        private async Task EmptyTrashIfNeededAsync(BackupPlan plan, CancellationToken ct)
+        {
+            if (CloudOrchestrator == null || plan.CloudTargets == null || !plan.CloudTargets.Any(t => t.IsEnabled))
+                return;
+
+            try
+            {
+                int trashDeleted = await CloudOrchestrator.EmptyTrashForAllAsync(plan.CloudTargets, ct);
+                if (trashDeleted > 0)
+                {
+                    Log.Information("Bulut çöp kutusu temizlendi: {DeletedCount} öğe silindi. Plan={PlanName}",
+                        trashDeleted, plan.PlanName);
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "Çöp Kutusu",
+                        Message = $"Bulut çöp kutusu temizlendi: {trashDeleted} öğe silindi"
+                    });
+                }
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Bulut çöp kutusu temizleme hatası: Plan={PlanName}", plan.PlanName);
+            }
         }
 
         /// <summary>

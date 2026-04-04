@@ -42,6 +42,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         public string DisplayName => "Mega.io";
 
+        public bool SupportsTrash => true;
+
         public async Task<CloudUploadResult> UploadAsync(
             string localFilePath,
             string remoteFileName,
@@ -427,5 +429,82 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         #endregion
+
+        /// <summary>
+        /// Mega çöp kutusundaki tüm dosyaları kalıcı olarak siler.
+        /// Trash node'un doğrudan çocuklarını bulup her birini permanent delete yapar.
+        /// </summary>
+        public async Task<int> EmptyTrashAsync(
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
+        {
+            MegaApiClient client = null;
+
+            try
+            {
+                client = new MegaApiClient();
+                await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
+
+                var nodes = await client.GetNodesAsync().ConfigureAwait(false);
+                var trashNode = nodes.FirstOrDefault(n => n.Type == NodeType.Trash);
+
+                if (trashNode is null)
+                {
+                    Log.Information("Mega çöp kutusu bulunamadı.");
+                    return 0;
+                }
+
+                // Trash'ın doğrudan çocuklarını bul
+                var trashChildren = nodes
+                    .Where(n => n.ParentId == trashNode.Id)
+                    .ToList();
+
+                if (trashChildren.Count == 0)
+                {
+                    Log.Information("Mega çöp kutusu zaten boş.");
+                    return 0;
+                }
+
+                Log.Information("Mega çöp kutusu boşaltılıyor: {Count} öğe", trashChildren.Count);
+
+                int deletedCount = 0;
+
+                foreach (var node in trashChildren)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    try
+                    {
+                        await client.DeleteAsync(node, moveToTrash: false).ConfigureAwait(false);
+                        deletedCount++;
+                        Log.Debug("Mega çöp öğesi kalıcı silindi: {NodeName} ({NodeId})", node.Name, node.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Mega çöp öğesi silinemedi: {NodeName} ({NodeId})", node.Name, node.Id);
+                    }
+                }
+
+                Log.Information("Mega çöp kutusu boşaltıldı: {Deleted}/{Total} öğe silindi",
+                    deletedCount, trashChildren.Count);
+
+                return deletedCount;
+            }
+            catch (OperationCanceledException)
+            {
+                Log.Warning("Mega çöp boşaltma iptal edildi.");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Mega çöp kutusu boşaltılamadı.");
+                return 0;
+            }
+            finally
+            {
+                if (client is not null)
+                    await LogoutSafeAsync(client).ConfigureAwait(false);
+            }
+        }
     }
 }
