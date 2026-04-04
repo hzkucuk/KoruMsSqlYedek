@@ -1,4 +1,19 @@
-﻿## [0.75.0] - 2026-04-06 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
+﻿## [0.75.1] - 2026-04-06 — Anti-Regresyon & Installer Düzeltmesi
+
+### Düzeltme
+- **3 pre-existing test failure düzeltildi** — 1174/1174 test artık geçiyor (0 failure)
+  - GoogleDrive: Gömülü credential fallback nedeniyle MissingClientId/MissingClientSecret testleri güncellendi
+  - FileBackup: SourceDirNotExists test beklentisi düzeltildi (Failed status doğru davranış)
+- **Installer takılma sorunu çözüldü** — `sc.exe` ile servis yönetimi; exe'nin CLI komut desteklememesi nedeniyle sonsuz bekleme engellendi
+- **Build-Release.ps1 RID uyumsuzluğu düzeltildi** — `--no-build` publish'ten kaldırıldı, RID-specific self-restore aktif
+
+### Yeni
+- **TimeoutConstants.cs:** Tüm timeout değerleri merkezi sabit dosyasında tanımlı (FTP, SFTP, Mega, genel)
+- FtpSftpProvider ve MegaProvider timeout'ları TimeoutConstants'tan okunuyor
+- Installer güncelleme öncesi servisi otomatik durduruyor (dosya kilidi önleme)
+- Installer servis açıklaması ve auto-start yapılandırması eklendi
+
+## [0.75.0] - 2026-04-06 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
 
 ### Yeni
 - **FileBackupSourceEditDialog:** Daha geniş pencere (510px), GroupBox ile bölümlendirilmiş alan, tüm kontrollere ToolTip eklendi

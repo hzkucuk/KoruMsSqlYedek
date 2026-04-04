@@ -10,7 +10,7 @@
 
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
-#define MyAppVersion "0.75.0"
+#define MyAppVersion "0.75.1"
 #define MyAppPublisher "HZK"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"
@@ -116,18 +116,23 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#MyAppName}"; ValueData: """{app}\{#MyAppExeName}"""; Flags: uninsdeletevalue; Tasks: startup
 
 [Run]
-; Kurulum sonrası service kur ve başlat
-Filename: "{app}\Service\{#MyServiceExeName}"; Parameters: "install"; StatusMsg: "{cm:ServiceInstall}"; Components: service; Flags: runhidden waituntilterminated
+; Kurulum sonrası service kur ve başlat (sc.exe ile — exe CLI komut desteklemiyor)
+Filename: "sc.exe"; Parameters: "create {#MyServiceName} binPath= ""{app}\Service\{#MyServiceExeName}"" start= auto"; StatusMsg: "{cm:ServiceInstall}"; Components: service; Flags: runhidden waituntilterminated
 ; Service hesabını LocalSystem yap — VSS (Volume Shadow Copy) yetkisi için zorunlu
 Filename: "sc.exe"; Parameters: "config {#MyServiceName} obj= ""LocalSystem"""; Components: service; Flags: runhidden waituntilterminated
-Filename: "{app}\Service\{#MyServiceExeName}"; Parameters: "start"; StatusMsg: "{cm:ServiceStart}"; Components: service; Flags: runhidden waituntilterminated
+; Service açıklaması
+Filename: "sc.exe"; Parameters: "description {#MyServiceName} ""Koru MsSql Yedek — SQL Server Yedekleme & Bulut Senkronizasyon Servisi"""; Components: service; Flags: runhidden waituntilterminated
+; Servisi başlat
+Filename: "sc.exe"; Parameters: "start {#MyServiceName}"; StatusMsg: "{cm:ServiceStart}"; Components: service; Flags: runhidden waituntilterminated
 ; İsteğe bağlı: Kurulum sonrası Tray uygulamasını başlat
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-; Kaldırma öncesi service durdur ve kaldır
-Filename: "{app}\Service\{#MyServiceExeName}"; Parameters: "stop"; RunOnceId: "StopService"; Components: service; Flags: runhidden waituntilterminated
-Filename: "{app}\Service\{#MyServiceExeName}"; Parameters: "uninstall"; RunOnceId: "UninstallService"; Components: service; Flags: runhidden waituntilterminated
+; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)
+Filename: "sc.exe"; Parameters: "stop {#MyServiceName}"; RunOnceId: "StopService"; Components: service; Flags: runhidden waituntilterminated
+; Servisin durmasını bekle
+Filename: "cmd.exe"; Parameters: "/c timeout /t 3 /nobreak >nul"; RunOnceId: "WaitServiceStop"; Components: service; Flags: runhidden waituntilterminated
+Filename: "sc.exe"; Parameters: "delete {#MyServiceName}"; RunOnceId: "UninstallService"; Components: service; Flags: runhidden waituntilterminated
 
 [UninstallDelete]
 ; Service log dosyaları (opsiyonel temizlik)
@@ -169,17 +174,19 @@ begin
   end;
 end;
 
-// Güncelleme öncesi tray uygulamasını kapat
+// Güncelleme öncesi servisi durdur ve tray uygulamasını kapat
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
 begin
   if CurStep = ssInstall then
   begin
+    // Çalışan servisi durdur (güncelleme öncesi dosya kilidi önleme)
+    Exec('sc.exe', 'stop {#MyServiceName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     // Çalışan tray uygulamasını kapat
     Exec('taskkill', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     // Kısa bekle (dosya kilidi serbest kalsın)
-    Sleep(1000);
+    Sleep(2000);
   end;
 end;
 

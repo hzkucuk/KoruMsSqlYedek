@@ -327,7 +327,7 @@ namespace KoruMsSqlYedek.Tests
         #region BackupSourceAsync — Status & Error Handling
 
         [TestMethod]
-        public async Task BackupSourceAsync_WhenSourceDirNotExists_ReturnsSuccessWithZeroFiles()
+        public async Task BackupSourceAsync_WhenSourceDirNotExists_ReturnsFailedWithZeroFiles()
         {
             // Arrange
             string nonExistentDir = Path.Combine(_testDir, "NonExistent");
@@ -337,10 +337,11 @@ namespace KoruMsSqlYedek.Tests
             // Act
             var result = await _service.BackupSourceAsync(source, _destDir, null, CancellationToken.None);
 
-            // Assert
+            // Assert — Kaynak dizin yoksa dosya bulunamaz → Failed
             result.FilesCopied.Should().Be(0);
             result.FilesSkipped.Should().Be(0);
-            result.Status.Should().Be(BackupResultStatus.Success);
+            result.Status.Should().Be(BackupResultStatus.Failed);
+            result.ErrorMessage.Should().Contain("bulunamadı");
         }
 
         [TestMethod]

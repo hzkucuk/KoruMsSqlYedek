@@ -9,6 +9,7 @@ using Serilog;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Core.Constants;
 
 namespace KoruMsSqlYedek.Engine.Cloud
 {
@@ -24,13 +25,13 @@ namespace KoruMsSqlYedek.Engine.Cloud
         private const int ApiTimeoutSeconds = 30;
 
         /// <summary>Logout temizliği için kısa zaman aşımı — takılırsa beklemeyi kes.</summary>
-        private const int LogoutTimeoutSeconds = 10;
+        private const int LogoutTimeoutSeconds = TimeoutConstants.MegaLogoutTimeoutSeconds;
 
         /// <summary>Bağlantı ön kontrolü zaman aşımı (saniye).</summary>
-        private const int ConnectivityCheckSeconds = 10;
+        private const int ConnectivityCheckSeconds = TimeoutConstants.MegaConnectivityCheckSeconds;
 
         /// <summary>Oturum önbellek süresi (dakika). Bu süre boyunca aynı oturum yeniden kullanılır.</summary>
-        private const int SessionExpiryMinutes = 15;
+        private const int SessionExpiryMinutes = TimeoutConstants.MegaSessionExpiryMinutes;
 
         /// <summary>Mega API endpoint — bağlantı ön kontrolü için.</summary>
         private const string MegaApiUrl = "https://g.api.mega.co.nz/cs";
