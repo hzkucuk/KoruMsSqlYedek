@@ -1,4 +1,25 @@
-﻿## [0.76.0] - 2026-04-06 — Servis Veri Yolu Düzeltmesi & DPAPI Migrasyon
+﻿## [0.77.0] - 2026-04-06 — Post-Install Düzeltmeleri & Modern Tray İkonları
+
+### Düzeltme
+- **Error 740 (admin yetki hatası) çözüldü** — app.manifest `requireAdministrator` → `asInvoker` olarak değiştirildi. Tray uygulaması artık normal kullanıcı olarak çalışır, servis kontrolü (başlat/durdur) sc.exe + UAC ile yükseltilir.
+- **Tray ikonu görünmüyor sorunu çözüldü** — `Icon.FromHandle(hIcon)` native handle sızıntısı düzeltildi. Tüm ikon üretim metotlarında clone + DestroyIcon pattern'i uygulandı.
+- **Görev zamanlama (Step 3) layout sorunu çözüldü** — CronBuilderPanel boyutu (100→80px) ve y-offset çakışması düzeltildi. Form yüksekliği artırıldı (680→740px), Sizable yapıldı.
+
+### İyileştirme
+- **Modern tray ikonları** — Windows 11 flat stil: dikey gradient, ince kenar, gölgesiz sembol. Animasyon: kısa yay (120°) spinner stili.
+- **ServiceController bağımlılığı kaldırıldı** — Servis durumu sc.exe query ile sorgulanır (admin gerektirmez), Start/Stop/Restart için sc.exe + `runas` verb (UAC) kullanılır.
+- `System.ServiceProcess.ServiceController` NuGet paketi kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/app.manifest` — asInvoker
+- `KoruMsSqlYedek.Win/TrayApplicationContext.cs` — sc.exe service kontrol
+- `KoruMsSqlYedek.Win/Helpers/SymbolIconHelper.cs` — icon handle fix + modern stil
+- `KoruMsSqlYedek.Win/Controls/CronBuilderPanel.cs` — Height 80px
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs` — layout + form boyutu
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — ServiceController paketi kaldırıldı
+- `Deployment/InnoSetup/KoruMsSqlYedek.iss` — shellexec flag
+
+## [0.76.0] - 2026-04-06 — Servis Veri Yolu Düzeltmesi & DPAPI Migrasyon
 
 ### Düzeltme (Kritik)
 - **Servis %APPDATA% yol uyumsuzluğu çözüldü** — Windows Service (LocalSystem) ile Tray uygulaması (kullanıcı) farklı %APPDATA% kullandığı için plan dosyaları servis tarafından bulunamıyordu. Tüm paylaşılan veriler artık %ProgramData%\KoruMsSqlYedek altında saklanır.

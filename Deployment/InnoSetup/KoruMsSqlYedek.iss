@@ -10,7 +10,7 @@
 
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
-#define MyAppVersion "0.76.0"
+#define MyAppVersion "0.77.0"
 #define MyAppPublisher "HZK"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"
@@ -133,8 +133,8 @@ Filename: "sc.exe"; Parameters: "config {#MyServiceName} obj= ""LocalSystem"""; 
 Filename: "sc.exe"; Parameters: "description {#MyServiceName} ""Koru MsSql Yedek — SQL Server Yedekleme & Bulut Senkronizasyon Servisi"""; Components: service; Flags: runhidden waituntilterminated
 ; Servisi başlat
 Filename: "sc.exe"; Parameters: "start {#MyServiceName}"; StatusMsg: "{cm:ServiceStart}"; Components: service; Flags: runhidden waituntilterminated
-; İsteğe bağlı: Kurulum sonrası Tray uygulamasını başlat
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: nowait postinstall skipifsilent
+; İsteğe bağlı: Kurulum sonrası Tray uygulamasını başlat (asInvoker — normal kullanıcı olarak)
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall skipifsilent
 
 [UninstallRun]
 ; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)

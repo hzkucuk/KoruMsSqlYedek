@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -182,24 +181,23 @@ namespace KoruMsSqlYedek.Win
         {
             try
             {
-                using var sc = new ServiceController(ServiceName);
-                var status = sc.Status;
-                bool running = status == ServiceControllerStatus.Running;
-                bool stopped = status == ServiceControllerStatus.Stopped;
+                string state = QueryServiceState();
+                bool running = state == "RUNNING";
+                bool stopped = state == "STOPPED";
 
                 _tsmServiceStatus.Text = running
                     ? Res.Get("Tray_ServiceStatusRunning")
                     : stopped
                         ? Res.Get("Tray_ServiceStatusStopped")
-                        : $"Servis: {status}";
+                        : $"Servis: {state}";
 
                 _tsmServiceStart.Enabled   = stopped;
                 _tsmServiceStop.Enabled    = running;
                 _tsmServiceRestart.Enabled = running;
             }
-            catch (InvalidOperationException)
+            catch (Exception ex)
             {
-                // Servis yüklü değil — pipe bağlıysa debug modunda çalışıyor demektir
+                // Servis yüklü değil veya sorgulanamadı
                 if (_pipeClient.IsConnected)
                 {
                     _tsmServiceStatus.Text     = Res.Get("Tray_ServiceDebugMode");
@@ -209,29 +207,42 @@ namespace KoruMsSqlYedek.Win
                 }
                 else
                 {
+                    Log.Debug(ex, "Servis durumu sorgulanamadı: {ServiceName}", ServiceName);
                     _tsmServiceStatus.Text     = Res.Get("Tray_ServiceNotInstalled");
                     _tsmServiceStart.Enabled   = false;
                     _tsmServiceStop.Enabled    = false;
                     _tsmServiceRestart.Enabled = false;
                 }
             }
-            catch (System.ComponentModel.Win32Exception ex)
+        }
+
+        /// <summary>sc.exe query ile servis durumunu sorgular (yönetici yetkisi gerekmez).</summary>
+        private string QueryServiceState()
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo("sc.exe", $"query {ServiceName}")
             {
-                // SCM erişim hatası (yetki yetersiz olabilir)
-                Log.Warning(ex, "Servis durumu sorgulanamadı (Win32): {ServiceName}", ServiceName);
-                _tsmServiceStatus.Text     = "Servis: Erişim Reddedildi ⚠";
-                _tsmServiceStart.Enabled   = true;
-                _tsmServiceStop.Enabled    = true;
-                _tsmServiceRestart.Enabled = true;
-            }
-            catch (Exception ex)
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var proc = System.Diagnostics.Process.Start(psi);
+            string output = proc!.StandardOutput.ReadToEnd();
+            proc.WaitForExit(5000);
+
+            // Parse STATE line: "        STATE              : 4  RUNNING"
+            foreach (string line in output.Split('\n'))
             {
-                Log.Warning(ex, "Servis durumu sorgulanamadı: {ServiceName}", ServiceName);
-                _tsmServiceStatus.Text     = Res.Get("Tray_ServiceStatusUnknown");
-                _tsmServiceStart.Enabled   = true;
-                _tsmServiceStop.Enabled    = true;
-                _tsmServiceRestart.Enabled = true;
+                string trimmed = line.Trim();
+                if (trimmed.StartsWith("STATE", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Extract last word (RUNNING, STOPPED, etc.)
+                    string[] parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    return parts.Length > 0 ? parts[^1] : "UNKNOWN";
+                }
             }
+
+            return "UNKNOWN";
         }
 
         private async void OnServiceStartClick(object sender, EventArgs e)
@@ -239,21 +250,14 @@ namespace KoruMsSqlYedek.Win
             try
             {
                 _tsmServiceStart.Enabled = false;
-                await Task.Run(() =>
-                {
-                    using var sc = new ServiceController(ServiceName);
-                    sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
-                });
+                await RunScCommandAsync("start");
                 ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStarted"), ToolTipIcon.Info, 2500);
                 Log.Information("Servis kullanıcı tarafından başlatıldı.");
             }
-            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
             {
-                Log.Warning(ex, "Servis başlatma yetki hatası.");
-                ShowBalloonTip(Res.Get("AppName"),
-                    "Servis başlatılamadı: Yönetici olarak çalıştırın.",
-                    ToolTipIcon.Warning, 5000);
+                // Kullanıcı UAC'ı iptal etti
+                Log.Information("Kullanıcı servis başlatma UAC isteğini iptal etti.");
             }
             catch (Exception ex)
             {
@@ -268,21 +272,13 @@ namespace KoruMsSqlYedek.Win
             {
                 _tsmServiceStop.Enabled    = false;
                 _tsmServiceRestart.Enabled = false;
-                await Task.Run(() =>
-                {
-                    using var sc = new ServiceController(ServiceName);
-                    sc.Stop();
-                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-                });
+                await RunScCommandAsync("stop");
                 ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStopped"), ToolTipIcon.Info, 2500);
                 Log.Information("Servis kullanıcı tarafından durduruldu.");
             }
-            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
             {
-                Log.Warning(ex, "Servis durdurma yetki hatası.");
-                ShowBalloonTip(Res.Get("AppName"),
-                    "Servis durdurulamadı: Yönetici olarak çalıştırın.",
-                    ToolTipIcon.Warning, 5000);
+                Log.Information("Kullanıcı servis durdurma UAC isteğini iptal etti.");
             }
             catch (Exception ex)
             {
@@ -297,29 +293,42 @@ namespace KoruMsSqlYedek.Win
             {
                 _tsmServiceStop.Enabled    = false;
                 _tsmServiceRestart.Enabled = false;
-                await Task.Run(() =>
-                {
-                    using var sc = new ServiceController(ServiceName);
-                    sc.Stop();
-                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-                    sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
-                });
+                await RunScCommandAsync("stop");
+                // Servisin tamamen durmasını bekle
+                await Task.Delay(2000);
+                await RunScCommandAsync("start");
                 ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceRestarted"), ToolTipIcon.Info, 2500);
                 Log.Information("Servis kullanıcı tarafından yeniden başlatıldı.");
             }
-            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
             {
-                Log.Warning(ex, "Servis yeniden başlatma yetki hatası.");
-                ShowBalloonTip(Res.Get("AppName"),
-                    "Servis yeniden başlatılamadı: Yönetici olarak çalıştırın.",
-                    ToolTipIcon.Warning, 5000);
+                Log.Information("Kullanıcı servis yeniden başlatma UAC isteğini iptal etti.");
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Servis yeniden başlatılamadı.");
                 ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
             }
+        }
+
+        /// <summary>
+        /// sc.exe komutu çalıştırır (UAC ile yükseltilmiş).
+        /// </summary>
+        private static async Task RunScCommandAsync(string command)
+        {
+            await Task.Run(() =>
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("sc.exe", $"{command} {ServiceName}")
+                {
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    CreateNoWindow = true,
+                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+                };
+
+                using var proc = System.Diagnostics.Process.Start(psi);
+                proc?.WaitForExit(30_000);
+            });
         }
 
         #endregion
@@ -393,7 +402,7 @@ namespace KoruMsSqlYedek.Win
 
             if (oldIcon != null)
             {
-                try { NativeMethods.DestroyIcon(oldIcon.Handle); }
+                try { oldIcon.Dispose(); }
                 catch { /* ikon zaten serbest bırakılmış olabilir */ }
             }
         }
@@ -524,7 +533,7 @@ namespace KoruMsSqlYedek.Win
                 for (int i = 0; i < localFrames.Length; i++)
                 {
                     if (i == lastIndex) continue; // UpdateTrayStatus zaten yok etti
-                    try { NativeMethods.DestroyIcon(localFrames[i].Handle); } catch { }
+                    try { localFrames[i].Dispose(); } catch { }
                 }
             }
         }

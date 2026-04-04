@@ -201,7 +201,7 @@ namespace KoruMsSqlYedek.Win.Controls
         {
             SuspendLayout();
 
-            Height = 100;
+            Height = 80;
             Dock = DockStyle.None;
             BackColor = Color.Transparent;
 

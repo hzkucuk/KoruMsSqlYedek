@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.77.0 — Post-Install Düzeltmeleri & Modern Tray İkonları
+- ✅ Error 740 admin hatası çözüldü (asInvoker + sc.exe UAC)
+- ✅ Tray ikonu görünmüyor: native icon handle sızıntısı düzeltildi
+- ✅ Görev zamanlama layout sorunu düzeltildi (CronBuilderPanel boyut + form yükseklik)
+- ✅ Modern Windows 11 flat tray ikonları (gradient + spinner animasyon)
+- ✅ System.ServiceProcess.ServiceController bağımlılığı kaldırıldı
+
 ### v0.76.0 — Servis Veri Yolu Düzeltmesi & DPAPI Migrasyon
 - ✅ %APPDATA% → %ProgramData% geçişi (Tray + Service aynı veri yolunu kullanır)
 - ✅ DPAPI CurrentUser → LocalMachine scope geçişi (Service LocalSystem şifre çözebilir)
