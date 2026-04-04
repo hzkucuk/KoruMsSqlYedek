@@ -30,11 +30,12 @@ namespace KoruMsSqlYedek.Engine.Retention
             if (plan?.Retention == null || string.IsNullOrEmpty(plan.LocalPath))
                 return;
 
-            Log.Information("Retention temizliği başlıyor: Plan={PlanName}, Mod={Mode}", plan.PlanName, plan.Mode);
+            Log.Information("Retention temizliği başlıyor: Plan={PlanName}, BulutHedef={HasCloud}",
+                plan.PlanName, plan.HasCloudTargets);
 
-            // Bulut modda geçmiş kayıtlarını yükle — upload durumunu kontrol etmek için
+            // Aktif bulut hedefi varsa geçmiş kayıtlarını yükle — upload durumunu kontrol etmek için
             HashSet<string> cloudProtectedFiles = null;
-            if (plan.Mode == BackupMode.Cloud)
+            if (plan.HasCloudTargets)
             {
                 cloudProtectedFiles = BuildCloudProtectedFileSet(plan);
             }

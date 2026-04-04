@@ -138,14 +138,10 @@ namespace KoruMsSqlYedek.Win.Forms
             _btnSave.Text = isLastStep ? "Kaydet" : "Kaydet & Çık";
         }
 
-        /// <summary>Yedekleme moduna göre aktif adımları yeniden hesaplar.</summary>
+        /// <summary>Aktif adımları hesaplar. Hedefler adımı her zaman dahildir.</summary>
         private void RebuildActiveSteps()
         {
-            bool isCloud = _rbModeCloud.Checked;
-            _activeSteps = new System.Collections.Generic.List<int> { 0, 1, 2, 3 };
-            if (isCloud)
-                _activeSteps.Add(4); // Hedefler adımı
-            _activeSteps.Add(5); // Bildirim her zaman son
+            _activeSteps = new System.Collections.Generic.List<int> { 0, 1, 2, 3, 4, 5 };
         }
 
         /// <summary>Aktif adımlara göre üst bar göstergesini yeniden çizer.</summary>
@@ -382,8 +378,6 @@ namespace KoruMsSqlYedek.Win.Forms
             // Adım 1: Plan Bilgileri + SQL Bağlantı
             _txtPlanName.Text = _plan.PlanName ?? "";
             _chkEnabled.Checked = _plan.IsEnabled;
-            _rbModeLocal.Checked = _plan.Mode == BackupMode.Local;
-            _rbModeCloud.Checked = _plan.Mode == BackupMode.Cloud;
             _txtLocalPath.Text = _plan.LocalPath ?? @"D:\Backups\KoruMsSqlYedek";
             _txtServer.Text = _plan.SqlConnection?.Server ?? "";
             _cmbAuthMode.SelectedIndex = (_plan.SqlConnection?.AuthMode ?? SqlAuthMode.Windows) == SqlAuthMode.Windows ? 0 : 1;
@@ -473,7 +467,6 @@ namespace KoruMsSqlYedek.Win.Forms
             // Adım 1: Bağlantı
             _plan.PlanName = _txtPlanName.Text.Trim();
             _plan.IsEnabled = _chkEnabled.Checked;
-            _plan.Mode = _rbModeCloud.Checked ? BackupMode.Cloud : BackupMode.Local;
             _plan.LocalPath = _txtLocalPath.Text.Trim();
             _plan.SqlConnection.Server = _txtServer.Text.Trim();
             _plan.SqlConnection.AuthMode = _cmbAuthMode.SelectedIndex == 0
@@ -815,17 +808,6 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             UpdateFileBackupFieldsVisibility();
             UpdateFileScheduleVisibility();
-        }
-
-        private void OnBackupModeChanged(object sender, EventArgs e)
-        {
-            if (_activeSteps == null) return;
-            int prevPanelIndex = _activeSteps.Count > _currentStep ? _activeSteps[_currentStep] : 0;
-            RebuildActiveSteps();
-            // Mevcut panel hâlâ aktifse aynı konumda kal
-            int newActiveIndex = _activeSteps.IndexOf(prevPanelIndex);
-            if (newActiveIndex < 0) newActiveIndex = 0;
-            ShowStep(newActiveIndex);
         }
 
         private void UpdateAuthFieldsVisibility()

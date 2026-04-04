@@ -71,11 +71,8 @@
             _chkTrustCert = new System.Windows.Forms.CheckBox();
             _btnTestSql = new Theme.ModernButton();
             _lblStep1SqlHeader = new System.Windows.Forms.Label();
-            _lblBackupMode = new System.Windows.Forms.Label();
-            _rbModeLocal = new System.Windows.Forms.RadioButton();
-            _rbModeCloud = new System.Windows.Forms.RadioButton();
 
-            // ========== STEP 2: Kaynaklar (Veritabanları + Dosya) ==========
+            // ========== STEP 2: Kaynaklar
             _lblStep2Header = new System.Windows.Forms.Label();
             _lblStep2Hint = new System.Windows.Forms.Label();
             _clbDatabases = new System.Windows.Forms.CheckedListBox();
@@ -223,29 +220,9 @@
             step1.Controls.Add(_chkEnabled);
             y += 32;
 
-            _lblBackupMode.Text = "Yedekleme Modu:";
-            _lblBackupMode.AutoSize = true;
-            _lblBackupMode.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            _lblBackupMode.Location = new System.Drawing.Point(lx, y + 3);
-            step1.Controls.Add(_lblBackupMode);
-            _rbModeLocal.Text = "Yerel (Disk / UNC / A\u011f Payla\u015f\u0131m\u0131)";
-            _rbModeLocal.AutoSize = true;
-            _rbModeLocal.Checked = true;
-            _rbModeLocal.Location = new System.Drawing.Point(tx, y);
-            _rbModeLocal.CheckedChanged += OnBackupModeChanged;
-            _toolTip.SetToolTip(_rbModeLocal, "Yedek dosyalar\u0131 yaln\u0131zca yerel diske,\nharici diske veya a\u011f payla\u015f\u0131m\u0131na (UNC) kaydedilir.\nBulut y\u00fckleme ad\u0131m\u0131 atlan\u0131r.");
-            step1.Controls.Add(_rbModeLocal);
-            y += 22;
-            _rbModeCloud.Text = "Bulut (Google Drive / Mega.io / FTP / SFTP)";
-            _rbModeCloud.AutoSize = true;
-            _rbModeCloud.Location = new System.Drawing.Point(tx, y);
-            _toolTip.SetToolTip(_rbModeCloud, "Yedek dosyalar\u0131 \u00f6nce yerele kaydedilir,\nsonra bulut sa\u011flay\u0131c\u0131lar\u0131na y\u00fcklenir.\nHedef yap\u0131land\u0131rma ad\u0131m\u0131 g\u00f6sterilir.");
-            step1.Controls.Add(_rbModeCloud);
-            y += 30;
-
             ConfigLabel(_lblLocalPath, "Yerel Yedek Klas\u00f6r\u00fc:", lx, y, step1);
             ConfigTextBox(_txtLocalPath, tx, y, tw - 36, step1);
-            _toolTip.SetToolTip(_txtLocalPath, "Yedek dosyalar\u0131n\u0131n kaydedilece\u011fi yerel dizin.\n\u00d6rnek: D:\\Backups\\KoruMsSqlYedek\nNot: Yeterli disk alan\u0131 oldu\u011fundan emin olun.");
+            _toolTip.SetToolTip(_txtLocalPath, "Yedek dosyalar\u0131n\u0131n kaydedilece\u011fi yerel dizin.\n\u00d6rnek: D:\\Backups\\KoruMsSqlYedek\nBulut hedef eklerseniz dosyalar \u00f6nce buraya kaydedilir, sonra buluta y\u00fcklenir.\nNot: Yeterli disk alan\u0131 oldu\u011fundan emin olun.");
             _btnBrowseLocal.Text = "...";
             _btnBrowseLocal.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnBrowseLocal.Size = new System.Drawing.Size(30, 26);
@@ -822,10 +799,6 @@
         private Theme.ModernButton _btnSave;
         private Theme.ModernButton _btnCancel;
 
-        // Backup mode selection
-        private System.Windows.Forms.Label _lblBackupMode;
-        private System.Windows.Forms.RadioButton _rbModeLocal;
-        private System.Windows.Forms.RadioButton _rbModeCloud;
         private System.Collections.Generic.List<int> _activeSteps;
 
         // Step 1: Plan + SQL

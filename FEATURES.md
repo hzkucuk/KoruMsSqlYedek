@@ -2,7 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
-### v0.72.0 — Mega Oturum Önbellekleme Yeniden Eklendi
+### v0.73.0 — Yerel/Bulut Mod Ayrımı Kaldırıldı
+- Plan sihirbazından "Yerel" / "Bulut" mod seçimi kaldırıldı — tüm planlar 6 adımı her zaman gösteriyor
+- Bulut hedef varlığı `BackupPlan.HasCloudTargets` computed property ile otomatik algılanıyor
+- `BackupMode` enum ve `Mode` property geriye dönük JSON uyumluluğu için `[Obsolete]` korunuyor
+- Wizard UX sadeleştirildi: Kullanıcı doğrudan hedef ekleyerek bulut depolama kullanabilir
+
+### v0.72.0
 - Mega oturum önbellekleme geri eklendi: 15 dakika boyunca aynı oturum yeniden kullanılıyor
 - SemaphoreSlim ile tüm Mega API çağrıları sıralı işleniyor (rate limiting önleme)
 - Hata sonrası oturum otomatik geçersizleştirme + yeni oturum açma

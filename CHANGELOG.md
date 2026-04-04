@@ -1,4 +1,25 @@
-﻿## [0.72.0] - 2026-04-05 — Mega Oturum Önbellekleme Yeniden Eklendi
+﻿## [0.73.0] - 2026-04-05 — Yerel/Bulut Mod Ayrımı Kaldırıldı
+
+### İyileştirme
+- **Yedekleme Modu Kaldırıldı:** Plan oluşturma sihirbazından "Yerel" / "Bulut" mod seçimi kaldırıldı. Artık tüm planlar her zaman 6 adımı (Bağlantı → Kaynaklar → Zamanlama → Sıkıştırma → Hedefler → Bildirim) gösteriyor.
+- **Otomatik Algılama:** Bulut hedef varlığı `BackupPlan.HasCloudTargets` computed property ile otomatik belirleniyor.
+- **Geriye Dönük Uyumluluk:** `BackupMode` enum ve `Mode` property JSON uyumluluğu için `[Obsolete]` olarak korunuyor.
+
+### Teknik
+- `Enums.cs`: `BackupMode` enum `[Obsolete]` işaretlendi.
+- `BackupPlan.cs`: `Mode` property `[Obsolete]`, `HasCloudTargets` computed property eklendi.
+- `RetentionCleanupService.cs`: `plan.Mode == BackupMode.Cloud` → `plan.HasCloudTargets` olarak değiştirildi.
+- `PlanEditForm.cs`: Radio button mantığı, `OnBackupModeChanged` handler kaldırıldı, `RebuildActiveSteps` her zaman 6 adım döndürüyor.
+- `PlanEditForm.Designer.cs`: `_lblBackupMode`, `_rbModeLocal`, `_rbModeCloud` kontrolleri kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/Enums.cs`
+- `KoruMsSqlYedek.Core/Models/BackupPlan.cs`
+- `KoruMsSqlYedek.Engine/Retention/RetentionCleanupService.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs`
+
+## [0.72.0] - 2026-04-05 — Mega Oturum Önbellekleme Yeniden Eklendi
 
 ### Düzeltme
 - **Mega Session Caching Kaybı Giderildi:** v0.71.x çöp kutusu özelliği eklenirken v0.70.0'da eklenen oturum önbellekleme kaybolmuştu. Her upload/delete/trash işleminde ayrı login/logout yapılıyordu → Mega rate limiting tetikleniyordu.
