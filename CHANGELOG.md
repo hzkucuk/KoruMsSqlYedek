@@ -1,4 +1,31 @@
-﻿## [0.74.0] - 2026-04-05 — Plan Bazlı Şifre Koruması
+﻿## [0.74.1] - 2026-04-06 — Kapsamlı Çapraz Özellik Kombinasyon Testleri
+
+### Yeni
+- **CrossFeatureCombinationTests.cs:** 644 yeni test — tüm BackupPlan özelliklerinin çapraz kombinasyonlarını doğrular.
+  - MegaMatrix: Strategy(3) × Retention(4) × Cloud(2) × Password(2) × FileBackup(2) × ArchivePw(2) × Verify(2) = 384 JSON round-trip testi
+  - SqlAuth × Compression: AuthMode(2) × Strategy(3) × Algorithm(4) × Level(5) = 120 kombinasyon
+  - CloudTarget: 6 provider tipi için tüm provider-specific alanlar (FtpsSkipCertValidation, SftpFingerprint, BandwidthLimit, PermanentDeleteFromTrash)
+  - Notification: SmtpProfile vs Legacy × OnSuccess × OnFailure × Email × Toast = 32 kombinasyon
+  - Reporting: Frequency(3) × Enabled(2) × EmailTo(2) = 12 kombinasyon
+  - FileBackup: Recursive × VSS × Enabled = 8 kombinasyon + çoklu kaynak + edge case
+  - GFS Retention: 5 parametre kombinasyonu
+  - Triple Password System: PlanPw × ArchivePw × SqlPw = 8 kombinasyon
+  - Edge Cases: Maximum config (tüm özellikler açık) + Minimum config (tüm özellikler kapalı)
+  - Backward Compatibility: v0.72 öncesi JSON format doğrulaması
+
+### Düzeltme
+- **FTP Null Config Test Discovery:** MSTest DataRow enum serileştirme sorunu düzeltildi — `CloudProviderType` enum yerine `int` değerler kullanılarak 3 test [None] durumundan çıkarıldı.
+
+### Test İstatistikleri
+- Toplam test: 521 → 1168 (+647 yeni test)
+- Başarılı: 1165/1168 (3 pre-existing failure — GoogleDrive, FileBackup)
+- Yeni regresyon: **0**
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Tests/CrossFeatureCombinationTests.cs` (yeni)
+- `KoruMsSqlYedek.Tests/PlanPasswordIntegrationTests.cs` (FTP DataRow fix)
+
+## [0.74.0] - 2026-04-05 — Plan Bazlı Şifre Koruması
 
 ### Yeni Özellik
 - **Plan Şifresi:** Her plan için ayrı şifre belirlenebilir. Plan düzenleme ve silme işlemlerinde hem master şifre hem plan şifresi kabul edilir.
