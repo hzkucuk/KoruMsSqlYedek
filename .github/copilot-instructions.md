@@ -149,12 +149,35 @@ Bu dosyalarda değişiklik yaparken **ekstra dikkatli** ol:
 
 | Dosya | Risk | Neden |
 |-------|------|-------|
+| `MegaProvider.cs` | 🔴 Çok Yüksek | **2 kez regresyon yaşandı!** Session caching + semaphore + trash filtresi; snapshot doğrulaması zorunlu |
 | `MainWindow.cs` → `OnBackupActivityChanged` | 🔴 Yüksek | Tüm backup eventlerinin merkezi; eksik case = sessiz hata |
 | `MainWindow.cs` → `AppendBackupLog` | 🔴 Yüksek | Buffer + UI + renk + ilerleme; 4 sorumluluğu var |
+| `GoogleDriveProvider.cs` → `EmptyTrashAsync` | 🔴 Yüksek | Klasör kapsamlı sorgu zorunlu; `Files.EmptyTrash()` TÜM çöpü siler — YASAK |
 | `MainWindow.cs` → `OnPlanGridSelectionChanged` | 🟡 Orta | Buffer rebuild; format değişirse kırılır |
 | `CloudUploadOrchestrator.cs` | 🟡 Orta | Event firing; PlanId eksikliği log karışmasına yol açar |
 | `BackupJobExecutor.cs` | 🟡 Orta | Plan lifecycle; PlanId geçirilmezse izolasyon bozulur |
 | `ModernTheme.cs` | 🟢 Düşük | Renk ekleme güvenli; ama Dark+Light **ikisi birden** güncellenmeli |
+
+### 11. Snapshot Doğrulama (Kritik — Kritik Dosya Değişikliklerinde Zorunlu)
+- **Kural:** `.copilot/critical-files-manifest.md` dosyasında listelenen **kritik dosyalarda** herhangi bir değişiklik yapılmadan ÖNCE:
+  1. `.copilot/snapshots/` dizinindeki ilgili snapshot dosyasını oku.
+  2. Korunması gereken kalıpları (session caching, semaphore, trash filtresi vb.) belirle.
+  3. Değişiklik SONRASI manifest'teki kontrol listesini tek tek doğrula.
+  4. Eksik kalıp tespit edilirse değişikliği **tamamla, kaybetme**.
+- **Özellikle MegaProvider.cs:** Her değişiklikte şu 4 kalıp MUTLAKA mevcut olmalı:
+  1. `_cachedClient` + `_sessionSemaphore` statik alanları
+  2. `GetOrCreateSessionAsync` metodu
+  3. `InvalidateSessionInternalAsync` metodu
+  4. Tüm public metotlarda semaphore + cache pattern
+- **Neden:** v0.71.x'te trash özelliği eklenirken MegaProvider.cs session caching tamamen kaybedildi. Bu kural tekrarı önler.
+- **Snapshot güncelleme:** Büyük değişiklik sonrası snapshot'ı da güncelle: `Copy-Item "dosya" ".copilot/snapshots/vX.Y.Z/dosya"`
+
+### 12. Yeni Özellik → Mevcut Kalıp Koruması
+- **Kural:** Bir dosyaya yeni özellik eklerken, mevcut kalıplar **olduğu gibi korunmalıdır**.
+- Dosyanın tamamını yeniden yazmak yerine **sadece ilgili bloğu** ekle/değiştir.
+- `replace_string_in_file` ile minimal değişiklik yap; tüm dosyayı `create_file` ile üzerine yazma.
+- **Neden:** Tüm dosya yeniden yazma işlemleri sırasında mevcut kalıplar (session caching, filtreler vb.) kayboluyor.
+
 ## Git Branch Stratejisi (3 Katmanlı)
 
 | Branch | Amaç | Kural |
