@@ -10,7 +10,7 @@
 
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
-#define MyAppVersion "0.75.1"
+#define MyAppVersion "0.76.0"
 #define MyAppPublisher "HZK"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"
@@ -110,6 +110,15 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Components: tra
 Name: "{group}\{#MyAppName} Kaldır"; Filename: "{uninstallexe}"
 ; Masaüstü
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Dirs]
+; %ProgramData%\KoruMsSqlYedek — hem Tray hem Service tarafından erişilir
+; Users grubuna Modify izni verilir (Tray kullanıcı bağlamında yazabilsin)
+Name: "{commonappdata}\KoruMsSqlYedek"; Permissions: users-modify
+Name: "{commonappdata}\KoruMsSqlYedek\Plans"; Permissions: users-modify
+Name: "{commonappdata}\KoruMsSqlYedek\Config"; Permissions: users-modify
+Name: "{commonappdata}\KoruMsSqlYedek\Logs"; Permissions: users-modify
+Name: "{commonappdata}\KoruMsSqlYedek\UploadState"; Permissions: users-modify
 
 [Registry]
 ; Windows başlangıcında çalıştır (isteğe bağlı)
