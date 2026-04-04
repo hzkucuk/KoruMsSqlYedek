@@ -24,12 +24,18 @@ namespace KoruMsSqlYedek.Win
         [STAThread]
         static void Main()
         {
-            // Serilog yapılandırması
+            // Dizinleri oluştur (%ProgramData%\KoruMsSqlYedek\...)
+            PathHelper.EnsureDirectoriesExist();
+
+            // Serilog yapılandırması (dizinler hazır olduktan sonra)
             ConfigureLogging();
 
-            // Eski AppData klasöründen (MikroSqlDbYedek) migrasyon
-            PathHelper.MigrateLegacyAppData();
-            PathHelper.EnsureDirectoriesExist();
+            // Eski AppData klasöründen (MikroSqlDbYedek → KoruMsSqlYedek) migrasyon
+            PathHelper.MigrateLegacyAppName();
+
+            // %APPDATA% → %ProgramData% migrasyon (v0.76.0+)
+            // Dosyaları kopyalar + DPAPI şifrelerini LocalMachine scope'a dönüştürür
+            DataMigrationHelper.MigrateIfNeeded();
 
             bool createdNew;
             using (var mutex = new Mutex(true, MutexName, out createdNew))
@@ -93,8 +99,7 @@ namespace KoruMsSqlYedek.Win
         private static void ConfigureLogging()
         {
             var logPath = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "KoruMsSqlYedek", "Logs", "mikrosqldb-.log");
+                PathHelper.LogsDirectory, "mikrosqldb-.log");
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()

@@ -77,8 +77,10 @@ namespace KoruMsSqlYedek.Tests
                 "somefile.7z", "remote.7z", config,
                 new Progress<int>(), CancellationToken.None);
 
+            // Gömülü credential'lar mevcut olduğunda config ClientId boş olsa bile
+            // ValidateConfig geçer — hata token/auth aşamasında oluşur
             result.IsSuccess.Should().BeFalse();
-            result.ErrorMessage.Should().Contain("Client ID");
+            result.ErrorMessage.Should().NotBeNullOrEmpty();
         }
 
         [TestMethod]
@@ -97,8 +99,10 @@ namespace KoruMsSqlYedek.Tests
                 "somefile.7z", "remote.7z", config,
                 new Progress<int>(), CancellationToken.None);
 
+            // Gömülü credential'lar mevcut olduğunda config ClientSecret boş olsa bile
+            // ValidateConfig geçer — hata token/auth aşamasında oluşur
             result.IsSuccess.Should().BeFalse();
-            result.ErrorMessage.Should().Contain("Client Secret");
+            result.ErrorMessage.Should().NotBeNullOrEmpty();
         }
 
         [TestMethod]

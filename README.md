@@ -47,9 +47,11 @@ KoruMsSqlYedek.sln
 ├── KoruMsSqlYedek.Core       # Paylaşılan modeller, arayüzler, yardımcılar
 ├── KoruMsSqlYedek.Engine     # İş mantığı: yedekleme, sıkıştırma, bulut, zamanlama
 ├── KoruMsSqlYedek.Win        # System Tray WinForms UI uygulaması
-├── KoruMsSqlYedek.Service    # Windows Service (Topshelf)
+├── KoruMsSqlYedek.Service    # Windows Service (arka plan yedekleme motoru)
 └── KoruMsSqlYedek.Tests      # Unit testler (MSTest)
 ```
+
+**Veri yolu:** Tüm paylaşılan veriler (planlar, ayarlar, upload state, loglar) `%ProgramData%\KoruMsSqlYedek\` altında saklanır. Bu sayede hem Tray uygulaması (kullanıcı bağlamı) hem Windows Service (LocalSystem) aynı verilere erişir.
 
 ---
 

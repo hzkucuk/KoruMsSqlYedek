@@ -1,4 +1,37 @@
-﻿## [0.75.0] - 2026-04-06 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
+﻿## [0.76.0] - 2026-04-06 — Servis Veri Yolu Düzeltmesi & DPAPI Migrasyon
+
+### Düzeltme (Kritik)
+- **Servis %APPDATA% yol uyumsuzluğu çözüldü** — Windows Service (LocalSystem) ile Tray uygulaması (kullanıcı) farklı %APPDATA% kullandığı için plan dosyaları servis tarafından bulunamıyordu. Tüm paylaşılan veriler artık %ProgramData%\KoruMsSqlYedek altında saklanır.
+- **DPAPI CurrentUser → LocalMachine scope geçişi** — Şifreler artık LocalMachine scope ile korunur, böylece hem kullanıcı hem LocalSystem servisi şifreleri çözebilir. Eski CurrentUser şifreleri otomatik dönüştürülür.
+
+### Yeni
+- **DataMigrationHelper:** Eski %APPDATA% konumundaki verileri otomatik olarak %ProgramData%'ya taşır ve DPAPI şifrelerini LocalMachine scope'a dönüştürür
+- **Installer dizin izinleri:** ProgramData dizinlerine Users grubuna Modify izni otomatik verilir
+- PasswordProtector artık çözme sırasında önce LocalMachine, başarısız olursa CurrentUser scope dener (geriye uyumluluk)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Helpers/PathHelper.cs` — CommonApplicationData (%ProgramData%)
+- `KoruMsSqlYedek.Core/Helpers/PasswordProtector.cs` — LocalMachine scope + fallback
+- `KoruMsSqlYedek.Core/Helpers/DataMigrationHelper.cs` — YENİ: migrasyon yardımcısı
+- `KoruMsSqlYedek.Win/Program.cs` — Migrasyon entegrasyonu
+- `Deployment/InnoSetup/KoruMsSqlYedek.iss` — [Dirs] section + versiyon
+
+## [0.75.1] - 2026-04-06 — Anti-Regresyon & Installer Düzeltmesi
+
+### Düzeltme
+- **3 pre-existing test failure düzeltildi** — 1174/1174 test artık geçiyor (0 failure)
+  - GoogleDrive: Gömülü credential fallback nedeniyle MissingClientId/MissingClientSecret testleri güncellendi
+  - FileBackup: SourceDirNotExists test beklentisi düzeltildi (Failed status doğru davranış)
+- **Installer takılma sorunu çözüldü** — `sc.exe` ile servis yönetimi; exe'nin CLI komut desteklememesi nedeniyle sonsuz bekleme engellendi
+- **Build-Release.ps1 RID uyumsuzluğu düzeltildi** — `--no-build` publish'ten kaldırıldı, RID-specific self-restore aktif
+
+### Yeni
+- **TimeoutConstants.cs:** Tüm timeout değerleri merkezi sabit dosyasında tanımlı (FTP, SFTP, Mega, genel)
+- FtpSftpProvider ve MegaProvider timeout'ları TimeoutConstants'tan okunuyor
+- Installer güncelleme öncesi servisi otomatik durduruyor (dosya kilidi önleme)
+- Installer servis açıklaması ve auto-start yapılandırması eklendi
+
+## [0.75.0] - 2026-04-06 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
 
 ### Yeni
 - **FileBackupSourceEditDialog:** Daha geniş pencere (510px), GroupBox ile bölümlendirilmiş alan, tüm kontrollere ToolTip eklendi

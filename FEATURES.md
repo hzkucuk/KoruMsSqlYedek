@@ -2,6 +2,20 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.76.0 — Servis Veri Yolu Düzeltmesi & DPAPI Migrasyon
+- ✅ %APPDATA% → %ProgramData% geçişi (Tray + Service aynı veri yolunu kullanır)
+- ✅ DPAPI CurrentUser → LocalMachine scope geçişi (Service LocalSystem şifre çözebilir)
+- ✅ Otomatik veri migrasyonu (DataMigrationHelper — dosya kopyalama + şifre re-encryption)
+- ✅ Installer ProgramData dizin izinleri (Users: Modify)
+- ✅ PasswordProtector geriye uyumluluk (LocalMachine → CurrentUser fallback)
+
+### v0.75.1 — Anti-Regresyon & Installer Düzeltmesi
+- ✅ 3 pre-existing test failure düzeltildi (1174/1174 → 0 failure)
+- ✅ Installer takılma sorunu çözüldü (sc.exe ile servis yönetimi)
+- ✅ Build-Release.ps1 RID uyumsuzluğu düzeltildi
+- ✅ Merkezi TimeoutConstants sistemi (tüm provider'lar)
+- ✅ Güncelleme öncesi servis otomatik durdurma
+
 ### v0.75.0 — Dialog Düzeni + Zamanlama UX + Dosya Retention Düzeltmesi
 - Dosya kaynak düzenleme diyaloğu yeniden tasarlandı: 510px genişlik, GroupBox bölümleri, kapsamlı ToolTip'ler
 - Zamanlama adımında "Görev" terminolojisi: "Tam Yedek Görevi", "Fark Yedek Görevi" vb. ile anlaşılır etiketler

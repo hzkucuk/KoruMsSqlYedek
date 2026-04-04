@@ -79,11 +79,11 @@ try {
     if (Test-Path $publishBase) { Remove-Item $publishBase -Recurse -Force }
 
     # Win (Tray App)
-    dotnet publish KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj -c $Configuration -o $winPublish --no-build -r win-x64 --self-contained false
+    dotnet publish KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj -c $Configuration -o $winPublish -r win-x64 --self-contained false
     if ($LASTEXITCODE -ne 0) { Write-Error "Win publish basarisiz."; exit 1 }
 
     # Service
-    dotnet publish KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj -c $Configuration -o $servicePublish --no-build -r win-x64 --self-contained false
+    dotnet publish KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj -c $Configuration -o $servicePublish -r win-x64 --self-contained false
     if ($LASTEXITCODE -ne 0) { Write-Error "Service publish basarisiz."; exit 1 }
 
     # --- 5. 7z.dll kopyalama (SevenZipSharp icin gerekli) ---

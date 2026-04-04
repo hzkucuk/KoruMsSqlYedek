@@ -7,7 +7,7 @@ namespace KoruMsSqlYedek.Core.Models
 {
     /// <summary>
     /// Yedekleme planını temsil eden ana model.
-    /// JSON olarak %APPDATA%\KoruMsSqlYedek\Plans\{planId}.json dosyasına kaydedilir.
+    /// JSON olarak %ProgramData%\KoruMsSqlYedek\Plans\{planId}.json dosyasına kaydedilir.
     /// </summary>
     public class BackupPlan
     {

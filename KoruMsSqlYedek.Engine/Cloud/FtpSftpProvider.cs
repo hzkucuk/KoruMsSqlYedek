@@ -8,6 +8,7 @@ using Renci.SshNet;
 using Serilog;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Core.Constants;
 
 namespace KoruMsSqlYedek.Engine.Cloud
 {
@@ -167,9 +168,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
         {
             using (var client = CreateFtpClient(config))
             {
-                client.Config.ConnectTimeout = 30000;
-                client.Config.DataConnectionConnectTimeout = 30000;
-                client.Config.ReadTimeout = 60000;
+                client.Config.ConnectTimeout = TimeoutConstants.FtpConnectTimeoutMs;
+                client.Config.DataConnectionConnectTimeout = TimeoutConstants.FtpDataConnectionTimeoutMs;
+                client.Config.ReadTimeout = TimeoutConstants.FtpReadTimeoutMs;
 
                 await client.AutoConnect(cancellationToken);
 
@@ -233,7 +234,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
         {
             using (var client = CreateFtpClient(config))
             {
-                client.Config.ConnectTimeout = 10000;
+                client.Config.ConnectTimeout = TimeoutConstants.FtpTestConnectionTimeoutMs;
                 await client.AutoConnect(cancellationToken);
                 bool connected = client.IsConnected;
                 await client.Disconnect(cancellationToken);
@@ -306,8 +307,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
             {
                 using (var client = CreateSftpClient(config))
                 {
-                    client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(30);
-                    client.OperationTimeout = TimeSpan.FromMinutes(30);
+                    client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TimeoutConstants.SftpConnectTimeoutSeconds);
+                    client.OperationTimeout = TimeSpan.FromSeconds(TimeoutConstants.SftpOperationTimeoutSeconds);
                     client.Connect();
 
                     Log.Debug("SFTP bağlantısı kuruldu: {Host}:{Port}", config.Host, config.Port ?? 22);
@@ -416,7 +417,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
             {
                 using (var client = CreateSftpClient(config))
                 {
-                    client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(10);
+                    client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TimeoutConstants.FtpTestConnectionTimeoutMs / 1000);
                     client.Connect();
                     bool connected = client.IsConnected;
                     client.Disconnect();

@@ -6,7 +6,7 @@ namespace KoruMsSqlYedek.Core.Models
 {
     /// <summary>
     /// Uygulama genelinde geçerli olan ayarları temsil eder.
-    /// JSON olarak %APPDATA%\KoruMsSqlYedek\Config\appsettings.json dosyasına kaydedilir.
+    /// JSON olarak %ProgramData%\KoruMsSqlYedek\Config\appsettings.json dosyasına kaydedilir.
     /// </summary>
     public class AppSettings
     {
