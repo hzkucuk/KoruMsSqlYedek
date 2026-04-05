@@ -1,4 +1,25 @@
-﻿## [0.87.0] - 2026-06-22 — DevExpress PNG İkonları Tüm Formlara + Animasyonlu Tray İkonları + ListView Grup Collapse Düzeltmesi
+﻿## [0.88.0] - 2026-06-22 — Konsolide Bildirim: Tek E-posta
+
+### Yeni Özellik
+- **Konsolide e-posta bildirimi** — Görev tamamlandığında SQL yedekleme, dosya yedekleme ve bulut yükleme sonuçları tek bir e-posta olarak gönderilir (eskiden 2+ ayrı e-posta gidiyordu).
+- E-postada **görev logu** bölümü — Log ekranındaki tüm adım bilgileri e-postaya dahil edilir.
+- `JobNotificationData` modeli — Tüm görev sonuçlarını (SQL + dosya + bulut) tek nesnede toplar.
+- `INotificationService.NotifyJobCompletedAsync` — Yeni konsolide bildirim metodu.
+- E-posta şablonu: SQL veritabanı tablosu, dosya yedek özeti, bulut yükleme detayları ve görev logu bölümleri.
+
+### Değişiklik
+- `BackupJobExecutor.Execute()` — Per-DB ve per-component bildirimler kaldırıldı; tüm sonuçlar toplanıp görev sonunda tek bildirim gönderilir.
+- `BackupJobExecutor.ExecuteSqlBackupAsync` — `(bool, List<BackupResult>)` tuple döndürür.
+- `BackupJobExecutor.ExecuteFileBackupAsync` — `(bool, List<FileBackupResult>, List<CloudUploadResult>, string)` tuple döndürür.
+- `NotifyIfConfigured` ve `NotifyFileBackupIfConfiguredAsync` metotları kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/JobNotificationData.cs` — Yeni model
+- `KoruMsSqlYedek.Core/Interfaces/INotificationService.cs` — NotifyJobCompletedAsync eklendi
+- `KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs` — NotifyJobCompletedAsync + BuildJobCompletedEmailBody
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — Konsolide bildirim akışı
+
+## [0.87.0] - 2026-06-22 — DevExpress PNG İkonları Tüm Formlara + Animasyonlu Tray İkonları + ListView Grup Collapse Düzeltmesi
 
 ### Yeni Özellik
 - **DevExpress PNG ikonları tüm formlara** — MainWindow, PlanEditForm, CloudTargetEditDialog, FileBackupSourceEditDialog'daki tüm PhosphorIcons kullanımları DevExpress Images kütüphanesi PNG'lerine değiştirildi (23 ikon).

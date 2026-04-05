@@ -41,5 +41,14 @@ namespace KoruMsSqlYedek.Core.Interfaces
             string archiveFileName,
             long archiveSizeBytes,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Görev tamamlandığında tüm sonuçları (SQL + dosya + bulut) tek bir e-posta olarak bildirir.
+        /// Log ekranındaki bilgiler de e-postaya dahil edilir.
+        /// </summary>
+        Task NotifyJobCompletedAsync(
+            JobNotificationData data,
+            NotificationConfig config,
+            CancellationToken cancellationToken);
     }
 }

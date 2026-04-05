@@ -2,6 +2,20 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.88.0 — Konsolide Bildirim: Tek E-posta
+
+- [x] **Konsolide e-posta bildirimi**: Görev tamamlandığında SQL + dosya + bulut sonuçları tek e-postada
+- [x] **Görev logu e-postada**: BackupActivityHub eventleri toplanıp e-postaya ekleniyor
+- [x] **JobNotificationData modeli**: Tüm sonuçları tek nesnede birleştiren veri sınıfı
+- [x] **NotifyJobCompletedAsync**: INotificationService'e yeni konsolide bildirim metodu
+- [x] Per-DB ve per-component bildirimler kaldırıldı
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Core/Models/JobNotificationData.cs` — Yeni
+- [x] `KoruMsSqlYedek.Core/Interfaces/INotificationService.cs` — NotifyJobCompletedAsync
+- [x] `KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs` — Uygulama
+- [x] `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — Konsolide akış
+
 ### v0.87.0 — DevExpress PNG İkonları Tüm Formlara + Animasyonlu Tray İkonları
 - [x] Tüm formlardaki PhosphorIcons → DevExpress PNG ikonlarına geçiş (23 ikon)
 - [x] MainWindow, PlanEditForm, CloudTargetEditDialog, FileBackupSourceEditDialog güncel
