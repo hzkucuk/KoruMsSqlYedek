@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.86.0 — Toolbar: DevExpress PNG İkonları
+- [x] DevExpress Images kütüphanesinden renkli 16x16 PNG ikonlar (7 adet)
+- [x] Toolbar’dan şifre butonları kaldırıldı
+- [x] EmbeddedResource tabanlı ikon yükleme (LoadToolStripIcon)
+
 ### v0.85.0 — Dashboard: Plan Bazlı Gruplandırma
 - [x] Son Yedeklemeler listesi plan adına göre gruplandırıldı (ListViewGroup)
 - [x] Açılır/kapanır gruplar (+/−) — CollapsedState.Expanded

@@ -7,7 +7,7 @@
     <AssemblyName>KoruMsSqlYedek.Win</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <ApplicationVersion>0.85.0.0</ApplicationVersion>
+    <ApplicationVersion>0.86.0.0</ApplicationVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <NoWarn>$(NoWarn);WFO1000;CA1416</NoWarn>
   </PropertyGroup>
@@ -17,6 +17,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\Fonts\Phosphor-Fill.ttf" />
     <EmbeddedResource Include="Resources\Fonts\Phosphor-Bold.ttf" />
+    <EmbeddedResource Include="Resources\Icons\*.png" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac" Version="8.1.1" />

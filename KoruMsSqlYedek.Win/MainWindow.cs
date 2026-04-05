@@ -193,46 +193,55 @@ namespace KoruMsSqlYedek.Win
             _lblNextIcon.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Clock, Theme.ModernTheme.AccentPrimary, 24);
             _lblPlansIcon.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Database, Theme.ModernTheme.StatusWarning, 24);
 
-            // ToolStrip butonları — Phosphor ikonları
-            ApplyToolStripIcons(sz);
+            // ToolStrip butonları — DevExpress ikonları
+            ApplyToolStripIcons();
         }
 
-        private void ApplyToolStripIcons(int sz)
+        private static Image? LoadToolStripIcon(string name)
         {
-            var col = Theme.ModernTheme.TextPrimary;
-            _tsbNew.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PlusCircle, col, sz);
+            var asm = typeof(MainWindow).Assembly;
+            string resourceName = $"KoruMsSqlYedek.Win.Resources.Icons.{name}";
+            using var stream = asm.GetManifestResourceStream(resourceName);
+            if (stream is null) return null;
+            return Image.FromStream(stream);
+        }
+
+        private void ApplyToolStripIcons()
+        {
+            _tsbNew.Image = LoadToolStripIcon("New_16x16.png");
             _tsbNew.Text = "Yeni Görev";
-            _tsbNew.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
-            _tsbNew.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            _tsbNew.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            _tsbNew.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _tsbEdit.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PencilSimple, col, sz);
+            _tsbEdit.Image = LoadToolStripIcon("Edit_16x16.png");
             _tsbEdit.Text = "Düzenle";
-            _tsbEdit.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
-            _tsbEdit.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            _tsbEdit.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            _tsbEdit.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _tsbDelete.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Trash, Theme.ModernTheme.StatusError, sz);
+            _tsbDelete.Image = LoadToolStripIcon("Delete_16x16.png");
             _tsbDelete.Text = "Sil";
-            _tsbDelete.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
-            _tsbDelete.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            _tsbDelete.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            _tsbDelete.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _tsbExport.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Export, col, sz);
+            _tsbExport.Image = LoadToolStripIcon("Export_16x16.png");
             _tsbExport.Text = "Dışa Aktar";
-            _tsbExport.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
-            _tsbExport.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            _tsbExport.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            _tsbExport.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _tsbImport.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Download, col, sz);
+            _tsbImport.Image = LoadToolStripIcon("Import_16x16.png");
             _tsbImport.Text = "İçe Aktar";
-            _tsbImport.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
-            _tsbImport.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            _tsbImport.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            _tsbImport.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _tsbRefreshPlans.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.ArrowClockwise, col, sz);
+            _tsbRefreshPlans.Image = LoadToolStripIcon("Refresh_16x16.png");
             _tsbRefreshPlans.Text = "Yenile";
-            _tsbRefreshPlans.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
-            _tsbRefreshPlans.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            _tsbRefreshPlans.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            _tsbRefreshPlans.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _tsbPassword.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.ImageAndText;
-            _tsbPassword.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            UpdatePasswordButtonIcon();
+            _tslSearchLabel.Image = LoadToolStripIcon("Find_16x16.png");
+            _tslSearchLabel.Text = "Ara:";
+            _tslSearchLabel.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            _tslSearchLabel.TextImageRelation = TextImageRelation.ImageBeforeText;
         }
 
         /// <summary>
@@ -886,114 +895,6 @@ namespace KoruMsSqlYedek.Win
                 }
 
                 return true;
-            }
-        }
-
-        /// <summary>Şifre koruması ayarları dialogunu açar.</summary>
-        private void OnPasswordSetupClick(object sender, EventArgs e)
-        {
-            // _settings henüz yüklenmediyse yükle
-            _settings ??= _settingsManager.Load();
-
-            // Mevcut şifre varsa önce doğrula
-            if (_settings.HasPassword)
-            {
-                if (!CheckPlanPassword()) return;
-            }
-
-            using (var dlg = new PasswordSetupDialog(_settings, _settingsManager))
-            {
-                dlg.ShowDialog(this);
-            }
-
-            // Ayarları yeniden yükle (şifre değişmiş olabilir)
-            _settings = _settingsManager.Load();
-            UpdatePasswordButtonIcon();
-        }
-
-        /// <summary>Şifre korumasını aktif/pasif yapar.</summary>
-        private void OnPasswordToggleClick(object sender, EventArgs e)
-        {
-            _settings ??= _settingsManager.Load();
-
-            if (!_settings.HasPassword)
-            {
-                Theme.ModernMessageBox.Show(
-                    "Önce bir şifre tanımlamanız gerekiyor.",
-                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            // Pasif yapılacaksa şifre doğrulama iste
-            if (_settings.PasswordEnabled)
-            {
-                if (!CheckPlanPassword()) return;
-
-                _settings.PasswordEnabled = false;
-                _settingsManager.Save(_settings);
-
-                Theme.ModernMessageBox.Show(
-                    "Şifre koruması pasif yapıldı.\nGörev işlemleri şifresiz yapılabilir.",
-                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            else
-            {
-                // Aktif yapılacaksa da şifreyi doğrula
-                using (var dlg = new PasswordDialog(_settings, _settingsManager))
-                {
-                    if (dlg.ShowDialog(this) != DialogResult.OK) return;
-                }
-
-                _settings.PasswordEnabled = true;
-                _settingsManager.Save(_settings);
-
-                Theme.ModernMessageBox.Show(
-                    "Şifre koruması aktif yapıldı.\nGörev işlemleri artık şifre ile korunuyor.",
-                    "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-
-            UpdatePasswordButtonIcon();
-        }
-
-        /// <summary>Şifre buton ikonunu duruma göre günceller (3 durum: yok/aktif/pasif).</summary>
-        private void UpdatePasswordButtonIcon()
-        {
-            bool hasPassword = _settings != null && _settings.HasPassword;
-            bool isActive = _settings != null && _settings.IsPasswordProtected;
-
-            char icon;
-            Color color;
-            string tooltip;
-
-            if (!hasPassword)
-            {
-                icon = Theme.PhosphorIcons.ShieldCheck;
-                color = Theme.ModernTheme.TextSecondary;
-                tooltip = "Şifre Koruması Ayarla";
-            }
-            else if (isActive)
-            {
-                icon = Theme.PhosphorIcons.ShieldCheck;
-                color = Theme.ModernTheme.StatusSuccess;
-                tooltip = "Şifre Koruması Aktif";
-            }
-            else
-            {
-                icon = Theme.PhosphorIcons.ShieldSlash;
-                color = Theme.ModernTheme.StatusWarning;
-                tooltip = "Şifre Koruması Pasif";
-            }
-
-            _tsbPassword.Image = Theme.PhosphorIcons.Render(icon, color, 18);
-            _tsbPassword.ToolTipText = tooltip;
-
-            // Dropdown menü metnini güncelle
-            if (_tsmiPasswordToggle != null)
-            {
-                _tsmiPasswordToggle.Text = isActive
-                    ? "🔓 Şifre Korumasını Pasif Yap"
-                    : "🔒 Şifre Korumasını Aktif Yap";
-                _tsmiPasswordToggle.Enabled = hasPassword;
             }
         }
 

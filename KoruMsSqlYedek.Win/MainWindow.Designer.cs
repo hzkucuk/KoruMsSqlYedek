@@ -91,10 +91,6 @@
             _tsSep3 = new System.Windows.Forms.ToolStripSeparator();
             _tslSearchLabel = new System.Windows.Forms.ToolStripLabel();
             _tstSearch = new System.Windows.Forms.ToolStripTextBox();
-            _tsSep4 = new System.Windows.Forms.ToolStripSeparator();
-            _tsbPassword = new System.Windows.Forms.ToolStripSplitButton();
-            _tsmiPasswordToggle = new System.Windows.Forms.ToolStripMenuItem();
-            _tsmiPasswordSetup = new System.Windows.Forms.ToolStripMenuItem();
             _tabLogs = new System.Windows.Forms.TabPage();
             _tlpLogsMain = new System.Windows.Forms.TableLayoutPanel();
             _tlpLogToolbar = new System.Windows.Forms.TableLayoutPanel();
@@ -831,7 +827,7 @@
             // _toolStrip
             // 
             _toolStrip.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
-            _toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { _tsbNew, _tsbEdit, _tsbDelete, _tsSep1, _tsbExport, _tsbImport, _tsSep2, _tsbRefreshPlans, _tsSep3, _tslSearchLabel, _tstSearch, _tsSep4, _tsbPassword });
+            _toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { _tsbNew, _tsbEdit, _tsbDelete, _tsSep1, _tsbExport, _tsbImport, _tsSep2, _tsbRefreshPlans, _tsSep3, _tslSearchLabel, _tstSearch });
             _toolStrip.Location = new System.Drawing.Point(0, 0);
             _toolStrip.Name = "_toolStrip";
             _toolStrip.Padding = new System.Windows.Forms.Padding(12, 7, 12, 7);
@@ -907,33 +903,6 @@
             _tstSearch.Name = "_tstSearch";
             _tstSearch.Size = new System.Drawing.Size(100, 23);
             _tstSearch.TextChanged += OnPlanSearchTextChanged;
-            // 
-            // _tsSep4
-            // 
-            _tsSep4.Name = "_tsSep4";
-            _tsSep4.Size = new System.Drawing.Size(6, 23);
-            // 
-            // _tsbPassword
-            // 
-            _tsbPassword.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { _tsmiPasswordToggle, _tsmiPasswordSetup });
-            _tsbPassword.Name = "_tsbPassword";
-            _tsbPassword.Size = new System.Drawing.Size(46, 20);
-            _tsbPassword.Text = "Şifre";
-            _tsbPassword.ButtonClick += OnPasswordSetupClick;
-            // 
-            // _tsmiPasswordToggle
-            // 
-            _tsmiPasswordToggle.Name = "_tsmiPasswordToggle";
-            _tsmiPasswordToggle.Size = new System.Drawing.Size(210, 22);
-            _tsmiPasswordToggle.Text = "Şifre Korumasını Pasif Yap";
-            _tsmiPasswordToggle.Click += OnPasswordToggleClick;
-            // 
-            // _tsmiPasswordSetup
-            // 
-            _tsmiPasswordSetup.Name = "_tsmiPasswordSetup";
-            _tsmiPasswordSetup.Size = new System.Drawing.Size(210, 22);
-            _tsmiPasswordSetup.Text = "Şifre Ayarları...";
-            _tsmiPasswordSetup.Click += OnPasswordSetupClick;
             // 
             // _tabLogs
             // 
@@ -1888,10 +1857,6 @@
         private System.Windows.Forms.ToolStripSeparator _tsSep3;
         private System.Windows.Forms.ToolStripLabel _tslSearchLabel;
         private System.Windows.Forms.ToolStripTextBox _tstSearch;
-        private System.Windows.Forms.ToolStripSeparator _tsSep4;
-        private System.Windows.Forms.ToolStripSplitButton _tsbPassword;
-        private System.Windows.Forms.ToolStripMenuItem _tsmiPasswordToggle;
-        private System.Windows.Forms.ToolStripMenuItem _tsmiPasswordSetup;
         private System.Windows.Forms.DataGridView _dgvPlans;
         private System.Windows.Forms.ContextMenuStrip _ctxPlan;
         private System.Windows.Forms.ToolStripMenuItem _ctxBackupNow;

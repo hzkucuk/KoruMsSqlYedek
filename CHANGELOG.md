@@ -1,4 +1,20 @@
-﻿## [0.85.1] - 2026-06-21 — Fix: Zamanlanmış görev manualTrigger KeyNotFoundException
+﻿## [0.86.0] - 2026-06-21 — Toolbar: DevExpress PNG İkonları + Şifre Butonları Kaldırıldı
+
+### Yeni Özellik
+- **DevExpress PNG ikonları** — Toolbar butonları DevExpress Images kütüphanesinden renkli 16x16 PNG ikonlar kullanıyor (New, Edit, Delete, Export, Import, Refresh, Find).
+- `LoadToolStripIcon` yardımcı metodu — EmbeddedResource’tan ikon yükleme.
+
+### Kaldırılan
+- Toolbar’dan şifre butonları kaldırıldı (`_tsbPassword`, `_tsmiPasswordToggle`, `_tsmiPasswordSetup`).
+- `UpdatePasswordButtonIcon` metodu ve `OnPasswordSetupClick`, `OnPasswordToggleClick` handler’ları kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs` — ApplyToolStripIcons, LoadToolStripIcon
+- `KoruMsSqlYedek.Win/MainWindow.Designer.cs` — Şifre butonları kaldırıldı
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — EmbeddedResource Icons/*.png
+- `KoruMsSqlYedek.Win/Resources/Icons/` — 7 adet PNG ikon dosyası
+
+## [0.85.1] - 2026-06-21 — Fix: Zamanlanmış görev manualTrigger KeyNotFoundException
 
 ### Düzeltme
 - `BackupJobExecutor.Execute` — `context.MergedJobDataMap.GetString("manualTrigger")` zamanlanmış tetiklemede `KeyNotFoundException` fırlatıyordu. `ContainsKey` kontrolü eklendi.
