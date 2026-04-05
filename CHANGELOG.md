@@ -1,4 +1,16 @@
-﻿## [0.84.0] - 2026-06-21 — E-posta Şablonları: Bulut Yükleme Detayları & Hata Kodları
+﻿## [0.85.0] - 2026-06-21 — Dashboard: Plan Bazlı Gruplandırma
+
+### Yeni Özellik
+- **ListView grup görünümü** — "Son Yedeklemeler" listesi plan adına göre gruplandırıldı. Her grup başlığında plan adı ve yedekleme sayısı gösterilir.
+- **Açılır/kapanır gruplar** — `ListViewGroupCollapsedState.Expanded` ile +/− butonlarıyla gruplar daraltılıp genişletilebilir.
+- `BeginUpdate/EndUpdate` ile performans optimizasyonu.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs` — `LoadRecentBackups()` grup mantığı
+- `KoruMsSqlYedek.Win/Properties/Resources.resx` — `Dashboard_GroupBackupCount` eklendi
+- `KoruMsSqlYedek.Win/Properties/Resources.tr-TR.resx` — `Dashboard_GroupBackupCount` eklendi
+
+## [0.84.0] - 2026-06-21 — E-posta Şablonları: Bulut Yükleme Detayları & Hata Kodları
 
 ### Yeni Özellik
 - **SQL yedekleme bildirimi — bulut yükleme detayları** — Başarılı yüklemelerde uzak dosya yolu (`RemoteFilePath`) ve boyutu, başarısız yüklemelerde detaylı hata mesajı ve deneme sayısı gösterilir.

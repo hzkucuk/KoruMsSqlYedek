@@ -406,19 +406,42 @@ namespace KoruMsSqlYedek.Win
         private void LoadRecentBackups()
         {
             var history = _historyManager.GetRecentHistory(50);
+
+            _lvLastBackups.BeginUpdate();
             _lvLastBackups.Items.Clear();
+            _lvLastBackups.Groups.Clear();
+            _lvLastBackups.ShowGroups = true;
+
+            var groups = new Dictionary<string, ListViewGroup>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var result in history)
             {
-                var item = new ListViewItem(result.StartedAt.ToString("yyyy-MM-dd HH:mm"));
-                item.SubItems.Add(result.PlanName ?? "—");
+                string planName = result.PlanName ?? "—";
+
+                if (!groups.TryGetValue(planName, out ListViewGroup? group))
+                {
+                    group = new ListViewGroup
+                    {
+                        Name = planName,
+                        Header = planName,
+                        CollapsedState = ListViewGroupCollapsedState.Expanded
+                    };
+                    groups[planName] = group;
+                    _lvLastBackups.Groups.Add(group);
+                }
+
+                var item = new ListViewItem(result.StartedAt.ToString("yyyy-MM-dd HH:mm"))
+                {
+                    Group = group,
+                    Tag = result
+                };
+                item.SubItems.Add(planName);
                 item.SubItems.Add(result.DatabaseName ?? "—");
                 item.SubItems.Add(GetBackupTypeName(result.BackupType));
                 item.SubItems.Add(GetStatusName(result.Status));
                 item.SubItems.Add(FormatFileSize(result.CompressedSizeBytes > 0
                     ? result.CompressedSizeBytes
                     : result.FileSizeBytes));
-                item.Tag = result;
 
                 switch (result.Status)
                 {
@@ -436,7 +459,14 @@ namespace KoruMsSqlYedek.Win
                 _lvLastBackups.Items.Add(item);
             }
 
+            // Grup başlıklarına yedekleme sayısını ekle
+            foreach (ListViewGroup grp in _lvLastBackups.Groups)
+            {
+                grp.Header = $"{grp.Name}  —  {grp.Items.Count} " + Res.Get("Dashboard_GroupBackupCount");
+            }
+
             _lvLastBackups.ListViewItemSorter = new LastBackupsItemComparer(_lvSortColumn, _lvSortAscending);
+            _lvLastBackups.EndUpdate();
             AutoResizeListViewColumns(_lvLastBackups);
         }
 

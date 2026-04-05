@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.85.0 — Dashboard: Plan Bazlı Gruplandırma
+- [x] Son Yedeklemeler listesi plan adına göre gruplandırıldı (ListViewGroup)
+- [x] Açılır/kapanır gruplar (+/−) — CollapsedState.Expanded
+- [x] Grup başlığında plan adı ve yedekleme sayısı
+- [x] BeginUpdate/EndUpdate performans optimizasyonu
+
 ### v0.84.0 — E-posta Şablonları: Bulut Yükleme Detayları & Hata Kodları
 - [x] SQL yedek bildirimi: Bulut yükleme detayında uzak dosya yolu, boyut, detaylı hata + deneme sayısı
 - [x] Dosya yedek bildirimi: Arşiv bilgisi, kaynak başına süre/boyut, başarısız dosya listesi, bulut yükleme sonuçları

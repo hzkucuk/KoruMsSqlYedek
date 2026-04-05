@@ -123,6 +123,7 @@ Detaylı bilgi log dosyasında bulunabilir.</value></data>
   <data name="Dashboard_TimeHourFormat" xml:space="preserve"><value>{0} saat</value></data>
   <data name="Dashboard_TimeDayFormat" xml:space="preserve"><value>{0} gün</value></data>
   <data name="Dashboard_TimeAgo" xml:space="preserve"><value>önce</value></data>
+  <data name="Dashboard_GroupBackupCount" xml:space="preserve"><value>yedekleme</value></data>
 
   <!-- ===== PlanList ===== -->
   <data name="PlanList_Title" xml:space="preserve"><value>Yedekleme Planları</value></data>
