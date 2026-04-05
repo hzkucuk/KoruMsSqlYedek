@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.84.0 — E-posta Şablonları: Bulut Yükleme Detayları & Hata Kodları
+- [x] SQL yedek bildirimi: Bulut yükleme detayında uzak dosya yolu, boyut, detaylı hata + deneme sayısı
+- [x] Dosya yedek bildirimi: Arşiv bilgisi, kaynak başına süre/boyut, başarısız dosya listesi, bulut yükleme sonuçları
+- [x] Bulut başarısızlık bildirimi: Provider türü, başarısız hedef sayısı, genişletilmiş hata mesajı
+- [x] Periyodik rapor: Bulut kolonu, hata detayları bölümü, başarısız bulut yüklemeleri bölümü
+- [x] `INotificationService.NotifyFileBackupAsync` ve `BackupJobExecutor` entegrasyonu
+
 ### v0.83.0 — Dosya Yedekleme Fark/Artırımlı Strateji & İlerleme Düzeltmesi
 - [x] Dosya yedekleme stratejisi: Tam (Full), Fark (Differential), Artırımlı (Incremental)
 - [x] JSON manifest sistemi: `file_full.json` + `file_last.json` ile değişen dosya tespiti (LastWriteTimeUtc + Size)

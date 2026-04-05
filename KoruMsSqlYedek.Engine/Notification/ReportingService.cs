@@ -312,7 +312,7 @@ namespace KoruMsSqlYedek.Engine.Notification
             if (results.Count > 0)
             {
                 builder.WriteSectionTitle("Yedekleme Detayları");
-                builder.BeginDetailTable("Tarih", "Veritabanı", "Tür", "Durum", "Boyut", "Süre");
+                builder.BeginDetailTable("Tarih", "Veritabanı", "Tür", "Durum", "Boyut", "Süre", "Bulut");
 
                 int rowIndex = 0;
                 foreach (var r in results.OrderByDescending(x => x.StartedAt).Take(50))
@@ -331,19 +331,89 @@ namespace KoruMsSqlYedek.Engine.Notification
                         ? r.Duration.Value.ToString(@"mm\:ss")
                         : "-";
 
+                    // Bulut yükleme özeti
+                    string cloudText = "-";
+                    string cloudColor = null;
+                    if (r.CloudUploadResults is { Count: > 0 })
+                    {
+                        int cloudOk = r.CloudUploadResults.Count(c => c.IsSuccess);
+                        int cloudTotal = r.CloudUploadResults.Count;
+                        cloudText = $"{cloudOk}/{cloudTotal}";
+                        cloudColor = cloudOk == cloudTotal
+                            ? EmailTemplateBuilder.GetSuccessColor()
+                            : cloudOk > 0
+                                ? EmailTemplateBuilder.GetWarningColor()
+                                : EmailTemplateBuilder.GetFailureColor();
+                    }
+
                     builder.WriteDetailRow(rowIndex++,
                         ($"{r.StartedAt:dd.MM.yy HH:mm}", null),
                         (EmailTemplateBuilder.Encode(r.DatabaseName ?? "-"), null),
                         (r.BackupType.ToString(), null),
                         ($"{statusIcon}", statusColor),
                         (sizeText, null),
-                        (durationText, null));
+                        (durationText, null),
+                        (cloudText, cloudColor));
                 }
 
                 builder.EndDetailTable();
 
                 if (results.Count > 50)
                     builder.WriteInfoBlock($"* Yalnızca son 50 kayıt gösterilmektedir (toplam {results.Count}).");
+
+                // ── Başarısız Yedeklemelerin Hata Detayları ──
+                var failedBackups = results
+                    .Where(r => r.Status == BackupResultStatus.Failed && !string.IsNullOrEmpty(r.ErrorMessage))
+                    .OrderByDescending(x => x.StartedAt)
+                    .Take(10)
+                    .ToList();
+
+                if (failedBackups.Count > 0)
+                {
+                    builder.WriteSectionTitle("Hata Detayları");
+                    builder.BeginDetailTable("Tarih", "Veritabanı", "Hata Mesajı");
+
+                    int errIdx = 0;
+                    foreach (var r in failedBackups)
+                    {
+                        string errMsg = SanitizeForReport(r.ErrorMessage);
+                        builder.WriteDetailRow(errIdx++,
+                            ($"{r.StartedAt:dd.MM.yy HH:mm}", null),
+                            (EmailTemplateBuilder.Encode(r.DatabaseName ?? "-"), null),
+                            (errMsg, EmailTemplateBuilder.GetFailureColor()));
+                    }
+
+                    builder.EndDetailTable();
+                }
+
+                // ── Başarısız Bulut Yüklemeleri ──
+                var failedCloudBackups = results
+                    .Where(r => r.CloudUploadResults is { Count: > 0 } && r.CloudUploadResults.Any(c => !c.IsSuccess))
+                    .OrderByDescending(x => x.StartedAt)
+                    .Take(10)
+                    .ToList();
+
+                if (failedCloudBackups.Count > 0)
+                {
+                    builder.WriteSectionTitle("Başarısız Bulut Yüklemeleri");
+                    builder.BeginDetailTable("Tarih", "Veritabanı", "Hedef", "Deneme", "Hata");
+
+                    int cloudErrIdx = 0;
+                    foreach (var r in failedCloudBackups)
+                    {
+                        foreach (var c in r.CloudUploadResults.Where(x => !x.IsSuccess))
+                        {
+                            builder.WriteDetailRow(cloudErrIdx++,
+                                ($"{r.StartedAt:dd.MM.yy HH:mm}", null),
+                                (EmailTemplateBuilder.Encode(r.DatabaseName ?? "-"), null),
+                                (EmailTemplateBuilder.Encode(c.DisplayName ?? c.ProviderType.ToString()), null),
+                                ($"{c.RetryCount + 1}", null),
+                                (SanitizeForReport(c.ErrorMessage), EmailTemplateBuilder.GetFailureColor()));
+                        }
+                    }
+
+                    builder.EndDetailTable();
+                }
             }
             else
             {
@@ -351,6 +421,32 @@ namespace KoruMsSqlYedek.Engine.Notification
             }
 
             return builder.Build();
+        }
+
+        /// <summary>
+        /// Rapor için hata mesajını güvenli biçimde kısaltır.
+        /// </summary>
+        private static string SanitizeForReport(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return "Bilinmeyen hata";
+
+            // Stack trace varsa kaldır
+            int stackIdx = message.IndexOf("   at ", StringComparison.Ordinal);
+            if (stackIdx > 0)
+                message = message.Substring(0, stackIdx).Trim();
+
+            // Dosya yollarını gizle
+            message = System.Text.RegularExpressions.Regex.Replace(
+                message,
+                @"[A-Za-z]:\\[^\s""']+|\\\\[^\s""']+",
+                "[yol]");
+
+            const int maxLength = 400;
+            if (message.Length > maxLength)
+                message = message.Substring(0, maxLength) + "…";
+
+            return System.Net.WebUtility.HtmlEncode(message);
         }
     }
 }

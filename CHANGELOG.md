@@ -1,4 +1,23 @@
-﻿## [0.83.1] - 2026-06-21 — İlerleme Çubuğu Ağırlık Modeli Düzeltmesi
+﻿## [0.84.0] - 2026-06-21 — E-posta Şablonları: Bulut Yükleme Detayları & Hata Kodları
+
+### Yeni Özellik
+- **SQL yedekleme bildirimi — bulut yükleme detayları** — Başarılı yüklemelerde uzak dosya yolu (`RemoteFilePath`) ve boyutu, başarısız yüklemelerde detaylı hata mesajı ve deneme sayısı gösterilir.
+- **Dosya yedekleme bildirimi — zengin içerik** — Arşiv dosyası adı/boyutu, kaynak başına süre/boyut, başarısız dosya listesi (`FailedFiles`), bulut yükleme sonuçları (uzak yol, boyut, hata). Daha önce gönderilmeyen dosya yedek bildirimi artık `BackupJobExecutor`'dan çağrılıyor.
+- **Bulut başarısızlık bildirimi — detaylı hata** — Provider türü, başarısız hedef sayısı, hata mesajı limiti 300→500 karakter.
+- **Periyodik rapor — bulut & hata bölümleri** — Detay tablosuna “Bulut” kolonu (başarılı/toplam), “Hata Detayları” bölümü (başarısız yedeklemelerin hata mesajları), “Başarısız Bulut Yüklemeleri” bölümü (hedef, deneme, hata).
+
+### Değişiklik
+- `INotificationService` — `NotifyFileBackupAsync` metodu eklendi (bulut sonuçları + arşiv bilgisi parametreleri).
+- `EmailNotificationService` — `FormatErrorDetail`, `FormatBytes` yardımcı metotları.
+- `ReportingService` — `SanitizeForReport` yardımcı metodu.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Interfaces/INotificationService.cs` — NotifyFileBackupAsync eklendi
+- `KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs` — Tüm e-posta şablonları zenginleştirildi
+- `KoruMsSqlYedek.Engine/Notification/ReportingService.cs` — Rapor şablonu güncellendi
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — NotifyFileBackupIfConfiguredAsync eklendi
+
+## [0.83.1] - 2026-06-21 — İlerleme Çubuğu Ağırlık Modeli Düzeltmesi
 
 ### Düzeltme
 - **İlerleme çubuğu dosya yedeklemede %100'e zıplıyor** — Bulut hedefi olmayan planlarda dosya yedekleme aşamaları (kopyalama, sıkıştırma, temizlik) için ağırlık dağılımı düzeltildi.

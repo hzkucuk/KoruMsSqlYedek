@@ -746,12 +746,14 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             if (CloudOrchestrator == null)
             {
                 Log.Warning("Dosya yedekleme: CloudOrchestrator null, bulut yüklemesi atlanıyor. Plan={PlanName}", plan.PlanName);
+                await NotifyFileBackupIfConfiguredAsync(results, plan, null, archivePath, ct);
                 return true;
             }
 
             if (plan.CloudTargets == null || !plan.CloudTargets.Any(t => t.IsEnabled))
             {
                 Log.Information("Dosya yedekleme: Aktif bulut hedefi yok, yükleme atlanıyor. Plan={PlanName}", plan.PlanName);
+                await NotifyFileBackupIfConfiguredAsync(results, plan, null, archivePath, ct);
                 return true;
             }
 
@@ -799,6 +801,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         Log.Warning(notifyEx, "Bulut upload başarısızlık bildirimi gönderilemedi: {PlanName}", plan.PlanName);
                     }
                 }
+
+                // Dosya yedekleme genel bildirimi (bulut sonuçları dahil)
+                await NotifyFileBackupIfConfiguredAsync(results, plan, uploadResults, archivePath, ct);
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
@@ -924,6 +929,31 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     // Bildirim hatası yedek başarısını ETKİLEMEZ
                     Log.Error(ex, "Bildirim gönderilemedi: {CorrelationId}", result.CorrelationId);
                 }
+            }
+        }
+
+        private async Task NotifyFileBackupIfConfiguredAsync(
+            List<FileBackupResult> results, BackupPlan plan,
+            List<CloudUploadResult> cloudUploadResults, string archivePath, CancellationToken ct)
+        {
+            if (NotificationService == null || plan.Notifications == null)
+                return;
+
+            try
+            {
+                string archiveFileName = !string.IsNullOrEmpty(archivePath) ? Path.GetFileName(archivePath) : null;
+                long archiveSizeBytes = 0;
+                if (!string.IsNullOrEmpty(archivePath) && File.Exists(archivePath))
+                {
+                    try { archiveSizeBytes = new FileInfo(archivePath).Length; } catch { }
+                }
+
+                await NotificationService.NotifyFileBackupAsync(
+                    results, plan, cloudUploadResults, archiveFileName, archiveSizeBytes, ct);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Dosya yedek bildirimi gönderilemedi: {PlanName}", plan.PlanName);
             }
         }
     }

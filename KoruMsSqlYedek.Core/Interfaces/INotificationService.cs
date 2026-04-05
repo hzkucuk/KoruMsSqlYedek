@@ -29,5 +29,17 @@ namespace KoruMsSqlYedek.Core.Interfaces
             string fileName,
             NotificationConfig config,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Dosya yedekleme sonuçlarını bildirir.
+        /// Bulut yükleme sonuçları ve arşiv bilgisi dahil.
+        /// </summary>
+        Task NotifyFileBackupAsync(
+            List<FileBackupResult> results,
+            BackupPlan plan,
+            List<CloudUploadResult> cloudUploadResults,
+            string archiveFileName,
+            long archiveSizeBytes,
+            CancellationToken cancellationToken);
     }
 }

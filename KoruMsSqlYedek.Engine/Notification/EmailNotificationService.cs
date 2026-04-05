@@ -211,18 +211,35 @@ namespace KoruMsSqlYedek.Engine.Notification
             if (result.CloudUploadResults is { Count: > 0 })
             {
                 tmpl.WriteSectionTitle("Bulut Yükleme");
-                tmpl.BeginDetailTable("Hedef", "Durum", "Detay");
+                tmpl.BeginDetailTable("Hedef", "Durum", "Uzak Yol", "Detay");
 
                 int idx = 0;
                 foreach (var cloud in result.CloudUploadResults)
                 {
                     string statusIcon = cloud.IsSuccess ? "✓" : "✗";
                     string color = EmailTemplateBuilder.GetStatusColor(cloud.IsSuccess);
-                    string detail = cloud.IsSuccess ? "-" : SanitizeForEmail(cloud.ErrorMessage);
+
+                    string remotePath = cloud.IsSuccess && !string.IsNullOrEmpty(cloud.RemoteFilePath)
+                        ? EmailTemplateBuilder.Encode(cloud.RemoteFilePath)
+                        : "-";
+
+                    string detail;
+                    if (cloud.IsSuccess)
+                    {
+                        detail = cloud.RemoteFileSizeBytes > 0
+                            ? FormatBytes(cloud.RemoteFileSizeBytes)
+                            : "Yüklendi";
+                    }
+                    else
+                    {
+                        string errorDetail = FormatErrorDetail(cloud.ErrorMessage, cloud.RetryCount);
+                        detail = errorDetail;
+                    }
 
                     tmpl.WriteDetailRow(idx++,
                         (EmailTemplateBuilder.Encode(cloud.DisplayName), null),
                         ($"{statusIcon}", color),
+                        (remotePath, null),
                         (detail, cloud.IsSuccess ? null : color));
                 }
 
@@ -243,6 +260,9 @@ namespace KoruMsSqlYedek.Engine.Notification
         public async Task NotifyFileBackupAsync(
             List<FileBackupResult> results,
             BackupPlan plan,
+            List<CloudUploadResult> cloudUploadResults,
+            string archiveFileName,
+            long archiveSizeBytes,
             CancellationToken cancellationToken)
         {
             if (plan?.Notifications == null || !plan.Notifications.EmailEnabled)
@@ -294,7 +314,8 @@ namespace KoruMsSqlYedek.Engine.Notification
 
                 var bodyBuilder = new BodyBuilder
                 {
-                    HtmlBody = BuildFileBackupEmailBody(results, plan.PlanName, allSuccess)
+                    HtmlBody = BuildFileBackupEmailBody(results, plan.PlanName, allSuccess,
+                        cloudUploadResults, archiveFileName, archiveSizeBytes)
                 };
                 message.Body = bodyBuilder.ToMessageBody();
 
@@ -328,13 +349,15 @@ namespace KoruMsSqlYedek.Engine.Notification
         }
 
         private string BuildFileBackupEmailBody(
-            List<FileBackupResult> results, string planName, bool allSuccess)
+            List<FileBackupResult> results, string planName, bool allSuccess,
+            List<CloudUploadResult> cloudUploadResults, string archiveFileName, long archiveSizeBytes)
         {
             string statusText = allSuccess ? "Başarılı" : "Kısmi Başarı";
 
             int totalCopied = results.Sum(r => r.FilesCopied);
             int totalSkipped = results.Sum(r => r.FilesSkipped);
             long totalSize = results.Sum(r => r.TotalSizeBytes);
+            int failedSourceCount = results.Count(r => r.Status == BackupResultStatus.Failed);
 
             var tmpl = new EmailTemplateBuilder();
             tmpl.WriteHeader("Koru MsSql Yedek — Dosya Yedekleme", planName);
@@ -345,25 +368,122 @@ namespace KoruMsSqlYedek.Engine.Notification
             tmpl.WriteTableRow("Plan", EmailTemplateBuilder.Encode(planName));
             tmpl.WriteTableRow("Kopyalanan Dosya", totalCopied.ToString());
             tmpl.WriteTableRow("Atlanan Dosya", totalSkipped.ToString());
-            tmpl.WriteTableRow("Toplam Boyut", $"{totalSize / BytesPerMb:F1} MB");
+            tmpl.WriteTableRow("Toplam Boyut", FormatBytes(totalSize));
+
+            if (!string.IsNullOrEmpty(archiveFileName))
+                tmpl.WriteTableRow("Arşiv Dosyası", EmailTemplateBuilder.Encode(archiveFileName));
+
+            if (archiveSizeBytes > 0)
+            {
+                double ratio = totalSize > 0
+                    ? (1.0 - (double)archiveSizeBytes / totalSize) * 100
+                    : 0;
+                tmpl.WriteTableRow("Arşiv Boyutu", $"{FormatBytes(archiveSizeBytes)} (%{ratio:F0} kazanç)");
+            }
+
+            if (failedSourceCount > 0)
+                tmpl.WriteTableRow("Başarısız Kaynak", failedSourceCount.ToString(),
+                    EmailTemplateBuilder.GetFailureColor());
+
             tmpl.EndTable();
 
+            // Kaynak detayları
             tmpl.WriteSectionTitle("Kaynak Detayları");
-            tmpl.BeginDetailTable("Kaynak", "Dosya", "Durum");
+            tmpl.BeginDetailTable("Kaynak", "Dosya", "Boyut", "Süre", "Durum");
 
             int idx = 0;
             foreach (var r in results)
             {
-                string statusIcon = r.Status == BackupResultStatus.Success ? "✓" : "✗";
-                string color = EmailTemplateBuilder.GetStatusColor(r.Status == BackupResultStatus.Success);
+                bool isOk = r.Status == BackupResultStatus.Success;
+                string statusIcon = isOk ? "✓" : "✗";
+                string color = EmailTemplateBuilder.GetStatusColor(isOk);
+                string sizeText = r.TotalSizeBytes > 0 ? FormatBytes(r.TotalSizeBytes) : "-";
+                string durationText = r.Duration.HasValue
+                    ? r.Duration.Value.ToString(@"mm\:ss")
+                    : "-";
 
                 tmpl.WriteDetailRow(idx++,
                     (EmailTemplateBuilder.Encode(r.SourceName), null),
                     ($"{r.FilesCopied} dosya", null),
+                    (sizeText, null),
+                    (durationText, null),
                     ($"{statusIcon} {r.Status}", color));
             }
 
             tmpl.EndDetailTable();
+
+            // Başarısız kaynakların hata detayları
+            var failedSources = results.Where(r =>
+                r.Status != BackupResultStatus.Success &&
+                (!string.IsNullOrEmpty(r.ErrorMessage) || r.FailedFiles.Count > 0)).ToList();
+
+            if (failedSources.Count > 0)
+            {
+                tmpl.WriteSectionTitle("Hata Detayları");
+                foreach (var failed in failedSources)
+                {
+                    if (!string.IsNullOrEmpty(failed.ErrorMessage))
+                    {
+                        tmpl.WriteErrorBlock(
+                            $"<b>{EmailTemplateBuilder.Encode(failed.SourceName)}:</b> {SanitizeForEmail(failed.ErrorMessage)}");
+                    }
+
+                    if (failed.FailedFiles.Count > 0)
+                    {
+                        tmpl.BeginDetailTable("Başarısız Dosya", "Hata");
+                        int fIdx = 0;
+                        foreach (var ff in failed.FailedFiles.Take(20))
+                        {
+                            tmpl.WriteDetailRow(fIdx++,
+                                (SanitizeForEmail(ff.FilePath), null),
+                                (SanitizeForEmail(ff.ErrorMessage), EmailTemplateBuilder.GetFailureColor()));
+                        }
+                        tmpl.EndDetailTable();
+
+                        if (failed.FailedFiles.Count > 20)
+                            tmpl.WriteInfoBlock($"* Yalnızca ilk 20 hata gösterilmektedir (toplam {failed.FailedFiles.Count}).");
+                    }
+                }
+            }
+
+            // Bulut yükleme sonuçları
+            if (cloudUploadResults is { Count: > 0 })
+            {
+                tmpl.WriteSectionTitle("Bulut Yükleme");
+                tmpl.BeginDetailTable("Hedef", "Durum", "Uzak Yol", "Detay");
+
+                int cIdx = 0;
+                foreach (var cloud in cloudUploadResults)
+                {
+                    string cloudStatusIcon = cloud.IsSuccess ? "✓" : "✗";
+                    string cloudColor = EmailTemplateBuilder.GetStatusColor(cloud.IsSuccess);
+
+                    string remotePath = cloud.IsSuccess && !string.IsNullOrEmpty(cloud.RemoteFilePath)
+                        ? EmailTemplateBuilder.Encode(cloud.RemoteFilePath)
+                        : "-";
+
+                    string detail;
+                    if (cloud.IsSuccess)
+                    {
+                        detail = cloud.RemoteFileSizeBytes > 0
+                            ? FormatBytes(cloud.RemoteFileSizeBytes)
+                            : "Yüklendi";
+                    }
+                    else
+                    {
+                        detail = FormatErrorDetail(cloud.ErrorMessage, cloud.RetryCount);
+                    }
+
+                    tmpl.WriteDetailRow(cIdx++,
+                        (EmailTemplateBuilder.Encode(cloud.DisplayName), null),
+                        ($"{cloudStatusIcon}", cloudColor),
+                        (remotePath, null),
+                        (detail, cloud.IsSuccess ? null : cloudColor));
+                }
+
+                tmpl.EndDetailTable();
+            }
+
             return tmpl.Build();
         }
 
@@ -388,12 +508,34 @@ namespace KoruMsSqlYedek.Engine.Notification
                 "[yol gizlendi]");
 
             // Uzun mesajları kısalt
-            const int maxLength = 300;
+            const int maxLength = 500;
             if (message.Length > maxLength)
                 message = message.Substring(0, maxLength) + "…";
 
             // HTML encode — XSS önlemi
             return System.Net.WebUtility.HtmlEncode(message);
+        }
+
+        /// <summary>
+        /// Hata mesajını detaylı formatta biçimlendirir (deneme sayısı + mesaj).
+        /// </summary>
+        private static string FormatErrorDetail(string errorMessage, int retryCount)
+        {
+            string sanitized = SanitizeForEmail(errorMessage);
+            string retryInfo = retryCount > 0 ? $"({retryCount + 1} deneme) " : "";
+            return $"{retryInfo}{sanitized}";
+        }
+
+        /// <summary>
+        /// Byte değerini okunabilir boyut metnine dönüştürür.
+        /// </summary>
+        private static string FormatBytes(long bytes)
+        {
+            if (bytes <= 0) return "—";
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024.0).ToString("F1") + " KB";
+            if (bytes < 1024L * 1024 * 1024) return (bytes / (1024.0 * 1024)).ToString("F1") + " MB";
+            return (bytes / (1024.0 * 1024 * 1024)).ToString("F2") + " GB";
         }
 
         /// <inheritdoc />
@@ -490,19 +632,24 @@ namespace KoruMsSqlYedek.Engine.Notification
             tmpl.WriteTableRow("Plan", EmailTemplateBuilder.Encode(planName));
             tmpl.WriteTableRow("Dosya", EmailTemplateBuilder.Encode(fileName));
             tmpl.WriteTableRow("Tarih", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            tmpl.WriteTableRow("Başarısız Hedef Sayısı", failedResults?.Count.ToString() ?? "0",
+                EmailTemplateBuilder.GetFailureColor());
             tmpl.EndTable();
 
             if (failedResults is { Count: > 0 })
             {
                 tmpl.WriteSectionTitle("Provider Detayları");
-                tmpl.BeginDetailTable("Hedef", "Deneme", "Hata");
+                tmpl.BeginDetailTable("Hedef", "Tür", "Deneme", "Hata Mesajı");
 
                 int idx = 0;
                 foreach (var result in failedResults)
                 {
                     string color = EmailTemplateBuilder.GetStatusColor(false);
+                    string providerType = result.ProviderType.ToString();
+
                     tmpl.WriteDetailRow(idx++,
                         (EmailTemplateBuilder.Encode(result.DisplayName), null),
+                        (providerType, null),
                         ($"{result.RetryCount + 1} deneme", null),
                         (SanitizeForEmail(result.ErrorMessage), color));
                 }
