@@ -81,7 +81,11 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void ApplyIcons()
         {
-            // Navigasyon — Geri/İleri metin okları Designer.cs'de tanımlı, ikon yok
+            // Navigasyon
+            _btnBack.Image = LoadIcon("Import_16x16.png");
+            _btnBack.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            _btnNext.Image = LoadIcon("Export_16x16.png");
+            _btnNext.TextImageRelation = System.Windows.Forms.TextImageRelation.TextBeforeImage;
             _btnSave.Image = LoadIcon("Save_16x16.png");
             _btnSave.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             _btnCancel.Image = LoadIcon("Cancel_16x16.png");

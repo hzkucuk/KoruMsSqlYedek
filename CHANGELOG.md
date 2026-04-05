@@ -1,4 +1,13 @@
-﻿## [0.88.0] - 2026-06-22 — Konsolide Bildirim: Tek E-posta
+﻿## [0.89.0] - 2026-06-22 — UI Düzeltmeleri: Ayarlar ComboBox, Yedek Türü Genişlik, Navigasyon İkonları
+
+### Düzeltme
+- **Ayarlar > Genel sekmesinde görünmeyen ComboBox'lar** — Dil, Tema ve Log Konsol Teması ComboBox'ları 1px genişlikteydi (Size=1,34). `Dock=Fill` eklenerek TLP sütununa tam genişletildi.
+- **"Yedek Türü" ComboBox'u çok dar** — "Incremental (Artırımlı)" metni sığmıyordu. `Dock=Fill` eklenerek genişletildi.
+
+### İyileştirme
+- **İleri/Geri butonlarına DevExpress ikonları** — PlanEditForm navigasyon butonlarına Import_16x16.png (Geri) ve Export_16x16.png (İleri) ikonları eklendi. Unicode ok karakterleri kaldırıldı.
+
+## [0.88.0] - 2026-06-22 — Konsolide Bildirim: Tek E-posta
 
 ### Yeni Özellik
 - **Konsolide e-posta bildirimi** — Görev tamamlandığında SQL yedekleme, dosya yedekleme ve bulut yükleme sonuçları tek bir e-posta olarak gönderilir (eskiden 2+ ayrı e-posta gidiyordu).

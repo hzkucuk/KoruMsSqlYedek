@@ -726,8 +726,9 @@
             _cmbBackupType.Items.AddRange(new object[] { "Full (Tam)", "Differential (Fark)", "Incremental (Artırımlı)" });
             _cmbBackupType.Location = new System.Drawing.Point(97, 10);
             _cmbBackupType.Margin = new System.Windows.Forms.Padding(3, 5, 3, 3);
+            _cmbBackupType.Dock = System.Windows.Forms.DockStyle.Fill;
             _cmbBackupType.Name = "_cmbBackupType";
-            _cmbBackupType.Size = new System.Drawing.Size(92, 34);
+            _cmbBackupType.Size = new System.Drawing.Size(250, 34);
             _cmbBackupType.TabIndex = 1;
             // 
             // _lblBackupStatus
@@ -1320,8 +1321,9 @@
             _cmbLanguage.Items.AddRange(new object[] { "Türkçe (tr-TR)", "English (en-US)" });
             _cmbLanguage.Location = new System.Drawing.Point(156, 7);
             _cmbLanguage.Margin = new System.Windows.Forms.Padding(3, 7, 3, 3);
+            _cmbLanguage.Dock = System.Windows.Forms.DockStyle.Fill;
             _cmbLanguage.Name = "_cmbLanguage";
-            _cmbLanguage.Size = new System.Drawing.Size(1, 34);
+            _cmbLanguage.Size = new System.Drawing.Size(250, 34);
             _cmbLanguage.TabIndex = 1;
             // 
             // _chkStartWithWindows
@@ -1483,8 +1485,9 @@
             _cmbTheme.Items.AddRange(new object[] { "Koyu (Dark)", "Açık (Light)" });
             _cmbTheme.Location = new System.Drawing.Point(156, 234);
             _cmbTheme.Margin = new System.Windows.Forms.Padding(3, 7, 3, 3);
+            _cmbTheme.Dock = System.Windows.Forms.DockStyle.Fill;
             _cmbTheme.Name = "_cmbTheme";
-            _cmbTheme.Size = new System.Drawing.Size(1, 34);
+            _cmbTheme.Size = new System.Drawing.Size(250, 34);
             _cmbTheme.TabIndex = 14;
             // 
             // _lblLogColorScheme
@@ -1511,8 +1514,9 @@
             _cmbLogColorScheme.ItemHeight = 28;
             _cmbLogColorScheme.Location = new System.Drawing.Point(156, 278);
             _cmbLogColorScheme.Margin = new System.Windows.Forms.Padding(3, 7, 3, 3);
+            _cmbLogColorScheme.Dock = System.Windows.Forms.DockStyle.Fill;
             _cmbLogColorScheme.Name = "_cmbLogColorScheme";
-            _cmbLogColorScheme.Size = new System.Drawing.Size(1, 34);
+            _cmbLogColorScheme.Size = new System.Drawing.Size(250, 34);
             _cmbLogColorScheme.TabIndex = 16;
             // 
             // _tabSmtp

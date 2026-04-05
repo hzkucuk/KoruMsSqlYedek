@@ -767,13 +767,13 @@
             _btnSave.Dock = System.Windows.Forms.DockStyle.Right;
             _btnSave.Click += OnSaveClick;
 
-            _btnNext.Text = "\u0130leri \u25ba";
+            _btnNext.Text = "\u0130leri";
             _btnNext.ButtonStyle = Theme.ModernButtonStyle.Primary;
             _btnNext.Size = new System.Drawing.Size(100, 34);
             _btnNext.Dock = System.Windows.Forms.DockStyle.Right;
             _btnNext.Click += OnNextClick;
 
-            _btnBack.Text = "\u25c4 Geri";
+            _btnBack.Text = "Geri";
             _btnBack.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnBack.Size = new System.Drawing.Size(100, 34);
             _btnBack.Dock = System.Windows.Forms.DockStyle.Right;

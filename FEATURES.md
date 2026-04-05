@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.89.0 — UI Düzeltmeleri: Ayarlar ComboBox, Navigasyon İkonları
+- Ayarlar > Genel: Dil, Tema, Log Konsol Teması ComboBox'ları görünür hale getirildi (Dock=Fill)
+- Yedek Türü ComboBox'u genişletildi (Dock=Fill)
+- PlanEditForm İleri/Geri butonlarına DevExpress PNG ikonları eklendi (Import/Export)
+
 ### v0.88.0 — Konsolide Bildirim: Tek E-posta
 
 - [x] **Konsolide e-posta bildirimi**: Görev tamamlandığında SQL + dosya + bulut sonuçları tek e-postada
