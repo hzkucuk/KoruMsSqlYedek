@@ -20,9 +20,6 @@ namespace KoruMsSqlYedek.Win.Forms
 
             _lblSourceName = new System.Windows.Forms.Label();
             _txtSourceName = new System.Windows.Forms.TextBox();
-            _lblSourcePath = new System.Windows.Forms.Label();
-            _txtSourcePath = new System.Windows.Forms.TextBox();
-            _btnBrowsePath = new Theme.ModernButton();
             _treeView = new Theme.FileSystemCheckedTreeView();
             _lblStatus = new System.Windows.Forms.Label();
             _grpPatterns = new System.Windows.Forms.GroupBox();
@@ -57,40 +54,26 @@ namespace KoruMsSqlYedek.Win.Forms
             _txtSourceName.Size = new System.Drawing.Size(665, 23);
             _toolTip.SetToolTip(_txtSourceName, "Bu kayna\u011f\u0131 tan\u0131mlayan k\u0131sa bir isim.\n\u00d6rnek: Outlook PST, Proje Dosyalar\u0131");
 
-            // ── _lblSourcePath ──
-            _lblSourcePath.AutoSize = true;
-            _lblSourcePath.Location = new System.Drawing.Point(15, 51);
-            _lblSourcePath.Name = "_lblSourcePath";
-            _lblSourcePath.Text = "Dizin Yolu:";
-
-            // ── _txtSourcePath ──
-            _txtSourcePath.Anchor = System.Windows.Forms.AnchorStyles.Top
-                | System.Windows.Forms.AnchorStyles.Left
+            // ── _btnNavigate ──
+            _btnNavigate = new Theme.ModernButton();
+            _btnNavigate.Anchor = System.Windows.Forms.AnchorStyles.Top
                 | System.Windows.Forms.AnchorStyles.Right;
-            _txtSourcePath.Location = new System.Drawing.Point(120, 48);
-            _txtSourcePath.Name = "_txtSourcePath";
-            _txtSourcePath.Size = new System.Drawing.Size(625, 23);
-            _toolTip.SetToolTip(_txtSourcePath, "Yedeklenecek klas\u00f6r\u00fcn tam yolu.\n\u00d6rnek: C:\\Users\\Belgeler\nEnter ile TreeView'da konuma gidin.");
-
-            // ── _btnBrowsePath ──
-            _btnBrowsePath.Anchor = System.Windows.Forms.AnchorStyles.Top
-                | System.Windows.Forms.AnchorStyles.Right;
-            _btnBrowsePath.ButtonStyle = Theme.ModernButtonStyle.Secondary;
-            _btnBrowsePath.Location = new System.Drawing.Point(750, 47);
-            _btnBrowsePath.Name = "_btnBrowsePath";
-            _btnBrowsePath.Size = new System.Drawing.Size(35, 26);
-            _btnBrowsePath.Text = "...";
-            _btnBrowsePath.Click += OnBrowseSourcePath;
-            _toolTip.SetToolTip(_btnBrowsePath, "Klas\u00f6r se\u00e7mek i\u00e7in t\u0131klay\u0131n");
+            _btnNavigate.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnNavigate.Location = new System.Drawing.Point(645, 46);
+            _btnNavigate.Name = "_btnNavigate";
+            _btnNavigate.Size = new System.Drawing.Size(140, 26);
+            _btnNavigate.Text = "\uD83D\uDCC1 Konuma Git...";
+            _btnNavigate.Click += OnNavigateToFolder;
+            _toolTip.SetToolTip(_btnNavigate, "Bir klas\u00f6re h\u0131zl\u0131ca gidin.\nTreeView'da o konumu a\u00e7ar.");
 
             // ── _treeView ──
             _treeView.Anchor = System.Windows.Forms.AnchorStyles.Top
                 | System.Windows.Forms.AnchorStyles.Bottom
                 | System.Windows.Forms.AnchorStyles.Left
                 | System.Windows.Forms.AnchorStyles.Right;
-            _treeView.Location = new System.Drawing.Point(15, 80);
+            _treeView.Location = new System.Drawing.Point(15, 77);
             _treeView.Name = "_treeView";
-            _treeView.Size = new System.Drawing.Size(770, 376);
+            _treeView.Size = new System.Drawing.Size(770, 379);
 
             // ── _lblStatus ──
             _lblStatus.Anchor = System.Windows.Forms.AnchorStyles.Bottom
@@ -223,9 +206,7 @@ namespace KoruMsSqlYedek.Win.Forms
             MinimumSize = new System.Drawing.Size(680, 560);
             Controls.Add(_lblSourceName);
             Controls.Add(_txtSourceName);
-            Controls.Add(_lblSourcePath);
-            Controls.Add(_txtSourcePath);
-            Controls.Add(_btnBrowsePath);
+            Controls.Add(_btnNavigate);
             Controls.Add(_treeView);
             Controls.Add(_lblStatus);
             Controls.Add(_grpPatterns);
@@ -253,9 +234,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private System.Windows.Forms.ToolTip _toolTip;
         private System.Windows.Forms.Label _lblSourceName;
         private System.Windows.Forms.TextBox _txtSourceName;
-        private System.Windows.Forms.Label _lblSourcePath;
-        private System.Windows.Forms.TextBox _txtSourcePath;
-        private Theme.ModernButton _btnBrowsePath;
+        private Theme.ModernButton _btnNavigate;
         private Theme.FileSystemCheckedTreeView _treeView;
         private System.Windows.Forms.Label _lblStatus;
         private System.Windows.Forms.GroupBox _grpPatterns;

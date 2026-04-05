@@ -95,8 +95,12 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     try
                     {
                         // Kaynak dizinin volume'unu al ve snapshot oluştur
-                        // CreateSnapshot bloke edici VSS çağrıları içerir — Task.Run ile offload et
+                        // SelectedPaths varsa ortak kök, yoksa SourcePath kullanılır
                         string volumeRoot = Path.GetPathRoot(source.SourcePath);
+                        if (string.IsNullOrEmpty(volumeRoot) && source.SelectedPaths?.Count > 0)
+                            volumeRoot = Path.GetPathRoot(source.SelectedPaths[0]);
+
+                        // CreateSnapshot bloke edici VSS çağrıları içerir — Task.Run ile offload et
                         snapshotId = await Task.Run(
                             () => _vssService.CreateSnapshot(volumeRoot, cancellationToken),
                             CancellationToken.None);
@@ -337,45 +341,41 @@ namespace KoruMsSqlYedek.Engine.FileBackup
         {
             var files = new List<string>();
 
-            if (!Directory.Exists(source.SourcePath))
-            {
-                Log.Warning("Kaynak dizin bulunamadı: {Path}", source.SourcePath);
-                return files;
-            }
-
             var searchOption = source.Recursive
                 ? SearchOption.AllDirectories
                 : SearchOption.TopDirectoryOnly;
 
-            // Include pattern'lara göre dosya topla
-            if (source.IncludePatterns.Count > 0)
+            // ── Yeni davranış: TreeView seçili yollar ──
+            if (source.SelectedPaths?.Count > 0)
             {
-                foreach (string pattern in source.IncludePatterns)
+                foreach (string selectedPath in source.SelectedPaths)
                 {
-                    try
+                    if (File.Exists(selectedPath))
                     {
-                        files.AddRange(Directory.GetFiles(source.SourcePath, pattern, searchOption));
+                        // Doğrudan seçili dosya
+                        files.Add(selectedPath);
                     }
-                    catch (UnauthorizedAccessException ex)
+                    else if (Directory.Exists(selectedPath))
                     {
-                        Log.Warning(ex, "Erişim engellendi: {Path} ({Pattern})", source.SourcePath, pattern);
+                        // Seçili klasör — içindeki dosyaları topla
+                        CollectFilesFromDirectory(selectedPath, source.IncludePatterns, searchOption, files);
                     }
-                    catch (DirectoryNotFoundException)
+                    else
                     {
-                        // Alt dizin silinmiş olabilir, atla
+                        Log.Warning("Seçili yol bulunamadı: {Path}", selectedPath);
                     }
                 }
             }
-            else
+            // ── Eski davranış uyumu: SourcePath tabanlı ──
+            else if (!string.IsNullOrWhiteSpace(source.SourcePath))
             {
-                try
+                if (!Directory.Exists(source.SourcePath))
                 {
-                    files.AddRange(Directory.GetFiles(source.SourcePath, "*.*", searchOption));
+                    Log.Warning("Kaynak dizin bulunamadı: {Path}", source.SourcePath);
+                    return files;
                 }
-                catch (UnauthorizedAccessException ex)
-                {
-                    Log.Warning(ex, "Erişim engellendi: {Path}", source.SourcePath);
-                }
+
+                CollectFilesFromDirectory(source.SourcePath, source.IncludePatterns, searchOption, files);
             }
 
             // Exclude pattern uygula
@@ -388,6 +388,41 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             files = files.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             return files;
+        }
+
+        /// <summary>Bir dizindeki dosyaları include pattern'lara göre toplar.</summary>
+        private void CollectFilesFromDirectory(
+            string directoryPath, List<string> includePatterns, SearchOption searchOption, List<string> files)
+        {
+            if (includePatterns?.Count > 0)
+            {
+                foreach (string pattern in includePatterns)
+                {
+                    try
+                    {
+                        files.AddRange(Directory.GetFiles(directoryPath, pattern, searchOption));
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Log.Warning(ex, "Erişim engellendi: {Path} ({Pattern})", directoryPath, pattern);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        // Alt dizin silinmiş olabilir, atla
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    files.AddRange(Directory.GetFiles(directoryPath, "*.*", searchOption));
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Log.Warning(ex, "Erişim engellendi: {Path}", directoryPath);
+                }
+            }
         }
 
         private bool MatchesAnyPattern(string filePath, List<string> patterns)

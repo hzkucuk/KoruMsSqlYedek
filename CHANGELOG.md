@@ -1,4 +1,24 @@
-﻿## [0.79.0] - 2026-06-18 — Mega Login Düzeltmesi & TreeView Boyut Hesaplaması
+﻿## [0.80.0] - 2026-06-18 — TreeView Kaynak Seçimi Mimarisi
+
+### Yeni Özellik
+- **TreeView kaynak gerçeği (source of truth)** — Dizin Yolu textbox'ı kaldırıldı, TreeView seçimleri artık dosya yedekleme kaynağının tek belirleyicisi.
+  - `SelectedPaths` modele eklendi — TreeView'da seçilen klasör/dosya yolları JSON'da saklanır.
+  - `SourcePath` otomatik türetilir (`DeriveCommonRoot`) — VSS volume tespiti ve geriye uyumluluk için.
+  - "📁 Konuma Git..." butonu ile TreeView'da navigasyon (FolderBrowserDialog → NavigateAndExpand).
+  - Kaydet validasyonu: en az bir seçim zorunlu (path textbox yerine TreeView kontrol edilir).
+- **Engine SelectedPaths desteği** — `CollectFiles` artık `SelectedPaths` listesini doğrudan kullanır.
+  - Her seçili yol: dosya ise doğrudan eklenir, klasör ise include pattern'larla taranır.
+  - Eski format uyumu: `SelectedPaths` boşsa `SourcePath` ile çalışır.
+  - `CollectFilesFromDirectory` helper metodu çıkarıldı.
+  - VSS volume tespiti `SelectedPaths[0]` fallback'i eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/FileBackupModels.cs` — `SelectedPaths` property eklendi
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — Tamamen yeniden yazıldı (TreeView = kaynak gerçeği)
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs` — Path row kaldırıldı, navigate butonu eklendi
+- `KoruMsSqlYedek.Engine/FileBackup/FileBackupService.cs` — CollectFiles SelectedPaths desteği, CollectFilesFromDirectory helper
+
+## [0.79.0] - 2026-06-18 — Mega Login Düzeltmesi & TreeView Boyut Hesaplaması
 
 ### Düzeltme
 - **Mega login timeout** — Login zaman aşımı 30s→90s'ye çıkarıldı (hashcash/PBKDF2 hesaplaması için yeterli süre).
