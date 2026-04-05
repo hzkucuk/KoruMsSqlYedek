@@ -1,4 +1,12 @@
-﻿## [0.85.0] - 2026-06-21 — Dashboard: Plan Bazlı Gruplandırma
+﻿## [0.85.1] - 2026-06-21 — Fix: Zamanlanmış görev manualTrigger KeyNotFoundException
+
+### Düzeltme
+- `BackupJobExecutor.Execute` — `context.MergedJobDataMap.GetString("manualTrigger")` zamanlanmış tetiklemede `KeyNotFoundException` fırlatıyordu. `ContainsKey` kontrolü eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs`
+
+## [0.85.0] - 2026-06-21 — Dashboard: Plan Bazlı Gruplandırma
 
 ### Yeni Özellik
 - **ListView grup görünümü** — "Son Yedeklemeler" listesi plan adına göre gruplandırıldı. Her grup başlığında plan adı ve yedekleme sayısı gösterilir.

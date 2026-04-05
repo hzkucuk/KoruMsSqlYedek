@@ -83,7 +83,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 lockAcquired = true;
 
                 // Dosya yedekleme koşulunu Started event'inden ÖNCE hesapla (progress ağırlıkları için)
-                bool isManualTrigger = context.MergedJobDataMap.GetString("manualTrigger") == "true";
+                bool isManualTrigger = context.MergedJobDataMap.ContainsKey("manualTrigger")
+                    && context.MergedJobDataMap.GetString("manualTrigger") == "true";
                 bool willRunFileBackup = backupType == "FileBackup"
                     || (plan.FileBackup != null && plan.FileBackup.IsEnabled
                         && (string.IsNullOrEmpty(plan.FileBackup.Schedule) || isManualTrigger));
