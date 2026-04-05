@@ -1405,6 +1405,8 @@ namespace KoruMsSqlYedek.Win
                                 stepPct = stepTracker.CalculateFileSourceProgress(e.CurrentIndex, e.TotalCount);
                             else if (e.StepName == "Dosya Sıkıştırma" && stepTracker.IsFileBackupPhase)
                                 stepPct = stepTracker.CalculateFileCompressionProgress();
+                            else if (e.StepName == "Temizlik" && stepTracker.IsFileBackupPhase && !stepTracker.HasCloudTargets)
+                                stepPct = stepTracker.CalculateFileCleanupProgress();
 
                             if (stepPct >= 0 && stepPlanId == _viewingPlanId)
                             {

@@ -1,4 +1,17 @@
-﻿## [0.83.0] - 2026-06-21 — Dosya Yedekleme Fark/Artırımlı Strateji & İlerleme Çubuğu Düzeltmesi
+﻿## [0.83.1] - 2026-06-21 — İlerleme Çubuğu Ağırlık Modeli Düzeltmesi
+
+### Düzeltme
+- **İlerleme çubuğu dosya yedeklemede %100'e zıplıyor** — Bulut hedefi olmayan planlarda dosya yedekleme aşamaları (kopyalama, sıkıştırma, temizlik) için ağırlık dağılımı düzeltildi.
+  - Bulut yokken: Dosya-only planlarda copy=%50, compress=%35, cleanup=%5 (toplam %90).
+  - Bulut yokken: SQL+Dosya planlarda copy=%10, compress=%7, cleanup=%2 (toplam %19, SQL üstüne eklenir).
+  - `PlanProgressTracker`: `GetFileCopyWeight`/`GetFileCompressWeight` helper metotları, `CalculateFileCleanupProgress` yeni metot.
+  - `MainWindow`: StepChanged handler'a dosya temizlik case'i eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/PlanProgressTracker.cs` — Cloud-aware ağırlık modeli
+- `KoruMsSqlYedek.Win/MainWindow.cs` — Dosya temizlik ilerleme handler
+
+## [0.83.0] - 2026-06-21 — Dosya Yedekleme Fark/Artırımlı Strateji & İlerleme Çubuğu Düzeltmesi
 
 ### Yeni Özellik
 - **Dosya yedekleme stratejisi (Tam/Fark/Artırımlı)** — Dosya yedekleme görevleri artık üç strateji destekliyor:

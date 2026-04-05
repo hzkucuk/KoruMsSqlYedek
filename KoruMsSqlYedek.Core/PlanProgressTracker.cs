@@ -108,14 +108,16 @@ public sealed class PlanProgressTracker
 
     /// <summary>
     /// Dosya sıkıştırma adımı yüzdesini hesaplar.
+    /// Bulut hedefi yoksa sıkıştırma fazı daha geniş bir dilim alır.
     /// </summary>
     /// <returns>Klamplanmış, monoton artan yüzde [0-100].</returns>
     public int CalculateFileCompressionProgress()
     {
         bool isFileOnly = SqlDbCount == 0;
         int fileBase = isFileOnly ? 0 : SqlRangeWithFileBackup;
-        int fileCopyWeight = isFileOnly ? 25 : 5;
-        int pct = fileBase + fileCopyWeight;
+        int fileCopyWeight = GetFileCopyWeight(isFileOnly);
+        int fileCompressWeight = GetFileCompressWeight(isFileOnly);
+        int pct = fileBase + fileCopyWeight + fileCompressWeight;
         pct = Math.Max(pct, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
         MaxPercent = pct;
@@ -125,6 +127,7 @@ public sealed class PlanProgressTracker
     /// <summary>
     /// Dosya yedekleme fazında kaynak bazlı ilerleme yüzdesini hesaplar.
     /// Her kaynak, dosya kopyalama ağırlığının eşit bir dilimini alır.
+    /// Bulut hedefi yoksa kopyalama fazı daha geniş bir dilim alır.
     /// </summary>
     /// <param name="sourceIndex">1 tabanlı tamamlanan kaynak sırası.</param>
     /// <param name="totalSources">Toplam aktif kaynak sayısı.</param>
@@ -136,13 +139,56 @@ public sealed class PlanProgressTracker
 
         bool isFileOnly = SqlDbCount == 0;
         int fileBase = isFileOnly ? 0 : SqlRangeWithFileBackup;
-        int fileCopyWeight = isFileOnly ? 25 : 5;
+        int fileCopyWeight = GetFileCopyWeight(isFileOnly);
 
         int pct = fileBase + (int)((double)sourceIndex / totalSources * fileCopyWeight);
         pct = Math.Max(pct, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
         MaxPercent = pct;
         return pct;
+    }
+
+    /// <summary>
+    /// Dosya yedekleme temizlik adımı yüzdesini hesaplar (bulut hedefsiz mod).
+    /// Dosya kopyalama + sıkıştırma sonrasında temizlik adımını temsil eder.
+    /// </summary>
+    /// <returns>Klamplanmış, monoton artan yüzde [0-100] veya -1 (faz uyumsuz veya bulut var).</returns>
+    public int CalculateFileCleanupProgress()
+    {
+        if (!IsFileBackupPhase || HasCloudTargets)
+            return -1;
+
+        bool isFileOnly = SqlDbCount == 0;
+        int fileBase = isFileOnly ? 0 : SqlRangeWithFileBackup;
+        int fileCopyWeight = GetFileCopyWeight(isFileOnly);
+        int fileCompressWeight = GetFileCompressWeight(isFileOnly);
+        int fileCleanupWeight = isFileOnly ? 5 : 2;
+        int pct = fileBase + fileCopyWeight + fileCompressWeight + fileCleanupWeight;
+        pct = Math.Max(pct, MaxPercent);
+        pct = Math.Clamp(pct, 0, 100);
+        MaxPercent = pct;
+        return pct;
+    }
+
+    // ── Dosya fazı ağırlık yardımcıları ───────────────────────────────────
+
+    /// <summary>Dosya kopyalama ağırlığı — bulut yoksa daha geniş dilim.</summary>
+    private int GetFileCopyWeight(bool isFileOnly)
+    {
+        if (HasCloudTargets)
+            return isFileOnly ? 25 : 5;
+
+        // Bulut yok: kopyalama + sıkıştırma + temizlik tüm dosya aralığını doldurmalı
+        return isFileOnly ? 50 : 10;
+    }
+
+    /// <summary>Dosya sıkıştırma ağırlığı — bulut yoksa sıkıştırma daha ağır.</summary>
+    private int GetFileCompressWeight(bool isFileOnly)
+    {
+        if (HasCloudTargets)
+            return 0; // Bulut varken sıkıştırma ayrı ağırlık almaz, copy sonrası cloud başlar
+
+        return isFileOnly ? 35 : 7;
     }
 
     /// <summary>
@@ -191,9 +237,11 @@ public sealed class PlanProgressTracker
         {
             bool isFileOnly = SqlDbCount == 0;
             int fileBase = isFileOnly ? 0 : SqlRangeWithFileBackup;
-            int fileCopyWeight = isFileOnly ? 25 : 5;
-            int fileCloudWeight = isFileOnly ? 75 : 15;
-            cumPct = fileBase + fileCopyWeight + (int)(overallCloudPct / 100.0 * fileCloudWeight);
+            int fileCopyWeight = GetFileCopyWeight(isFileOnly);
+            int fileCompressWeight = GetFileCompressWeight(isFileOnly);
+            // Bulut aralığı: dosya fazının kalanı (kopyalama + sıkıştırma sonrası → %100'e kadar)
+            int fileCloudWeight = (isFileOnly ? 100 : 20) - fileCopyWeight - fileCompressWeight;
+            cumPct = fileBase + fileCopyWeight + fileCompressWeight + (int)(overallCloudPct / 100.0 * fileCloudWeight);
         }
         else
         {
