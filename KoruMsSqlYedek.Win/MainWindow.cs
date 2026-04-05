@@ -75,6 +75,7 @@ namespace KoruMsSqlYedek.Win
         // Son yedekler ListView sıralama durumu
         private int _lvSortColumn = 0;
         private bool _lvSortAscending = false;
+        private Theme.ListViewHeaderPainter? _headerPainter;
 
         public MainWindow(
             IPlanManager planManager,
@@ -103,6 +104,9 @@ namespace KoruMsSqlYedek.Win
                 "KoruMsSqlYedek", "Logs");
 
             InitializeComponent();
+
+            // Header custom draw (NativeWindow) — OwnerDraw kullanmadan dark theme header boyama
+            _headerPainter = new Theme.ListViewHeaderPainter(_lvLastBackups);
 
             // Versiyon metnini runtime'da ayarla (Designer'da statik metinlere izin verilmiyor)
             string ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
@@ -138,60 +142,55 @@ namespace KoruMsSqlYedek.Win
 
         private void ApplyIcons()
         {
-            const int sz = 18;
-            _btnStart.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Play, Color.White, sz);
+            _btnStart.Image = LoadToolStripIcon("Apply_16x16.png");
             _btnStart.Text = "Yedeklemeyi Baslat";
             _btnStart.TextImageRelation = TextImageRelation.ImageBeforeText;
             _btnStart.ImageAlign = ContentAlignment.MiddleLeft;
 
-            _btnCancelBackup.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Stop, Color.White, sz);
+            _btnCancelBackup.Image = LoadToolStripIcon("Close_16x16.png");
             _btnCancelBackup.Text = "Iptal Et";
             _btnCancelBackup.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             // Context menu ikonları
-            _ctxBackupNow.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Play, Theme.ModernTheme.StatusSuccess, sz);
-            _ctxStopBackup.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Stop, Theme.ModernTheme.StatusError, sz);
-            _ctxEditPlan.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PencilSimple, Theme.ModernTheme.TextPrimary, sz);
-            _ctxDeletePlan.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Trash, Theme.ModernTheme.StatusError, sz);
-            _ctxExportPlan.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Export, Theme.ModernTheme.TextPrimary, sz);
-            _ctxViewPlanLogs.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FileText, Theme.ModernTheme.AccentPrimary, sz);
+            _ctxBackupNow.Image = LoadToolStripIcon("Apply_16x16.png");
+            _ctxStopBackup.Image = LoadToolStripIcon("Close_16x16.png");
+            _ctxEditPlan.Image = LoadToolStripIcon("Edit_16x16.png");
+            _ctxDeletePlan.Image = LoadToolStripIcon("Delete_16x16.png");
+            _ctxExportPlan.Image = LoadToolStripIcon("Export_16x16.png");
+            _ctxViewPlanLogs.Image = LoadToolStripIcon("Article_16x16.png");
 
-            _btnCancelBackup.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Stop, Color.White, sz);
-            _btnCancelBackup.Text = "Iptal Et";
-            _btnCancelBackup.TextImageRelation = TextImageRelation.ImageBeforeText;
-
-            _btnClearLogFilter.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Eraser, Theme.ModernTheme.TextSecondary, sz);
+            _btnClearLogFilter.Image = LoadToolStripIcon("Clear_16x16.png");
             _btnClearLogFilter.Text = "Temizle";
             _btnClearLogFilter.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _btnLogRefresh.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.ArrowClockwise, Color.White, sz);
+            _btnLogRefresh.Image = LoadToolStripIcon("Refresh_16x16.png");
             _btnLogRefresh.Text = "Yenile";
             _btnLogRefresh.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _btnLogExport.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Export, Theme.ModernTheme.TextSecondary, sz);
+            _btnLogExport.Image = LoadToolStripIcon("Export_16x16.png");
             _btnLogExport.Text = "Disa Aktar";
             _btnLogExport.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _btnBrowseBackupPath.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Folder, Theme.ModernTheme.AccentPrimary, 14);
+            _btnBrowseBackupPath.Image = LoadToolStripIcon("Open_16x16.png");
             _btnBrowseBackupPath.Text = "";
             _btnBrowseBackupPath.ImageAlign = ContentAlignment.MiddleCenter;
 
-            _btnSmtpTest.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Envelope, Color.White, sz);
+            _btnSmtpTest.Image = LoadToolStripIcon("Send_16x16.png");
             _btnSmtpTest.Text = "Test E-postasi Gonder";
             _btnSmtpTest.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _btnSaveSettings.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FloppyDisk, Color.White, sz);
+            _btnSaveSettings.Image = LoadToolStripIcon("Save_16x16.png");
             _btnSaveSettings.Text = "Kaydet";
             _btnSaveSettings.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _btnCancelSettings.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, Color.White, sz);
+            _btnCancelSettings.Image = LoadToolStripIcon("Cancel_16x16.png");
             _btnCancelSettings.Text = "Iptal";
             _btnCancelSettings.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            // Dashboard KPI kart ikonları (Phosphor)
-            _lblStatusIcon.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.CheckCircle, Theme.ModernTheme.StatusSuccess, 24);
-            _lblNextIcon.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Clock, Theme.ModernTheme.AccentPrimary, 24);
-            _lblPlansIcon.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Database, Theme.ModernTheme.StatusWarning, 24);
+            // Dashboard KPI kart ikonları
+            _lblStatusIcon.Image = LoadToolStripIcon("CheckBox_16x16.png");
+            _lblNextIcon.Image = LoadToolStripIcon("Time_16x16.png");
+            _lblPlansIcon.Image = LoadToolStripIcon("Database_16x16.png");
 
             // ToolStrip butonları — DevExpress ikonları
             ApplyToolStripIcons();
@@ -306,6 +305,7 @@ namespace KoruMsSqlYedek.Win
             _dashboardTimer.Dispose();
             _logTimer.Stop();
             _logTimer.Dispose();
+            _headerPainter?.Dispose();
             BackupActivityHub.ActivityChanged -= OnBackupActivityChanged;
             _pipeClient.ConnectionChanged    -= OnPipeConnectionChanged;
             ServiceStatusHub.StatusReceived  -= OnServiceStatusReceived;
@@ -528,48 +528,6 @@ namespace KoruMsSqlYedek.Win
             return Res.Format("Dashboard_TimeDayFormat", (int)span.TotalDays);
         }
 
-        private void OnListViewDrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
-        {
-            using var bgBrush = new SolidBrush(Theme.ModernTheme.GridHeaderBack);
-            e.Graphics.FillRectangle(bgBrush, e.Bounds);
-
-            using var borderPen = new Pen(Theme.ModernTheme.DividerColor);
-            e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
-
-            bool isSorted = e.ColumnIndex == _lvSortColumn;
-            int arrowAreaWidth = isSorted ? 18 : 0;
-            var textRect = new Rectangle(e.Bounds.X + 8, e.Bounds.Y, e.Bounds.Width - 16 - arrowAreaWidth, e.Bounds.Height);
-            using var sf = new StringFormat
-            {
-                LineAlignment = StringAlignment.Center,
-                Trimming = StringTrimming.EllipsisCharacter,
-                FormatFlags = StringFormatFlags.NoWrap
-            };
-            using var textBrush = new SolidBrush(Theme.ModernTheme.GridHeaderText);
-            e.Graphics.DrawString(e.Header.Text, Theme.ModernTheme.FontCaptionBold, textBrush, textRect, sf);
-
-            if (isSorted)
-            {
-                int ax = e.Bounds.Right - 14;
-                int ay = e.Bounds.Y + e.Bounds.Height / 2;
-                using var arrowBrush = new SolidBrush(Theme.ModernTheme.AccentPrimary);
-                Point[] arrow = _lvSortAscending
-                    ? new[] { new Point(ax, ay + 3), new Point(ax + 7, ay + 3), new Point(ax + 3, ay - 3) }
-                    : new[] { new Point(ax, ay - 3), new Point(ax + 7, ay - 3), new Point(ax + 3, ay + 3) };
-                e.Graphics.FillPolygon(arrowBrush, arrow);
-            }
-        }
-
-        private void OnListViewDrawItem(object sender, DrawListViewItemEventArgs e)
-        {
-            e.DrawDefault = true;
-        }
-
-        private void OnListViewDrawSubItem(object sender, DrawListViewSubItemEventArgs e)
-        {
-            e.DrawDefault = true;
-        }
-
         private void OnLastBackupsColumnClick(object sender, ColumnClickEventArgs e)
         {
             if (_lvSortColumn == e.Column)
@@ -581,6 +539,7 @@ namespace KoruMsSqlYedek.Win
             }
 
             _lvLastBackups.ListViewItemSorter = new LastBackupsItemComparer(_lvSortColumn, _lvSortAscending);
+            _headerPainter?.SetSortState(_lvSortColumn, _lvSortAscending);
             _lvLastBackups.Invalidate();
         }
 

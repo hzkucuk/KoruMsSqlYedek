@@ -45,16 +45,24 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void ApplyIcons()
         {
-            const int sz = 16;
-            _btnSave.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FloppyDisk, System.Drawing.Color.White, sz);
+            _btnSave.Image = LoadIcon("Save_16x16.png");
             _btnSave.Text = "Kaydet";
             _btnSave.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _btnCancel.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, System.Drawing.Color.White, sz);
+            _btnCancel.Image = LoadIcon("Cancel_16x16.png");
             _btnCancel.Text = "Iptal";
             _btnCancel.TextImageRelation = TextImageRelation.ImageBeforeText;
 
-            _btnNavigate.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Folder, Theme.ModernTheme.AccentPrimary, 14);
+            _btnNavigate.Image = LoadIcon("Open_16x16.png");
+        }
+
+        private static System.Drawing.Image? LoadIcon(string name)
+        {
+            var asm = typeof(FileBackupSourceEditDialog).Assembly;
+            string resourceName = $"KoruMsSqlYedek.Win.Resources.Icons.{name}";
+            using var stream = asm.GetManifestResourceStream(resourceName);
+            if (stream is null) return null;
+            return System.Drawing.Image.FromStream(stream);
         }
 
         private void WireEvents()

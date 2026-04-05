@@ -65,23 +65,31 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void ApplyIcons()
         {
-            const int sz = 16;
-            _btnSave.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FloppyDisk, System.Drawing.Color.White, sz);
+            _btnSave.Image = LoadIcon("Save_16x16.png");
             _btnSave.Text = "Kaydet";
             _btnSave.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
 
-            _btnCancel.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, System.Drawing.Color.White, sz);
+            _btnCancel.Image = LoadIcon("Cancel_16x16.png");
             _btnCancel.Text = "Iptal";
             _btnCancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
 
-            _btnBrowseLocal.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Folder, Theme.ModernTheme.AccentPrimary, 14);
+            _btnBrowseLocal.Image = LoadIcon("Open_16x16.png");
             _btnBrowseLocal.Text = "";
 
-            _btnGoogleAuth.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.ShieldCheck, System.Drawing.Color.White, sz);
+            _btnGoogleAuth.Image = LoadIcon("CheckBox_16x16.png");
             _btnGoogleAuth.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
 
-            _btnOAuthSettings.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Gear, Theme.ModernTheme.TextSecondary, 14);
+            _btnOAuthSettings.Image = LoadIcon("Properties_16x16.png");
             _btnOAuthSettings.Text = "";
+        }
+
+        private static System.Drawing.Image? LoadIcon(string name)
+        {
+            var asm = typeof(CloudTargetEditDialog).Assembly;
+            string resourceName = $"KoruMsSqlYedek.Win.Resources.Icons.{name}";
+            using var stream = asm.GetManifestResourceStream(resourceName);
+            if (stream is null) return null;
+            return System.Drawing.Image.FromStream(stream);
         }
 
         protected override void OnLoad(EventArgs e)

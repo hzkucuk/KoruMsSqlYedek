@@ -1,4 +1,27 @@
-﻿## [0.86.0] - 2026-06-21 — Toolbar: DevExpress PNG İkonları + Şifre Butonları Kaldırıldı
+﻿## [0.87.0] - 2026-06-22 — DevExpress PNG İkonları Tüm Formlara + Animasyonlu Tray İkonları + ListView Grup Collapse Düzeltmesi
+
+### Yeni Özellik
+- **DevExpress PNG ikonları tüm formlara** — MainWindow, PlanEditForm, CloudTargetEditDialog, FileBackupSourceEditDialog'daki tüm PhosphorIcons kullanımları DevExpress Images kütüphanesi PNG'lerine değiştirildi (23 ikon).
+- **Animasyonlu tray ikonları** — Yedekleme sırasında Icons8 CloudSync animasyonlu GIF, tamamlanınca CheckMark animasyonlu GIF tray'de gösterilir.
+- `SymbolIconHelper.ExtractGifFrames` — Gömülü GIF dosyasından tray ikonu boyutunda kareler çıkarır.
+- Tamamlanma animasyonu bitince otomatik idle ikona döner.
+
+### Düzeltme
+- **ListView grup collapse/expand (+/−) butonları** — `OwnerDraw=true` native grup header renderını engelliyordu. `OwnerDraw` kaldırıldı, kolon başlık boyama `ListViewHeaderPainter` NativeWindow subclass'ına taşındı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs` — ApplyIcons (PhosphorIcons→DevExpress PNG)
+- `KoruMsSqlYedek.Win/MainWindow.Designer.cs` — OwnerDraw, DrawItem/DrawSubItem kaldırıldı
+- `KoruMsSqlYedek.Win/Theme/ListViewHeaderPainter.cs` — Yeni: NativeWindow header custom draw
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs` — ApplyIcons (DevExpress PNG)
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs` — ApplyIcons (DevExpress PNG)
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — ApplyIcons (DevExpress PNG)
+- `KoruMsSqlYedek.Win/TrayApplicationContext.cs` — GIF animasyon, completion animation
+- `KoruMsSqlYedek.Win/Helpers/SymbolIconHelper.cs` — ExtractGifFrames
+- `KoruMsSqlYedek.Win/Resources/Icons/` — 16 yeni PNG ikon
+- `KoruMsSqlYedek.Win/Resources/TrayIcons/` — CloudSync.gif, CheckMark.gif
+
+## [0.86.0] - 2026-06-21 — Toolbar: DevExpress PNG İkonları + Şifre Butonları Kaldırıldı
 
 ### Yeni Özellik
 - **DevExpress PNG ikonları** — Toolbar butonları DevExpress Images kütüphanesinden renkli 16x16 PNG ikonlar kullanıyor (New, Edit, Delete, Export, Import, Refresh, Find).

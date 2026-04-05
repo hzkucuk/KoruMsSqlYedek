@@ -255,15 +255,11 @@
             _lvLastBackups.FullRowSelect = true;
             _lvLastBackups.Location = new System.Drawing.Point(0, 39);
             _lvLastBackups.Name = "_lvLastBackups";
-            _lvLastBackups.OwnerDraw = true;
             _lvLastBackups.Size = new System.Drawing.Size(1016, 557);
             _lvLastBackups.TabIndex = 1;
             _lvLastBackups.UseCompatibleStateImageBehavior = false;
             _lvLastBackups.View = System.Windows.Forms.View.Details;
             _lvLastBackups.ColumnClick += OnLastBackupsColumnClick;
-            _lvLastBackups.DrawColumnHeader += OnListViewDrawColumnHeader;
-            _lvLastBackups.DrawItem += OnListViewDrawItem;
-            _lvLastBackups.DrawSubItem += OnListViewDrawSubItem;
             // 
             // _colDate
             // 

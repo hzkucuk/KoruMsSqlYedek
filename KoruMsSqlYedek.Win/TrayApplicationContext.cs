@@ -43,6 +43,12 @@ namespace KoruMsSqlYedek.Win
         private int _animFrameIndex;
         private bool _isAnimating;
 
+        // Tamamlanma animasyonu — kısa süre gösterilir, sonra idle'a döner
+        private readonly System.Windows.Forms.Timer _completionTimer;
+        private Icon[] _completionFrames;
+        private int _completionFrameIndex;
+        private bool _isCompletionAnimating;
+
         // Güncelleme kontrolü
         private readonly IUpdateService _updateService;
         private readonly System.Windows.Forms.Timer _updateTimer;
@@ -70,6 +76,9 @@ namespace KoruMsSqlYedek.Win
 
             _animTimer = new System.Windows.Forms.Timer { Interval = 150 };
             _animTimer.Tick += OnAnimTimerTick;
+
+            _completionTimer = new System.Windows.Forms.Timer { Interval = 120 };
+            _completionTimer.Tick += OnCompletionTimerTick;
 
             _contextMenu = CreateContextMenu();
             _notifyIcon = CreateNotifyIcon();
@@ -357,6 +366,10 @@ namespace KoruMsSqlYedek.Win
             Log.Information("Tray uygulaması kapatılıyor...");
 
             _pipeClient?.Stop();
+            _animTimer.Stop();
+            _animTimer.Dispose();
+            _completionTimer.Stop();
+            _completionTimer.Dispose();
 
             _notifyIcon.Visible = false;
 
@@ -498,10 +511,30 @@ namespace KoruMsSqlYedek.Win
             _notifyIcon.Icon = _animFrames[_animFrameIndex];
         }
 
+        private void OnCompletionTimerTick(object sender, EventArgs e)
+        {
+            if (_completionFrames == null) return;
+            _completionFrameIndex++;
+
+            if (_completionFrameIndex >= _completionFrames.Length)
+            {
+                // Animasyon tamamlandı — idle'a dön
+                StopCompletionAnimation();
+                return;
+            }
+
+            _notifyIcon.Icon = _completionFrames[_completionFrameIndex];
+        }
+
         private void StartTrayAnimation(string tooltipText)
         {
             if (_isAnimating) return;
-            _animFrames = SymbolIconHelper.CreateAnimationFrames();
+
+            // Tamamlanma animasyonu çalışıyorsa önce durdur
+            if (_isCompletionAnimating)
+                StopCompletionAnimation();
+
+            _animFrames = SymbolIconHelper.ExtractGifFrames("CloudSync.gif");
             _animFrameIndex = 0;
             _isAnimating = true;
 
@@ -524,17 +557,60 @@ namespace KoruMsSqlYedek.Win
             int lastIndex = _animFrameIndex;
             _animFrames = null;
 
-            // UpdateTrayStatus, _notifyIcon.Icon'u (= localFrames[lastIndex]) dispose eder
-            UpdateTrayStatus(finalStatus, tooltipText);
-
-            // Kalan kareleri temizle
-            if (localFrames != null)
+            // Başarılı tamamlandıysa kısa check-mark animasyonu göster
+            if (finalStatus == TrayIconStatus.Success)
             {
-                for (int i = 0; i < localFrames.Length; i++)
-                {
-                    if (i == lastIndex) continue; // UpdateTrayStatus zaten yok etti
-                    try { localFrames[i].Dispose(); } catch { }
-                }
+                StartCompletionAnimation(tooltipText);
+            }
+            else
+            {
+                UpdateTrayStatus(finalStatus, tooltipText);
+            }
+
+            // Eski kareleri temizle
+            DisposeFrames(localFrames, lastIndex);
+        }
+
+        /// <summary>
+        /// Check-mark GIF animasyonunu başlatır; bitince idle ikona döner.
+        /// </summary>
+        private void StartCompletionAnimation(string tooltipText)
+        {
+            _completionFrames = SymbolIconHelper.ExtractGifFrames("CheckMark.gif");
+            _completionFrameIndex = 0;
+            _isCompletionAnimating = true;
+
+            if (tooltipText != null)
+                _notifyIcon.Text = tooltipText.Length > 63
+                    ? tooltipText.Substring(0, 63)
+                    : tooltipText;
+
+            _notifyIcon.Icon = _completionFrames[0];
+            _completionTimer.Start();
+        }
+
+        private void StopCompletionAnimation()
+        {
+            _completionTimer.Stop();
+            _isCompletionAnimating = false;
+
+            var localFrames = _completionFrames;
+            int lastIndex = _completionFrameIndex;
+            _completionFrames = null;
+
+            // Idle ikona geri dön
+            UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
+
+            DisposeFrames(localFrames, lastIndex);
+        }
+
+        private static void DisposeFrames(Icon[] frames, int skipIndex)
+        {
+            if (frames == null) return;
+            for (int i = 0; i < frames.Length; i++)
+            {
+                if (i == skipIndex) continue;
+                try { frames[i].Dispose(); } catch { }
             }
         }
 

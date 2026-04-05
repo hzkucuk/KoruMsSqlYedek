@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Drawing.Text;
+using System.IO;
 using System.Windows.Forms;
 
 namespace KoruMsSqlYedek.Win.Helpers
@@ -329,6 +331,57 @@ namespace KoruMsSqlYedek.Win.Helpers
             {
                 return string.Equals(testFont.Name, familyName, StringComparison.OrdinalIgnoreCase);
             }
+        }
+
+        /// <summary>
+        /// Gömülü animated GIF dosyasından tray ikonu boyutuna uygun Icon[] çıkarır.
+        /// </summary>
+        /// <param name="gifResourceName">Embedded resource adı (örn. "CloudSync.gif")</param>
+        internal static Icon[] ExtractGifFrames(string gifResourceName)
+        {
+            var asm = typeof(SymbolIconHelper).Assembly;
+            string fullName = $"KoruMsSqlYedek.Win.Resources.TrayIcons.{gifResourceName}";
+            using var stream = asm.GetManifestResourceStream(fullName);
+            if (stream is null)
+                return CreateAnimationFrames(); // Fallback — spinner
+
+            return ExtractGifFramesFromStream(stream);
+        }
+
+        /// <summary>
+        /// Stream'den animated GIF karelerini tray ikonu boyutuna ölçekleyerek Icon[] döndürür.
+        /// </summary>
+        private static Icon[] ExtractGifFramesFromStream(Stream stream)
+        {
+            int targetSize = TrayIconSize;
+
+            using var gif = Image.FromStream(stream);
+            var dimension = new FrameDimension(gif.FrameDimensionsList[0]);
+            int frameCount = gif.GetFrameCount(dimension);
+
+            if (frameCount <= 0)
+                return CreateAnimationFrames(); // Fallback
+
+            var frames = new Icon[frameCount];
+
+            for (int i = 0; i < frameCount; i++)
+            {
+                gif.SelectActiveFrame(dimension, i);
+
+                using var resized = new Bitmap(targetSize, targetSize);
+                using (var g = Graphics.FromImage(resized))
+                {
+                    g.SmoothingMode = SmoothingMode.HighQuality;
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.Clear(Color.Transparent);
+                    g.DrawImage(gif, 0, 0, targetSize, targetSize);
+                }
+
+                frames[i] = CloneIconFromBitmap(resized);
+            }
+
+            return frames;
         }
     }
 

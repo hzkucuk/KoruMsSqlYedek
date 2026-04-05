@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.87.0 — DevExpress PNG İkonları Tüm Formlara + Animasyonlu Tray İkonları
+- [x] Tüm formlardaki PhosphorIcons → DevExpress PNG ikonlarına geçiş (23 ikon)
+- [x] MainWindow, PlanEditForm, CloudTargetEditDialog, FileBackupSourceEditDialog güncel
+- [x] Animasyonlu GIF tray ikonları (CloudSync yedeklerken, CheckMark tamamlanınca)
+- [x] GIF frame extraction (SymbolIconHelper.ExtractGifFrames)
+- [x] ListView grup collapse/expand (+/−) düzeltmesi (ListViewHeaderPainter NativeWindow)
+
 ### v0.86.0 — Toolbar: DevExpress PNG İkonları
 - [x] DevExpress Images kütüphanesinden renkli 16x16 PNG ikonlar (7 adet)
 - [x] Toolbar’dan şifre butonları kaldırıldı

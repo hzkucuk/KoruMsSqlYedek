@@ -81,29 +81,35 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void ApplyIcons()
         {
-            const int sz = 16;
-            var accentColor = Theme.ModernTheme.AccentPrimary;
-
             // Navigasyon — Geri/İleri metin okları Designer.cs'de tanımlı, ikon yok
-            _btnSave.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.FloppyDisk, System.Drawing.Color.White, sz);
+            _btnSave.Image = LoadIcon("Save_16x16.png");
             _btnSave.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            _btnCancel.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.XCircle, Theme.ModernTheme.TextPrimary, sz);
+            _btnCancel.Image = LoadIcon("Cancel_16x16.png");
             _btnCancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
 
             // Step 1
-            _btnBrowseLocal.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Folder, accentColor, 14);
-            _btnTestSql.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Plug, System.Drawing.Color.White, sz);
+            _btnBrowseLocal.Image = LoadIcon("Open_16x16.png");
+            _btnTestSql.Image = LoadIcon("ForceTesting_16x16.png");
 
             // Step 2
-            _btnRefreshDatabases.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.ArrowClockwise, Theme.ModernTheme.TextPrimary, sz);
-            _btnAddFileSource.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PlusCircle, Theme.ModernTheme.TextPrimary, sz);
-            _btnEditFileSource.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PencilSimple, Theme.ModernTheme.TextPrimary, sz);
-            _btnRemoveFileSource.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Trash, System.Drawing.Color.White, sz);
+            _btnRefreshDatabases.Image = LoadIcon("Refresh_16x16.png");
+            _btnAddFileSource.Image = LoadIcon("Add_16x16.png");
+            _btnEditFileSource.Image = LoadIcon("Edit_16x16.png");
+            _btnRemoveFileSource.Image = LoadIcon("Delete_16x16.png");
 
             // Step 5
-            _btnAddCloud.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PlusCircle, Theme.ModernTheme.TextPrimary, sz);
-            _btnEditCloud.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.PencilSimple, Theme.ModernTheme.TextPrimary, sz);
-            _btnRemoveCloud.Image = Theme.PhosphorIcons.Render(Theme.PhosphorIcons.Trash, System.Drawing.Color.White, sz);
+            _btnAddCloud.Image = LoadIcon("Add_16x16.png");
+            _btnEditCloud.Image = LoadIcon("Edit_16x16.png");
+            _btnRemoveCloud.Image = LoadIcon("Delete_16x16.png");
+        }
+
+        private static System.Drawing.Image? LoadIcon(string name)
+        {
+            var asm = typeof(PlanEditForm).Assembly;
+            string resourceName = $"KoruMsSqlYedek.Win.Resources.Icons.{name}";
+            using var stream = asm.GetManifestResourceStream(resourceName);
+            if (stream is null) return null;
+            return System.Drawing.Image.FromStream(stream);
         }
 
         protected override void OnLoad(EventArgs e)
