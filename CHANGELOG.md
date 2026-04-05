@@ -1,4 +1,32 @@
-﻿## [0.77.3] - 2026-04-06 — Kurtarma Şifresi (Recovery Password)
+﻿## [0.78.0] - 2026-06-18 — TreeView Checkbox Dosya Seçimi
+
+### Yeni Özellik
+- **FileSystemCheckedTreeView kontrolü** — Dosya yedekleme kaynak seçimi için checkbox destekli TreeView kontrolü eklendi.
+  - Lazy-load dizin yapısı (BeforeExpand ile talep üzerine yükleme)
+  - Tri-state checkbox desteği (ebeveyn↔çocuk propagasyonu)
+  - Include/Exclude filtre kalıpları ile görsel filtreleme (hariç tutulan dosyalar soluk görünür)
+  - Wildcard eşleme (*, ?) desteği
+  - Sürücü/Klasör/Dosya simgeleri (Segoe MDL2 Assets)
+  - `GetCheckedPaths()`, `SetCheckedPaths()`, `GetCheckedCounts()`, `NavigateAndExpand()` API'leri
+- **FileBackupSourceEditDialog yeniden tasarlandı** — Yeni TreeView kontrolü ile dosya sistemi gezgini, gerçek zamanlı filtre önizlemesi ve durum çubuğu eklendi.
+  - Form boyutlandırılabilir (800×700, min 680×560)
+  - Include/Exclude kalıpları değiştiğinde TreeView anlık güncellenir
+  - Dizin yolu Enter ile veya Browse butonu ile TreeView'da navigasyon
+  - Seçili klasör/dosya sayısı durum etiketinde gösterilir
+  - Seçenekler yatay düzende (tek satırda) gösterilir
+
+### Düzeltme
+- `MainWindow.BackupLog.resx` çift kaynak çıktısı hatası düzeltildi (MSB3577)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Theme/FileSystemCheckedTreeView.cs` — Yeni custom TreeView kontrolü
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs` — Yeniden tasarlanmış layout
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — TreeView entegrasyonu, yeni event handler'lar
+- `MainWindow.BackupLog.resx` — Kaldırıldı (çift kaynak çakışması)
+
+---
+
+## [0.77.3] - 2026-04-06 — Kurtarma Şifresi (Recovery Password)
 
 ### Yeni Özellik
 - **Plan bazlı kurtarma şifresi** — Plan şifresini unutan kullanıcılar, önceden tanımladıkları kurtarma şifresiyle erişim sağlayabilir.

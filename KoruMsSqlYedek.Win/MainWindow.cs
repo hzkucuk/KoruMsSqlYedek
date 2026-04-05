@@ -103,6 +103,11 @@ namespace KoruMsSqlYedek.Win
                 "KoruMsSqlYedek", "Logs");
 
             InitializeComponent();
+
+            // Versiyon metnini runtime'da ayarla (Designer'da statik metinlere izin verilmiyor)
+            string ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
+            _tslVersion.Text = $"v{ver}";
+
             ApplyIcons();
 
             _dashboardTimer = new System.Windows.Forms.Timer { Interval = 30000 };

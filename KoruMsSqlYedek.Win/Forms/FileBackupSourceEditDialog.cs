@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Helpers;
@@ -12,6 +15,7 @@ namespace KoruMsSqlYedek.Win.Forms
     public partial class FileBackupSourceEditDialog : Theme.ModernFormBase
     {
         private readonly FileBackupSource _source;
+        private bool _suppressFilterUpdate;
 
         /// <summary>Düzenlenen/oluşturulan dosya yedekleme kaynağı.</summary>
         public FileBackupSource Source => _source;
@@ -24,6 +28,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             InitializeComponent();
             ApplyIcons();
+            WireEvents();
 
             if (existing != null)
             {
@@ -52,6 +57,14 @@ namespace KoruMsSqlYedek.Win.Forms
             _btnBrowsePath.Text = "";
         }
 
+        private void WireEvents()
+        {
+            _treeView.CheckStateChanged += OnTreeCheckStateChanged;
+            _txtIncludePatterns.TextChanged += OnFilterPatternsChanged;
+            _txtExcludePatterns.TextChanged += OnFilterPatternsChanged;
+            _txtSourcePath.KeyDown += OnSourcePathKeyDown;
+        }
+
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
@@ -62,19 +75,31 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void LoadSourceToUi()
         {
+            _suppressFilterUpdate = true;
+
             _txtSourceName.Text = _source.SourceName ?? "";
             _txtSourcePath.Text = _source.SourcePath ?? "";
             _chkRecursive.Checked = _source.Recursive;
             _chkUseVss.Checked = _source.UseVss;
             _chkEnabled.Checked = _source.IsEnabled;
 
-            _txtIncludePatterns.Text = _source.IncludePatterns != null
+            _txtIncludePatterns.Text = _source.IncludePatterns is not null
                 ? string.Join("; ", _source.IncludePatterns)
                 : "";
 
-            _txtExcludePatterns.Text = _source.ExcludePatterns != null
+            _txtExcludePatterns.Text = _source.ExcludePatterns is not null
                 ? string.Join("; ", _source.ExcludePatterns)
                 : "";
+
+            _suppressFilterUpdate = false;
+
+            // Kalıpları TreeView'a uygula ve kaynak dizine git
+            ApplyPatternsToTree();
+
+            if (!string.IsNullOrWhiteSpace(_source.SourcePath))
+                _treeView.NavigateAndExpand(_source.SourcePath);
+
+            UpdateStatusLabel();
         }
 
         private bool SaveUiToSource()
@@ -146,14 +171,75 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnBrowseSourcePath(object sender, EventArgs e)
         {
-            using (var fbd = new FolderBrowserDialog())
-            {
-                fbd.Description = Res.Get("FileSource_BrowsePath");
-                if (!string.IsNullOrEmpty(_txtSourcePath.Text))
-                    fbd.SelectedPath = _txtSourcePath.Text;
+            using FolderBrowserDialog fbd = new();
+            fbd.Description = Res.Get("FileSource_BrowsePath");
+            if (!string.IsNullOrEmpty(_txtSourcePath.Text))
+                fbd.SelectedPath = _txtSourcePath.Text;
 
-                if (fbd.ShowDialog(this) == DialogResult.OK)
-                    _txtSourcePath.Text = fbd.SelectedPath;
+            if (fbd.ShowDialog(this) == DialogResult.OK)
+            {
+                _txtSourcePath.Text = fbd.SelectedPath;
+                _treeView.NavigateAndExpand(fbd.SelectedPath);
+            }
+        }
+
+        private void OnTreeCheckStateChanged(object? sender, EventArgs e)
+        {
+            UpdateStatusLabel();
+        }
+
+        private void OnFilterPatternsChanged(object? sender, EventArgs e)
+        {
+            if (_suppressFilterUpdate) return;
+            ApplyPatternsToTree();
+        }
+
+        private void OnSourcePathKeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter) return;
+
+            e.SuppressKeyPress = true;
+            string path = _txtSourcePath.Text.Trim();
+            if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(path))
+                _treeView.NavigateAndExpand(path);
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private void ApplyPatternsToTree()
+        {
+            List<string> includes = ParsePatterns(_txtIncludePatterns.Text);
+            List<string> excludes = ParsePatterns(_txtExcludePatterns.Text);
+
+            _treeView.SetIncludePatterns(includes);
+            _treeView.SetExcludePatterns(excludes);
+        }
+
+        private static List<string> ParsePatterns(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return [];
+
+            return text.Split([';', ','], StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => p.Length > 0)
+                .ToList();
+        }
+
+        private void UpdateStatusLabel()
+        {
+            (int folders, int files) = _treeView.GetCheckedCounts();
+            if (folders == 0 && files == 0)
+            {
+                _lblStatus.Text = "Dosya se\u00e7mek i\u00e7in klas\u00f6rlere g\u00f6z at\u0131n ve onay kutular\u0131n\u0131 i\u015faretleyin";
+                _lblStatus.ForeColor = Theme.ModernTheme.TextSecondary;
+            }
+            else
+            {
+                _lblStatus.Text = $"\u2705 {folders} klas\u00f6r, {files} dosya se\u00e7ili";
+                _lblStatus.ForeColor = Theme.ModernTheme.AccentPrimary;
             }
         }
 
