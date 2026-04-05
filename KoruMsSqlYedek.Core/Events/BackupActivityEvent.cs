@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace KoruMsSqlYedek.Core.Events
 {
@@ -10,6 +11,7 @@ namespace KoruMsSqlYedek.Core.Events
         CloudUploadStarted,   // Bir bulut hedefine upload başladı
         CloudUploadProgress,  // Upload yüzdesi güncellendi
         CloudUploadCompleted, // Bir bulut hedefine upload bitti
+        CloudUploadAbandoned, // Maks deneme aşıldı, dosya terk edildi
         Completed,
         Failed,
         Cancelled
@@ -57,6 +59,12 @@ namespace KoruMsSqlYedek.Core.Events
         /// Varsayılan true — plan bilgisi yoksa her zaman göster.
         /// </summary>
         public bool ToastEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Maks deneme aşılarak terk edilen dosya bilgileri.
+        /// CloudUploadAbandoned olaylarında doldurulur.
+        /// </summary>
+        public List<string> AbandonedFiles { get; set; }
     }
 
     /// <summary>

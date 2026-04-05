@@ -1465,6 +1465,11 @@ namespace KoruMsSqlYedek.Win
                     // Log satırı ve renk switch sonrasında BuildActivityLogLine + GetLogColor ile işlenir.
                     break;
 
+                case BackupActivityType.CloudUploadAbandoned:
+                    // Terk edilen dosyaları uyarı ikonu ile göster
+                    UpdatePlanRowStatusCustom(e.PlanId, "⚠ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.LogWarning);
+                    break;
+
                 case BackupActivityType.Completed:
                 case BackupActivityType.Failed:
                 case BackupActivityType.Cancelled:
@@ -1588,6 +1593,11 @@ namespace KoruMsSqlYedek.Win
                     ? string.Format("Bulut {0}: Başarılı ✓", e.CloudTargetName)
                     : string.Format("Bulut {0}: Başarısız ✕ — {1}", e.CloudTargetName, e.Message ?? "Bilinmeyen hata"),
 
+            BackupActivityType.CloudUploadAbandoned
+                => e.AbandonedFiles is { Count: > 0 }
+                    ? string.Format("⚠ Bulut yükleme terk edildi ({0} dosya): {1}", e.AbandonedFiles.Count, string.Join(", ", e.AbandonedFiles))
+                    : string.Format("⚠ Bulut yükleme terk edildi: {0}", e.Message ?? "Maksimum deneme aşıldı"),
+
             BackupActivityType.Completed
                 => e.IsSuccess || string.IsNullOrEmpty(e.Message)
                     ? string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId)
@@ -1645,6 +1655,7 @@ namespace KoruMsSqlYedek.Win
             BackupActivityType.CloudUploadStarted => Theme.ModernTheme.LogCloud,
             BackupActivityType.CloudUploadProgress => Theme.ModernTheme.LogProgress,
             BackupActivityType.CloudUploadCompleted => Theme.ModernTheme.LogCloud,
+            BackupActivityType.CloudUploadAbandoned => Theme.ModernTheme.LogWarning,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(activityType), activityType,
                 $"Unhandled BackupActivityType: {activityType}. GetLogColor güncellenmelidir.")

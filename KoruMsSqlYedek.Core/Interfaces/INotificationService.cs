@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using KoruMsSqlYedek.Core.Models;
 
@@ -15,6 +16,17 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// </summary>
         Task NotifyAsync(
             BackupResult result,
+            NotificationConfig config,
+            CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Bulut yükleme kalıcı başarısızlığını bildirir.
+        /// Maks deneme aşılıp dosya terk edildiğinde çağrılır.
+        /// </summary>
+        Task NotifyCloudUploadFailureAsync(
+            string planName,
+            List<CloudUploadResult> failedResults,
+            string fileName,
             NotificationConfig config,
             CancellationToken cancellationToken);
     }

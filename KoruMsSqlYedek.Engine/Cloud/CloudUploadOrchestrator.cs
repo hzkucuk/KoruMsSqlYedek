@@ -22,6 +22,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
         private const int MaxRetries = 3;
         private static readonly int[] RetryDelaysMs = { 2000, 4000, 8000 };
 
+        /// <summary>Recovery'de aynı dosya için maksimum toplam deneme sayısı. Aşılırsa vazgeçilir.</summary>
+        private const int MaxRecoveryAttempts = 10;
+
         private readonly Dictionary<CloudProviderType, ICloudProvider> _providers;
         private readonly ICloudProviderFactory _factory;
         private readonly UploadStateManager _stateManager;
@@ -532,10 +535,25 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
             Log.Information("Bekleyen {Count} upload işlemi bulundu, devam ettiriliyor...", pendingStates.Count);
             int recovered = 0;
+            var abandonedFiles = new List<(string FileName, string Provider, int Attempts, string Error)>();
 
             foreach (var state in pendingStates)
             {
                 if (cancellationToken.IsCancellationRequested) break;
+
+                // Maks deneme sayısı aşıldıysa vazgeç ve state'i temizle
+                if (state.AttemptCount >= MaxRecoveryAttempts)
+                {
+                    Log.Warning(
+                        "Recovery: Maks deneme aşıldı ({Attempts}/{Max}), vazgeçiliyor: {Provider} — {File}",
+                        state.AttemptCount, MaxRecoveryAttempts, state.ProviderType, state.RemoteFileName);
+
+                    abandonedFiles.Add((state.RemoteFileName, state.ProviderType.ToString(),
+                        state.AttemptCount, $"Maks deneme sayısı aşıldı ({state.AttemptCount})"));
+
+                    _stateManager.Delete(state.StateId);
+                    continue;
+                }
 
                 try
                 {
@@ -547,9 +565,10 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     }
 
                     Log.Information(
-                        "Recovery: {Provider} — {File} (session: {HasSession})",
+                        "Recovery: {Provider} — {File} (session: {HasSession}, deneme: {Attempt}/{Max})",
                         state.ProviderType, state.RemoteFileName,
-                        !string.IsNullOrEmpty(state.ResumeSessionUri) ? "mevcut" : "yok");
+                        !string.IsNullOrEmpty(state.ResumeSessionUri) ? "mevcut" : "yok",
+                        state.AttemptCount + 1, MaxRecoveryAttempts);
 
                     state.AttemptCount++;
                     state.LastAttemptAt = DateTime.UtcNow;
@@ -573,8 +592,21 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     else
                     {
                         Log.Warning(
-                            "Recovery başarısız: {Provider} — {File} — {Error}",
-                            state.ProviderType, state.RemoteFileName, result.ErrorMessage);
+                            "Recovery başarısız: {Provider} — {File} — {Error} (deneme: {Attempt}/{Max})",
+                            state.ProviderType, state.RemoteFileName, result.ErrorMessage,
+                            state.AttemptCount, MaxRecoveryAttempts);
+
+                        // Toplam deneme aşıldıysa vazgeç
+                        if (state.AttemptCount >= MaxRecoveryAttempts)
+                        {
+                            abandonedFiles.Add((state.RemoteFileName, state.ProviderType.ToString(),
+                                state.AttemptCount, result.ErrorMessage));
+                            _stateManager.Delete(state.StateId);
+
+                            Log.Error(
+                                "Recovery: Kalıcı başarısızlık, dosya terk edildi: {Provider} — {File} ({Attempts} deneme)",
+                                state.ProviderType, state.RemoteFileName, state.AttemptCount);
+                        }
                     }
                 }
                 catch (OperationCanceledException) { break; }
@@ -583,6 +615,19 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     Log.Error(ex, "Recovery hatası: {Provider} — {File}",
                         state.ProviderType, state.RemoteFileName);
                 }
+            }
+
+            // Terk edilen dosyalar için bildirim fırlat
+            if (abandonedFiles.Count > 0)
+            {
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    ActivityType = BackupActivityType.CloudUploadAbandoned,
+                    Message = $"{abandonedFiles.Count} dosyanın bulut yüklemesi kalıcı olarak başarısız oldu",
+                    AbandonedFiles = abandonedFiles
+                        .Select(f => $"{f.FileName} ({f.Provider}, {f.Attempts} deneme): {f.Error}")
+                        .ToList()
+                });
             }
 
             return recovered;

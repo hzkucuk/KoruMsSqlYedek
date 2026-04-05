@@ -1,4 +1,26 @@
-﻿## [0.81.0] - 2026-06-18 — Tahmini 7z Sıkıştırılmış Boyut Gösterimi
+﻿## [0.82.0] - 2026-04-05 — Bulut Yükleme Hata Yönetimi & Bildirim
+
+### Yeni Özellik
+- **Maksimum deneme ile vazgeçme** — Bulut yükleme 10 kurtarma denemesinden sonra otomatik terk edilir (`MaxRecoveryAttempts=10`).
+  - `RecoverPendingUploadsAsync` artık `AttemptCount >= 10` olan dosyaları siler ve `CloudUploadAbandoned` event'i fırlatır.
+  - Terk edilen dosya isimleri `AbandonedFiles` listesiyle UI'ya iletilir.
+- **Bulut yükleme başarısızlık e-posta bildirimi** — Tüm bulut hedeflerine yükleme başarısız olduğunda detaylı HTML e-posta gönderilir.
+  - Plan adı, dosya adı, tarih, sağlayıcı detayları tablosu (deneme sayısı, hata mesajları), aksiyon önerileri.
+  - Hem SQL yedekleme (ana + VSS başarısız) hem dosya yedekleme senaryolarında aktif.
+- **Dosya yedek arşiv adı log'da görünür** — Bulut yükleme tamamlanma mesajında arşiv dosya adı (`archiveFileName`) eklendi.
+
+### Düzeltme
+- **Servis sonsuz yeniden deneme** — Önceden başarısız yükleme kayıtları sonsuza kadar tekrar deneniyor, artık 10 denemeden sonra terk ediliyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.cs` — MaxRecoveryAttempts, abandon logic, CloudUploadAbandoned event
+- `KoruMsSqlYedek.Core/Events/BackupActivityEvent.cs` — CloudUploadAbandoned enum, AbandonedFiles property
+- `KoruMsSqlYedek.Core/Interfaces/INotificationService.cs` — NotifyCloudUploadFailureAsync method
+- `KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs` — NotifyCloudUploadFailureAsync implementasyonu
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — Dosya+SQL yedek cloud failure notification, archiveFileName log
+- `KoruMsSqlYedek.Win/MainWindow.cs` — CloudUploadAbandoned UI handler (OnBackupActivityChanged, BuildActivityLogLine, GetLogColor)
+
+## [0.81.0] - 2026-06-18 — Tahmini 7z Sıkıştırılmış Boyut Gösterimi
 
 ### Yeni Özellik
 - **Tahmini 7z boyut hesaplaması** — Seçili dosyaların gerçek boyutunun yanına tahmini 7z sıkıştırılmış boyutu eklendi.

@@ -505,13 +505,35 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         }
                     }
 
-                    // Her iki upload da başarısızsa uyarı
+                    // Her iki upload da başarısızsa uyarı ve bildirim
                     if (!mainUploadOk && !vssUploadOk)
                     {
                         Log.Error(
                             "Buluta hiçbir dosya yüklenemedi: {Database} — " +
                             "ne ana yedek ne de VSS kopyası başarılı olamadı.", dbName);
                         cloudAllOk = false;
+
+                        // Başarısız sonuçları topla ve bildir
+                        var allFailedResults = new List<CloudUploadResult>();
+                        if (result.CloudUploadResults is not null)
+                            allFailedResults.AddRange(result.CloudUploadResults.Where(r => !r.IsSuccess));
+
+                        if (allFailedResults.Count > 0 && NotificationService is not null && plan.Notifications is not null)
+                        {
+                            try
+                            {
+                                string failedFile = !string.IsNullOrEmpty(result.CompressedFilePath)
+                                    ? Path.GetFileName(result.CompressedFilePath)
+                                    : Path.GetFileName(result.BackupFilePath);
+
+                                await NotificationService.NotifyCloudUploadFailureAsync(
+                                    plan.PlanName, allFailedResults, failedFile, plan.Notifications, ct);
+                            }
+                            catch (Exception notifyEx)
+                            {
+                                Log.Warning(notifyEx, "Bulut upload başarısızlık bildirimi gönderilemedi: {Database}", dbName);
+                            }
+                        }
                     }
                 }
 
@@ -725,15 +747,17 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             // Buluta gönder
             bool fileCloudOk = false;
             int enabledTargetCount = plan.CloudTargets.Count(t => t.IsEnabled);
+            string archiveFileName = Path.GetFileName(archivePath);
             Log.Information("Dosya yedek bulut yüklemesi başlıyor: {Archive} — {TargetCount} hedef",
                 archivePath, enabledTargetCount);
             try
             {
                 var uploadResults = await CloudOrchestrator.UploadToAllAsync(
-                    archivePath, Path.GetFileName(archivePath),
+                    archivePath, archiveFileName,
                     plan.CloudTargets, null, ct, plan.PlanName, plan.PlanId);
 
                 int successCount = uploadResults.Count(r => r.IsSuccess);
+                int totalCount = uploadResults.Count;
                 fileCloudOk = successCount > 0;
 
                 Log.Information("Dosya yedek bulut yüklemesi tamamlandı. Plan={PlanName}", plan.PlanName);
@@ -747,8 +771,23 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     PlanName = plan.PlanName,
                     ActivityType = BackupActivityType.StepChanged,
                     StepName = "Dosya Bulut Yükleme",
-                    Message = $"Dosya yedek bulut yüklemesi tamamlandı [{Fmt(uploadSize)}]"
+                    Message = $"Dosya yedek bulut yüklemesi tamamlandı: {archiveFileName} — {successCount}/{totalCount} başarılı [{Fmt(uploadSize)}]"
                 });
+
+                // Başarısız hedefler varsa bildirim gönder
+                var failedResults = uploadResults.Where(r => !r.IsSuccess).ToList();
+                if (failedResults.Count > 0 && NotificationService is not null && plan.Notifications is not null)
+                {
+                    try
+                    {
+                        await NotificationService.NotifyCloudUploadFailureAsync(
+                            plan.PlanName, failedResults, archiveFileName, plan.Notifications, ct);
+                    }
+                    catch (Exception notifyEx)
+                    {
+                        Log.Warning(notifyEx, "Bulut upload başarısızlık bildirimi gönderilemedi: {PlanName}", plan.PlanName);
+                    }
+                }
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
