@@ -1,4 +1,27 @@
-﻿## [0.78.0] - 2026-06-18 — TreeView Checkbox Dosya Seçimi
+﻿## [0.79.0] - 2026-06-18 — Mega Login Düzeltmesi & TreeView Boyut Hesaplaması
+
+### Düzeltme
+- **Mega login timeout** — Login zaman aşımı 30s→90s'ye çıkarıldı (hashcash/PBKDF2 hesaplaması için yeterli süre).
+  - `LoginAsync` çağrısı `Task.Run` ile sarımlandı — .NET 10'da kütüphanenin dahili sync-over-async çağrıları güvenle çalışır.
+  - `SynchronizeApiRequests=false` ile oluşturma — semafor ile zaten kontrol edildiği için gereksiz iç kilitleme kaldırıldı.
+  - Şifre çözüleme kontrolü eklendi (null/empty ise açıklayıcı hata mesajı).
+  - Giriş öncesi teşhis log'u eklendi (email + şifre uzunluğu).
+
+### Yeni Özellik
+- **TreeView disk boyut hesaplaması** — Seçilen dosya ve klasörlerin toplam boyutu arka planda hesaplanır ve status bar'da gösterilir.
+  - `ConcurrentDictionary` önbelleği: dosya boyutları `LoadChildren` sırasında, klasör boyutları ilk erişimde cache'lenir.
+  - Arka plan `Task.Run` ile hesaplama, `CancellationToken` ile debounce.
+  - `SizeCalculated` event'i ile UI güncelleme ("3 klasör, 12 dosya seçili — 1.45 GB").
+  - `GetCheckedTotalSize()` API metodu.
+  - Okunabilir boyut formatı: B, KB, MB, GB.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` — Login timeout artırımı, Task.Run sarmalama, Options, teşhis log
+- `KoruMsSqlYedek.Core/Constants/TimeoutConstants.cs` — `MegaLoginTimeoutSeconds = 90` eklendi
+- `KoruMsSqlYedek.Win/Theme/FileSystemCheckedTreeView.cs` — Boyut cache, arka plan hesaplama, SizeCalculated event
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — Boyut gösterimi, FormatFileSize, SizeCalculated handler
+
+## [0.78.0] - 2026-06-18 — TreeView Checkbox Dosya Seçimi
 
 ### Yeni Özellik
 - **FileSystemCheckedTreeView kontrolü** — Dosya yedekleme kaynak seçimi için checkbox destekli TreeView kontrolü eklendi.

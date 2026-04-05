@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace KoruMsSqlYedek.Win.Theme
@@ -32,8 +35,21 @@ namespace KoruMsSqlYedek.Win.Theme
         private List<string> _includePatterns = new();
         private List<string> _excludePatterns = new();
 
-        /// <summary>Checkbox durumu değiştiğinde tetiklenir.</summary>
+        // ── Size Cache ──
+        /// <summary>Dosya boyutu önbelleği: path → byte cinsinden boyut. LoadChildren sırasında doldurulur.</summary>
+        private readonly ConcurrentDictionary<string, long> _fileSizeCache = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Klasör boyutu önbelleği: path → byte cinsinden toplam boyut (recursive).</summary>
+        private readonly ConcurrentDictionary<string, long> _folderSizeCache = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Arka plan boyut hesaplamasını iptal etmek için.</summary>
+        private CancellationTokenSource _sizeCts;
+
+        /// <summary>Checkpoint durumu değiştiğinde tetiklenir.</summary>
         internal event EventHandler CheckStateChanged;
+
+        /// <summary>Boyut hesaplaması tamamlandığında (veya güncellendiğinde) tetiklenir. Toplam boyutu (long) taşır.</summary>
+        internal event EventHandler<long> SizeCalculated;
 
         internal FileSystemCheckedTreeView()
         {
@@ -139,6 +155,18 @@ namespace KoruMsSqlYedek.Win.Theme
             return (folders, files);
         }
 
+        /// <summary>
+        /// Seçili dosya ve klasörlerin toplam boyutunu döndürür (byte).
+        /// Önbellekte mevcut değerleri kullanır; eksik klasörler için -1 tahmini döner.
+        /// Tam sonuç için SizeCalculated event'ini dinleyin.
+        /// </summary>
+        internal long GetCheckedTotalSize()
+        {
+            long total = 0;
+            CalculateCheckedSize(_tree.Nodes, ref total);
+            return total;
+        }
+
         /// <summary>TreeView'ı tamamen yeniden yükler.</summary>
         internal void RefreshTree()
         {
@@ -234,6 +262,11 @@ namespace KoruMsSqlYedek.Win.Theme
                     bool excluded = IsExcludedByPattern(file.Name);
                     bool included = IsIncludedByPattern(file.Name);
 
+                    // Boyutu önbelleğe al — FileInfo zaten elde edildiği için ek I/O maliyeti yok
+                    try { _fileSizeCache[file.FullName] = file.Length; }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+
                     TreeNode fileNode = new(file.Name)
                     {
                         Tag = file.FullName,
@@ -306,6 +339,7 @@ namespace KoruMsSqlYedek.Win.Theme
             }
 
             CheckStateChanged?.Invoke(this, EventArgs.Empty);
+            RequestSizeCalculationAsync();
         }
 
         // ═══════════════ TRI-STATE CHECK PROPAGATION ═══════════════
@@ -554,6 +588,133 @@ namespace KoruMsSqlYedek.Win.Theme
             }
         }
 
+        // ═══════════════ SIZE CALCULATION ═══════════════
+
+        /// <summary>
+        /// Seçili öğelerin boyutunu arka planda hesaplar ve SizeCalculated event'ini tetikler.
+        /// Her çağrıda önceki hesaplama iptal edilir (debounce).
+        /// </summary>
+        private void RequestSizeCalculationAsync()
+        {
+            _sizeCts?.Cancel();
+            _sizeCts?.Dispose();
+            _sizeCts = new CancellationTokenSource();
+            CancellationToken ct = _sizeCts.Token;
+
+            // Seçili yolları UI thread'inde topla
+            List<string> checkedPaths = GetCheckedPaths();
+
+            Task.Run(() =>
+            {
+                long total = 0;
+                foreach (string path in checkedPaths)
+                {
+                    if (ct.IsCancellationRequested) return;
+
+                    if (File.Exists(path))
+                    {
+                        total += GetFileSizeCached(path);
+                    }
+                    else if (Directory.Exists(path))
+                    {
+                        total += GetFolderSizeCached(path, ct);
+                    }
+                }
+
+                if (!ct.IsCancellationRequested)
+                {
+                    try
+                    {
+                        BeginInvoke(new Action(() => SizeCalculated?.Invoke(this, total)));
+                    }
+                    catch (InvalidOperationException) { }
+                }
+            }, ct);
+        }
+
+        /// <summary>Dosya boyutunu cache'den döndürür, yoksa hesaplar ve cache'ler.</summary>
+        private long GetFileSizeCached(string filePath)
+        {
+            if (_fileSizeCache.TryGetValue(filePath, out long cached))
+                return cached;
+
+            try
+            {
+                long size = new FileInfo(filePath).Length;
+                _fileSizeCache[filePath] = size;
+                return size;
+            }
+            catch (IOException) { return 0; }
+            catch (UnauthorizedAccessException) { return 0; }
+        }
+
+        /// <summary>
+        /// Klasör boyutunu cache'den döndürür, yoksa recursive hesaplar ve cache'ler.
+        /// EnumerateFiles ile tek seferde tüm dosyaları tarar — verimli I/O.
+        /// </summary>
+        private long GetFolderSizeCached(string folderPath, CancellationToken ct)
+        {
+            if (_folderSizeCache.TryGetValue(folderPath, out long cached))
+                return cached;
+
+            long total = 0;
+            try
+            {
+                foreach (string file in Directory.EnumerateFiles(folderPath, "*", SearchOption.AllDirectories))
+                {
+                    if (ct.IsCancellationRequested) return 0;
+
+                    try
+                    {
+                        long fileSize = GetFileSizeCached(file);
+                        total += fileSize;
+                    }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+
+            if (!ct.IsCancellationRequested)
+                _folderSizeCache[folderPath] = total;
+
+            return total;
+        }
+
+        /// <summary>Checked node'ların boyutunu hesaplar (sync, cache'den).</summary>
+        private void CalculateCheckedSize(TreeNodeCollection nodes, ref long total)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                if (node.Name == DummyNodeKey) continue;
+
+                if (node.Checked)
+                {
+                    string path = node.Tag as string;
+                    if (string.IsNullOrEmpty(path)) continue;
+
+                    bool allChildrenSelected = AllChildrenChecked(node);
+                    if (allChildrenSelected || node.Nodes.Count == 0 ||
+                        (node.Nodes.Count == 1 && node.Nodes[0].Name == DummyNodeKey))
+                    {
+                        if (_fileSizeCache.TryGetValue(path, out long fileSize))
+                            total += fileSize;
+                        else if (_folderSizeCache.TryGetValue(path, out long folderSize))
+                            total += folderSize;
+                    }
+                    else
+                    {
+                        CalculateCheckedSize(node.Nodes, ref total);
+                    }
+                }
+                else if (HasAnyCheckedChild(node))
+                {
+                    CalculateCheckedSize(node.Nodes, ref total);
+                }
+            }
+        }
+
         // ═══════════════ NAVIGATION ═══════════════
 
         private TreeNode NavigateToPath(string fullPath)
@@ -673,6 +834,8 @@ namespace KoruMsSqlYedek.Win.Theme
         {
             if (disposing)
             {
+                _sizeCts?.Cancel();
+                _sizeCts?.Dispose();
                 _imageList?.Dispose();
             }
             base.Dispose(disposing);

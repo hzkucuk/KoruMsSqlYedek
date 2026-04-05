@@ -60,6 +60,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void WireEvents()
         {
             _treeView.CheckStateChanged += OnTreeCheckStateChanged;
+            _treeView.SizeCalculated += OnSizeCalculated;
             _txtIncludePatterns.TextChanged += OnFilterPatternsChanged;
             _txtExcludePatterns.TextChanged += OnFilterPatternsChanged;
             _txtSourcePath.KeyDown += OnSourcePathKeyDown;
@@ -194,6 +195,11 @@ namespace KoruMsSqlYedek.Win.Forms
             ApplyPatternsToTree();
         }
 
+        private void OnSizeCalculated(object? sender, long totalBytes)
+        {
+            UpdateStatusLabel(totalBytes);
+        }
+
         private void OnSourcePathKeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode != Keys.Enter) return;
@@ -228,7 +234,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 .ToList();
         }
 
-        private void UpdateStatusLabel()
+        private void UpdateStatusLabel(long totalBytes = -1)
         {
             (int folders, int files) = _treeView.GetCheckedCounts();
             if (folders == 0 && files == 0)
@@ -238,9 +244,23 @@ namespace KoruMsSqlYedek.Win.Forms
             }
             else
             {
-                _lblStatus.Text = $"\u2705 {folders} klas\u00f6r, {files} dosya se\u00e7ili";
+                string sizeText = totalBytes >= 0
+                    ? $" \u2014 {FormatFileSize(totalBytes)}"
+                    : " \u2014 hesaplan\u0131yor...";
+                _lblStatus.Text = $"\u2705 {folders} klas\u00f6r, {files} dosya se\u00e7ili{sizeText}";
                 _lblStatus.ForeColor = Theme.ModernTheme.AccentPrimary;
             }
+        }
+
+        private static string FormatFileSize(long bytes)
+        {
+            return bytes switch
+            {
+                < 1024L => $"{bytes} B",
+                < 1024L * 1024 => $"{bytes / 1024.0:F1} KB",
+                < 1024L * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+                _ => $"{bytes / (1024.0 * 1024 * 1024):F2} GB"
+            };
         }
 
         #endregion

@@ -32,6 +32,9 @@ namespace KoruMsSqlYedek.Core.Constants
         /// <summary>Mega bağlantı ön kontrolü zaman aşımı (saniye).</summary>
         public const int MegaConnectivityCheckSeconds = 10;
 
+        /// <summary>Mega login zaman aşımı (saniye). Hashcash/PBKDF2 hesaplaması nedeniyle yüksek.</summary>
+        public const int MegaLoginTimeoutSeconds = 90;
+
         /// <summary>Mega oturum önbellek süresi (dakika).</summary>
         public const int MegaSessionExpiryMinutes = 15;
 

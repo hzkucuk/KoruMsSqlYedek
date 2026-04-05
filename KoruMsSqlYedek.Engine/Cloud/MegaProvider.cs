@@ -21,8 +21,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<MegaProvider>();
 
-        /// <summary>Login/Logout gibi CancellationToken almayan API çağrıları için zaman aşımı.</summary>
-        private const int ApiTimeoutSeconds = 30;
+        /// <summary>Login zaman aşımı (saniye). Hashcash/PBKDF2 hesaplaması nedeniyle yüksek tutulur.</summary>
+        private const int LoginTimeoutSeconds = TimeoutConstants.MegaLoginTimeoutSeconds;
 
         /// <summary>Logout temizliği için kısa zaman aşımı — takılırsa beklemeyi kes.</summary>
         private const int LogoutTimeoutSeconds = TimeoutConstants.MegaLogoutTimeoutSeconds;
@@ -205,7 +205,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
             {
                 ValidateConfig(config);
 
-                client = new MegaApiClient();
+                client = new MegaApiClient(new Options(synchronizeApiRequests: false));
                 await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
 
                 var accountInfo = await client.GetAccountInformationAsync().ConfigureAwait(false);
@@ -284,8 +284,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 await InvalidateSessionInternalAsync().ConfigureAwait(false);
             }
 
-            // Yeni oturum aç
-            var client = new MegaApiClient();
+            // Yeni oturum aç — SynchronizeApiRequests=false: sıralama _sessionSemaphore ile sağlanıyor
+            var client = new MegaApiClient(new Options(synchronizeApiRequests: false));
             await LoginWithTimeoutAsync(client, config, cancellationToken).ConfigureAwait(false);
 
             _cachedClient = client;
@@ -313,8 +313,10 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>
         /// Mega hesabına email/şifre ile giriş yapar.
-        /// Önce bağlantı ön kontrolü yapılır (10s), ardından login denenir (30s timeout).
+        /// Önce bağlantı ön kontrolü yapılır (10s), ardından login denenir (90s timeout).
         /// MegaApiClient.LoginAsync CancellationToken desteklemediği için timeout koruması uygulanır.
+        /// LoginAsync, Task.Run içinde çalıştırılır — kütüphanenin dahili sync-over-async çağrıları
+        /// .NET 10'da thread pool'da güvenli şekilde çözülür.
         /// </summary>
         private static async Task LoginWithTimeoutAsync(
             MegaApiClient client,
@@ -326,31 +328,50 @@ namespace KoruMsSqlYedek.Engine.Cloud
             string email = config.Username;
             string password = PasswordProtector.Unprotect(config.Password);
 
-            Log.Debug("Mega kimlik bilgileri: email={Email}, şifre uzunluk={PasswordLength}",
-                email, password?.Length ?? 0);
+            if (string.IsNullOrEmpty(password))
+            {
+                throw new InvalidOperationException(
+                    "Mega şifresi çözülemedi — şifre DPAPI ile korunmuş olabilir ve farklı bir makinede çözülemez. " +
+                    "Mega hesap ayarlarından şifreyi yeniden girin.");
+            }
+
+            Log.Debug("Mega login başlıyor: email={Email}, şifre uzunluk={PasswordLength}",
+                email, password.Length);
 
             // ── Bağlantı ön kontrolü ─────────────────────────────────
             // Mega API sunucusuna hızlı HTTP isteği göndererek erişilebilirliği doğrula.
-            // Başarısızsa 30 saniye login timeout beklemek yerine anında hata verilir.
+            // Başarısızsa login timeout beklemek yerine anında hata verilir.
             await CheckMegaConnectivityAsync(cancellationToken).ConfigureAwait(false);
 
+            Log.Debug("Mega bağlantı kontrolü başarılı, login deneniyor ({Timeout}s timeout)...", LoginTimeoutSeconds);
+
             // ── Login ────────────────────────────────────────────────
-            var loginTask = client.LoginAsync(email, password);
+            // Task.Run ile sarmalama: MegaApiClient dahili olarak sync PostRequestJson çağrıları
+            // yapar (HttpClient.SendAsync().GetAwaiter().GetResult()). .NET 10'da bu çağrılar
+            // thread pool'da güvenli çalışması için Task.Run gerekebilir.
+            var loginTask = Task.Run(
+                () => client.LoginAsync(email, password),
+                cancellationToken);
+
             var completed = await Task.WhenAny(
                 loginTask,
-                Task.Delay(TimeSpan.FromSeconds(ApiTimeoutSeconds), cancellationToken))
+                Task.Delay(TimeSpan.FromSeconds(LoginTimeoutSeconds), cancellationToken))
                 .ConfigureAwait(false);
 
             if (completed != loginTask)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 throw new TimeoutException(
-                    $"Mega giriş zaman aşımına uğradı ({ApiTimeoutSeconds} saniye). " +
+                    $"Mega giriş zaman aşımına uğradı ({LoginTimeoutSeconds} saniye). " +
                     "Sunucu erişilebilir ancak giriş yanıt vermiyor. " +
-                    "Email/şifre bilgilerinizi kontrol edin.");
+                    "Olası nedenler: (1) Email/şifre hatalı, (2) Hesap kilitli/2FA aktif, " +
+                    "(3) Mega sunucu yoğunluğu. Email/şifre bilgilerinizi kontrol edin.");
             }
 
+            // loginTask faulted olabilir — await ile exception'ı yakala
             await loginTask.ConfigureAwait(false);
+
+            Log.Information("Mega login başarılı: {Email}", email);
         }
 
         /// <summary>
