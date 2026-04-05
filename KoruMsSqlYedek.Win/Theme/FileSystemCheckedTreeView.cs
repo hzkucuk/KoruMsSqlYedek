@@ -11,6 +11,9 @@ using System.Windows.Forms;
 
 namespace KoruMsSqlYedek.Win.Theme
 {
+    /// <summary>Boyut hesaplama sonucu — gerçek boyut ve tahmini 7z sıkıştırılmış boyut.</summary>
+    internal sealed record SizeCalculationResult(long TotalBytes, long Estimated7zBytes);
+
     /// <summary>
     /// Dosya sistemi TreeView kontrolü — checkbox desteği, tri-state propagation,
     /// lazy-load ve include/exclude filtre görselleştirmesi.
@@ -48,8 +51,8 @@ namespace KoruMsSqlYedek.Win.Theme
         /// <summary>Checkpoint durumu değiştiğinde tetiklenir.</summary>
         internal event EventHandler CheckStateChanged;
 
-        /// <summary>Boyut hesaplaması tamamlandığında (veya güncellendiğinde) tetiklenir. Toplam boyutu (long) taşır.</summary>
-        internal event EventHandler<long> SizeCalculated;
+        /// <summary>Boyut hesaplaması tamamlandığında tetiklenir. Gerçek ve tahmini 7z boyutunu taşır.</summary>
+        internal event EventHandler<SizeCalculationResult> SizeCalculated;
 
         internal FileSystemCheckedTreeView()
         {
@@ -593,6 +596,7 @@ namespace KoruMsSqlYedek.Win.Theme
         /// <summary>
         /// Seçili öğelerin boyutunu arka planda hesaplar ve SizeCalculated event'ini tetikler.
         /// Her çağrıda önceki hesaplama iptal edilir (debounce).
+        /// Dosya uzantılarına göre tahmini 7z sıkıştırılmış boyut da hesaplanır.
         /// </summary>
         private void RequestSizeCalculationAsync()
         {
@@ -607,17 +611,22 @@ namespace KoruMsSqlYedek.Win.Theme
             Task.Run(() =>
             {
                 long total = 0;
+                double estimated7z = 0;
+
                 foreach (string path in checkedPaths)
                 {
                     if (ct.IsCancellationRequested) return;
 
                     if (File.Exists(path))
                     {
-                        total += GetFileSizeCached(path);
+                        long size = GetFileSizeCached(path);
+                        total += size;
+                        estimated7z += size * Estimate7zRatio(path);
                     }
                     else if (Directory.Exists(path))
                     {
                         total += GetFolderSizeCached(path, ct);
+                        estimated7z += GetFolderEstimated7zSize(path, ct);
                     }
                 }
 
@@ -625,7 +634,8 @@ namespace KoruMsSqlYedek.Win.Theme
                 {
                     try
                     {
-                        BeginInvoke(new Action(() => SizeCalculated?.Invoke(this, total)));
+                        SizeCalculationResult result = new(total, (long)estimated7z);
+                        BeginInvoke(new Action(() => SizeCalculated?.Invoke(this, result)));
                     }
                     catch (InvalidOperationException) { }
                 }
@@ -680,6 +690,80 @@ namespace KoruMsSqlYedek.Win.Theme
                 _folderSizeCache[folderPath] = total;
 
             return total;
+        }
+
+        /// <summary>
+        /// Klasör içindeki dosyaların uzantılarına göre tahmini 7z sıkıştırılmış boyutunu hesaplar.
+        /// </summary>
+        private long GetFolderEstimated7zSize(string folderPath, CancellationToken ct)
+        {
+            double estimated = 0;
+            try
+            {
+                foreach (string file in Directory.EnumerateFiles(folderPath, "*", SearchOption.AllDirectories))
+                {
+                    if (ct.IsCancellationRequested) return 0;
+
+                    try
+                    {
+                        long fileSize = GetFileSizeCached(file);
+                        estimated += fileSize * Estimate7zRatio(file);
+                    }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+
+            return (long)estimated;
+        }
+
+        /// <summary>
+        /// Dosya uzantısına göre tahmini 7z sıkıştırma oranını döndürür.
+        /// 0.0 = tam sıkıştırma, 1.0 = sıkıştırma yok.
+        /// </summary>
+        private static double Estimate7zRatio(string filePath)
+        {
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            return ext switch
+            {
+                // Zaten sıkıştırılmış formatlar — neredeyse küçülmez
+                ".7z" or ".zip" or ".rar" or ".gz" or ".bz2" or ".xz" or ".zst" or ".cab" => 0.99,
+                ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" or ".heic" or ".avif" => 0.98,
+                ".mp4" or ".mkv" or ".avi" or ".mov" or ".wmv" or ".flv" or ".webm" => 0.98,
+                ".mp3" or ".aac" or ".ogg" or ".flac" or ".wma" or ".opus" => 0.98,
+
+                // Modern Office (dahili zip) — az küçülür
+                ".docx" or ".xlsx" or ".pptx" or ".odt" or ".ods" or ".odp" => 0.92,
+                ".pdf" => 0.87,
+
+                // Eski Office & binary belgeler — orta sıkıştırma
+                ".doc" or ".xls" or ".ppt" or ".rtf" => 0.40,
+
+                // Veritabanı / yedek dosyaları — iyi sıkıştırır
+                ".bak" or ".mdf" or ".ldf" or ".ndf" or ".trn" => 0.20,
+                ".mdb" or ".accdb" or ".sqlite" or ".db" => 0.25,
+
+                // Çalıştırılabilir / ikili — orta
+                ".exe" or ".dll" or ".sys" or ".ocx" => 0.45,
+                ".iso" or ".img" or ".vhd" or ".vhdx" => 0.55,
+                ".pst" or ".ost" => 0.35,
+
+                // Metin / kaynak kodu — çok iyi sıkıştırır
+                ".txt" or ".log" or ".csv" or ".tsv" or ".md" => 0.12,
+                ".cs" or ".vb" or ".java" or ".py" or ".js" or ".ts" or ".cpp" or ".h" or ".c" => 0.12,
+                ".xml" or ".json" or ".yaml" or ".yml" or ".toml" or ".ini" or ".cfg" or ".config" => 0.12,
+                ".html" or ".htm" or ".css" or ".scss" or ".less" => 0.12,
+                ".sql" or ".ps1" or ".sh" or ".bat" or ".cmd" => 0.12,
+                ".sln" or ".csproj" or ".vbproj" or ".fsproj" or ".props" or ".targets" => 0.12,
+
+                // Bitmap görsel — iyi sıkıştırır
+                ".bmp" or ".tif" or ".tiff" or ".raw" => 0.15,
+
+                // Bilinmeyen — varsayılan orta tahmin
+                _ => 0.50
+            };
         }
 
         /// <summary>Checked node'ların boyutunu hesaplar (sync, cache'den).</summary>

@@ -202,9 +202,9 @@ namespace KoruMsSqlYedek.Win.Forms
             ApplyPatternsToTree();
         }
 
-        private void OnSizeCalculated(object? sender, long totalBytes)
+        private void OnSizeCalculated(object? sender, Theme.SizeCalculationResult result)
         {
-            UpdateStatusLabel(totalBytes);
+            UpdateStatusLabel(result.TotalBytes, result.Estimated7zBytes);
         }
 
         #endregion
@@ -231,7 +231,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 .ToList();
         }
 
-        private void UpdateStatusLabel(long totalBytes = -1)
+        private void UpdateStatusLabel(long totalBytes = -1, long estimated7zBytes = -1)
         {
             (int folders, int files) = _treeView.GetCheckedCounts();
             if (folders == 0 && files == 0)
@@ -241,9 +241,14 @@ namespace KoruMsSqlYedek.Win.Forms
             }
             else
             {
-                string sizeText = totalBytes >= 0
-                    ? $" — {FormatFileSize(totalBytes)}"
-                    : " — hesaplanıyor...";
+                string sizeText;
+                if (totalBytes >= 0 && estimated7zBytes >= 0)
+                    sizeText = $" — {FormatFileSize(totalBytes)} (~{FormatFileSize(estimated7zBytes)} 7z)";
+                else if (totalBytes >= 0)
+                    sizeText = $" — {FormatFileSize(totalBytes)}";
+                else
+                    sizeText = " — hesaplanıyor...";
+
                 _lblStatus.Text = $"✅ {folders} klasör, {files} dosya seçili{sizeText}";
                 _lblStatus.ForeColor = Theme.ModernTheme.AccentPrimary;
             }

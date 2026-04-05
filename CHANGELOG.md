@@ -1,4 +1,17 @@
-﻿## [0.80.0] - 2026-06-18 — TreeView Kaynak Seçimi Mimarisi
+﻿## [0.81.0] - 2026-06-18 — Tahmini 7z Sıkıştırılmış Boyut Gösterimi
+
+### Yeni Özellik
+- **Tahmini 7z boyut hesaplaması** — Seçili dosyaların gerçek boyutunun yanına tahmini 7z sıkıştırılmış boyutu eklendi.
+  - Dosya uzantısına göre 30+ kategori: metin (~%12), veritabanı/bak (~%20), sıkıştırılmış (~%99), görsel (~%98), exe (~%45).
+  - `SizeCalculationResult` record ile hem gerçek hem tahmini boyut iletilir.
+  - Durum çubuğu formatı: "✅ 3 klasör, 12 dosya seçili — 1.99 GB (~890 MB 7z)".
+  - Arka plan `Task.Run` ile hesaplama, `CancellationToken` debounce.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Theme/FileSystemCheckedTreeView.cs` — SizeCalculationResult, Estimate7zRatio, GetFolderEstimated7zSize
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — UpdateStatusLabel tahmini 7z gösterimi
+
+## [0.80.0] - 2026-06-18 — TreeView Kaynak Seçimi Mimarisi
 
 ### Yeni Özellik
 - **TreeView kaynak gerçeği (source of truth)** — Dizin Yolu textbox'ı kaldırıldı, TreeView seçimleri artık dosya yedekleme kaynağının tek belirleyicisi.
