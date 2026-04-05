@@ -1401,6 +1401,8 @@ namespace KoruMsSqlYedek.Win
                                 stepTracker.IsVssPhase = true;
                             else if (e.StepName == "Dosya Yedekleme" && !stepTracker.IsFileBackupPhase)
                                 stepPct = stepTracker.CalculateFileBackupPhaseStart();
+                            else if (e.StepName == "Dosya Yedekleme" && stepTracker.IsFileBackupPhase && e.TotalCount > 0)
+                                stepPct = stepTracker.CalculateFileSourceProgress(e.CurrentIndex, e.TotalCount);
                             else if (e.StepName == "Dosya Sıkıştırma" && stepTracker.IsFileBackupPhase)
                                 stepPct = stepTracker.CalculateFileCompressionProgress();
 

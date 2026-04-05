@@ -1,4 +1,34 @@
-﻿## [0.82.0] - 2026-04-05 — Bulut Yükleme Hata Yönetimi & Bildirim
+﻿## [0.83.0] - 2026-06-21 — Dosya Yedekleme Fark/Artırımlı Strateji & İlerleme Çubuğu Düzeltmesi
+
+### Yeni Özellik
+- **Dosya yedekleme stratejisi (Tam/Fark/Artırımlı)** — Dosya yedekleme görevleri artık üç strateji destekliyor:
+  - **Tam Yedek:** Her seferinde tüm dosyalar yedeklenir (varsayılan).
+  - **Fark Yedek:** Son tam yedekten bu yana değişen dosyalar yedeklenir.
+  - **Artırımlı Yedek:** Son yedekten (tam veya artırımlı) bu yana değişen dosyalar yedeklenir.
+  - JSON manifest sistemi: `{LocalPath}/Manifests/file_full.json` (son tam yedek) + `file_last.json` (son herhangi yedek).
+  - Dosya karşılaştırma: `LastWriteTimeUtc` + `Size` üzerinden (hash yok, performans için).
+  - Fark/artırımlı yedekte değişen dosya yoksa manifest güncellenir, boş arşiv oluşturulmaz.
+- **Plan düzenleme formunda strateji seçimi** — Adım 3'te dosya yedekleme bölümüne "Strateji" ComboBox eklendi.
+
+### Düzeltme
+- **İlerleme çubuğu dosya yedeklemeyi yansıtmıyor** — Dosya kaynaklarının kopyalanma ilerlemesi artık ilerleme çubuğuna yansıtılıyor.
+  - `PlanProgressTracker.CalculateFileSourceProgress`: Dosya-only planlarda %0-25, SQL+dosya planlarda %80-85 aralığında kaynak bazlı ilerleme.
+  - `BackupJobExecutor`: Her kaynak için `CurrentIndex`/`TotalCount` event parametreleri eklendi.
+  - `MainWindow`: StepChanged handler'a dosya kaynak ilerleme hesaplaması eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/FileBackupModels.cs` — FileBackupStrategy enum, Strategy property, BackedUpFilePaths
+- `KoruMsSqlYedek.Core/PlanProgressTracker.cs` — CalculateFileSourceProgress metodu
+- `KoruMsSqlYedek.Engine/FileBackup/FileBackupManifestManager.cs` — YENİ DOSYA: Manifest model ve yönetici
+- `KoruMsSqlYedek.Engine/FileBackup/FileBackupService.cs` — Strateji tabanlı filtreleme, manifest kaydetme
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — Strateji etiketi, kaynak bazlı event'ler
+- `KoruMsSqlYedek.Win/MainWindow.cs` — Dosya kaynak ilerleme handler
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs` — Strateji ComboBox kontrolleri
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs` — Strateji yükleme/kaydetme
+- `KoruMsSqlYedek.Win/Properties/Resources.resx` — FileStrat resource key'leri
+- `KoruMsSqlYedek.Win/Properties/Resources.tr-TR.resx` — FileStrat Türkçe çeviriler
+
+## [0.82.0] - 2026-04-05 — Bulut Yükleme Hata Yönetimi & Bildirim
 
 ### Yeni Özellik
 - **Maksimum deneme ile vazgeçme** — Bulut yükleme 10 kurtarma denemesinden sonra otomatik terk edilir (`MaxRecoveryAttempts=10`).

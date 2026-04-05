@@ -597,8 +597,14 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             }
 
             int enabledSources = plan.FileBackup.Sources?.Count(s => s.IsEnabled) ?? 0;
-            Log.Information("Dosya yedekleme başlıyor: Plan={PlanName}, Kaynaklar={SourceCount}, CorrelationId={CorrelationId}",
-                plan.PlanName, enabledSources, correlationId);
+            string strategyLabel = plan.FileBackup.Strategy switch
+            {
+                FileBackupStrategy.Differential => "Fark",
+                FileBackupStrategy.Incremental => "Artırımlı",
+                _ => "Tam"
+            };
+            Log.Information("Dosya yedekleme başlıyor: Plan={PlanName}, Strateji={Strategy}, Kaynaklar={SourceCount}, CorrelationId={CorrelationId}",
+                plan.PlanName, strategyLabel, enabledSources, correlationId);
 
             BackupActivityHub.Raise(new BackupActivityEventArgs
             {
@@ -606,15 +612,18 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 PlanName = plan.PlanName,
                 ActivityType = BackupActivityType.StepChanged,
                 StepName = "Dosya Yedekleme",
-                Message = $"Dosya yedekleme başlıyor: {enabledSources} kaynak"
+                Message = $"Dosya yedekleme başlıyor ({strategyLabel}): {enabledSources} kaynak"
             });
 
             var results = await FileBackupService.BackupFilesAsync(plan, null, ct);
 
             int totalCopied = 0;
+            int sourceIndex = 0;
+            int totalSources = results.Count;
             foreach (var fileResult in results)
             {
                 totalCopied += fileResult.FilesCopied;
+                sourceIndex++;
                 Log.Information(
                     "Dosya yedekleme tamamlandı: {SourceName} — {FilesCopied} dosya, {Status}",
                     fileResult.SourceName, fileResult.FilesCopied, fileResult.Status);
@@ -625,6 +634,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     PlanName = plan.PlanName,
                     ActivityType = BackupActivityType.StepChanged,
                     StepName = "Dosya Yedekleme",
+                    CurrentIndex = sourceIndex,
+                    TotalCount = totalSources,
                     Message = $"  {fileResult.SourceName}: {fileResult.FilesCopied} dosya kopyalandı — {fileResult.Status}"
                 });
             }

@@ -334,6 +334,12 @@ namespace KoruMsSqlYedek.Win.Forms
             _cmbStrategy.Items.Add(Res.Get("PlanEdit_StratFullDiff"));
             _cmbStrategy.Items.Add(Res.Get("PlanEdit_StratFullDiffInc"));
 
+            // File backup strategy
+            _cmbFileStrategy.Items.Clear();
+            _cmbFileStrategy.Items.Add(Res.Get("PlanEdit_FileStratFull"));
+            _cmbFileStrategy.Items.Add(Res.Get("PlanEdit_FileStratDiff"));
+            _cmbFileStrategy.Items.Add(Res.Get("PlanEdit_FileStratInc"));
+
             // Compression algorithm
             _cmbAlgorithm.Items.Clear();
             _cmbAlgorithm.Items.Add(Res.Get("PlanEdit_AlgoLzma2"));
@@ -407,6 +413,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _cronIncr.SetCronExpression(_plan.Strategy?.IncrementalSchedule ?? "");
             _nudAutoPromote.Value = _plan.Strategy?.AutoPromoteToFullAfter ?? 7;
             _chkVerify.Checked = _plan.VerifyAfterBackup;
+            _cmbFileStrategy.SelectedIndex = (int)(fb?.Strategy ?? FileBackupStrategy.Full);
             _cronFileSchedule.SetCronExpression(fb?.Schedule ?? "");
             UpdateStrategyFieldsVisibility();
             UpdateFileScheduleVisibility();
@@ -506,6 +513,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _plan.Strategy.IncrementalSchedule = _cronIncr.GetCronExpression();
             _plan.Strategy.AutoPromoteToFullAfter = (int)_nudAutoPromote.Value;
             _plan.VerifyAfterBackup = _chkVerify.Checked;
+            _plan.FileBackup.Strategy = (FileBackupStrategy)_cmbFileStrategy.SelectedIndex;
             _plan.FileBackup.Schedule = _cronFileSchedule.GetCronExpression();
 
             // Adım 4: Sıkıştırma + Saklama
@@ -910,6 +918,8 @@ namespace KoruMsSqlYedek.Win.Forms
             bool enabled = _chkFileBackupEnabled.Checked;
             _lblStep3FileSep.Visible = enabled;
             _lblStep3FileSchedHeader.Visible = enabled;
+            _lblFileStrategy.Visible = enabled;
+            _cmbFileStrategy.Visible = enabled;
             _lblFileSchedule.Visible = enabled;
             _cronFileSchedule.Visible = enabled;
         }

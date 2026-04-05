@@ -175,6 +175,9 @@ This action cannot be undone.</value></data>
   <data name="PlanEdit_StratFullOnly" xml:space="preserve"><value>Full Backup Only</value></data>
   <data name="PlanEdit_StratFullDiff" xml:space="preserve"><value>Full + Differential</value></data>
   <data name="PlanEdit_StratFullDiffInc" xml:space="preserve"><value>Full + Diff + Incremental</value></data>
+  <data name="PlanEdit_FileStratFull" xml:space="preserve"><value>Full Backup</value></data>
+  <data name="PlanEdit_FileStratDiff" xml:space="preserve"><value>Differential</value></data>
+  <data name="PlanEdit_FileStratInc" xml:space="preserve"><value>Incremental</value></data>
   <data name="PlanEdit_AlgoLzma2" xml:space="preserve"><value>LZMA2 (Recommended)</value></data>
   <data name="PlanEdit_AlgoLzma" xml:space="preserve"><value>LZMA</value></data>
   <data name="PlanEdit_AlgoBzip2" xml:space="preserve"><value>BZip2</value></data>

@@ -175,6 +175,9 @@ Bu işlem geri alınamaz.</value></data>
   <data name="PlanEdit_StratFullOnly" xml:space="preserve"><value>Yalnızca Tam Yedek</value></data>
   <data name="PlanEdit_StratFullDiff" xml:space="preserve"><value>Tam + Fark Yedek</value></data>
   <data name="PlanEdit_StratFullDiffInc" xml:space="preserve"><value>Tam + Fark + Artırımlı Yedek</value></data>
+  <data name="PlanEdit_FileStratFull" xml:space="preserve"><value>Tam Yedek</value></data>
+  <data name="PlanEdit_FileStratDiff" xml:space="preserve"><value>Fark Yedek</value></data>
+  <data name="PlanEdit_FileStratInc" xml:space="preserve"><value>Artırımlı Yedek</value></data>
   <data name="PlanEdit_AlgoLzma2" xml:space="preserve"><value>LZMA2 (Önerilen)</value></data>
   <data name="PlanEdit_AlgoLzma" xml:space="preserve"><value>LZMA</value></data>
   <data name="PlanEdit_AlgoBzip2" xml:space="preserve"><value>BZip2</value></data>

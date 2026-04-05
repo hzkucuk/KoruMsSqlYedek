@@ -123,6 +123,29 @@ public sealed class PlanProgressTracker
     }
 
     /// <summary>
+    /// Dosya yedekleme fazında kaynak bazlı ilerleme yüzdesini hesaplar.
+    /// Her kaynak, dosya kopyalama ağırlığının eşit bir dilimini alır.
+    /// </summary>
+    /// <param name="sourceIndex">1 tabanlı tamamlanan kaynak sırası.</param>
+    /// <param name="totalSources">Toplam aktif kaynak sayısı.</param>
+    /// <returns>Klamplanmış, monoton artan yüzde [0-100] veya -1 (faz uyumsuz).</returns>
+    public int CalculateFileSourceProgress(int sourceIndex, int totalSources)
+    {
+        if (!IsFileBackupPhase || totalSources <= 0 || sourceIndex <= 0)
+            return -1;
+
+        bool isFileOnly = SqlDbCount == 0;
+        int fileBase = isFileOnly ? 0 : SqlRangeWithFileBackup;
+        int fileCopyWeight = isFileOnly ? 25 : 5;
+
+        int pct = fileBase + (int)((double)sourceIndex / totalSources * fileCopyWeight);
+        pct = Math.Max(pct, MaxPercent);
+        pct = Math.Clamp(pct, 0, 100);
+        MaxPercent = pct;
+        return pct;
+    }
+
+    /// <summary>
     /// Bulut hedefsiz (local-mode) SQL adım bazlı ilerleme yüzdesini hesaplar.
     /// </summary>
     /// <param name="stepName">Adım adı (SQL Yedekleme, Doğrulama, Sıkıştırma, Arşiv Doğrulama, Temizlik).</param>

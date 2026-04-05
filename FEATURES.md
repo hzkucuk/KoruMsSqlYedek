@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.83.0 — Dosya Yedekleme Fark/Artırımlı Strateji & İlerleme Düzeltmesi
+- [x] Dosya yedekleme stratejisi: Tam (Full), Fark (Differential), Artırımlı (Incremental)
+- [x] JSON manifest sistemi: `file_full.json` + `file_last.json` ile değişen dosya tespiti (LastWriteTimeUtc + Size)
+- [x] Fark yedek: Son tam yedekten bu yana değişen dosyalar; Artırımlı: Son herhangi yedekten bu yana değişenler
+- [x] PlanEditForm Adım 3'te strateji ComboBox eklendi (Tam Yedek / Fark Yedek / Artırımlı Yedek)
+- [x] İlerleme çubuğu dosya kaynak bazlı güncelleme: `CalculateFileSourceProgress` ile kaynak başına ağırlıklı ilerleme
+
 ### v0.77.3 — Kurtarma Şifresi (Recovery Password)
 - [x] Plan bazlı kurtarma şifresi desteği
 - [x] Plan şifresi unutulduğunda kurtarma şifresi ile erişim

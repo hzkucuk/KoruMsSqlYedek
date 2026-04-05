@@ -5,6 +5,21 @@ using Newtonsoft.Json;
 namespace KoruMsSqlYedek.Core.Models
 {
     /// <summary>
+    /// Dosya yedekleme strateji türü.
+    /// </summary>
+    public enum FileBackupStrategy
+    {
+        /// <summary>Tüm dosyaları yedekler.</summary>
+        Full = 0,
+
+        /// <summary>Son tam yedekten bu yana değişen dosyaları yedekler.</summary>
+        Differential = 1,
+
+        /// <summary>Son yedekten (tür fark etmez) bu yana değişen dosyaları yedekler.</summary>
+        Incremental = 2
+    }
+
+    /// <summary>
     /// Dosya yedekleme kaynak tanımı.
     /// Dizin yolu, include/exclude pattern, recursive flag ve VSS kullanımı belirler.
     /// </summary>
@@ -68,6 +83,10 @@ namespace KoruMsSqlYedek.Core.Models
         /// <summary>Dosya yedekleme aktif mi?</summary>
         [JsonProperty("isEnabled")]
         public bool IsEnabled { get; set; }
+
+        /// <summary>Dosya yedekleme stratejisi (Tam / Fark / Artırımlı).</summary>
+        [JsonProperty("strategy")]
+        public FileBackupStrategy Strategy { get; set; } = FileBackupStrategy.Full;
 
         /// <summary>Yedeklenecek dosya kaynakları listesi.</summary>
         [JsonProperty("sources")]
@@ -144,6 +163,13 @@ namespace KoruMsSqlYedek.Core.Models
         /// <summary>Başarısız dosyaların listesi (yol + hata mesajı).</summary>
         [JsonProperty("failedFiles")]
         public List<FailedFileInfo> FailedFiles { get; set; } = new List<FailedFileInfo>();
+
+        /// <summary>
+        /// Başarıyla yedeklenen dosyaların kaynak yolları.
+        /// Manifest oluşturmak için kullanılır; JSON'a serileştirilmez.
+        /// </summary>
+        [JsonIgnore]
+        public List<string> BackedUpFilePaths { get; set; } = new List<string>();
     }
 
     /// <summary>
