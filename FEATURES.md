@@ -2,6 +2,10 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.90.1 — ListView Grup Görünümü Kök Neden Düzeltmesi
+- ShowGroups zamanlama hatası düzeltildi — Groups.Count > 0 olduktan sonra set ediliyor
+- Collapsible grup başlıkları artık doğru çalışıyor
+
 ### v0.90.0 — ListView Grup Başlıkları + SMTP Profil Ekleme
 - ListView DarkMode_Explorer teması — native grup başlıkları dark modda görünür, collapsible
 - LVS_EX_DOUBLEBUFFER — ListView flicker önleme

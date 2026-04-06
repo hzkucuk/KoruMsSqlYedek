@@ -1,4 +1,9 @@
-﻿## [0.90.0] - 2026-06-23 — ListView Grup Başlıkları + SMTP Profil Ekleme
+﻿## [0.90.1] - 2026-06-24 — ListView Grup Görünümü Kök Neden Düzeltmesi
+
+### Düzeltme
+- **ListView grupları görünmüyordu (kök neden)** — `ShowGroups = true` atandığında `Groups.Count == 0` olduğu için .NET dahili olarak `LVM_ENABLEGROUPVIEW(FALSE)` gönderiyordu. `ShowGroups` ataması, gruplar eklendikten sonraya taşınarak düzeltildi. Collapsible grup başlıkları artık doğru çalışıyor.
+
+## [0.90.0] - 2026-06-23 — ListView Grup Başlıkları + SMTP Profil Ekleme
 
 ### Düzeltme
 - **ListView grup başlıkları görünmüyor** — `SetWindowTheme("DarkMode_Explorer")` uygulanarak native grup başlıkları dark modda düzgün render edilir hale getirildi. Collapsible grup başlıkları artık görünür.

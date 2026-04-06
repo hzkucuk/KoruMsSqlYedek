@@ -419,7 +419,6 @@ namespace KoruMsSqlYedek.Win
             _lvLastBackups.BeginUpdate();
             _lvLastBackups.Items.Clear();
             _lvLastBackups.Groups.Clear();
-            _lvLastBackups.ShowGroups = true;
 
             var groups = new Dictionary<string, ListViewGroup>(StringComparer.OrdinalIgnoreCase);
 
@@ -476,6 +475,12 @@ namespace KoruMsSqlYedek.Win
 
             _lvLastBackups.ListViewItemSorter = new LastBackupsItemComparer(_lvSortColumn, _lvSortAscending);
             _lvLastBackups.EndUpdate();
+
+            // ShowGroups, gruplar eklendikten SONRA set edilmeli.
+            // .NET dahili olarak LVM_ENABLEGROUPVIEW(ShowGroups && Groups.Count > 0) gönderir;
+            // Groups.Count == 0 iken ShowGroups = true demek aslında grupları KAPATIR.
+            _lvLastBackups.ShowGroups = _lvLastBackups.Groups.Count > 0;
+
             AutoResizeListViewColumns(_lvLastBackups);
         }
 
