@@ -74,6 +74,8 @@ namespace KoruMsSqlYedek.Win
                                 stepTracker.HasVssUpload = true;
                             else if (e.StepName == "VSS Bulut Yükleme")
                                 stepTracker.IsVssPhase = true;
+                            else if (e.StepName == "Bulut Yükleme" && !stepTracker.IsConsolidatedCloudPhase)
+                                stepPct = stepTracker.StartConsolidatedCloudPhase();
                             else if (e.StepName == "Dosya Yedekleme" && !stepTracker.IsFileBackupPhase)
                                 stepPct = stepTracker.CalculateFileBackupPhaseStart();
                             else if (e.StepName == "Dosya Yedekleme" && stepTracker.IsFileBackupPhase && e.TotalCount > 0)
@@ -112,10 +114,9 @@ namespace KoruMsSqlYedek.Win
 
                         int cumPct;
                         if (_planProgressTracker.TryGetValue(uploadPlanId, out PlanProgressTracker upTracker)
-                            && upTracker.DbTotal > 0)
+                            && upTracker.IsConsolidatedCloudPhase)
                         {
-                            cumPct = upTracker.CalculateCloudUploadProgress(
-                                e.ProgressPercent, e.CloudTargetIndex, e.CloudTargetTotal);
+                            cumPct = upTracker.CalculateCloudUploadProgress(e.ProgressPercent);
                         }
                         else
                         {
@@ -276,6 +277,11 @@ namespace KoruMsSqlYedek.Win
         private string BuildCloudUploadLogLine(BackupActivityEventArgs e)
         {
             if (e.ProgressPercent >= 100) return string.Empty;
+
+            string fileInfo = !string.IsNullOrEmpty(e.CloudFileName) && e.CloudFileTotal > 1
+                ? $" [{e.CloudFileIndex}/{e.CloudFileTotal}] {e.CloudFileName}"
+                : "";
+
             if (e.BytesTotal > 0)
             {
                 long bytesRemaining = e.BytesTotal - e.BytesSent;
@@ -283,8 +289,8 @@ namespace KoruMsSqlYedek.Win
                     ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
                     : "";
                 string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
-                return string.Format("Yükleniyor {0}: %{1} | Gönderilen: {2}/{3} | Kalan: {4} | Hız: {5}/s{6}",
-                    e.CloudTargetName,
+                return string.Format("Yükleniyor{0}: %{1} | Gönderilen: {2}/{3} | Kalan: {4} | Hız: {5}/s{6}",
+                    fileInfo,
                     e.ProgressPercent,
                     FormatFileSize(e.BytesSent),
                     FormatFileSize(e.BytesTotal),
@@ -292,7 +298,7 @@ namespace KoruMsSqlYedek.Win
                     FormatFileSize(e.SpeedBytesPerSecond),
                     etaPart);
             }
-            return string.Format("Yükleniyor {0}: %{1}", e.CloudTargetName, e.ProgressPercent);
+            return string.Format("Yükleniyor{0}: %{1}", fileInfo, e.ProgressPercent);
         }
 
         private static Color GetLogColor(BackupActivityType activityType) => activityType switch

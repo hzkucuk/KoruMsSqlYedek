@@ -206,6 +206,177 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         /// <summary>
+        /// Birden fazla dosyayı toplu olarak tüm aktif bulut hedeflerine yükler.
+        /// Tüm dosyalar sırayla yüklenir, ilerleme toplam batch boyutu üzerinden hesaplanır.
+        /// </summary>
+        public async Task<List<List<CloudUploadResult>>> UploadBatchToAllAsync(
+            List<(string LocalFilePath, string RemoteFileName)> files,
+            List<CloudTargetConfig> targets,
+            CancellationToken cancellationToken,
+            string planName = null,
+            string planId = null)
+        {
+            var allResults = new List<List<CloudUploadResult>>();
+            if (files == null || files.Count == 0) return allResults;
+
+            var enabledTargets = targets.Where(t => t.IsEnabled).ToList();
+            if (enabledTargets.Count == 0)
+            {
+                // Her dosya için boş liste döndür
+                foreach (var _ in files) allResults.Add(new List<CloudUploadResult>());
+                return allResults;
+            }
+
+            // Toplam batch boyutunu hesapla
+            var fileSizes = new long[files.Count];
+            long totalBatchBytes = 0;
+            for (int i = 0; i < files.Count; i++)
+            {
+                try { fileSizes[i] = new FileInfo(files[i].LocalFilePath).Length; }
+                catch { fileSizes[i] = 0; }
+                totalBatchBytes += fileSizes[i];
+            }
+
+            long completedBytes = 0;
+            var uploadStartTime = DateTime.UtcNow;
+
+            for (int fileIdx = 0; fileIdx < files.Count; fileIdx++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var (localFilePath, remoteFileName) = files[fileIdx];
+                long currentFileSize = fileSizes[fileIdx];
+                string localSha256 = null;
+                try { localSha256 = UploadStateManager.ComputeSha256(localFilePath); }
+                catch (Exception ex) { Log.Warning(ex, "SHA-256 hesaplanamadı: {File}", localFilePath); }
+
+                var pendingStates = _stateManager.GetAll();
+                var fileResults = new List<CloudUploadResult>();
+                int targetCompleted = 0;
+
+                // Dosya başlangıcı eventi
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = planId,
+                    PlanName = planName,
+                    ActivityType = BackupActivityType.CloudUploadStarted,
+                    CloudTargetName = remoteFileName,
+                    CloudFileIndex = fileIdx + 1,
+                    CloudFileTotal = files.Count,
+                    CloudFileName = remoteFileName,
+                    CloudTargetIndex = 1,
+                    CloudTargetTotal = enabledTargets.Count
+                });
+
+                foreach (var target in enabledTargets)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var effectiveTarget = target;
+                    if (string.IsNullOrWhiteSpace(target.RemoteFolderPath))
+                    {
+                        string safePlanName = SanitizeFolderName(planName);
+                        effectiveTarget = ShallowCopyWithFolder(target,
+                            string.IsNullOrEmpty(safePlanName)
+                                ? "KoruMsSqlYedek"
+                                : $"KoruMsSqlYedek/{safePlanName}");
+                    }
+
+                    var stateRecord = pendingStates.FirstOrDefault(s =>
+                        s.LocalFilePath == localFilePath &&
+                        s.RemoteFileName == remoteFileName &&
+                        s.ProviderType == target.Type);
+
+                    if (stateRecord == null)
+                    {
+                        stateRecord = new UploadStateRecord
+                        {
+                            PlanName = planName,
+                            LocalFilePath = localFilePath,
+                            RemoteFileName = remoteFileName,
+                            LocalSha256 = localSha256,
+                            FileSizeBytes = currentFileSize,
+                            ProviderType = target.Type,
+                            CloudTarget = effectiveTarget
+                        };
+                        _stateManager.Save(stateRecord);
+                    }
+
+                    int lastReportedPct = -1;
+                    long capturedCompletedBytes = completedBytes;
+                    int capturedFileIdx = fileIdx;
+                    int capturedTargetCompleted = targetCompleted;
+
+                    var hubProgress = new Progress<int>(pct =>
+                    {
+                        if (pct <= lastReportedPct) return;
+                        lastReportedPct = pct;
+
+                        // Hedef bazlı dosya ilerlemesi: (targetCompleted * 100 + pct) / targetTotal
+                        double fileProgress = (capturedTargetCompleted * 100.0 + pct) / enabledTargets.Count;
+                        long fileBytesSent = (long)(currentFileSize * fileProgress / 100.0);
+
+                        // Toplam batch ilerlemesi
+                        long totalSent = capturedCompletedBytes + fileBytesSent;
+                        int batchPct = totalBatchBytes > 0
+                            ? (int)(totalSent * 100.0 / totalBatchBytes)
+                            : pct;
+                        batchPct = Math.Clamp(batchPct, 0, 100);
+
+                        double elapsedSec = (DateTime.UtcNow - uploadStartTime).TotalSeconds;
+                        long speedBps = elapsedSec > 0.5 && totalSent > 0
+                            ? (long)(totalSent / elapsedSec)
+                            : 0L;
+
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = planId,
+                            PlanName = planName,
+                            ActivityType = BackupActivityType.CloudUploadProgress,
+                            CloudTargetName = effectiveTarget.DisplayName,
+                            CloudFileName = remoteFileName,
+                            CloudFileIndex = capturedFileIdx + 1,
+                            CloudFileTotal = files.Count,
+                            CloudTargetIndex = capturedTargetCompleted + 1,
+                            CloudTargetTotal = enabledTargets.Count,
+                            ProgressPercent = batchPct,
+                            BytesSent = totalSent,
+                            BytesTotal = totalBatchBytes,
+                            SpeedBytesPerSecond = speedBps
+                        });
+                    });
+
+                    var result = await UploadWithRetryAsync(
+                        localFilePath, remoteFileName, effectiveTarget, hubProgress,
+                        cancellationToken, stateRecord);
+                    fileResults.Add(result);
+
+                    targetCompleted++;
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = planId,
+                        PlanName = planName,
+                        ActivityType = BackupActivityType.CloudUploadCompleted,
+                        CloudTargetName = effectiveTarget.DisplayName,
+                        CloudFileName = remoteFileName,
+                        CloudFileIndex = fileIdx + 1,
+                        CloudFileTotal = files.Count,
+                        CloudTargetIndex = targetCompleted,
+                        CloudTargetTotal = enabledTargets.Count,
+                        IsSuccess = result.IsSuccess,
+                        Message = result.IsSuccess ? null : result.ErrorMessage
+                    });
+                }
+
+                allResults.Add(fileResults);
+                completedBytes += currentFileSize;
+            }
+
+            return allResults;
+        }
+
+        /// <summary>
         /// Sadece RemoteFolderPath değiştirilmiş sığ kopya döndürür (orijinal config'i değiştirmez).
         /// </summary>
         private static CloudTargetConfig ShallowCopyWithFolder(CloudTargetConfig src, string folderPath)

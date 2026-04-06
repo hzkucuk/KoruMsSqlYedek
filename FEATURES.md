@@ -2,6 +2,15 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.92.0 — Konsolide Bulut Yükleme: Tek Seferde Toplu Upload
+- [x] SQL + dosya yedeklerinin bulut yüklemeleri tek toplu fazda birleştirildi
+- [x] `UploadBatchToAllAsync` — CloudUploadOrchestrator'a toplu yükleme metodu
+- [x] `UploadAllPendingAsync` — BackupJobExecutor'a konsolide yükleme yardımcısı
+- [x] PlanProgressTracker konsolide ağırlık modeli (SQL lokal → Dosya lokal → Toplu bulut)
+- [x] Progress bar %100'e ulaşma sorunu düzeltildi
+- [x] CloudFileName / CloudFileIndex / CloudFileTotal — UI'da yüklenen dosya bilgisi
+- [x] 52 birim testi geçti (konsolide model testleri dahil)
+
 ### v0.91.0 — Büyük Dosya Refactoring: Partial Class Ayrımı
 - [x] 12 büyük dosya partial class'lara ayrıldı (toplam 30+ yeni dosya)
 - [x] MainWindow.cs → 6 partial (Dashboard, Plans, BackupExecution, BackupActivity, LogViewer, Settings)

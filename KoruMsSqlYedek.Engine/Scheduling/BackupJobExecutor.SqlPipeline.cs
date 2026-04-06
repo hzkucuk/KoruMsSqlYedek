@@ -13,12 +13,16 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 {
     partial class BackupJobExecutor
     {
-        private async Task<(bool CloudOk, List<BackupResult> Results)> ExecuteSqlBackupAsync(
+        /// <summary>
+        /// SQL yedekleme pipeline'ı: Backup → Verify → Compress → dosyaları topla.
+        /// Bulut yükleme yapılmaz, dosya bilgileri pending listesine eklenir.
+        /// </summary>
+        private async Task<(List<BackupResult> Results, List<(string FilePath, string RemoteName, BackupResult SqlResult, bool IsVss)> PendingUploads)> ExecuteSqlBackupAsync(
             BackupPlan plan, string backupType, string correlationId, CancellationToken ct,
             List<string> cleanupPaths)
         {
-            bool cloudAllOk = true;
             var sqlResults = new List<BackupResult>();
+            var pendingUploads = new List<(string FilePath, string RemoteName, BackupResult SqlResult, bool IsVss)>();
             SqlBackupType sqlType;
             switch (backupType)
             {
@@ -33,7 +37,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     break;
                 default:
                     Log.Error("Bilinmeyen yedek türü: {BackupType}", backupType);
-                    return (true, sqlResults);
+                    return (sqlResults, pendingUploads);
             }
 
             for (int i = 0; i < plan.Databases.Count; i++)
@@ -241,123 +245,24 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     }
                 }
 
-                // 4. Cloud Upload — ana dosya (.bak/.7z) ve VSS dosyası bağımsız yüklenir.
-                //    İkisinden biri başarısız olsa bile diğeri denenir; en az biri buluta gitmelidir.
+                // 4. Bulut için yüklenecek dosyaları topla (upload sonraya ertelenir)
                 if (CloudOrchestrator != null && plan.CloudTargets != null &&
                     plan.CloudTargets.Any(t => t.IsEnabled))
                 {
-                    bool mainUploadOk = false;
-                    bool vssUploadOk = false;
+                    // Ana dosya (.bak veya .7z)
+                    string fileToUpload = !string.IsNullOrEmpty(result.CompressedFilePath)
+                        ? result.CompressedFilePath
+                        : result.BackupFilePath;
 
-                    // 4a. Ana dosya yükleme (.bak veya .7z)
-                    try
+                    if (!string.IsNullOrEmpty(fileToUpload) && File.Exists(fileToUpload))
                     {
-                        string fileToUpload = !string.IsNullOrEmpty(result.CompressedFilePath)
-                            ? result.CompressedFilePath
-                            : result.BackupFilePath;
-
-                        string remoteFileName = Path.GetFileName(fileToUpload);
-
-                        result.CloudUploadResults = await CloudOrchestrator.UploadToAllAsync(
-                            fileToUpload, remoteFileName, plan.CloudTargets, null, ct,
-                            plan.PlanName, plan.PlanId);
-
-                        int successCount = result.CloudUploadResults.Count(r => r.IsSuccess);
-                        int totalCount = result.CloudUploadResults.Count;
-                        mainUploadOk = successCount > 0;
-
-                        Log.Information(
-                            "Bulut upload tamamlandı: {Database} — {Success}/{Total} başarılı",
-                            dbName, successCount, totalCount);
-
-                        BackupActivityHub.Raise(new BackupActivityEventArgs
-                        {
-                            PlanId = plan.PlanId,
-                            PlanName = plan.PlanName,
-                            DatabaseName = dbName,
-                            ActivityType = BackupActivityType.StepChanged,
-                            StepName = "Bulut Yükleme",
-                            Message = $"Bulut yükleme tamamlandı: {dbName} — {successCount}/{totalCount} başarılı [{Fmt(new FileInfo(fileToUpload).Length)}]"
-                        });
-                    }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Ana dosya bulut upload hatası: {Database}", dbName);
+                        pendingUploads.Add((fileToUpload, Path.GetFileName(fileToUpload), result, false));
                     }
 
-                    // 4b. VSS dosyasını da buluta yükle (ana upload sonucundan bağımsız)
+                    // VSS dosyası
                     if (!string.IsNullOrEmpty(result.VssFileCopyPath) && File.Exists(result.VssFileCopyPath))
                     {
-                        try
-                        {
-                            string vssRemoteName = Path.GetFileName(result.VssFileCopyPath);
-                            Log.Information("VSS dosyası buluta yükleniyor: {VssFile}", vssRemoteName);
-
-                            BackupActivityHub.Raise(new BackupActivityEventArgs
-                            {
-                                PlanId = plan.PlanId,
-                                PlanName = plan.PlanName,
-                                DatabaseName = dbName,
-                                ActivityType = BackupActivityType.StepChanged,
-                                StepName = "VSS Bulut Yükleme",
-                                Message = $"VSS dosyası buluta yükleniyor: {vssRemoteName} [{Fmt(result.VssFileCopySizeBytes)}]"
-                            });
-
-                            var vssResults = await CloudOrchestrator.UploadToAllAsync(
-                                result.VssFileCopyPath, vssRemoteName, plan.CloudTargets, null, ct,
-                                plan.PlanName, plan.PlanId);
-
-                            int vssSuccess = vssResults.Count(r => r.IsSuccess);
-                            int vssTotal = vssResults.Count;
-                            vssUploadOk = vssSuccess > 0;
-
-                            BackupActivityHub.Raise(new BackupActivityEventArgs
-                            {
-                                PlanId = plan.PlanId,
-                                PlanName = plan.PlanName,
-                                DatabaseName = dbName,
-                                ActivityType = BackupActivityType.StepChanged,
-                                StepName = "VSS Bulut Yükleme",
-                                Message = $"VSS bulut yükleme tamamlandı: {dbName} — {vssSuccess}/{vssTotal} başarılı [{Fmt(result.VssFileCopySizeBytes)}]"
-                            });
-                        }
-                        catch (OperationCanceledException) { throw; }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "VSS dosyası bulut upload hatası: {Database}", dbName);
-                        }
-                    }
-
-                    // Her iki upload da başarısızsa uyarı ve bildirim
-                    if (!mainUploadOk && !vssUploadOk)
-                    {
-                        Log.Error(
-                            "Buluta hiçbir dosya yüklenemedi: {Database} — " +
-                            "ne ana yedek ne de VSS kopyası başarılı olamadı.", dbName);
-                        cloudAllOk = false;
-
-                        // Başarısız sonuçları topla ve bildir
-                        var allFailedResults = new List<CloudUploadResult>();
-                        if (result.CloudUploadResults is not null)
-                            allFailedResults.AddRange(result.CloudUploadResults.Where(r => !r.IsSuccess));
-
-                        if (allFailedResults.Count > 0 && NotificationService is not null && plan.Notifications is not null)
-                        {
-                            try
-                            {
-                                string failedFile = !string.IsNullOrEmpty(result.CompressedFilePath)
-                                    ? Path.GetFileName(result.CompressedFilePath)
-                                    : Path.GetFileName(result.BackupFilePath);
-
-                                await NotificationService.NotifyCloudUploadFailureAsync(
-                                    plan.PlanName, allFailedResults, failedFile, plan.Notifications, ct);
-                            }
-                            catch (Exception notifyEx)
-                            {
-                                Log.Warning(notifyEx, "Bulut upload başarısızlık bildirimi gönderilemedi: {Database}", dbName);
-                            }
-                        }
+                        pendingUploads.Add((result.VssFileCopyPath, Path.GetFileName(result.VssFileCopyPath), result, true));
                     }
                 }
 
@@ -385,18 +290,15 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     }
                 }
 
-                // 6. History
-                SaveHistory(result);
-
-                // 7. Sonuçları topla (konsolide bildirim için)
+                // 6. History (cloud sonuçları sonra atanacak)
                 sqlResults.Add(result);
 
-                // Bu DB başarıyla tamamlandı — ara dosyalarını temizlik listesinden çıkar
+                // Bu DB'nin lokal adımları tamamlandı — cleanup paths'ten çıkar
                 if (cleanupPaths.Count > cleanupSnapshot)
                     cleanupPaths.RemoveRange(cleanupSnapshot, cleanupPaths.Count - cleanupSnapshot);
             }
 
-            return (cloudAllOk, sqlResults);
+            return (sqlResults, pendingUploads);
         }
     }
 }

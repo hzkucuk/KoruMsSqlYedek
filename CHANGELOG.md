@@ -1,4 +1,29 @@
-﻿## [0.91.0] - 2026-06-26 — Büyük Dosya Refactoring: Partial Class Ayrımı
+﻿## [0.92.0] - 2026-06-27 — Konsolide Bulut Yükleme: Tek Seferde Toplu Upload
+
+### Yeni Özellik
+- **SQL ve dosya yedeklerinin bulut yüklemeleri tek bir toplu fazda birleştirildi** — Daha önce her SQL veritabanı yedeklemesinden sonra ayrı ayrı buluta yükleniyor ve dosya yedekleri de ayrı bir fazda yükleniyordu. Artık tüm yedek dosyaları (SQL + dosya) yerel işlemler tamamlandıktan sonra tek bir toplu fazda buluta gönderiliyor.
+- **UploadBatchToAllAsync**: CloudUploadOrchestrator'a yeni toplu yükleme metodu eklendi — tüm dosyaları tüm hedeflere sırayla yükler, kümülatif byte-bazlı ilerleme raporlar
+- **UploadAllPendingAsync**: BackupJobExecutor'a konsolide yükleme yardımcı metodu eklendi — SQL pending uploads + dosya arşivini birleştirip toplu yüklemeye gönderir
+- **PlanProgressTracker konsolide model**: Yeni ağırlık modeli — SQL lokal → Dosya lokal → Konsolide bulut fazı. Progress bar artık %100'e ulaşır
+- **CloudFileName / CloudFileIndex / CloudFileTotal**: BackupActivityEventArgs'a yeni özellikler — hangi dosyanın yüklendiği ve toplam dosya sayısı UI'da gösterilir
+- **ICloudUploadOrchestrator**: UploadBatchToAllAsync interface metodu eklendi
+
+### Düzeltme
+- **Progress bar %100'e ulaşmıyordu** — Ayrı SQL ve dosya bulut fazları arasındaki ağırlık model karmaşıklığı nedeniyle progress bar %100'e ulaşamıyordu. Konsolide model ile düzeltildi.
+
+### Etkilenen Dosyalar
+- `BackupActivityEvent.cs` — CloudFileName, CloudFileIndex, CloudFileTotal eklendi
+- `ICloudUploadOrchestrator.cs` — UploadBatchToAllAsync eklendi
+- `CloudUploadOrchestrator.cs` — UploadBatchToAllAsync implementasyonu
+- `BackupJobExecutor.SqlPipeline.cs` — Bulut yükleme kaldırıldı, pending uploads döndürüyor
+- `BackupJobExecutor.FilePipeline.cs` — Bulut yükleme kaldırıldı, arşiv yolu döndürüyor
+- `BackupJobExecutor.Helpers.cs` — UploadAllPendingAsync eklendi
+- `BackupJobExecutor.cs` — Execute() konsolide pipeline'a yeniden bağlandı
+- `PlanProgressTracker.cs` — Konsolide bulut ağırlık modeli
+- `MainWindow.BackupActivity.cs` — Konsolide bulut fazı UI desteği
+- `PlanProgressTrackerTests.cs` — Konsolide model testleri
+
+## [0.91.0] - 2026-06-26 — Büyük Dosya Refactoring: Partial Class Ayrımı
 
 ### Yeni Özellik
 - **12 büyük dosya partial class'lara ayrıldı** — Kod okunabilirliği ve bakım kolaylığı için tüm büyük dosyalar mantıksal birimlere bölündü:

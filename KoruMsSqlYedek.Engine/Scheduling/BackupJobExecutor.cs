@@ -133,13 +133,18 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         // Dosya yedekleme tipi
                         if (backupType == "FileBackup")
                         {
-                            var (fileOk, fileResults, fileCloudResults, fileArchivePath) =
+                            var (fileResults, fileArchivePath) =
                                 await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
+
+                            // Konsolide bulut yükleme (tüm dosyalar tek seferde)
+                            var (cloudOk, fileCloudResults) = await UploadAllPendingAsync(
+                                plan, null, fileArchivePath, cts.Token);
+
                             await EmptyTrashIfNeededAsync(plan, cts.Token);
                             cleanupPaths.Clear();
 
                             bool anyFileSourceFailed = fileResults != null && fileResults.Any(r => r.Status != BackupResultStatus.Success);
-                            bool fileOverallSuccess = fileOk && !anyFileSourceFailed;
+                            bool fileOverallSuccess = cloudOk && !anyFileSourceFailed;
 
                             logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme tamamlandı. {(fileOverallSuccess ? "✓" : "⚠")}");
 
@@ -174,24 +179,23 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         }
 
                         // SQL yedekleme tipi
-                        var (sqlCloudOk, sqlResults) = await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token, cleanupPaths);
+                        var (sqlResults, sqlPendingUploads) = await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token, cleanupPaths);
 
                         // Dosya yedekleme — ayrı zamanlama yoksa veya manuel tetikleme ise SQL yedek ile birlikte çalıştır
-                        bool fileCloudOk2 = true;
                         List<FileBackupResult> fileResults2 = null;
-                        List<CloudUploadResult> fileCloudResults2 = null;
                         string fileArchivePath2 = null;
 
                         if (willRunFileBackup && backupType != "FileBackup")
                         {
                             var fileResult = await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
-                            fileCloudOk2 = fileResult.CloudOk;
                             fileResults2 = fileResult.FileResults;
-                            fileCloudResults2 = fileResult.FileCloudResults;
                             fileArchivePath2 = fileResult.ArchivePath;
                         }
 
-                        bool allCloudOk = sqlCloudOk && fileCloudOk2;
+                        // Konsolide bulut yükleme (SQL + dosya dosyaları tek seferde)
+                        var (allCloudOk, fileCloudResults2) = await UploadAllPendingAsync(
+                            plan, sqlPendingUploads, fileArchivePath2, cts.Token);
+
                         bool anySqlFailed = sqlResults != null && sqlResults.Any(r => r.Status != BackupResultStatus.Success);
                         bool anyFileFailed = fileResults2 != null && fileResults2.Any(r => r.Status != BackupResultStatus.Success);
                         bool overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed;

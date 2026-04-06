@@ -139,6 +139,138 @@ namespace KoruMsSqlYedek.Engine.Scheduling
         }
 
         /// <summary>
+        /// Tüm bekleyen dosyaları toplu olarak buluta yükler.
+        /// SQL pipeline ve dosya pipeline'dan toplanan dosyalar tek seferde gönderilir.
+        /// </summary>
+        /// <returns>true: en az bir dosya başarıyla yüklendi; false: hiçbiri yüklenemedi.</returns>
+        private async Task<(bool AllCloudOk, List<CloudUploadResult> AllFileCloudResults)> UploadAllPendingAsync(
+            BackupPlan plan,
+            List<(string FilePath, string RemoteName, BackupResult SqlResult, bool IsVss)> sqlPendingUploads,
+            string fileArchivePath,
+            CancellationToken ct)
+        {
+            var allFileCloudResults = new List<CloudUploadResult>();
+
+            if (CloudOrchestrator == null || plan.CloudTargets == null || !plan.CloudTargets.Any(t => t.IsEnabled))
+                return (true, allFileCloudResults);
+
+            // Tüm dosyaları tek listeye topla
+            var batchFiles = new List<(string LocalFilePath, string RemoteFileName)>();
+
+            // SQL dosyaları (ana + VSS)
+            if (sqlPendingUploads != null)
+            {
+                foreach (var pending in sqlPendingUploads)
+                    batchFiles.Add((pending.FilePath, pending.RemoteName));
+            }
+
+            // Dosya yedek arşivi
+            if (!string.IsNullOrEmpty(fileArchivePath) && File.Exists(fileArchivePath))
+                batchFiles.Add((fileArchivePath, Path.GetFileName(fileArchivePath)));
+
+            if (batchFiles.Count == 0)
+                return (true, allFileCloudResults);
+
+            long totalSize = 0;
+            foreach (var f in batchFiles)
+                totalSize += GetFileSize(f.LocalFilePath);
+
+            Log.Information(
+                "Konsolide bulut yükleme başlıyor: {FileCount} dosya, {TotalSize}, Plan={PlanName}",
+                batchFiles.Count, Fmt(totalSize), plan.PlanName);
+
+            BackupActivityHub.Raise(new BackupActivityEventArgs
+            {
+                PlanId = plan.PlanId,
+                PlanName = plan.PlanName,
+                ActivityType = BackupActivityType.StepChanged,
+                StepName = "Bulut Yükleme",
+                Message = $"Toplu bulut yükleme başlıyor: {batchFiles.Count} dosya [{Fmt(totalSize)}]"
+            });
+
+            try
+            {
+                var batchResults = await CloudOrchestrator.UploadBatchToAllAsync(
+                    batchFiles, plan.CloudTargets, ct, plan.PlanName, plan.PlanId);
+
+                // Sonuçları ilgili BackupResult nesnelerine ata
+                bool allOk = true;
+                int batchIdx = 0;
+
+                // SQL dosya sonuçlarını BackupResult.CloudUploadResults'a ata
+                if (sqlPendingUploads != null)
+                {
+                    foreach (var pending in sqlPendingUploads)
+                    {
+                        if (batchIdx < batchResults.Count)
+                        {
+                            var fileResults = batchResults[batchIdx];
+
+                            if (!pending.IsVss && pending.SqlResult != null)
+                            {
+                                pending.SqlResult.CloudUploadResults = fileResults;
+                            }
+
+                            int successCount = fileResults.Count(r => r.IsSuccess);
+                            if (successCount == 0) allOk = false;
+
+                            Log.Information(
+                                "Bulut yükleme: {FileName} — {Success}/{Total} başarılı",
+                                pending.RemoteName, successCount, fileResults.Count);
+                        }
+                        batchIdx++;
+                    }
+                }
+
+                // Dosya arşivi sonuçlarını topla
+                if (!string.IsNullOrEmpty(fileArchivePath) && File.Exists(fileArchivePath))
+                {
+                    if (batchIdx < batchResults.Count)
+                    {
+                        allFileCloudResults = batchResults[batchIdx];
+                        int fSuccess = allFileCloudResults.Count(r => r.IsSuccess);
+                        if (fSuccess == 0) allOk = false;
+
+                        Log.Information(
+                            "Bulut yükleme: {FileName} — {Success}/{Total} başarılı",
+                            Path.GetFileName(fileArchivePath), fSuccess, allFileCloudResults.Count);
+                    }
+                }
+
+                // History'yi güncelle (cloud sonuçları artık atandı)
+                if (sqlPendingUploads != null)
+                {
+                    var processedResults = new HashSet<BackupResult>();
+                    foreach (var pending in sqlPendingUploads)
+                    {
+                        if (pending.SqlResult != null && processedResults.Add(pending.SqlResult))
+                            SaveHistory(pending.SqlResult);
+                    }
+                }
+
+                int totalSuccess = batchResults.Sum(r => r.Count(x => x.IsSuccess));
+                int totalTargets = batchResults.Sum(r => r.Count);
+
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = plan.PlanId,
+                    PlanName = plan.PlanName,
+                    ActivityType = BackupActivityType.StepChanged,
+                    StepName = "Bulut Yükleme",
+                    Message = $"Toplu bulut yükleme tamamlandı: {batchFiles.Count} dosya — {totalSuccess}/{totalTargets} başarılı"
+                });
+
+                return (allOk, allFileCloudResults);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Toplu bulut yükleme hatası: Plan={PlanName}", plan.PlanName);
+                return (false, allFileCloudResults);
+            }
+        }
+
+        /// <summary>
         /// BackupActivityEventArgs → log satır metni (e-posta log bölümü için).
         /// </summary>
         private static string FormatActivityLogLine(BackupActivityEventArgs e) => e.ActivityType switch
