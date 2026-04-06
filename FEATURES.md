@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.90.3 — IsSuccess Hesaplama Düzeltmesi
+- `IsSuccess` artık SQL/dosya yedekleme başarısızlıklarını da dahil ediyor
+- `overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed` formülü
+- Dosya-yalnızca planlarda da `anyFileSourceFailed` kontrolü eklendi
+
 ### v0.90.2 — ListView Grup Expand/Collapse P/Invoke Düzeltmesi
 - `ListViewHeaderPainter.EnableGroupView()` — doğrudan `LVM_ENABLEGROUPVIEW(TRUE)` P/Invoke
 - Force-toggle + P/Invoke belt-and-suspenders yaklaşımı ile grup görünümü garanti

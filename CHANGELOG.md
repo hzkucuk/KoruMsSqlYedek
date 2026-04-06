@@ -1,4 +1,9 @@
-﻿## [0.90.2] - 2026-06-24 — ListView Grup Expand/Collapse P/Invoke Düzeltmesi
+﻿## [0.90.3] - 2026-06-25 — IsSuccess Hesaplama Düzeltmesi
+
+### Düzeltme
+- **E-posta bildirimi SQL/dosya başarısızlığında "Başarılı" gösteriyordu** — `IsSuccess` hesaplaması yalnızca bulut upload sonucunu kontrol ediyordu. SQL yedekleme veya dosya yedekleme başarısız olduğunda bile bildirim "Başarılı" olarak gönderiliyordu. `overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed` formülü ile düzeltildi. Her iki yol da (SQL+Dosya ve sadece Dosya) güncellenip test edildi.
+
+## [0.90.2] - 2026-06-24 — ListView Grup Expand/Collapse P/Invoke Düzeltmesi
 
 ### Düzeltme
 - **ListView grup expand/collapse çalışmıyordu** — .NET'in `ShowGroups` setter'ı `value == current` ise `LVM_ENABLEGROUPVIEW` mesajını göndermiyordu. `Groups.Clear()` sonrası grup görünümü kayboluyordu. `ListViewHeaderPainter.EnableGroupView()` ile doğrudan P/Invoke üzerinden `LVM_ENABLEGROUPVIEW(TRUE)` gönderilerek düzeltildi. ShowGroups force-toggle + P/Invoke belt-and-suspenders yaklaşımı ile her çağrıda garanti edildi.

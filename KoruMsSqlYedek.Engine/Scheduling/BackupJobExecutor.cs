@@ -138,7 +138,10 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             await EmptyTrashIfNeededAsync(plan, cts.Token);
                             cleanupPaths.Clear();
 
-                            logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme tamamlandı. {(fileOk ? "✓" : "⚠")}");
+                            bool anyFileSourceFailed = fileResults != null && fileResults.Any(r => r.Status != BackupResultStatus.Success);
+                            bool fileOverallSuccess = fileOk && !anyFileSourceFailed;
+
+                            logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme tamamlandı. {(fileOverallSuccess ? "✓" : "⚠")}");
 
                             // Konsolide bildirim
                             await SendConsolidatedNotificationAsync(plan, new JobNotificationData
@@ -149,7 +152,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                 CorrelationId = correlationId,
                                 StartedAt = jobStartedAt,
                                 CompletedAt = DateTime.Now,
-                                IsSuccess = fileOk,
+                                IsSuccess = fileOverallSuccess,
                                 FileResults = fileResults ?? new List<FileBackupResult>(),
                                 FileArchiveFileName = !string.IsNullOrEmpty(fileArchivePath) ? Path.GetFileName(fileArchivePath) : null,
                                 FileArchiveSizeBytes = GetFileSize(fileArchivePath),
@@ -162,8 +165,10 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                 PlanId = plan.PlanId,
                                 PlanName = plan.PlanName,
                                 ActivityType = BackupActivityType.Completed,
-                                IsSuccess = fileOk,
-                                Message = fileOk ? null : "Bulut yükleme başarısız"
+                                IsSuccess = fileOverallSuccess,
+                                Message = !fileOverallSuccess
+                                    ? (anyFileSourceFailed ? "Dosya yedekleme başarısız" : "Bulut yükleme başarısız")
+                                    : null
                             });
                             return;
                         }
@@ -187,10 +192,13 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         }
 
                         bool allCloudOk = sqlCloudOk && fileCloudOk2;
+                        bool anySqlFailed = sqlResults != null && sqlResults.Any(r => r.Status != BackupResultStatus.Success);
+                        bool anyFileFailed = fileResults2 != null && fileResults2.Any(r => r.Status != BackupResultStatus.Success);
+                        bool overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed;
                         await EmptyTrashIfNeededAsync(plan, cts.Token);
                         cleanupPaths.Clear();
 
-                        logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme tamamlandı. {(allCloudOk ? "✓" : "⚠")}");
+                        logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme tamamlandı. {(overallSuccess ? "✓" : "⚠")}");
 
                         // Konsolide bildirim
                         await SendConsolidatedNotificationAsync(plan, new JobNotificationData
@@ -201,7 +209,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             CorrelationId = correlationId,
                             StartedAt = jobStartedAt,
                             CompletedAt = DateTime.Now,
-                            IsSuccess = allCloudOk,
+                            IsSuccess = overallSuccess,
                             SqlResults = sqlResults ?? new List<BackupResult>(),
                             FileResults = fileResults2 ?? new List<FileBackupResult>(),
                             FileArchiveFileName = !string.IsNullOrEmpty(fileArchivePath2) ? Path.GetFileName(fileArchivePath2) : null,
@@ -215,8 +223,10 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             PlanId = plan.PlanId,
                             PlanName = plan.PlanName,
                             ActivityType = BackupActivityType.Completed,
-                            IsSuccess = allCloudOk,
-                            Message = allCloudOk ? null : "Bulut yükleme başarısız"
+                            IsSuccess = overallSuccess,
+                            Message = !overallSuccess
+                                ? (anySqlFailed ? "SQL yedekleme başarısız" : "Bulut yükleme başarısız")
+                                : null
                         });
 
                         }
