@@ -361,9 +361,9 @@ namespace KoruMsSqlYedek.Tests
 
             int result = tracker.StartConsolidatedCloudPhase();
 
-            result.Should().Be(38);
+            result.Should().Be(40, "CloudPhaseBase = expectedBase = SqlRangeWithCloudNoFile = 40");
             tracker.IsConsolidatedCloudPhase.Should().BeTrue();
-            tracker.CloudPhaseBase.Should().Be(38);
+            tracker.CloudPhaseBase.Should().Be(40);
         }
 
         // ── Entegrasyon: Tam pipeline senaryoları ────────────────────────────
@@ -549,21 +549,21 @@ namespace KoruMsSqlYedek.Tests
             int localEnd = tracker.CalculateLocalStepProgress("Temizlik");
             localEnd.Should().Be(38, "SQL range=40, Temizlik ağırlığı=0.95 → 38");
 
-            // Konsolide bulut başlat
+            // Konsolide bulut başlat → expectedBase=40 (SqlRangeWithCloudNoFile)
             int cloudBase = tracker.StartConsolidatedCloudPhase();
-            cloudBase.Should().Be(38);
+            cloudBase.Should().Be(40);
 
-            // Bulut %0 → 38
+            // Bulut %0 → 40
             int at0 = tracker.CalculateCloudUploadProgress(0);
-            at0.Should().Be(38);
+            at0.Should().Be(40);
 
-            // Bulut %50 → 38 + 62*0.50 = 69
-            tracker.MaxPercent = 38; // reset for clean test
+            // Bulut %50 → 40 + 60*0.50 = 70
+            tracker.MaxPercent = 40; // reset for clean test
             int at50 = tracker.CalculateCloudUploadProgress(50);
-            at50.Should().Be(69);
+            at50.Should().Be(70);
 
-            // Bulut %100 → 38 + 62 = 100
-            tracker.MaxPercent = 38;
+            // Bulut %100 → 40 + 60 = 100
+            tracker.MaxPercent = 40;
             int at100 = tracker.CalculateCloudUploadProgress(100);
             at100.Should().Be(100);
         }

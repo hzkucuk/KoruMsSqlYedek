@@ -52,7 +52,8 @@ namespace KoruMsSqlYedek.Win
                             _planProgressTracker[dbPlanId] = dbTracker;
                         }
 
-                        int pct = dbTracker.CalculateDatabaseProgress(e.CurrentIndex, e.TotalCount);
+                        int pct = Math.Min(dbTracker.CalculateDatabaseProgress(e.CurrentIndex, e.TotalCount), 99);
+                        Log.Debug("[UI] DatabaseProgress: plan={PlanId}, idx={Idx}/{Total}, pct={Pct}", dbPlanId, e.CurrentIndex, e.TotalCount, pct);
 
                         if (dbPlanId == _viewingPlanId)
                         {
@@ -85,18 +86,24 @@ namespace KoruMsSqlYedek.Win
                             else if (e.StepName == "Temizlik" && stepTracker.IsFileBackupPhase && !stepTracker.HasCloudTargets)
                                 stepPct = stepTracker.CalculateFileCleanupProgress();
 
-                            if (stepPct >= 0 && stepPlanId == _viewingPlanId)
-                            {
-                                _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
-                                _progressBar.Value = stepPct;
-                            }
                             if (stepPct >= 0)
+                            {
+                                stepPct = Math.Min(stepPct, 99);
+                                Log.Debug("[UI] StepChanged(specific): plan={PlanId}, step={Step}, stepPct={Pct}", stepPlanId, e.StepName, stepPct);
+                                if (stepPlanId == _viewingPlanId)
+                                {
+                                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                                    _progressBar.Value = stepPct;
+                                }
                                 UpdatePlanRowProgress(stepPlanId, stepPct);
+                            }
 
                             // Local-mode SQL adım bazlı ilerleme
                             int localPct = stepTracker.CalculateLocalStepProgress(e.StepName);
                             if (localPct >= 0)
                             {
+                                localPct = Math.Min(localPct, 99);
+                                Log.Debug("[UI] StepChanged(local): plan={PlanId}, step={Step}, localPct={Pct}", stepPlanId, e.StepName, localPct);
                                 if (stepPlanId == _viewingPlanId)
                                 {
                                     _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
@@ -123,6 +130,11 @@ namespace KoruMsSqlYedek.Win
                             cumPct = e.ProgressPercent;
                         }
 
+                        cumPct = Math.Min(cumPct, 99);
+                        Log.Debug("[UI] CloudUploadProgress: plan={PlanId}, batchPct={BatchPct}, cumPct={CumPct}, isConsolidated={IsCons}",
+                            uploadPlanId, e.ProgressPercent, cumPct,
+                            upTracker?.IsConsolidatedCloudPhase ?? false);
+
                         if (uploadPlanId == _viewingPlanId)
                         {
                             _progressBar.Value = cumPct;
@@ -130,7 +142,7 @@ namespace KoruMsSqlYedek.Win
                             {
                                 _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.CustomText;
                                 _progressBar.Text = string.Format("%{0}  {1}/{2}  {3}/s",
-                                    cumPct,
+                                    e.ProgressPercent,
                                     FormatFileSize(e.BytesSent),
                                     FormatFileSize(e.BytesTotal),
                                     FormatFileSize(e.SpeedBytesPerSecond));

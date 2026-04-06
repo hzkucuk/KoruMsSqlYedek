@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Serilog;
 
 namespace KoruMsSqlYedek.Core;
 
@@ -21,6 +22,8 @@ namespace KoruMsSqlYedek.Core;
 /// </remarks>
 public sealed class PlanProgressTracker
 {
+    private static readonly ILogger Log = Serilog.Log.ForContext<PlanProgressTracker>();
+
     /// <summary>1 tabanlı, şu anki veritabanı sırası.</summary>
     public int DbIndex;
 
@@ -99,16 +102,25 @@ public sealed class PlanProgressTracker
 
     /// <summary>
     /// Konsolide bulut yükleme fazını başlatır.
-    /// CloudPhaseBase, ağırlık modelinin beklenen tavanı ile sınırlanarak
-    /// olası MaxPercent şişmesinin bulut hesaplamasını bozması engellenir.
+    /// CloudPhaseBase daima ağırlık modelinin beklediği değeri kullanır;
+    /// MaxPercent'in şişmiş olması bulut fazını etkilemez.
     /// </summary>
     /// <returns>Bulut fazının başlangıç yüzdesi.</returns>
     public int StartConsolidatedCloudPhase()
     {
         IsConsolidatedCloudPhase = true;
         int expectedBase = CalculateExpectedCloudBase();
-        CloudPhaseBase = Math.Min(MaxPercent, expectedBase);
+
+        Log.Debug(
+            "[ProgressTracker] StartConsolidatedCloudPhase: MaxPercent={MaxPercent}, expectedBase={ExpectedBase}, " +
+            "HasCloudTargets={HasCloud}, HasFileBackup={HasFile}, SqlDbCount={SqlCount}",
+            MaxPercent, expectedBase, HasCloudTargets, HasFileBackup, SqlDbCount);
+
+        // Daima ağırlık modelinin beklediği base'i kullan.
+        // MaxPercent şişmiş olsa bile bulut fazı doğru noktadan başlar.
+        CloudPhaseBase = expectedBase;
         _maxCloudPercent = CloudPhaseBase;
+        MaxPercent = Math.Max(MaxPercent, CloudPhaseBase);
         return CloudPhaseBase;
     }
 
@@ -147,6 +159,11 @@ public sealed class PlanProgressTracker
         int pct = (int)(((currentIndex - 1.0) / totalCount) * maxSqlRange);
         pct = Math.Max(pct, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
+
+        Log.Debug(
+            "[ProgressTracker] DatabaseProgress: idx={Idx}/{Total}, sqlRange={Range}, pct={Pct}, prevMax={PrevMax}",
+            currentIndex, totalCount, maxSqlRange, pct, MaxPercent);
+
         MaxPercent = pct;
         return pct;
     }
@@ -160,8 +177,15 @@ public sealed class PlanProgressTracker
         IsFileBackupPhase = true;
         bool isFileOnly = SqlDbCount == 0;
         int fileBase = GetEffectiveFileBase(isFileOnly);
+        int prevMax = MaxPercent;
         int pct = Math.Max(fileBase, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
+
+        Log.Debug(
+            "[ProgressTracker] FileBackupPhaseStart: isFileOnly={IsFileOnly}, fileBase={FileBase}, " +
+            "prevMax={PrevMax}, result={Result}, HasCloudTargets={HasCloud}",
+            isFileOnly, fileBase, prevMax, pct, HasCloudTargets);
+
         MaxPercent = pct;
         return pct;
     }
@@ -202,8 +226,15 @@ public sealed class PlanProgressTracker
         int fileCopyWeight = GetFileCopyWeight(isFileOnly);
 
         int pct = fileBase + (int)((double)sourceIndex / totalSources * fileCopyWeight);
+        int prevMax = MaxPercent;
         pct = Math.Max(pct, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
+
+        Log.Debug(
+            "[ProgressTracker] FileSource: src={Src}/{Total}, fileBase={Base}, copyW={CopyW}, " +
+            "prevMax={PrevMax}, result={Result}",
+            sourceIndex, totalSources, fileBase, fileCopyWeight, prevMax, pct);
+
         MaxPercent = pct;
         return pct;
     }
@@ -268,8 +299,16 @@ public sealed class PlanProgressTracker
         double slicePerDb = maxSqlRange / DbTotal;
         double dbBase = (DbIndex - 1) * slicePerDb;
         int pct = (int)(dbBase + slicePerDb * stepWeight);
+        int prevMax = MaxPercent;
         pct = Math.Max(pct, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
+
+        Log.Debug(
+            "[ProgressTracker] LocalStep: step={Step}, weight={Weight:F2}, sqlRange={Range}, " +
+            "slice={Slice:F1}, dbBase={DbBase:F1}, raw={Raw}, prevMax={PrevMax}, result={Result}",
+            stepName, stepWeight, maxSqlRange, slicePerDb, dbBase,
+            (int)(dbBase + slicePerDb * stepWeight), prevMax, pct);
+
         MaxPercent = pct;
         return pct;
     }
@@ -285,12 +324,28 @@ public sealed class PlanProgressTracker
     public int CalculateCloudUploadProgress(int batchProgressPercent)
     {
         if (!IsConsolidatedCloudPhase)
+        {
+            Log.Warning(
+                "[ProgressTracker] CloudUploadProgress called but IsConsolidatedCloudPhase=false! " +
+                "batchPct={BatchPct}, MaxPercent={MaxPercent}",
+                batchProgressPercent, MaxPercent);
             return MaxPercent;
+        }
 
         int cloudRange = 100 - CloudPhaseBase;
         int cumPct = CloudPhaseBase + (int)(batchProgressPercent / 100.0 * cloudRange);
         cumPct = Math.Max(cumPct, _maxCloudPercent);
         cumPct = Math.Clamp(cumPct, CloudPhaseBase, 100);
+
+        // İlk birkaç cloud progress logla (tanılama için)
+        if (_maxCloudPercent == CloudPhaseBase || cumPct != _maxCloudPercent)
+        {
+            Log.Debug(
+                "[ProgressTracker] CloudUpload: batchPct={BatchPct}, base={Base}, range={Range}, " +
+                "cumPct={CumPct}, prevCloudMax={PrevCloud}, MaxPercent={MaxPercent}",
+                batchProgressPercent, CloudPhaseBase, cloudRange, cumPct, _maxCloudPercent, MaxPercent);
+        }
+
         _maxCloudPercent = cumPct;
         MaxPercent = Math.Max(cumPct, MaxPercent);
         return cumPct;

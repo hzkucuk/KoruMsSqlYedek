@@ -1,4 +1,27 @@
-﻿## [0.92.1] - 2026-06-27 — Progress Bar Bulut Yükleme Sırasında %100 Gösterme Hatası Düzeltildi
+﻿## [0.92.2] - 2026-06-28 — Progress Bar %100 Hatası Kesin Düzeltme + Diagnostik Loglama
+
+### Düzeltme
+- **Progress bar Completed öncesi asla %100 göstermez** — Tüm ara hesaplamalar (DatabaseProgress, StepChanged, CloudUploadProgress) artık Math.Min(pct, 99) ile sınırlanıyor. Sadece Completed eventi %100 ayarlıyor.
+- **StartConsolidatedCloudPhase artık expectedBase kullanıyor** — CloudPhaseBase = expectedBase (ağırlık modelinin deterministik değeri). MaxPercent şişmesine karşı bağışık.
+- **Progress bar bulut yükleme metni düzeltildi** — Bar metni artık ham batch yüzdesini (e.ProgressPercent) gösteriyor, kümülatif değil.
+
+### Diagnostik
+- PlanProgressTracker: 6 metoda Serilog debug loglama eklendi (StartConsolidatedCloudPhase, CalculateDatabaseProgress, CalculateLocalStepProgress, CalculateCloudUploadProgress, CalculateFileBackupPhaseStart, CalculateFileSourceProgress)
+- MainWindow.BackupActivity: Tüm _progressBar.Value atamalarına debug loglama eklendi
+- Sonraki çalıştırmada kök neden kesin olarak tespit edilecek
+
+### Test
+- 2 test güncellendi (CloudPhaseBase artık expectedBase kullanıyor): StartConsolidatedCloudPhase_RecordsBasePercent, CloudUpload_Consolidated_WeightDistribution_SqlOnly
+- 56 test geçiyor
+
+### Etkilenen Dosyalar
+- `PlanProgressTracker.cs` — StartConsolidatedCloudPhase fix + 6 metoda diagnostik loglama
+- `MainWindow.BackupActivity.cs` — Safety cap (99) + diagnostik loglama + bar metin düzeltmesi
+- `PlanProgressTrackerTests.cs` — 2 test güncellendi
+
+---
+
+## [0.92.1] - 2026-06-27 — Progress Bar Bulut Yükleme Sırasında %100 Gösterme Hatası Düzeltildi
 
 ### Düzeltme
 - **Progress bar bulut yükleme sırasında %100 gösteriyordu** — Bulut yükleme %11 iken progress bar %100 gösteriyordu. Kök neden: `CalculateCloudUploadProgress` global `MaxPercent` değerini taban olarak kullanıyordu (`Math.Max(cumPct, MaxPercent)`). MaxPercent herhangi bir nedenle şiştiğinde bulut ilerlemesi hep 100 dönerdi.
