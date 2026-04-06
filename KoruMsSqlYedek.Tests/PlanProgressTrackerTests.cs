@@ -790,6 +790,66 @@ namespace KoruMsSqlYedek.Tests
             PlanProgressTracker.SqlRangeWithCloudAndFile.Should().Be(45);
         }
 
+        // ── Bug Fix: MaxPercent şişmesi bulut ilerlemesini bozmamalı ─────────
+
+        [TestMethod]
+        public void CloudUpload_InflatedMaxPercent_DoesNotCorruptCloudProgress()
+        {
+            // BUG SENARYOSU: MaxPercent bir şekilde beklenen aralığın ötesine şişmiş (100).
+            // Eski kod Math.Max(cumPct, MaxPercent) kullandığı için bulut ilerlemesi hep 100 dönerdi.
+            var tracker = CreateTracker(dbTotal: 1, sqlDbCount: 1, hasFileBackup: true, hasCloudTargets: true);
+            tracker.MaxPercent = 100; // Şişmiş MaxPercent!
+
+            int cloudBase = tracker.StartConsolidatedCloudPhase();
+
+            // CloudPhaseBase, ağırlık modelinin beklenen tavanı ile sınırlanmalı (50)
+            cloudBase.Should().BeLessThan(100, "CloudPhaseBase şişmiş MaxPercent'e eşit olmamalı");
+
+            int at11 = tracker.CalculateCloudUploadProgress(11);
+            at11.Should().BeLessThan(100, "batchPct=%11 iken bulut ilerlemesi %100 göstermemeli");
+            at11.Should().BeGreaterThan(cloudBase, "bulut ilerlemesi CloudPhaseBase'den büyük olmalı");
+        }
+
+        [TestMethod]
+        public void CloudUpload_InflatedMaxPercent_SqlOnlyPlan_CappedTo40()
+        {
+            // SQL-only + bulut → beklenen tavan 40
+            var tracker = CreateTracker(dbTotal: 1, sqlDbCount: 1, hasCloudTargets: true);
+            tracker.MaxPercent = 100;
+
+            int cloudBase = tracker.StartConsolidatedCloudPhase();
+            cloudBase.Should().Be(40, "SQL-only+bulut: ağırlık tavanı 40");
+
+            int at50 = tracker.CalculateCloudUploadProgress(50);
+            at50.Should().Be(70, "40 + 60*0.50 = 70");
+        }
+
+        [TestMethod]
+        public void CloudUpload_InflatedMaxPercent_FileOnlyPlan_CappedTo25()
+        {
+            // Dosya-only + bulut → beklenen tavan 25
+            var tracker = CreateTracker(dbTotal: 1, sqlDbCount: 0, hasFileBackup: true, hasCloudTargets: true);
+            tracker.MaxPercent = 100;
+
+            int cloudBase = tracker.StartConsolidatedCloudPhase();
+            cloudBase.Should().Be(25, "dosya-only+bulut: ağırlık tavanı 25");
+
+            int at50 = tracker.CalculateCloudUploadProgress(50);
+            at50.Should().Be(62, "25 + 75*0.50 = 62");
+        }
+
+        [TestMethod]
+        public void LocalStepProgress_InConsolidatedCloudPhase_ReturnsMinusOne()
+        {
+            var tracker = CreateTracker(dbTotal: 1, sqlDbCount: 1);
+            tracker.DbIndex = 1;
+            tracker.DbTotal = 1;
+            tracker.IsConsolidatedCloudPhase = true;
+
+            int pct = tracker.CalculateLocalStepProgress("Temizlik");
+            pct.Should().Be(-1, "bulut fazında SQL adım hesaplaması yapılmamalı");
+        }
+
         // ── Helper ───────────────────────────────────────────────────────────
 
         private static PlanProgressTracker CreateTracker(

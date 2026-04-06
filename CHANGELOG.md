@@ -1,4 +1,26 @@
-﻿## [0.92.0] - 2026-06-27 — Konsolide Bulut Yükleme: Tek Seferde Toplu Upload
+﻿## [0.92.1] - 2026-06-27 — Progress Bar Bulut Yükleme Sırasında %100 Gösterme Hatası Düzeltildi
+
+### Düzeltme
+- **Progress bar bulut yükleme sırasında %100 gösteriyordu** — Bulut yükleme %11 iken progress bar %100 gösteriyordu. Kök neden: `CalculateCloudUploadProgress` global `MaxPercent` değerini taban olarak kullanıyordu (`Math.Max(cumPct, MaxPercent)`). MaxPercent herhangi bir nedenle şiştiğinde bulut ilerlemesi hep 100 dönerdi.
+- **3 katmanlı savunma düzeltmesi:**
+  1. `CloudPhaseBase` artık ağırlık modelinin beklenen tavanı ile sınırlanıyor (`Math.Min(MaxPercent, expectedBase)`)
+  2. Bulut fazı kendi monoton artış izleyicisini (`_maxCloudPercent`) kullanıyor — global `MaxPercent` şişmesinden etkilenmiyor
+  3. `CalculateLocalStepProgress` bulut fazı sırasında devre dışı (`IsConsolidatedCloudPhase` guard)
+
+### Test
+- 4 yeni test eklendi (56 toplam):
+  - `CloudUpload_InflatedMaxPercent_DoesNotCorruptCloudProgress`
+  - `CloudUpload_InflatedMaxPercent_SqlOnlyPlan_CappedTo40`
+  - `CloudUpload_InflatedMaxPercent_FileOnlyPlan_CappedTo25`
+  - `LocalStepProgress_InConsolidatedCloudPhase_ReturnsMinusOne`
+
+### Etkilenen Dosyalar
+- `PlanProgressTracker.cs` — 3 katmanlı savunma: CloudPhaseBase cap, _maxCloudPercent, IsConsolidatedCloudPhase guard
+- `PlanProgressTrackerTests.cs` — 4 yeni test
+
+---
+
+## [0.92.0] - 2026-06-27 — Konsolide Bulut Yükleme: Tek Seferde Toplu Upload
 
 ### Yeni Özellik
 - **SQL ve dosya yedeklerinin bulut yüklemeleri tek bir toplu fazda birleştirildi** — Daha önce her SQL veritabanı yedeklemesinden sonra ayrı ayrı buluta yükleniyor ve dosya yedekleri de ayrı bir fazda yükleniyordu. Artık tüm yedek dosyaları (SQL + dosya) yerel işlemler tamamlandıktan sonra tek bir toplu fazda buluta gönderiliyor.

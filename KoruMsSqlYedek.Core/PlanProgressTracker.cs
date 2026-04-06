@@ -54,6 +54,9 @@ public sealed class PlanProgressTracker
     /// <summary>Konsolide bulut fazı başlangıç yüzdesi (lokal fazlar bittiğinde kaydedilir).</summary>
     public int CloudPhaseBase;
 
+    /// <summary>Bulut fazı içinde monoton artış için kullanılan ayrı izleyici (global MaxPercent'ten bağımsız).</summary>
+    private int _maxCloudPercent;
+
     // ── Sabitler ──────────────────────────────────────────────────────────
 
     /// <summary>Dosya yedekleme varsa SQL fazına ayrılan üst sınır yüzdesi (bulut yok).</summary>
@@ -96,14 +99,31 @@ public sealed class PlanProgressTracker
 
     /// <summary>
     /// Konsolide bulut yükleme fazını başlatır.
-    /// Mevcut MaxPercent'i baz alarak bulut aralığını [CloudPhaseBase, 100] olarak ayarlar.
+    /// CloudPhaseBase, ağırlık modelinin beklenen tavanı ile sınırlanarak
+    /// olası MaxPercent şişmesinin bulut hesaplamasını bozması engellenir.
     /// </summary>
     /// <returns>Bulut fazının başlangıç yüzdesi.</returns>
     public int StartConsolidatedCloudPhase()
     {
         IsConsolidatedCloudPhase = true;
-        CloudPhaseBase = MaxPercent;
-        return MaxPercent;
+        int expectedBase = CalculateExpectedCloudBase();
+        CloudPhaseBase = Math.Min(MaxPercent, expectedBase);
+        _maxCloudPercent = CloudPhaseBase;
+        return CloudPhaseBase;
+    }
+
+    /// <summary>
+    /// Ağırlık modeline göre bulut fazı öncesi beklenen maksimum lokal yüzdeyi hesaplar.
+    /// </summary>
+    private int CalculateExpectedCloudBase()
+    {
+        if (HasFileBackup)
+        {
+            bool isFileOnly = SqlDbCount == 0;
+            int fileBase = GetEffectiveFileBase(isFileOnly);
+            return fileBase + GetFileCopyWeight(isFileOnly) + GetFileCompressWeight(isFileOnly);
+        }
+        return GetEffectiveSqlRange();
     }
 
     // ── Hesaplama Metotları ───────────────────────────────────────────────
@@ -235,10 +255,10 @@ public sealed class PlanProgressTracker
     /// Bulut hedefsiz (local-mode) SQL adım bazlı ilerleme yüzdesini hesaplar.
     /// </summary>
     /// <param name="stepName">Adım adı (SQL Yedekleme, Doğrulama, Sıkıştırma, Arşiv Doğrulama, Temizlik).</param>
-    /// <returns>Klamplanmış, monoton artan yüzde [0-100] veya -1 (bilinmeyen adım).</returns>
+    /// <returns>Klamplanmış, monoton artan yüzde [0-100] veya -1 (bilinmeyen adım veya bulut/dosya fazında).</returns>
     public int CalculateLocalStepProgress(string stepName)
     {
-        if (IsFileBackupPhase || DbTotal <= 0 || DbIndex <= 0)
+        if (IsFileBackupPhase || IsConsolidatedCloudPhase || DbTotal <= 0 || DbIndex <= 0)
             return -1;
 
         if (!LocalStepWeights.TryGetValue(stepName, out double stepWeight))
@@ -257,6 +277,8 @@ public sealed class PlanProgressTracker
     /// <summary>
     /// Konsolide bulut yükleme ilerlemesini hesaplar.
     /// Batch progress (0-100) değerini [CloudPhaseBase, 100] aralığına eşler.
+    /// Bulut fazı kendi monoton artış izleyicisini (_maxCloudPercent) kullanır;
+    /// global MaxPercent'in önceden şişmiş olması bulut ilerlemesini etkilemez.
     /// </summary>
     /// <param name="batchProgressPercent">Toplam batch yükleme yüzdesi (0-100).</param>
     /// <returns>Klamplanmış, monoton artan yüzde [0-100].</returns>
@@ -267,9 +289,10 @@ public sealed class PlanProgressTracker
 
         int cloudRange = 100 - CloudPhaseBase;
         int cumPct = CloudPhaseBase + (int)(batchProgressPercent / 100.0 * cloudRange);
-        cumPct = Math.Max(cumPct, MaxPercent);
-        cumPct = Math.Clamp(cumPct, 0, 100);
-        MaxPercent = cumPct;
+        cumPct = Math.Max(cumPct, _maxCloudPercent);
+        cumPct = Math.Clamp(cumPct, CloudPhaseBase, 100);
+        _maxCloudPercent = cumPct;
+        MaxPercent = Math.Max(cumPct, MaxPercent);
         return cumPct;
     }
 }
