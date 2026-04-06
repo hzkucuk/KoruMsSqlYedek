@@ -1,4 +1,9 @@
-﻿## [0.90.1] - 2026-06-24 — ListView Grup Görünümü Kök Neden Düzeltmesi
+﻿## [0.90.2] - 2026-06-24 — ListView Grup Expand/Collapse P/Invoke Düzeltmesi
+
+### Düzeltme
+- **ListView grup expand/collapse çalışmıyordu** — .NET'in `ShowGroups` setter'ı `value == current` ise `LVM_ENABLEGROUPVIEW` mesajını göndermiyordu. `Groups.Clear()` sonrası grup görünümü kayboluyordu. `ListViewHeaderPainter.EnableGroupView()` ile doğrudan P/Invoke üzerinden `LVM_ENABLEGROUPVIEW(TRUE)` gönderilerek düzeltildi. ShowGroups force-toggle + P/Invoke belt-and-suspenders yaklaşımı ile her çağrıda garanti edildi.
+
+## [0.90.1] - 2026-06-24 — ListView Grup Görünümü Kök Neden Düzeltmesi
 
 ### Düzeltme
 - **ListView grupları görünmüyordu (kök neden)** — `ShowGroups = true` atandığında `Groups.Count == 0` olduğu için .NET dahili olarak `LVM_ENABLEGROUPVIEW(FALSE)` gönderiyordu. `ShowGroups` ataması, gruplar eklendikten sonraya taşınarak düzeltildi. Collapsible grup başlıkları artık doğru çalışıyor.

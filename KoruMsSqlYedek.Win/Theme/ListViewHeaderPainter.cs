@@ -86,6 +86,7 @@ internal sealed class ListViewHeaderPainter : NativeWindow, IDisposable
     private const int LVM_FIRST = 0x1000;
     private const int LVM_SETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 54;
     private const int LVM_GETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 55;
+    private const int LVM_ENABLEGROUPVIEW = LVM_FIRST + 157;
     private const int LVS_EX_DOUBLEBUFFER = 0x00010000;
 
     private readonly ListView _listView;
@@ -112,6 +113,18 @@ internal sealed class ListViewHeaderPainter : NativeWindow, IDisposable
         _sortColumn = column;
         _sortAscending = ascending;
         _headerWindow?.Invalidate();
+    }
+
+    /// <summary>
+    /// LVM_ENABLEGROUPVIEW(TRUE) mesajını doğrudan native control'e gönderir.
+    /// .NET'in ShowGroups setter'ı value==current ise mesajı yuttuğundan,
+    /// Groups.Clear() sonrası tekrar çağrıda grup görünümü kayboluyordu.
+    /// Bu metot .NET'in change-detection'ını bypass eder.
+    /// </summary>
+    public void EnableGroupView()
+    {
+        if (_listView.IsHandleCreated && _listView.Groups.Count > 0)
+            SendMessage(_listView.Handle, LVM_ENABLEGROUPVIEW, (IntPtr)1, IntPtr.Zero);
     }
 
     private void OnListViewHandleCreated(object? sender, EventArgs e)

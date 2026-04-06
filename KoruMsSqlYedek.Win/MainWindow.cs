@@ -476,10 +476,19 @@ namespace KoruMsSqlYedek.Win
             _lvLastBackups.ListViewItemSorter = new LastBackupsItemComparer(_lvSortColumn, _lvSortAscending);
             _lvLastBackups.EndUpdate();
 
-            // ShowGroups, gruplar eklendikten SONRA set edilmeli.
-            // .NET dahili olarak LVM_ENABLEGROUPVIEW(ShowGroups && Groups.Count > 0) gönderir;
-            // Groups.Count == 0 iken ShowGroups = true demek aslında grupları KAPATIR.
-            _lvLastBackups.ShowGroups = _lvLastBackups.Groups.Count > 0;
+            // Groups.Clear() sonrası ShowGroups hâlâ true ise .NET setter'ı tekrar true atamayı
+            // "değişiklik yok" diye yutarak LVM_ENABLEGROUPVIEW(TRUE) göndermez.
+            // Force-toggle + P/Invoke ile native grup görünümünü her çağrıda garanti et.
+            if (_lvLastBackups.Groups.Count > 0)
+            {
+                _lvLastBackups.ShowGroups = false;
+                _lvLastBackups.ShowGroups = true;
+                _headerPainter?.EnableGroupView();
+            }
+            else
+            {
+                _lvLastBackups.ShowGroups = false;
+            }
 
             AutoResizeListViewColumns(_lvLastBackups);
         }

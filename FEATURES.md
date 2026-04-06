@@ -2,6 +2,10 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.90.2 — ListView Grup Expand/Collapse P/Invoke Düzeltmesi
+- `ListViewHeaderPainter.EnableGroupView()` — doğrudan `LVM_ENABLEGROUPVIEW(TRUE)` P/Invoke
+- Force-toggle + P/Invoke belt-and-suspenders yaklaşımı ile grup görünümü garanti
+
 ### v0.90.1 — ListView Grup Görünümü Kök Neden Düzeltmesi
 - ShowGroups zamanlama hatası düzeltildi — Groups.Count > 0 olduktan sonra set ediliyor
 - Collapsible grup başlıkları artık doğru çalışıyor
