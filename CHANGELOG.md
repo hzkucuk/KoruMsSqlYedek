@@ -1,4 +1,13 @@
-﻿## [0.89.0] - 2026-06-22 — UI Düzeltmeleri: Ayarlar ComboBox, Yedek Türü Genişlik, Navigasyon İkonları
+﻿## [0.90.0] - 2026-06-23 — ListView Grup Başlıkları + SMTP Profil Ekleme
+
+### Düzeltme
+- **ListView grup başlıkları görünmüyor** — `SetWindowTheme("DarkMode_Explorer")` uygulanarak native grup başlıkları dark modda düzgün render edilir hale getirildi. Collapsible grup başlıkları artık görünür.
+- **LVS_EX_DOUBLEBUFFER** eklendi — ListView grup ve item geçişlerinde flicker önlendi.
+
+### İyileştirme
+- **SMTP profil linki çalışır hale getirildi** — PlanEditForm'da "Profil ekle / düzenle" linki artık MessageBox yerine SmtpProfileEditDialog açar. Yeni profil oluşturulunca ComboBox otomatik güncellenir ve yeni profil seçilir.
+
+## [0.89.0] - 2026-06-22 — UI Düzeltmeleri: Ayarlar ComboBox, Yedek Türü Genişlik, Navigasyon İkonları
 
 ### Düzeltme
 - **Ayarlar > Genel sekmesinde görünmeyen ComboBox'lar** — Dil, Tema ve Log Konsol Teması ComboBox'ları 1px genişlikteydi (Size=1,34). `Dock=Fill` eklenerek TLP sütununa tam genişletildi.

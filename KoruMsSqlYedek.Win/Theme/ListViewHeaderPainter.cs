@@ -79,6 +79,15 @@ internal sealed class ListViewHeaderPainter : NativeWindow, IDisposable
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, ref HDITEM lParam);
 
+    [DllImport("uxtheme.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern int SetWindowTheme(IntPtr hWnd, string? pszSubAppName, string? pszSubIdList);
+
+    // ListView extended styles
+    private const int LVM_FIRST = 0x1000;
+    private const int LVM_SETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 54;
+    private const int LVM_GETEXTENDEDLISTVIEWSTYLE = LVM_FIRST + 55;
+    private const int LVS_EX_DOUBLEBUFFER = 0x00010000;
+
     private readonly ListView _listView;
     private HeaderNativeWindow? _headerWindow;
     private int _sortColumn = -1;
@@ -113,6 +122,16 @@ internal sealed class ListViewHeaderPainter : NativeWindow, IDisposable
 
     private void AttachHeader()
     {
+        // Explorer teması — native grup başlıklarını (collapse/expand) aktifleştirir.
+        // Dark modda "DarkMode_Explorer" kullanılır; grup header renkleri otomatik uyumlanır.
+        string theme = Application.IsDarkModeEnabled ? "DarkMode_Explorer" : "Explorer";
+        SetWindowTheme(_listView.Handle, theme, null);
+
+        // Double-buffer flicker'ı önler
+        IntPtr exStyle = SendMessage(_listView.Handle, LVM_GETEXTENDEDLISTVIEWSTYLE, IntPtr.Zero, IntPtr.Zero);
+        SendMessage(_listView.Handle, LVM_SETEXTENDEDLISTVIEWSTYLE,
+            (IntPtr)LVS_EX_DOUBLEBUFFER, (IntPtr)((int)exStyle | LVS_EX_DOUBLEBUFFER));
+
         IntPtr headerHwnd = SendMessage(_listView.Handle, LVM_GETHEADER, IntPtr.Zero, IntPtr.Zero);
         if (headerHwnd != IntPtr.Zero)
         {

@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.90.0 — ListView Grup Başlıkları + SMTP Profil Ekleme
+- ListView DarkMode_Explorer teması — native grup başlıkları dark modda görünür, collapsible
+- LVS_EX_DOUBLEBUFFER — ListView flicker önleme
+- PlanEditForm SMTP profil linki — SmtpProfileEditDialog açar, profil ekleyince ComboBox güncellenir
+
 ### v0.89.0 — UI Düzeltmeleri: Ayarlar ComboBox, Navigasyon İkonları
 - Ayarlar > Genel: Dil, Tema, Log Konsol Teması ComboBox'ları görünür hale getirildi (Dock=Fill)
 - Yedek Türü ComboBox'u genişletildi (Dock=Fill)

@@ -843,9 +843,29 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnOpenSmtpSettingsClick(object sender, System.Windows.Forms.LinkLabelLinkClickedEventArgs e)
         {
-            Theme.ModernMessageBox.Show(
-                Res.Get("PlanEdit_SmtpGoToSettings") ?? "SMTP profillerini yönetmek için ana pencereden\nAyarlar \u003e E-posta (SMTP) sekmesini açın.",
-                Res.Get("Info") ?? "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using var dlg = new SmtpProfileEditDialog();
+            if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+            // Yeni profili kaydet
+            var settings = _settingsManager.Load();
+            settings.SmtpProfiles.Add(dlg.ResultProfile);
+            _settingsManager.Save(settings);
+
+            // ComboBox'ı yeniden yükle ve yeni profili seç
+            string newId = dlg.ResultProfile.Id;
+            _cmbSmtpProfile.Items.Clear();
+            _cmbSmtpProfile.Items.Add(new SmtpProfile { Id = string.Empty, DisplayName = Res.Get("PlanEdit_SmtpNoProfile") ?? "(Profil seçin)" });
+            foreach (var profile in settings.SmtpProfiles)
+                _cmbSmtpProfile.Items.Add(profile);
+
+            for (int i = 0; i < _cmbSmtpProfile.Items.Count; i++)
+            {
+                if (_cmbSmtpProfile.Items[i] is SmtpProfile p && p.Id == newId)
+                {
+                    _cmbSmtpProfile.SelectedIndex = i;
+                    break;
+                }
+            }
         }
         private void OnReportEnabledChanged(object sender, EventArgs e) => UpdateReportFieldsVisibility();
         private void OnFileBackupEnabledChanged(object sender, EventArgs e)
