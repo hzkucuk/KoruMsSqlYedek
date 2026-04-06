@@ -1,4 +1,23 @@
-﻿## [0.90.3] - 2026-06-25 — IsSuccess Hesaplama Düzeltmesi
+﻿## [0.91.0] - 2026-06-26 — Büyük Dosya Refactoring: Partial Class Ayrımı
+
+### Yeni Özellik
+- **12 büyük dosya partial class'lara ayrıldı** — Kod okunabilirliği ve bakım kolaylığı için tüm büyük dosyalar mantıksal birimlere bölündü:
+  1. `MainWindow.cs` (2197→350 satır) + 6 partial: Dashboard, Plans, BackupExecution, BackupActivity, LogViewer, Settings
+  2. `BackupJobExecutor.cs` (1043→278 satır) + 3 partial: SqlPipeline, FilePipeline, Helpers
+  3. `EmailNotificationService.cs` (956→126 satır) + 4 partial: SqlNotification, FileNotification, CloudNotification, JobNotification
+  4. `PlanEditForm.cs` (959→129 satır) + 4 partial: WizardNavigation, PlanBinding, CloudAndFileSources, Visibility
+  5. `TrayApplicationContext.cs` (788→307 satır) + 3 partial: ServiceControl, BackupActivity, UpdateCheck
+  6. `SqlBackupService.cs` (877→186 satır) + 3 partial: Operations, VssBackup, Helpers
+  7. `FileSystemCheckedTreeView.cs` (928→321 satır) + 3 partial: NodeLoading, Filtering, SizeCalculation
+  8. `CloudUploadOrchestrator.cs` (638→234 satır) + 2 partial: CloudOperations, RetryAndRecovery
+  9. `MegaProvider.cs` (629→261 satır) + 1 partial: Operations (4 kritik pattern korundu)
+  10. `GoogleDriveProvider.cs` (608→238 satır) + 1 partial: Operations
+  11. `FtpSftpProvider.cs` (594→226 satır) + 2 partial: Ftp, Sftp
+  12. `FileBackupService.cs` (523→288 satır) + 2 partial: CopyAndVerify, FileCollection
+- Toplam **30+ yeni partial dosya** oluşturuldu
+- Tüm mevcut davranış ve public API'ler korundu, breaking change yok
+
+## [0.90.3] - 2026-06-25 — IsSuccess Hesaplama Düzeltmesi
 
 ### Düzeltme
 - **E-posta bildirimi SQL/dosya başarısızlığında "Başarılı" gösteriyordu** — `IsSuccess` hesaplaması yalnızca bulut upload sonucunu kontrol ediyordu. SQL yedekleme veya dosya yedekleme başarısız olduğunda bile bildirim "Başarılı" olarak gönderiliyordu. `overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed` formülü ile düzeltildi. Her iki yol da (SQL+Dosya ve sadece Dosya) güncellenip test edildi.

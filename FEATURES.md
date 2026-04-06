@@ -2,6 +2,22 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.91.0 — Büyük Dosya Refactoring: Partial Class Ayrımı
+- [x] 12 büyük dosya partial class'lara ayrıldı (toplam 30+ yeni dosya)
+- [x] MainWindow.cs → 6 partial (Dashboard, Plans, BackupExecution, BackupActivity, LogViewer, Settings)
+- [x] BackupJobExecutor.cs → 3 partial (SqlPipeline, FilePipeline, Helpers)
+- [x] EmailNotificationService.cs → 4 partial (SqlNotification, FileNotification, CloudNotification, JobNotification)
+- [x] PlanEditForm.cs → 4 partial (WizardNavigation, PlanBinding, CloudAndFileSources, Visibility)
+- [x] TrayApplicationContext.cs → 3 partial (ServiceControl, BackupActivity, UpdateCheck)
+- [x] SqlBackupService.cs → 3 partial (Operations, VssBackup, Helpers)
+- [x] FileSystemCheckedTreeView.cs → 3 partial (NodeLoading, Filtering, SizeCalculation)
+- [x] CloudUploadOrchestrator.cs → 2 partial (CloudOperations, RetryAndRecovery)
+- [x] MegaProvider.cs → 1 partial (Operations) — 4 kritik pattern korundu
+- [x] GoogleDriveProvider.cs → 1 partial (Operations)
+- [x] FtpSftpProvider.cs → 2 partial (Ftp, Sftp)
+- [x] FileBackupService.cs → 2 partial (CopyAndVerify, FileCollection)
+- [x] Tüm public API'ler ve davranışlar korundu, breaking change yok
+
 ### v0.90.3 — IsSuccess Hesaplama Düzeltmesi
 - `IsSuccess` artık SQL/dosya yedekleme başarısızlıklarını da dahil ediyor
 - `overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed` formülü
