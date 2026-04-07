@@ -536,6 +536,7 @@
             _cmbRetentionTemplate.Location = new System.Drawing.Point(tx, y);
             _cmbRetentionTemplate.Size = new System.Drawing.Size(tw, 23);
             _cmbRetentionTemplate.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            _cmbRetentionTemplate.SelectedIndexChanged += OnRetentionTemplateChanged;
             _toolTip.SetToolTip(_cmbRetentionTemplate, "Haz\u0131r \u015fablon se\u00e7in veya \u00d6zel se\u00e7erek elle belirleyin.");
             step4.Controls.Add(_cmbRetentionTemplate);
             y += 34;
