@@ -1,4 +1,15 @@
-﻿## [0.96.0] - 2026-04-08 — Dashboard ObjectListView Geçişi
+﻿## [0.97.0] - 2026-04-08 — Yeşil Grup Başlıkları (ObjectListView)
+
+### Yeni Özellikler
+- **ThemedObjectListView** — ObjectListView için NM_CUSTOMDRAW WndProc interception ile grup başlık metin rengini özelleştiren alt sınıf oluşturuldu.
+- **Yeşil grup başlıkları** — Dashboard Son Yedeklemeler listesinde plan grup başlıkları artık emerald yeşil renkte (AccentPrimaryHover) gösteriliyor.
+
+### Teknik
+- `UseExplorerTheme = false` ile explorer tema baskılanması, Win32 NMLVCUSTOMDRAW struct offset hesaplamaları (x64/x86 uyumlu).
+
+---
+
+## [0.96.0] - 2026-04-08 — Dashboard ObjectListView Geçişi
 
 ### Yeni Özellikler
 - **Dashboard ListView → ObjectListView geçişi** — Son Yedeklemeler gridi, `ObjectListView.Repack.NET6Plus` v2.9.5 NuGet paketi ile yeniden yazıldı. Yerleşik sıralama, plan adına göre gruplama, AspectName veri bağlama ve satır düzeyinde renklendirme (FormatRow) aktif.

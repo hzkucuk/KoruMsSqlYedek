@@ -23,7 +23,7 @@
             _tabDashboard = new System.Windows.Forms.TabPage();
             _pnlGrid = new KoruMsSqlYedek.Win.Theme.ModernCardPanel();
             _lblGridTitle = new System.Windows.Forms.Label();
-            _olvLastBackups = new BrightIdeasSoftware.ObjectListView();
+            _olvLastBackups = new KoruMsSqlYedek.Win.Controls.ThemedObjectListView();
             _olvColDate = new BrightIdeasSoftware.OLVColumn();
             _olvColPlan = new BrightIdeasSoftware.OLVColumn();
             _olvColDatabase = new BrightIdeasSoftware.OLVColumn();
@@ -1848,7 +1848,7 @@
         private System.Windows.Forms.Label _lblActivePlansValue;
         private Theme.ModernCardPanel _pnlGrid;
         private System.Windows.Forms.Label _lblGridTitle;
-        private BrightIdeasSoftware.ObjectListView _olvLastBackups;
+        private Controls.ThemedObjectListView _olvLastBackups;
         private BrightIdeasSoftware.OLVColumn _olvColDate;
         private BrightIdeasSoftware.OLVColumn _olvColPlan;
         private BrightIdeasSoftware.OLVColumn _olvColDatabase;

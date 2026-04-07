@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.97.0 — Yeşil Grup Başlıkları (ObjectListView)
+- ThemedObjectListView alt sınıfı: NM_CUSTOMDRAW ile grup başlık rengini özelleştirme
+- Dashboard grup başlıkları emerald yeşil (AccentPrimaryHover)
+- UseExplorerTheme=false ile explorer tema baskılama
+
 ### v0.96.0 — Dashboard ObjectListView Geçişi
 - Dashboard Son Yedeklemeler gridi `ObjectListView.Repack.NET6Plus` v2.9.5 ile değiştirildi
 - Yerleşik sıralama, plan bazlı gruplama, AspectName veri bağlama, FormatRow satır renklendirme

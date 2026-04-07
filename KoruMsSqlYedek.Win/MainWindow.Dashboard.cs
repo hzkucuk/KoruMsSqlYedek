@@ -105,6 +105,9 @@ namespace KoruMsSqlYedek.Win
             _olvLastBackups.SelectedForeColor = Theme.ModernTheme.TextPrimary;
             _olvLastBackups.UnfocusedSelectedBackColor = Color.FromArgb(40, Theme.ModernTheme.AccentPrimary);
             _olvLastBackups.UnfocusedSelectedForeColor = Theme.ModernTheme.TextPrimary;
+
+            _olvLastBackups.UseExplorerTheme = false;
+            _olvLastBackups.GroupHeaderForeColor = Theme.ModernTheme.AccentPrimaryHover;
         }
 
         private void LoadDashboardData()
