@@ -1,4 +1,7 @@
-﻿## [0.99.5] - 2026-04-09 — Per-Type Retention Şablonları
+﻿## [0.99.5] - 2026-04-09 — Per-Type Retention Şablonları + IPC Eş Zamanlılık Düzeltmesi
+
+### Düzeltme
+- **`ServicePipeClient.SendAsync` eş zamanlı yazma hatası** — Plan kaydedilince tetiklenen `RequestStatusAsync()` ile `ConnectLoopAsync` içindeki eş zamanlı `WriteLineAsync` çağrıları `InvalidOperationException: The stream is currently in use by a previous operation on the stream` üretiyordu. `SemaphoreSlim _writeLock(1,1)` kilidi eklendi; tüm yazma işlemleri `WaitAsync → try/finally → Release` kalıbıyla serialze edildi.
 
 ### Yeni Özellik
 - **`RetentionScheme` (per-type retention)** — SQL Full, Diff, Log ve dosya arşivi (Files_*.7z) için artık ayrı bağımsız retention politikaları tanımlanabiliyor.

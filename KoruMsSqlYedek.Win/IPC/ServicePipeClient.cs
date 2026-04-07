@@ -25,6 +25,7 @@ namespace KoruMsSqlYedek.Win.IPC
         private NamedPipeClientStream _pipe;
         private StreamWriter          _writer;
         private CancellationTokenSource _cts;
+        private readonly SemaphoreSlim _writeLock = new SemaphoreSlim(1, 1);
         private bool _disposed;
         private volatile bool _connected;
 
@@ -183,8 +184,12 @@ namespace KoruMsSqlYedek.Win.IPC
         {
             if (!_connected || _writer == null) return;
 
+            await _writeLock.WaitAsync();
             try
             {
+                // Bekleme sırasında bağlantı kesilebilir — tekrar kontrol et
+                if (!_connected || _writer == null) return;
+
                 string json = PipeSerializer.Serialize(message);
                 await _writer.WriteLineAsync(json);
             }
@@ -192,6 +197,10 @@ namespace KoruMsSqlYedek.Win.IPC
             {
                 Log.Warning(ex, "Pipe mesajı gönderilemedi: {Type}", message.Type);
                 SetConnected(false);
+            }
+            finally
+            {
+                _writeLock.Release();
             }
         }
 
