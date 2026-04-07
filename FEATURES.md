@@ -2,7 +2,10 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
-### v0.99.3 — Başarı Bildirimleri Yeşil Checkmark
+### v0.99.4 — Güncelleme Kontrol Düzeltmesi
+- `InstallerPrefix` `"KoruMsSqlYedek_v"` olarak düzeltildi; artık GitHub asset eşleşiyor ve güncelleme bildirimi çalışıyor
+
+### v0.99.3
 - Bağlantı ve servis başlatma bildirimleri `ModernToast.Success` (yeşil ✓) ile gösteriliyor
 - Servis durdurma bildirimi nötr `ModernToast.Info` olarak güncellendi
 

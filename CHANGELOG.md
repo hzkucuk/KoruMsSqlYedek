@@ -1,4 +1,11 @@
-﻿## [0.99.3] - 2026-04-08 — Başarı Bildirimleri Yeşil Checkmark
+﻿## [0.99.4] - 2026-04-08 — Güncelleme Kontrol Düzeltmesi
+
+### Düzeltme
+- **`InstallerPrefix` hatası** — `UpdateChecker` GitHub asset'ini `"KoruMsSqlYedek_Setup_"` prefix'i ile arıyordu; ancak installer dosya adı `KoruMsSqlYedek_v{sürüm}_Setup.exe` formatında. Prefix `"KoruMsSqlYedek_v"` olarak düzeltildi. Bu hata yüzünden güncelleme her zaman "bulunamadı" olarak dönüyordu.
+
+---
+
+## [0.99.3]
 
 ### Değişiklik
 - **Yeşil ✓ başarı bildirimleri** — Servis bağlantısı kuruldu ve servis başlatıldı bildirimleri artık mavi "i" yerine `ModernToast.Success` ile yeşil checkmark gösteriyor.
