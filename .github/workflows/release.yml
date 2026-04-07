@@ -89,16 +89,6 @@ jobs:
             "Deployment\InnoSetup\KoruMsSqlYedek.iss"
         if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
 
-    # ── ZIP Paketi ────────────────────────────────────────────────
-    # BUG FIX: Wildcard ile çoklu path yerine dizin dizisi kullan.
-    - name: Create ZIP package
-      shell: pwsh
-      run: |
-        $ver = "${{ steps.version.outputs.VERSION }}"
-        Compress-Archive -Path @("publish\win", "publish\service") `
-          -DestinationPath "releases\KoruMsSqlYedek_v${ver}.zip" -Force
-        Write-Host "ZIP created: releases\KoruMsSqlYedek_v${ver}.zip"
-
     # ── Değişiklik notlarını çıkar ────────────────────────────────
     # BUG FIX: Çok satırlı output için heredoc delimiter syntax kullan.
     - name: Extract changelog notes
@@ -142,4 +132,3 @@ jobs:
         prerelease: false
         files: |
           releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
-          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}.zip
