@@ -5,10 +5,10 @@
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
         <!--
-          requireAdministrator: Windows Service başlatma/durdurma/yeniden başlatma
-          işlemleri için yönetici yetkisi gereklidir (ServiceController.Start/Stop).
+          asInvoker: Tray uygulaması normal kullanıcı olarak çalışır.
+          Servis kontrolü (başlat/durdur) gerektiğinde sc.exe + UAC ile yükseltilir.
         -->
-        <requestedExecutionLevel level="requireAdministrator" uiAccess="false"/>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
       </requestedPrivileges>
     </security>
   </trustInfo>

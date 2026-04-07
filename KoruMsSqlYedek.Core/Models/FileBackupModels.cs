@@ -14,9 +14,20 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("sourceName")]
         public string SourceName { get; set; }
 
-        /// <summary>Kaynak dizin yolu (ör. "C:\Users\*\AppData\Local\Microsoft\Outlook").</summary>
+        /// <summary>
+        /// Kaynak kök dizin yolu. TreeView seçimlerinden otomatik türetilir (ortak kök).
+        /// VSS volume tespiti ve eski davranış uyumluluğu için kullanılır.
+        /// </summary>
         [JsonProperty("sourcePath")]
         public string SourcePath { get; set; }
+
+        /// <summary>
+        /// TreeView'da seçili klasör/dosya yolları.
+        /// Bu liste yedeklenecek öğelerin kesin listesidir (kaynak gerçeği).
+        /// Boş ise SourcePath altındaki tüm dosyalar yedeklenir (eski davranış uyumu).
+        /// </summary>
+        [JsonProperty("selectedPaths")]
+        public List<string> SelectedPaths { get; set; } = new List<string>();
 
         /// <summary>Alt dizinler dahil mi?</summary>
         [JsonProperty("recursive")]

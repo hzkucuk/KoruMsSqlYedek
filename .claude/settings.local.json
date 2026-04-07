@@ -1,4 +1,4 @@
-﻿{
+{
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
@@ -28,7 +28,26 @@
       "Bash(dotnet run:*)",
       "Bash(dotnet list:*)",
       "Bash(dotnet add:*)",
-      "Bash(find /c/Users/Hzk/source/repos/KoruMsSqlYedek -type f \\\\\\(-name app.config -o -name appsettings.json -o -name *.config \\\\\\))"
+      "Bash(find /c/Users/Hzk/source/repos/KoruMsSqlYedek -type f \\\\\\(-name app.config -o -name appsettings.json -o -name *.config \\\\\\))",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(grep -rn \"SelectedIndex\\\\|SelectedItem\" /c/Users/Hzk/source/repos/KoruMssqlYedek/KoruMsSqlYedek.Win/MainWindow*.cs)",
+      "Bash(grep -n \"class ManualBackupCommand\\\\|backupType\" /c/Users/Hzk/source/repos/KoruMssqlYedek/KoruMsSqlYedek.Core/IPC/*.cs)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"COMPRESSION\\\\|backup\\\\.Compression\\\\|WITH COMPRESSION\\\\|CompressionCheck\" /c/Users/Hzk/source/repos/KoruMssqlYedek --include=*.cs)",
+      "Bash(dotnet publish:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File Deployment/Build-Release.ps1 -SkipTests)",
+      "Bash(\"C:\\\\Program Files \\(x86\\)\\\\Inno Setup 6\\\\ISCC.exe\" \"Deployment\\\\InnoSetup\\\\KoruMsSqlYedek.iss\")",
+      "Bash(grep -r \"MegaProvider\\\\|CloudProviderType.Mega\" C:UsersHzksourcereposKoruMssqlYedek --include=*.Designer.cs --include=*.cs)",
+      "Bash(grep -r Mega C:UsersHzksourcereposKoruMssqlYedek --include=*.json)",
+      "Bash(dotnet test:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File 'C:/Users/Hzk/source/repos/KoruMssqlYedek/Deployment/Build-Release.ps1' -SkipTests 2>&1)",
+      "Bash(powershell -ExecutionPolicy Bypass -File Deployment/Build-Release.ps1 -SkipTests -GitRelease 2>&1)",
+      "Bash(git checkout master:*)",
+      "Bash(git checkout develop:*)",
+      "Bash(git merge develop:*)",
+      "Bash(git tag v*:*)",
+      "Bash(git push origin master --tags:*)"
     ]
   }
 }

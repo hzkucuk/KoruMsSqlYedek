@@ -29,15 +29,6 @@ namespace KoruMsSqlYedek.Tests
             provider.ProviderType.Should().Be(CloudProviderType.GoogleDrivePersonal);
         }
 
-        [TestMethod]
-        public void CreateProvider_Mega_ReturnsMegaProvider()
-        {
-            var provider = _factory.CreateProvider(CloudProviderType.Mega);
-
-            provider.Should().BeOfType<MegaProvider>();
-            provider.ProviderType.Should().Be(CloudProviderType.Mega);
-        }
-
         // ── CreateProvider — FTP/SFTP ──
 
         [TestMethod]
@@ -97,7 +88,6 @@ namespace KoruMsSqlYedek.Tests
         public void IsSupported_AllValidTypes_ReturnsTrue()
         {
             _factory.IsSupported(CloudProviderType.GoogleDrivePersonal).Should().BeTrue();
-            _factory.IsSupported(CloudProviderType.Mega).Should().BeTrue();
             _factory.IsSupported(CloudProviderType.Ftp).Should().BeTrue();
             _factory.IsSupported(CloudProviderType.Ftps).Should().BeTrue();
             _factory.IsSupported(CloudProviderType.Sftp).Should().BeTrue();

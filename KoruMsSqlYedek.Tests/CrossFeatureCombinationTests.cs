@@ -26,8 +26,8 @@ namespace KoruMsSqlYedek.Tests
         // ═══════════════════════════════════════════════════════════════
 
         [TestMethod]
-        [DynamicData(nameof(GetMegaMatrixData), DynamicDataSourceType.Method)]
-        public void MegaMatrix_JsonRoundTrip_AllFieldsPreserved(
+        [DynamicData(nameof(GetFullMatrixData), DynamicDataSourceType.Method)]
+        public void FullMatrix_JsonRoundTrip_AllFieldsPreserved(
             BackupStrategyType strategy,
             RetentionPolicyType retention,
             bool withCloud,
@@ -37,7 +37,7 @@ namespace KoruMsSqlYedek.Tests
             bool verifyAfterBackup)
         {
             // Arrange
-            var plan = BuildMegaMatrixPlan(
+            var plan = BuildFullMatrixPlan(
                 strategy, retention, withCloud, withPassword,
                 withFileBackup, withArchivePassword, verifyAfterBackup);
 
@@ -112,7 +112,7 @@ namespace KoruMsSqlYedek.Tests
         /// 384 kombinasyonun tamamını üretir (3×4×2×2×2×2×2).
         /// Test runner hepsini ayrı ayrı çalıştırır.
         /// </summary>
-        private static IEnumerable<object[]> GetMegaMatrixData()
+        private static IEnumerable<object[]> GetFullMatrixData()
         {
             var strategies = new[] { BackupStrategyType.Full, BackupStrategyType.FullPlusDifferential, BackupStrategyType.FullPlusDifferentialPlusIncremental };
             var retentions = new[] { RetentionPolicyType.KeepLastN, RetentionPolicyType.DeleteOlderThanDays, RetentionPolicyType.Both, RetentionPolicyType.GFS };
@@ -365,33 +365,6 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
-        public void CloudTarget_MegaConfig_BasicFields_Preserved()
-        {
-            var target = new CloudTargetConfig
-            {
-                Type = CloudProviderType.Mega,
-                IsEnabled = true,
-                DisplayName = "Mega Cloud",
-                Username = "mega@test.com",
-                Password = PasswordProtector.Protect("megaPw"),
-                RemoteFolderPath = "/Root/Backups",
-                BandwidthLimitMbps = null,
-                PermanentDeleteFromTrash = true
-            };
-
-            var plan = CreatePlanWithSingleCloud(target);
-            var loaded = RoundTrip(plan);
-
-            var ct = loaded.CloudTargets.First();
-            ct.Type.Should().Be(CloudProviderType.Mega);
-            ct.Username.Should().Be("mega@test.com");
-            PasswordProtector.Unprotect(ct.Password).Should().Be("megaPw");
-            ct.RemoteFolderPath.Should().Be("/Root/Backups");
-            ct.BandwidthLimitMbps.Should().BeNull();
-            ct.PermanentDeleteFromTrash.Should().BeTrue();
-        }
-
-        [TestMethod]
         public void CloudTarget_UncPathConfig_AllFields_Preserved()
         {
             var target = new CloudTargetConfig
@@ -444,7 +417,7 @@ namespace KoruMsSqlYedek.Tests
         {
             var target = new CloudTargetConfig
             {
-                Type = CloudProviderType.Mega,
+                Type = CloudProviderType.GoogleDrivePersonal,
                 IsEnabled = true,
                 DisplayName = "Trash Test",
                 PermanentDeleteFromTrash = permanentDelete
@@ -471,7 +444,6 @@ namespace KoruMsSqlYedek.Tests
                     new CloudTargetConfig { Type = CloudProviderType.Ftps, IsEnabled = true, DisplayName = "FTPS", Host = "ftps.test.com", Port = 990, FtpsSkipCertificateValidation = true },
                     new CloudTargetConfig { Type = CloudProviderType.Sftp, IsEnabled = true, DisplayName = "SFTP", Host = "sftp.test.com", Port = 22, SftpHostFingerprint = "SHA256:xyz" },
                     new CloudTargetConfig { Type = CloudProviderType.GoogleDrivePersonal, IsEnabled = true, DisplayName = "GDrive", OAuthClientId = "cid" },
-                    new CloudTargetConfig { Type = CloudProviderType.Mega, IsEnabled = true, DisplayName = "Mega", Username = "mega@test.com" },
                     new CloudTargetConfig { Type = CloudProviderType.UncPath, IsEnabled = true, DisplayName = "UNC", LocalOrUncPath = @"\\server\share" }
                 }
             };
@@ -479,13 +451,13 @@ namespace KoruMsSqlYedek.Tests
             var loaded = RoundTrip(plan);
 
             loaded.HasCloudTargets.Should().BeTrue();
-            loaded.CloudTargets.Should().HaveCount(6);
+            loaded.CloudTargets.Should().HaveCount(5);
             loaded.HasPlanPassword.Should().BeTrue();
 
             loaded.CloudTargets.Select(c => c.Type).Should().BeEquivalentTo(
                 new[] {
                     CloudProviderType.Ftp, CloudProviderType.Ftps, CloudProviderType.Sftp,
-                    CloudProviderType.GoogleDrivePersonal, CloudProviderType.Mega, CloudProviderType.UncPath
+                    CloudProviderType.GoogleDrivePersonal, CloudProviderType.UncPath
                 });
         }
 
@@ -498,7 +470,7 @@ namespace KoruMsSqlYedek.Tests
                 CloudTargets = new List<CloudTargetConfig>
                 {
                     new CloudTargetConfig { Type = CloudProviderType.Ftp, IsEnabled = false, DisplayName = "FTP Off" },
-                    new CloudTargetConfig { Type = CloudProviderType.Mega, IsEnabled = true, DisplayName = "Mega On" },
+                    new CloudTargetConfig { Type = CloudProviderType.Ftps, IsEnabled = true, DisplayName = "FTPS On" },
                     new CloudTargetConfig { Type = CloudProviderType.Sftp, IsEnabled = false, DisplayName = "SFTP Off" }
                 }
             };
@@ -520,7 +492,7 @@ namespace KoruMsSqlYedek.Tests
                 CloudTargets = new List<CloudTargetConfig>
                 {
                     new CloudTargetConfig { Type = CloudProviderType.Ftp, IsEnabled = false },
-                    new CloudTargetConfig { Type = CloudProviderType.Mega, IsEnabled = false },
+                    new CloudTargetConfig { Type = CloudProviderType.Ftps, IsEnabled = false },
                     new CloudTargetConfig { Type = CloudProviderType.UncPath, IsEnabled = false }
                 }
             };
@@ -949,7 +921,6 @@ namespace KoruMsSqlYedek.Tests
                     new CloudTargetConfig { Type = CloudProviderType.Ftps, IsEnabled = true, DisplayName = "FTPS", Host = "ftps.test.com", Port = 990, FtpsSkipCertificateValidation = true },
                     new CloudTargetConfig { Type = CloudProviderType.Sftp, IsEnabled = true, DisplayName = "SFTP", Host = "sftp.test.com", SftpHostFingerprint = "SHA256:abc" },
                     new CloudTargetConfig { Type = CloudProviderType.GoogleDrivePersonal, IsEnabled = true, DisplayName = "GDrive", OAuthClientId = "cid" },
-                    new CloudTargetConfig { Type = CloudProviderType.Mega, IsEnabled = true, DisplayName = "Mega", Username = "mega@test.com" },
                     new CloudTargetConfig { Type = CloudProviderType.UncPath, IsEnabled = true, DisplayName = "UNC", LocalOrUncPath = @"\\nas\backups" }
                 },
                 FileBackup = new FileBackupConfig
@@ -993,7 +964,7 @@ namespace KoruMsSqlYedek.Tests
             PasswordProtector.Unprotect(loaded.Compression.ArchivePassword).Should().Be("archMax");
             loaded.Retention.Type.Should().Be(RetentionPolicyType.GFS);
             loaded.Retention.GfsKeepYearly.Should().Be(5);
-            loaded.CloudTargets.Should().HaveCount(6);
+            loaded.CloudTargets.Should().HaveCount(5);
             loaded.FileBackup.IsEnabled.Should().BeTrue();
             loaded.FileBackup.Sources.Should().HaveCount(2);
             loaded.Notifications.SmtpProfileId.Should().Be("smtp-main");
@@ -1214,7 +1185,7 @@ namespace KoruMsSqlYedek.Tests
                 PasswordHash = withPlanPw ? PlanPasswordHelper.HashPassword("planCross") : null,
                 CloudTargets = new List<CloudTargetConfig>
                 {
-                    new CloudTargetConfig { Type = CloudProviderType.Mega, IsEnabled = true, DisplayName = "Cloud" }
+                    new CloudTargetConfig { Type = CloudProviderType.Ftp, IsEnabled = true, DisplayName = "Cloud" }
                 }
             };
 
@@ -1469,7 +1440,7 @@ namespace KoruMsSqlYedek.Tests
             };
         }
 
-        private static BackupPlan BuildMegaMatrixPlan(
+        private static BackupPlan BuildFullMatrixPlan(
             BackupStrategyType strategy,
             RetentionPolicyType retention,
             bool withCloud,

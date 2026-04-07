@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,11 +16,14 @@ namespace KoruMsSqlYedek.Engine.Cloud
     /// Retry politikası (3 deneme, exponential backoff) uygular.
     /// Provider factory veya doğrudan provider listesi ile çalışır.
     /// </summary>
-    public class CloudUploadOrchestrator : ICloudUploadOrchestrator
+    public partial class CloudUploadOrchestrator : ICloudUploadOrchestrator
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<CloudUploadOrchestrator>();
         private const int MaxRetries = 3;
         private static readonly int[] RetryDelaysMs = { 2000, 4000, 8000 };
+
+        /// <summary>Recovery'de aynı dosya için maksimum toplam deneme sayısı. Aşılırsa vazgeçilir.</summary>
+        private const int MaxRecoveryAttempts = 10;
 
         private readonly Dictionary<CloudProviderType, ICloudProvider> _providers;
         private readonly ICloudProviderFactory _factory;
@@ -203,6 +206,210 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         /// <summary>
+        /// Birden fazla dosyayı toplu olarak tüm aktif bulut hedeflerine yükler.
+        /// Tüm dosyalar sırayla yüklenir, ilerleme toplam batch boyutu üzerinden hesaplanır.
+        /// </summary>
+        public async Task<List<List<CloudUploadResult>>> UploadBatchToAllAsync(
+            List<(string LocalFilePath, string RemoteFileName)> files,
+            List<CloudTargetConfig> targets,
+            CancellationToken cancellationToken,
+            string planName = null,
+            string planId = null)
+        {
+            var allResults = new List<List<CloudUploadResult>>();
+            if (files == null || files.Count == 0) return allResults;
+
+            var enabledTargets = targets.Where(t => t.IsEnabled).ToList();
+            if (enabledTargets.Count == 0)
+            {
+                // Her dosya için boş liste döndür
+                foreach (var _ in files) allResults.Add(new List<CloudUploadResult>());
+                return allResults;
+            }
+
+            // Toplam batch boyutunu hesapla
+            var fileSizes = new long[files.Count];
+            long totalBatchBytes = 0;
+            for (int i = 0; i < files.Count; i++)
+            {
+                try { fileSizes[i] = new FileInfo(files[i].LocalFilePath).Length; }
+                catch { fileSizes[i] = 0; }
+                totalBatchBytes += fileSizes[i];
+            }
+
+            long completedBytes = 0;
+            var uploadStartTime = DateTime.UtcNow;
+
+            for (int fileIdx = 0; fileIdx < files.Count; fileIdx++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var (localFilePath, remoteFileName) = files[fileIdx];
+                long currentFileSize = fileSizes[fileIdx];
+                string localSha256 = null;
+                try { localSha256 = UploadStateManager.ComputeSha256(localFilePath); }
+                catch (Exception ex) { Log.Warning(ex, "SHA-256 hesaplanamadı: {File}", localFilePath); }
+
+                var pendingStates = _stateManager.GetAll();
+                var fileResults = new List<CloudUploadResult>();
+                int targetCompleted = 0;
+
+                // Dosya başlangıcı eventi
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = planId,
+                    PlanName = planName,
+                    ActivityType = BackupActivityType.CloudUploadStarted,
+                    CloudTargetName = remoteFileName,
+                    CloudFileIndex = fileIdx + 1,
+                    CloudFileTotal = files.Count,
+                    CloudFileName = remoteFileName,
+                    CloudTargetIndex = 1,
+                    CloudTargetTotal = enabledTargets.Count
+                });
+
+                foreach (var target in enabledTargets)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var effectiveTarget = target;
+                    if (string.IsNullOrWhiteSpace(target.RemoteFolderPath))
+                    {
+                        string safePlanName = SanitizeFolderName(planName);
+                        effectiveTarget = ShallowCopyWithFolder(target,
+                            string.IsNullOrEmpty(safePlanName)
+                                ? "KoruMsSqlYedek"
+                                : $"KoruMsSqlYedek/{safePlanName}");
+                    }
+
+                    var stateRecord = pendingStates.FirstOrDefault(s =>
+                        s.LocalFilePath == localFilePath &&
+                        s.RemoteFileName == remoteFileName &&
+                        s.ProviderType == target.Type);
+
+                    if (stateRecord == null)
+                    {
+                        stateRecord = new UploadStateRecord
+                        {
+                            PlanName = planName,
+                            LocalFilePath = localFilePath,
+                            RemoteFileName = remoteFileName,
+                            LocalSha256 = localSha256,
+                            FileSizeBytes = currentFileSize,
+                            ProviderType = target.Type,
+                            CloudTarget = effectiveTarget
+                        };
+                        _stateManager.Save(stateRecord);
+                    }
+
+                    int lastReportedPct = -1;
+                    long capturedCompletedBytes = completedBytes;
+                    int capturedFileIdx = fileIdx;
+                    int capturedTargetCompleted = targetCompleted;
+
+                    var hubProgress = new Progress<int>(pct =>
+                    {
+                        if (pct <= lastReportedPct) return;
+                        lastReportedPct = pct;
+
+                        // Hedef bazlı dosya ilerlemesi: (targetCompleted * 100 + pct) / targetTotal
+                        double fileProgress = (capturedTargetCompleted * 100.0 + pct) / enabledTargets.Count;
+                        long fileBytesSent = (long)(currentFileSize * fileProgress / 100.0);
+
+                        // Toplam batch ilerlemesi
+                        long totalSent = capturedCompletedBytes + fileBytesSent;
+                        int batchPct = totalBatchBytes > 0
+                            ? (int)(totalSent * 100.0 / totalBatchBytes)
+                            : pct;
+                        batchPct = Math.Clamp(batchPct, 0, 100);
+
+                        double elapsedSec = (DateTime.UtcNow - uploadStartTime).TotalSeconds;
+                        long speedBps = elapsedSec > 0.5 && totalSent > 0
+                            ? (long)(totalSent / elapsedSec)
+                            : 0L;
+
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = planId,
+                            PlanName = planName,
+                            ActivityType = BackupActivityType.CloudUploadProgress,
+                            CloudTargetName = effectiveTarget.DisplayName,
+                            CloudFileName = remoteFileName,
+                            CloudFileIndex = capturedFileIdx + 1,
+                            CloudFileTotal = files.Count,
+                            CloudTargetIndex = capturedTargetCompleted + 1,
+                            CloudTargetTotal = enabledTargets.Count,
+                            ProgressPercent = batchPct,
+                            BytesSent = totalSent,
+                            BytesTotal = totalBatchBytes,
+                            SpeedBytesPerSecond = speedBps
+                        });
+                    });
+
+                    var result = await UploadWithRetryAsync(
+                        localFilePath, remoteFileName, effectiveTarget, hubProgress,
+                        cancellationToken, stateRecord);
+                    fileResults.Add(result);
+
+                    targetCompleted++;
+
+                    // Hedef tamamlandıktan sonra batch progress güncelle — sonraki hedefe kadar "duraklama" önlenir
+                    {
+                        double fileProgress = (targetCompleted * 100.0) / enabledTargets.Count;
+                        long fileBytesSent = (long)(currentFileSize * fileProgress / 100.0);
+                        long totalSent = capturedCompletedBytes + fileBytesSent;
+                        int batchPct = totalBatchBytes > 0
+                            ? (int)(totalSent * 100.0 / totalBatchBytes)
+                            : 100;
+                        batchPct = Math.Clamp(batchPct, 0, 100);
+
+                        double elapsedSec = (DateTime.UtcNow - uploadStartTime).TotalSeconds;
+                        long speedBps = elapsedSec > 0.5 && totalSent > 0
+                            ? (long)(totalSent / elapsedSec)
+                            : 0L;
+
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = planId,
+                            PlanName = planName,
+                            ActivityType = BackupActivityType.CloudUploadProgress,
+                            CloudTargetName = effectiveTarget.DisplayName,
+                            CloudFileName = remoteFileName,
+                            CloudFileIndex = fileIdx + 1,
+                            CloudFileTotal = files.Count,
+                            CloudTargetIndex = targetCompleted,
+                            CloudTargetTotal = enabledTargets.Count,
+                            ProgressPercent = batchPct,
+                            BytesSent = totalSent,
+                            BytesTotal = totalBatchBytes,
+                            SpeedBytesPerSecond = speedBps
+                        });
+                    }
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = planId,
+                        PlanName = planName,
+                        ActivityType = BackupActivityType.CloudUploadCompleted,
+                        CloudTargetName = effectiveTarget.DisplayName,
+                        CloudFileName = remoteFileName,
+                        CloudFileIndex = fileIdx + 1,
+                        CloudFileTotal = files.Count,
+                        CloudTargetIndex = targetCompleted,
+                        CloudTargetTotal = enabledTargets.Count,
+                        IsSuccess = result.IsSuccess,
+                        Message = result.IsSuccess ? null : result.ErrorMessage
+                    });
+                }
+
+                allResults.Add(fileResults);
+                completedBytes += currentFileSize;
+            }
+
+            return allResults;
+        }
+
+        /// <summary>
         /// Sadece RemoteFolderPath değiştirilmiş sığ kopya döndürür (orijinal config'i değiştirmez).
         /// </summary>
         private static CloudTargetConfig ShallowCopyWithFolder(CloudTargetConfig src, string folderPath)
@@ -227,367 +434,5 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 SftpHostFingerprint = src.SftpHostFingerprint
             };
         }
-        public async Task<List<CloudDeleteResult>> DeleteFromAllAsync(
-            string remoteFileIdentifier,
-            List<CloudTargetConfig> targets,
-            CancellationToken cancellationToken)
-        {
-            var results = new List<CloudDeleteResult>();
-
-            foreach (var target in targets.Where(t => t.IsEnabled))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var deleteResult = new CloudDeleteResult
-                {
-                    ProviderType = target.Type,
-                    DisplayName = target.DisplayName
-                };
-
-                try
-                {
-                    var provider = GetProvider(target.Type);
-                    if (provider == null)
-                    {
-                        deleteResult.ErrorMessage = $"Provider bulunamadı: {target.Type}";
-                        results.Add(deleteResult);
-                        continue;
-                    }
-
-                    deleteResult.IsSuccess = await provider.DeleteAsync(
-                        remoteFileIdentifier, target, cancellationToken)
-                        .ConfigureAwait(false);
-
-                    if (deleteResult.IsSuccess)
-                    {
-                        Log.Information("Bulut dosya silindi: {Provider} — {FileId}",
-                            target.DisplayName, remoteFileIdentifier);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    deleteResult.ErrorMessage = ex.Message;
-                    Log.Error(ex, "Bulut silme hatası: {Provider} — {FileId}",
-                        target.DisplayName, remoteFileIdentifier);
-                }
-
-                results.Add(deleteResult);
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// Çöp kutusu destekleyen tüm aktif bulut hedeflerinin çöp kutusunu boşaltır.
-        /// PermanentDeleteFromTrash=false olan hedefler için retention sonrası çağrılır.
-        /// </summary>
-        public async Task<int> EmptyTrashForAllAsync(
-            List<CloudTargetConfig> targets,
-            CancellationToken cancellationToken)
-        {
-            int totalDeleted = 0;
-
-            // Sadece çöp kutusu kullanan hedefleri filtrele (PermanentDeleteFromTrash=false)
-            var trashTargets = targets
-                .Where(t => t.IsEnabled && !t.PermanentDeleteFromTrash)
-                .ToList();
-
-            if (trashTargets.Count == 0)
-                return 0;
-
-            foreach (var target in trashTargets)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                try
-                {
-                    var provider = GetProvider(target.Type);
-                    if (provider is null || !provider.SupportsTrash)
-                        continue;
-
-                    int deleted = await provider.EmptyTrashAsync(target, cancellationToken)
-                        .ConfigureAwait(false);
-
-                    totalDeleted += deleted;
-
-                    if (deleted > 0)
-                    {
-                        Log.Information("Çöp kutusu boşaltıldı: {Provider} — {Count} öğe silindi",
-                            target.DisplayName, deleted);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Çöp kutusu boşaltma hatası: {Provider}", target.DisplayName);
-                }
-            }
-
-            return totalDeleted;
-        }
-
-        /// <summary>
-        /// Tüm aktif bulut hedeflerinin bağlantısını test eder.
-        /// </summary>
-        public async Task<List<CloudConnectionTestResult>> TestAllConnectionsAsync(
-            List<CloudTargetConfig> targets,
-            CancellationToken cancellationToken)
-        {
-            var results = new List<CloudConnectionTestResult>();
-
-            foreach (var target in targets.Where(t => t.IsEnabled))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var testResult = new CloudConnectionTestResult
-                {
-                    ProviderType = target.Type,
-                    DisplayName = target.DisplayName
-                };
-
-                try
-                {
-                    var provider = GetProvider(target.Type);
-                    if (provider == null)
-                    {
-                        testResult.ErrorMessage = $"Provider bulunamadı: {target.Type}";
-                        results.Add(testResult);
-                        continue;
-                    }
-
-                    testResult.IsConnected = await provider.TestConnectionAsync(target, cancellationToken)
-                        .ConfigureAwait(false);
-
-                    Log.Information("Bağlantı testi: {Provider} — {Status}",
-                        target.DisplayName, testResult.IsConnected ? "Başarılı" : "Başarısız");
-                }
-                catch (Exception ex)
-                {
-                    testResult.ErrorMessage = ex.Message;
-                    Log.Error(ex, "Bağlantı testi hatası: {Provider}", target.DisplayName);
-                }
-
-                results.Add(testResult);
-            }
-
-            return results;
-        }
-
-        #region Private Helpers
-
-        private ICloudProvider GetProvider(CloudProviderType type)
-        {
-            // Önce cache'e bak
-            if (_providers.TryGetValue(type, out var cached))
-                return cached;
-
-            // Factory varsa oluştur ve cache'le
-            if (_factory != null && _factory.IsSupported(type))
-            {
-                var provider = _factory.CreateProvider(type);
-                _providers[type] = provider;
-                return provider;
-            }
-
-            return null;
-        }
-
-        private async Task<CloudUploadResult> UploadWithRetryAsync(
-            string localFilePath,
-            string remoteFileName,
-            CloudTargetConfig target,
-            IProgress<int> progress,
-            CancellationToken cancellationToken,
-            UploadStateRecord stateRecord = null)
-        {
-            var provider = GetProvider(target.Type);
-            if (provider == null)
-            {
-                return new CloudUploadResult
-                {
-                    ProviderType = target.Type,
-                    DisplayName = target.DisplayName,
-                    IsSuccess = false,
-                    ErrorMessage = $"Provider bulunamadı: {target.Type}"
-                };
-            }
-
-            for (int attempt = 0; attempt <= MaxRetries; attempt++)
-            {
-                try
-                {
-                    // İlk denemede kayıtlı session URI'yi kullan, retry'larda sıfırdan başla
-                    string resumeUri = attempt == 0 ? stateRecord?.ResumeSessionUri : null;
-
-                    // Session URI alındığında state'i güncelle (transfer başlamadan önce)
-                    Action<string> sessionUriObtained = null;
-                    if (stateRecord != null)
-                    {
-                        sessionUriObtained = uri =>
-                        {
-                            if (!string.IsNullOrEmpty(uri))
-                                _stateManager.UpdateProgress(stateRecord.StateId, uri, 0);
-                        };
-                    }
-
-                    var result = await provider.UploadAsync(
-                        localFilePath, remoteFileName, target, progress, cancellationToken,
-                        resumeUri, sessionUriObtained);
-
-                    result.RetryCount = attempt;
-
-                    if (result.IsSuccess)
-                    {
-                        // Bütünlük kontrolü: uzak dosya boyutu yerel ile eşleşmeli
-                        if (result.RemoteFileSizeBytes > 0 && stateRecord?.FileSizeBytes > 0
-                            && result.RemoteFileSizeBytes != stateRecord.FileSizeBytes)
-                        {
-                            Log.Warning(
-                                "Bütünlük hatası! Yerel={Local:N0} bytes ≠ Uzak={Remote:N0} bytes — {Provider} — {File}",
-                                stateRecord.FileSizeBytes, result.RemoteFileSizeBytes,
-                                target.DisplayName, remoteFileName);
-
-                            result.IsSuccess = false;
-                            result.ErrorMessage =
-                                $"Bütünlük kontrolü başarısız: yerel {stateRecord.FileSizeBytes:N0} bytes, uzak {result.RemoteFileSizeBytes:N0} bytes.";
-
-                            if (attempt < MaxRetries)
-                            {
-                                // Session URI'yi temizle, dosya yeniden gönderilecek
-                                if (stateRecord != null)
-                                    _stateManager.UpdateProgress(stateRecord.StateId, null, 0);
-                                await Task.Delay(RetryDelaysMs[attempt], cancellationToken);
-                                continue;
-                            }
-                        }
-
-                        if (result.IsSuccess)
-                        {
-                            // Upload tamamlandı — state dosyasını temizle
-                            if (stateRecord != null)
-                                _stateManager.Delete(stateRecord.StateId);
-
-                            Log.Information(
-                                "Bulut upload başarılı: {Provider} ({Attempt}. deneme)",
-                                target.DisplayName, attempt + 1);
-                            return result;
-                        }
-                    }
-                    else
-                    {
-                        // Provider hata döndürdü (exception fırlatmadan) — retry uygula
-                        Log.Warning(
-                            "Bulut upload deneme {Attempt}/{Max} başarısız (provider): {Provider} — {Error}",
-                            attempt + 1, MaxRetries + 1, target.DisplayName, result.ErrorMessage);
-
-                        if (attempt >= MaxRetries)
-                            return result;
-
-                        await Task.Delay(RetryDelaysMs[attempt], cancellationToken);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    // State'i koru — kullanıcı iptal etti, sonra resume edilebilir
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(
-                        ex,
-                        "Bulut upload deneme {Attempt}/{Max} başarısız: {Provider}",
-                        attempt + 1, MaxRetries + 1, target.DisplayName);
-
-                    if (attempt < MaxRetries)
-                        await Task.Delay(RetryDelaysMs[attempt], cancellationToken);
-                    else
-                        return new CloudUploadResult
-                        {
-                            ProviderType = target.Type,
-                            DisplayName = target.DisplayName,
-                            IsSuccess = false,
-                            ErrorMessage = ex.Message,
-                            RetryCount = attempt
-                        };
-                }
-            }
-
-            return new CloudUploadResult
-            {
-                ProviderType = target.Type,
-                DisplayName = target.DisplayName,
-                IsSuccess = false,
-                ErrorMessage = "Tüm denemeler başarısız oldu.",
-                RetryCount = MaxRetries
-            };
-        }
-
-        /// <summary>
-        /// Uygulama başlatmada yarıda kalan upload işlemlerini kaldığı yerden sürdürür.
-        /// %APPDATA%\KoruMsSqlYedek\UploadState\ altındaki state dosyalarını okur.
-        /// </summary>
-        public async Task<int> RecoverPendingUploadsAsync(CancellationToken cancellationToken)
-        {
-            var pendingStates = _stateManager.GetAll();
-            if (pendingStates.Count == 0) return 0;
-
-            Log.Information("Bekleyen {Count} upload işlemi bulundu, devam ettiriliyor...", pendingStates.Count);
-            int recovered = 0;
-
-            foreach (var state in pendingStates)
-            {
-                if (cancellationToken.IsCancellationRequested) break;
-
-                try
-                {
-                    var provider = GetProvider(state.ProviderType);
-                    if (provider == null)
-                    {
-                        Log.Warning("Recovery: provider bulunamadı {Type}, atlanıyor.", state.ProviderType);
-                        continue;
-                    }
-
-                    Log.Information(
-                        "Recovery: {Provider} — {File} (session: {HasSession})",
-                        state.ProviderType, state.RemoteFileName,
-                        !string.IsNullOrEmpty(state.ResumeSessionUri) ? "mevcut" : "yok");
-
-                    state.AttemptCount++;
-                    state.LastAttemptAt = DateTime.UtcNow;
-                    _stateManager.Save(state);
-
-                    var result = await UploadWithRetryAsync(
-                        state.LocalFilePath,
-                        state.RemoteFileName,
-                        state.CloudTarget,
-                        progress: null,
-                        cancellationToken,
-                        stateRecord: state).ConfigureAwait(false);
-
-                    if (result.IsSuccess)
-                    {
-                        recovered++;
-                        Log.Information(
-                            "Recovery başarılı: {Provider} — {File}",
-                            state.ProviderType, state.RemoteFileName);
-                    }
-                    else
-                    {
-                        Log.Warning(
-                            "Recovery başarısız: {Provider} — {File} — {Error}",
-                            state.ProviderType, state.RemoteFileName, result.ErrorMessage);
-                    }
-                }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Recovery hatası: {Provider} — {File}",
-                        state.ProviderType, state.RemoteFileName);
-                }
-            }
-
-            return recovered;
-        }
-
-        #endregion
     }
 }

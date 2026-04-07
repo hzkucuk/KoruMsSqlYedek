@@ -58,6 +58,23 @@ namespace KoruMsSqlYedek.Core.Interfaces
         Task<int> EmptyTrashForAllAsync(
             List<CloudTargetConfig> targets,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Birden fazla dosyayı toplu olarak tüm aktif bulut hedeflerine yükler.
+        /// Her dosya sırayla tüm hedeflere gönderilir; ilerleme toplam batch üzerinden hesaplanır.
+        /// </summary>
+        /// <param name="files">Yüklenecek dosya listesi (yerel yol, uzak dosya adı).</param>
+        /// <param name="targets">Aktif bulut hedefleri.</param>
+        /// <param name="cancellationToken">İptal jetonu.</param>
+        /// <param name="planName">Plan adı (klasör oluşturmak için).</param>
+        /// <param name="planId">İlerleme olaylarına eklenen plan kimliği.</param>
+        /// <returns>Her dosya için ayrı upload sonuçları listesi. Dosya sırası ile eşleşir.</returns>
+        Task<List<List<CloudUploadResult>>> UploadBatchToAllAsync(
+            List<(string LocalFilePath, string RemoteFileName)> files,
+            List<CloudTargetConfig> targets,
+            CancellationToken cancellationToken,
+            string planName = null,
+            string planId = null);
     }
 
     /// <summary>

@@ -78,7 +78,10 @@ jobs:
     - name: Compile Installer
       shell: pwsh
       run: |
-        iscc /DMyAppVersion=${{ steps.version.outputs.VERSION }} installer\setup.iss
+        iscc /DMyAppVersion=${{ steps.version.outputs.VERSION }} `
+             /DWinPublishDir=publish\win `
+             /DServicePublishDir=publish\service `
+             Deployment\InnoSetup\KoruMsSqlYedek.iss
 
     # ── GitHub Release ────────────────────────────────────────────
     - name: Create GitHub Release
@@ -104,4 +107,5 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          installer/output/KoruMsSqlYedek_Setup_v${{ steps.version.outputs.VERSION }}.exe
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}.zip

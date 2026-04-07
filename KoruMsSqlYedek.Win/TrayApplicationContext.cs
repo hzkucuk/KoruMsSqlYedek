@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -20,7 +19,7 @@ namespace KoruMsSqlYedek.Win
     /// NotifyIcon ile tray'de çalışır; menüden tek MainWindow açılır, sekme seçimi ile yönlendirilir.
     /// Windows Service ile Named Pipe üzerinden iletişim kurar.
     /// </summary>
-    internal class TrayApplicationContext : ApplicationContext
+    internal partial class TrayApplicationContext : ApplicationContext
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<TrayApplicationContext>();
 
@@ -43,6 +42,12 @@ namespace KoruMsSqlYedek.Win
         private Icon[] _animFrames;
         private int _animFrameIndex;
         private bool _isAnimating;
+
+        // Tamamlanma animasyonu — kısa süre gösterilir, sonra idle'a döner
+        private readonly System.Windows.Forms.Timer _completionTimer;
+        private Icon[] _completionFrames;
+        private int _completionFrameIndex;
+        private bool _isCompletionAnimating;
 
         // Güncelleme kontrolü
         private readonly IUpdateService _updateService;
@@ -71,6 +76,9 @@ namespace KoruMsSqlYedek.Win
 
             _animTimer = new System.Windows.Forms.Timer { Interval = 150 };
             _animTimer.Tick += OnAnimTimerTick;
+
+            _completionTimer = new System.Windows.Forms.Timer { Interval = 120 };
+            _completionTimer.Tick += OnCompletionTimerTick;
 
             _contextMenu = CreateContextMenu();
             _notifyIcon = CreateNotifyIcon();
@@ -161,6 +169,7 @@ namespace KoruMsSqlYedek.Win
 
         #endregion
 
+
         #region MainWindow
 
         private void OpenMainWindow(int tabIndex)
@@ -176,153 +185,6 @@ namespace KoruMsSqlYedek.Win
 
         #endregion
 
-        #region Service Control
-
-        private void UpdateServiceMenuItems()
-        {
-            try
-            {
-                using var sc = new ServiceController(ServiceName);
-                var status = sc.Status;
-                bool running = status == ServiceControllerStatus.Running;
-                bool stopped = status == ServiceControllerStatus.Stopped;
-
-                _tsmServiceStatus.Text = running
-                    ? Res.Get("Tray_ServiceStatusRunning")
-                    : stopped
-                        ? Res.Get("Tray_ServiceStatusStopped")
-                        : $"Servis: {status}";
-
-                _tsmServiceStart.Enabled   = stopped;
-                _tsmServiceStop.Enabled    = running;
-                _tsmServiceRestart.Enabled = running;
-            }
-            catch (InvalidOperationException)
-            {
-                // Servis yüklü değil — pipe bağlıysa debug modunda çalışıyor demektir
-                if (_pipeClient.IsConnected)
-                {
-                    _tsmServiceStatus.Text     = Res.Get("Tray_ServiceDebugMode");
-                    _tsmServiceStart.Enabled   = false;
-                    _tsmServiceStop.Enabled    = false;
-                    _tsmServiceRestart.Enabled = false;
-                }
-                else
-                {
-                    _tsmServiceStatus.Text     = Res.Get("Tray_ServiceNotInstalled");
-                    _tsmServiceStart.Enabled   = false;
-                    _tsmServiceStop.Enabled    = false;
-                    _tsmServiceRestart.Enabled = false;
-                }
-            }
-            catch (System.ComponentModel.Win32Exception ex)
-            {
-                // SCM erişim hatası (yetki yetersiz olabilir)
-                Log.Warning(ex, "Servis durumu sorgulanamadı (Win32): {ServiceName}", ServiceName);
-                _tsmServiceStatus.Text     = "Servis: Erişim Reddedildi ⚠";
-                _tsmServiceStart.Enabled   = true;
-                _tsmServiceStop.Enabled    = true;
-                _tsmServiceRestart.Enabled = true;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Servis durumu sorgulanamadı: {ServiceName}", ServiceName);
-                _tsmServiceStatus.Text     = Res.Get("Tray_ServiceStatusUnknown");
-                _tsmServiceStart.Enabled   = true;
-                _tsmServiceStop.Enabled    = true;
-                _tsmServiceRestart.Enabled = true;
-            }
-        }
-
-        private async void OnServiceStartClick(object sender, EventArgs e)
-        {
-            try
-            {
-                _tsmServiceStart.Enabled = false;
-                await Task.Run(() =>
-                {
-                    using var sc = new ServiceController(ServiceName);
-                    sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
-                });
-                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStarted"), ToolTipIcon.Info, 2500);
-                Log.Information("Servis kullanıcı tarafından başlatıldı.");
-            }
-            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
-            {
-                Log.Warning(ex, "Servis başlatma yetki hatası.");
-                ShowBalloonTip(Res.Get("AppName"),
-                    "Servis başlatılamadı: Yönetici olarak çalıştırın.",
-                    ToolTipIcon.Warning, 5000);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Servis başlatılamadı.");
-                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
-            }
-        }
-
-        private async void OnServiceStopClick(object sender, EventArgs e)
-        {
-            try
-            {
-                _tsmServiceStop.Enabled    = false;
-                _tsmServiceRestart.Enabled = false;
-                await Task.Run(() =>
-                {
-                    using var sc = new ServiceController(ServiceName);
-                    sc.Stop();
-                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-                });
-                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStopped"), ToolTipIcon.Info, 2500);
-                Log.Information("Servis kullanıcı tarafından durduruldu.");
-            }
-            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
-            {
-                Log.Warning(ex, "Servis durdurma yetki hatası.");
-                ShowBalloonTip(Res.Get("AppName"),
-                    "Servis durdurulamadı: Yönetici olarak çalıştırın.",
-                    ToolTipIcon.Warning, 5000);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Servis durdurulamadı.");
-                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
-            }
-        }
-
-        private async void OnServiceRestartClick(object sender, EventArgs e)
-        {
-            try
-            {
-                _tsmServiceStop.Enabled    = false;
-                _tsmServiceRestart.Enabled = false;
-                await Task.Run(() =>
-                {
-                    using var sc = new ServiceController(ServiceName);
-                    sc.Stop();
-                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(30));
-                    sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
-                });
-                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceRestarted"), ToolTipIcon.Info, 2500);
-                Log.Information("Servis kullanıcı tarafından yeniden başlatıldı.");
-            }
-            catch (InvalidOperationException ex) when (ex.InnerException is System.ComponentModel.Win32Exception)
-            {
-                Log.Warning(ex, "Servis yeniden başlatma yetki hatası.");
-                ShowBalloonTip(Res.Get("AppName"),
-                    "Servis yeniden başlatılamadı: Yönetici olarak çalıştırın.",
-                    ToolTipIcon.Warning, 5000);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Servis yeniden başlatılamadı.");
-                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
-            }
-        }
-
-        #endregion
 
         #region Exit
 
@@ -348,6 +210,10 @@ namespace KoruMsSqlYedek.Win
             Log.Information("Tray uygulaması kapatılıyor...");
 
             _pipeClient?.Stop();
+            _animTimer.Stop();
+            _animTimer.Dispose();
+            _completionTimer.Stop();
+            _completionTimer.Dispose();
 
             _notifyIcon.Visible = false;
 
@@ -365,6 +231,7 @@ namespace KoruMsSqlYedek.Win
         }
 
         #endregion
+
 
         #region Balloon Tips & Status
 
@@ -393,276 +260,13 @@ namespace KoruMsSqlYedek.Win
 
             if (oldIcon != null)
             {
-                try { NativeMethods.DestroyIcon(oldIcon.Handle); }
+                try { oldIcon.Dispose(); }
                 catch { /* ikon zaten serbest bırakılmış olabilir */ }
             }
         }
 
         #endregion
 
-        #region Backup Activity
-
-        private void OnPipeConnectionChanged(object sender, bool connected)
-        {
-            // Arka plan thread'inden gelebilir — UI thread'e aktar
-            if (Application.OpenForms.Count > 0 && Application.OpenForms[0]?.InvokeRequired == true)
-            {
-                Application.OpenForms[0].BeginInvoke(new Action(() => OnPipeConnectionChanged(sender, connected)));
-                return;
-            }
-
-            if (connected)
-            {
-                UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
-                ShowBalloonTip(
-                    Res.Get("Tray_ServiceConnectionTitle"),
-                    Res.Get("Tray_ServiceConnected"),
-                    ToolTipIcon.Info, 2000);
-                Log.Information("Servis pipe bağlandı.");
-            }
-            else
-            {
-                UpdateTrayStatus(TrayIconStatus.Disconnected, Res.Get("Tray_TooltipDisconnected"));
-                ShowBalloonTip(
-                    Res.Get("Tray_ServiceConnectionTitle"),
-                    Res.Get("Tray_ServiceDisconnected"),
-                    ToolTipIcon.Warning, 3000);
-                Log.Warning("Servis pipe bağlantısı kesildi.");
-            }
-        }
-
-        private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
-        {
-            // Arka plan thread'inden gelebilir — UI thread'e aktar
-            if (Application.OpenForms.Count > 0 && Application.OpenForms[0]?.InvokeRequired == true)
-            {
-                Application.OpenForms[0].BeginInvoke(new Action(() => OnBackupActivityChanged(sender, e)));
-                return;
-            }
-
-            switch (e.ActivityType)
-            {
-                case BackupActivityType.Started:
-                    StartTrayAnimation(Res.Format("Tray_BackupRunning", e.PlanName));
-                    if (e.ToastEnabled)
-                        ShowBalloonTip(
-                            Res.Get("Toast_BackupStartedTitle"),
-                            Res.Format("Toast_BackupStartedMessage", e.PlanName),
-                            ToolTipIcon.Info);
-                    break;
-
-                case BackupActivityType.Completed:
-                    StopTrayAnimation(TrayIconStatus.Success,
-                        Res.Format("Tray_BackupCompleted", e.PlanName));
-                    if (e.ToastEnabled)
-                        ShowBalloonTip(
-                            Res.Get("Toast_BackupCompletedTitle"),
-                            Res.Format("Toast_BackupCompletedMessage", e.PlanName),
-                            ToolTipIcon.Info);
-                    break;
-
-                case BackupActivityType.Failed:
-                    StopTrayAnimation(TrayIconStatus.Error,
-                        Res.Format("Tray_BackupFailed", e.PlanName));
-                    if (e.ToastEnabled)
-                        ShowBalloonTip(
-                            Res.Get("Toast_BackupFailedTitle"),
-                            Res.Format("Toast_BackupFailedMessage", e.PlanName),
-                            ToolTipIcon.Error);
-                    break;
-
-                case BackupActivityType.Cancelled:
-                    StopTrayAnimation(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
-                    if (e.ToastEnabled)
-                        ShowBalloonTip(
-                            Res.Get("Toast_BackupCancelledTitle"),
-                            Res.Format("Toast_BackupCancelledMessage", e.PlanName),
-                            ToolTipIcon.Warning);
-                    break;
-            }
-        }
-
-        private void OnAnimTimerTick(object sender, EventArgs e)
-        {
-            if (_animFrames == null) return;
-            _animFrameIndex = (_animFrameIndex + 1) % _animFrames.Length;
-            _notifyIcon.Icon = _animFrames[_animFrameIndex];
-        }
-
-        private void StartTrayAnimation(string tooltipText)
-        {
-            if (_isAnimating) return;
-            _animFrames = SymbolIconHelper.CreateAnimationFrames();
-            _animFrameIndex = 0;
-            _isAnimating = true;
-
-            if (tooltipText != null)
-                _notifyIcon.Text = tooltipText.Length > 63
-                    ? tooltipText.Substring(0, 63)
-                    : tooltipText;
-
-            _notifyIcon.Icon = _animFrames[0];
-            _animTimer.Start();
-        }
-
-        private void StopTrayAnimation(TrayIconStatus finalStatus, string tooltipText)
-        {
-            if (!_isAnimating) return;
-            _animTimer.Stop();
-            _isAnimating = false;
-
-            var localFrames = _animFrames;
-            int lastIndex = _animFrameIndex;
-            _animFrames = null;
-
-            // UpdateTrayStatus, _notifyIcon.Icon'u (= localFrames[lastIndex]) dispose eder
-            UpdateTrayStatus(finalStatus, tooltipText);
-
-            // Kalan kareleri temizle
-            if (localFrames != null)
-            {
-                for (int i = 0; i < localFrames.Length; i++)
-                {
-                    if (i == lastIndex) continue; // UpdateTrayStatus zaten yok etti
-                    try { NativeMethods.DestroyIcon(localFrames[i].Handle); } catch { }
-                }
-            }
-        }
-
-        #endregion
-
-        #region Update Check
-
-        private async void OnUpdateTimerTick(object sender, EventArgs e)
-        {
-            // İlk tick sonrası aralığı günlük yap
-            _updateTimer.Interval = UpdateCheckIntervalMs;
-
-            try
-            {
-                UpdateInfo info = await _updateService.CheckForUpdateAsync().ConfigureAwait(true);
-                if (info is not null)
-                {
-                    _pendingUpdate = info;
-                    _tsmCheckUpdate.Text = Res.Format("Update_BalloonMessage", info.Version);
-                    _tsmCheckUpdate.Font = new Font(_tsmCheckUpdate.Font, FontStyle.Bold);
-
-                    ShowBalloonTip(
-                        Res.Get("Update_BalloonTitle"),
-                        Res.Format("Update_BalloonMessage", info.Version),
-                        ToolTipIcon.Info, 5000);
-
-                    Log.Information("Yeni sürüm bildirimi gösterildi: v{Version}", info.Version);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Otomatik güncelleme kontrolü başarısız.");
-            }
-        }
-
-        private async void OnCheckUpdateClick(object sender, EventArgs e)
-        {
-            _tsmCheckUpdate.Enabled = false;
-            _tsmCheckUpdate.Text = Res.Get("Update_Checking");
-
-            try
-            {
-                UpdateInfo info = await _updateService.CheckForUpdateAsync().ConfigureAwait(true);
-
-                if (info is null)
-                {
-                    string currentVer = System.Reflection.Assembly
-                        .GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?";
-                    Theme.ModernMessageBox.Show(
-                        Res.Format("Update_NoUpdateMessage", currentVer),
-                        Res.Get("Update_NoUpdate"),
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                    return;
-                }
-
-                _pendingUpdate = info;
-                DialogResult result = Theme.ModernMessageBox.Show(
-                    Res.Format("Update_AvailableMessage", info.Version),
-                    Res.Get("Update_Available"),
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Information,
-                    MessageBoxDefaultButton.Button1);
-
-                if (result == DialogResult.Yes)
-                {
-                    await DownloadAndLaunchUpdateAsync(info).ConfigureAwait(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Manuel güncelleme kontrolü başarısız.");
-                Theme.ModernMessageBox.Show(
-                    Res.Get("Update_CheckFailed"),
-                    Res.Get("AppName"),
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-            }
-            finally
-            {
-                _tsmCheckUpdate.Enabled = true;
-                _tsmCheckUpdate.Text = _pendingUpdate is not null
-                    ? Res.Format("Update_BalloonMessage", _pendingUpdate.Version)
-                    : Res.Get("Update_MenuCheckForUpdates");
-            }
-        }
-
-        private async Task DownloadAndLaunchUpdateAsync(UpdateInfo info)
-        {
-            string tempDir = Path.Combine(Path.GetTempPath(), "KoruUpdate");
-            Directory.CreateDirectory(tempDir);
-            string installerPath = Path.Combine(tempDir, $"KoruMsSqlYedek_Setup_v{info.Version}.exe");
-
-            try
-            {
-                ShowBalloonTip(
-                    Res.Get("AppName"),
-                    Res.Format("Update_Downloading", 0),
-                    ToolTipIcon.Info, 3000);
-
-                var progress = new Progress<int>(pct =>
-                {
-                    _notifyIcon.Text = Res.Format("Update_Downloading", pct);
-                });
-
-                await _updateService.DownloadInstallerAsync(
-                    info.DownloadUrl, installerPath, progress).ConfigureAwait(true);
-
-                ShowBalloonTip(
-                    Res.Get("AppName"),
-                    Res.Get("Update_DownloadComplete"),
-                    ToolTipIcon.Info, 2000);
-
-                Log.Information("Installer indirme tamamlandı, başlatılıyor: {Path}", installerPath);
-
-                // Installer'ı başlat ve uygulamayı kapat
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = installerPath,
-                    UseShellExecute = true,
-                    Verb = "runas"
-                });
-
-                ExitApplication();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Güncelleme indirme/başlatma hatası.");
-                Theme.ModernMessageBox.Show(
-                    Res.Format("Update_DownloadFailed", ex.Message),
-                    Res.Get("AppName"),
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-        }
-
-        #endregion
 
         #region Cleanup
 

@@ -1,10 +1,12 @@
 ﻿# KoruMsSqlYedek — Release Build & Package Script
-# Kullanım: .\Deployment\Build-Release.ps1 [-Configuration Release] [-SkipTests]
-# Çıktı: releases\KoruMsSqlYedek_vX.Y.Z.zip
+# Kullanım: .\Deployment\Build-Release.ps1 [-Configuration Release] [-SkipTests] [-GitRelease]
+# Çıktı: releases\KoruMsSqlYedek_vX.Y.Z.zip + KoruMsSqlYedek_vX.Y.Z_Setup.exe
+# -GitRelease: build sonrası develop commit, master merge, tag, push (GitHub Actions tetiklenir)
 
 param(
     [string]$Configuration = "Release",
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$GitRelease
 )
 
 $ErrorActionPreference = "Stop"
@@ -149,7 +151,8 @@ try {
     # --- 7. Inno Setup Installer (opsiyonel — ISCC.exe PATH'de olmalı) ---
     Write-Host "`n[7/7] Inno Setup installer derleniyor (opsiyonel)..." -ForegroundColor Yellow
     $issPath = Join-Path $rootDir "Deployment\InnoSetup\KoruMsSqlYedek.iss"
-    $isccExe = (Get-Command "ISCC.exe" -ErrorAction SilentlyContinue)?.Source
+    $isccCmd = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
+    $isccExe = if ($isccCmd) { $isccCmd.Source } else { $null }
     if (-not $isccExe) {
         # Inno Setup varsayilan kurulum yolu
         $defaultIscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
@@ -157,7 +160,7 @@ try {
     }
     if ($isccExe -and (Test-Path $issPath)) {
         Write-Host "  ISCC.exe bulundu: $isccExe" -ForegroundColor DarkGray
-        & $isccExe $issPath
+        & $isccExe $issPath /DMyAppVersion=$version /DWinPublishDir=$winPublish /DServicePublishDir=$servicePublish
         if ($LASTEXITCODE -eq 0) {
             $setupFile = Join-Path $rootDir "releases\KoruMsSqlYedek_v$version`_Setup.exe"
             if (Test-Path $setupFile) {
@@ -181,6 +184,45 @@ try {
 
     # Temizlik
     if (Test-Path $publishBase) { Remove-Item $publishBase -Recurse -Force }
+
+    # --- Git Release (opsiyonel) ---
+    if ($GitRelease) {
+        Write-Host "`n[Git] Release adımlari baslatiliyor..." -ForegroundColor Cyan
+
+        # develop üzerinde commit
+        git add -A
+        git commit -m "release: v$version"
+        if ($LASTEXITCODE -ne 0) { Write-Warning "git commit basarisiz veya commit edilecek degisiklik yok." }
+
+        # master'a merge
+        git checkout master
+        if ($LASTEXITCODE -ne 0) { Write-Error "git checkout master basarisiz."; exit 1 }
+
+        git merge develop --no-ff -m "release: v$version"
+        if ($LASTEXITCODE -ne 0) { Write-Error "git merge develop basarisiz."; exit 1 }
+
+        # Tag
+        git tag "v$version"
+        if ($LASTEXITCODE -ne 0) { Write-Warning "Tag zaten mevcut olabilir: v$version" }
+
+        # Push master + tags
+        git push origin master --tags
+        if ($LASTEXITCODE -ne 0) { Write-Error "git push origin master --tags basarisiz."; exit 1 }
+
+        # develop'a geri don ve push
+        git checkout develop
+        git push origin develop
+        if ($LASTEXITCODE -ne 0) { Write-Warning "git push origin develop basarisiz." }
+
+        Write-Host ""
+        Write-Host "========================================" -ForegroundColor Cyan
+        Write-Host " Git Release tamamlandi!" -ForegroundColor Cyan
+        Write-Host " Tag   : v$version" -ForegroundColor Cyan
+        Write-Host " GitHub Actions tetiklendi — setup.exe" -ForegroundColor Cyan
+        Write-Host " yukleme tamamlaninca GitHub Releases'da" -ForegroundColor Cyan
+        Write-Host " gorunur." -ForegroundColor Cyan
+        Write-Host "========================================" -ForegroundColor Cyan
+    }
 }
 finally {
     Pop-Location

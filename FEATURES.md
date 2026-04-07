@@ -2,6 +2,120 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.92.0 — Konsolide Bulut Yükleme: Tek Seferde Toplu Upload
+- [x] SQL + dosya yedeklerinin bulut yüklemeleri tek toplu fazda birleştirildi
+- [x] `UploadBatchToAllAsync` — CloudUploadOrchestrator'a toplu yükleme metodu
+- [x] `UploadAllPendingAsync` — BackupJobExecutor'a konsolide yükleme yardımcısı
+- [x] PlanProgressTracker konsolide ağırlık modeli (SQL lokal → Dosya lokal → Toplu bulut)
+- [x] Progress bar %100'e ulaşma sorunu düzeltildi
+- [x] CloudFileName / CloudFileIndex / CloudFileTotal — UI'da yüklenen dosya bilgisi
+- [x] 52 birim testi geçti (konsolide model testleri dahil)
+
+### v0.91.0 — Büyük Dosya Refactoring: Partial Class Ayrımı
+- [x] 12 büyük dosya partial class'lara ayrıldı (toplam 30+ yeni dosya)
+- [x] MainWindow.cs → 6 partial (Dashboard, Plans, BackupExecution, BackupActivity, LogViewer, Settings)
+- [x] BackupJobExecutor.cs → 3 partial (SqlPipeline, FilePipeline, Helpers)
+- [x] EmailNotificationService.cs → 4 partial (SqlNotification, FileNotification, CloudNotification, JobNotification)
+- [x] PlanEditForm.cs → 4 partial (WizardNavigation, PlanBinding, CloudAndFileSources, Visibility)
+- [x] TrayApplicationContext.cs → 3 partial (ServiceControl, BackupActivity, UpdateCheck)
+- [x] SqlBackupService.cs → 3 partial (Operations, VssBackup, Helpers)
+- [x] FileSystemCheckedTreeView.cs → 3 partial (NodeLoading, Filtering, SizeCalculation)
+- [x] CloudUploadOrchestrator.cs → 2 partial (CloudOperations, RetryAndRecovery)
+- [x] GoogleDriveProvider.cs → 1 partial (Operations)
+- [x] FtpSftpProvider.cs → 2 partial (Ftp, Sftp)
+- [x] FileBackupService.cs → 2 partial (CopyAndVerify, FileCollection)
+- [x] Tüm public API'ler ve davranışlar korundu, breaking change yok
+
+### v0.90.3 — IsSuccess Hesaplama Düzeltmesi
+- `IsSuccess` artık SQL/dosya yedekleme başarısızlıklarını da dahil ediyor
+- `overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed` formülü
+- Dosya-yalnızca planlarda da `anyFileSourceFailed` kontrolü eklendi
+
+### v0.90.2 — ListView Grup Expand/Collapse P/Invoke Düzeltmesi
+- `ListViewHeaderPainter.EnableGroupView()` — doğrudan `LVM_ENABLEGROUPVIEW(TRUE)` P/Invoke
+- Force-toggle + P/Invoke belt-and-suspenders yaklaşımı ile grup görünümü garanti
+
+### v0.90.1 — ListView Grup Görünümü Kök Neden Düzeltmesi
+- ShowGroups zamanlama hatası düzeltildi — Groups.Count > 0 olduktan sonra set ediliyor
+- Collapsible grup başlıkları artık doğru çalışıyor
+
+### v0.90.0 — ListView Grup Başlıkları + SMTP Profil Ekleme
+- ListView DarkMode_Explorer teması — native grup başlıkları dark modda görünür, collapsible
+- LVS_EX_DOUBLEBUFFER — ListView flicker önleme
+- PlanEditForm SMTP profil linki — SmtpProfileEditDialog açar, profil ekleyince ComboBox güncellenir
+
+### v0.89.0 — UI Düzeltmeleri: Ayarlar ComboBox, Navigasyon İkonları
+- Ayarlar > Genel: Dil, Tema, Log Konsol Teması ComboBox'ları görünür hale getirildi (Dock=Fill)
+- Yedek Türü ComboBox'u genişletildi (Dock=Fill)
+- PlanEditForm İleri/Geri butonlarına DevExpress PNG ikonları eklendi (Import/Export)
+
+### v0.88.0 — Konsolide Bildirim: Tek E-posta
+
+- [x] **Konsolide e-posta bildirimi**: Görev tamamlandığında SQL + dosya + bulut sonuçları tek e-postada
+- [x] **Görev logu e-postada**: BackupActivityHub eventleri toplanıp e-postaya ekleniyor
+- [x] **JobNotificationData modeli**: Tüm sonuçları tek nesnede birleştiren veri sınıfı
+- [x] **NotifyJobCompletedAsync**: INotificationService'e yeni konsolide bildirim metodu
+- [x] Per-DB ve per-component bildirimler kaldırıldı
+
+### Değiştirilen Dosyalar
+- [x] `KoruMsSqlYedek.Core/Models/JobNotificationData.cs` — Yeni
+- [x] `KoruMsSqlYedek.Core/Interfaces/INotificationService.cs` — NotifyJobCompletedAsync
+- [x] `KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs` — Uygulama
+- [x] `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — Konsolide akış
+
+### v0.87.0 — DevExpress PNG İkonları Tüm Formlara + Animasyonlu Tray İkonları
+- [x] Tüm formlardaki PhosphorIcons → DevExpress PNG ikonlarına geçiş (23 ikon)
+- [x] MainWindow, PlanEditForm, CloudTargetEditDialog, FileBackupSourceEditDialog güncel
+- [x] Animasyonlu GIF tray ikonları (CloudSync yedeklerken, CheckMark tamamlanınca)
+- [x] GIF frame extraction (SymbolIconHelper.ExtractGifFrames)
+- [x] ListView grup collapse/expand (+/−) düzeltmesi (ListViewHeaderPainter NativeWindow)
+
+### v0.86.0 — Toolbar: DevExpress PNG İkonları
+- [x] DevExpress Images kütüphanesinden renkli 16x16 PNG ikonlar (7 adet)
+- [x] Toolbar’dan şifre butonları kaldırıldı
+- [x] EmbeddedResource tabanlı ikon yükleme (LoadToolStripIcon)
+
+### v0.85.0 — Dashboard: Plan Bazlı Gruplandırma
+- [x] Son Yedeklemeler listesi plan adına göre gruplandırıldı (ListViewGroup)
+- [x] Açılır/kapanır gruplar (+/−) — CollapsedState.Expanded
+- [x] Grup başlığında plan adı ve yedekleme sayısı
+- [x] BeginUpdate/EndUpdate performans optimizasyonu
+
+### v0.84.0 — E-posta Şablonları: Bulut Yükleme Detayları & Hata Kodları
+- [x] SQL yedek bildirimi: Bulut yükleme detayında uzak dosya yolu, boyut, detaylı hata + deneme sayısı
+- [x] Dosya yedek bildirimi: Arşiv bilgisi, kaynak başına süre/boyut, başarısız dosya listesi, bulut yükleme sonuçları
+- [x] Bulut başarısızlık bildirimi: Provider türü, başarısız hedef sayısı, genişletilmiş hata mesajı
+- [x] Periyodik rapor: Bulut kolonu, hata detayları bölümü, başarısız bulut yüklemeleri bölümü
+- [x] `INotificationService.NotifyFileBackupAsync` ve `BackupJobExecutor` entegrasyonu
+
+### v0.83.0 — Dosya Yedekleme Fark/Artırımlı Strateji & İlerleme Düzeltmesi
+- [x] Dosya yedekleme stratejisi: Tam (Full), Fark (Differential), Artırımlı (Incremental)
+- [x] JSON manifest sistemi: `file_full.json` + `file_last.json` ile değişen dosya tespiti (LastWriteTimeUtc + Size)
+- [x] Fark yedek: Son tam yedekten bu yana değişen dosyalar; Artırımlı: Son herhangi yedekten bu yana değişenler
+- [x] PlanEditForm Adım 3'te strateji ComboBox eklendi (Tam Yedek / Fark Yedek / Artırımlı Yedek)
+- [x] İlerleme çubuğu dosya kaynak bazlı güncelleme: `CalculateFileSourceProgress` ile kaynak başına ağırlıklı ilerleme
+
+### v0.77.3 — Kurtarma Şifresi (Recovery Password)
+- [x] Plan bazlı kurtarma şifresi desteği
+- [x] Plan şifresi unutulduğunda kurtarma şifresi ile erişim
+- [x] Güvenlik sorusu sıfırlamasında kurtarma şifresi de temizlenir
+
+### v0.77.2 — Plan Şifre UX Sadeleştirme
+- [x] Checkbox tabanlı plan şifre koruması ("🔒 Bu görevi şifre ile koru")
+- [x] Tikle → şifre gir → kaydet — bitti
+
+### v0.77.1 — Plan Bazlı Şifre İzolasyonu
+- [x] Plan şifresi tanımlı planlarda yalnızca plan şifresi kabul edilir (global override kaldırıldı)
+- [x] Güvenlik sorusu kurtarma → plan şifresi de otomatik sıfırlanır
+- [x] Şifremi Unuttum config yolu ProgramData ile uyumlu
+
+### v0.77.0 — Post-Install Düzeltmeleri & Modern Tray İkonları
+- ✅ Error 740 admin hatası çözüldü (asInvoker + sc.exe UAC)
+- ✅ Tray ikonu görünmüyor: native icon handle sızıntısı düzeltildi
+- ✅ Görev zamanlama layout sorunu düzeltildi (CronBuilderPanel boyut + form yükseklik)
+- ✅ Modern Windows 11 flat tray ikonları (gradient + spinner animasyon)
+- ✅ System.ServiceProcess.ServiceController bağımlılığı kaldırıldı
+
 ### v0.76.0 — Servis Veri Yolu Düzeltmesi & DPAPI Migrasyon
 - ✅ %APPDATA% → %ProgramData% geçişi (Tray + Service aynı veri yolunu kullanır)
 - ✅ DPAPI CurrentUser → LocalMachine scope geçişi (Service LocalSystem şifre çözebilir)
@@ -35,47 +149,24 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 - `BackupMode` enum ve `Mode` property geriye dönük JSON uyumluluğu için `[Obsolete]` korunuyor
 - Wizard UX sadeleştirildi: Kullanıcı doğrudan hedef ekleyerek bulut depolama kullanabilir
 
-### v0.72.0
-- Mega oturum önbellekleme geri eklendi: 15 dakika boyunca aynı oturum yeniden kullanılıyor
-- SemaphoreSlim ile tüm Mega API çağrıları sıralı işleniyor (rate limiting önleme)
-- Hata sonrası oturum otomatik geçersizleştirme + yeni oturum açma
-- Her upload/delete/trash işleminde ayrı login/logout sorunu giderildi
-
 ### v0.71.1 — Çöp Kutusu Güvenlik Düzeltmesi
 - Google Drive: Sadece bizim klasörümüzdeki çöp dosyaları temizlenir, kullanıcının kişisel çöpüne dokunulmaz
-- Mega: Yedek dosya isim desenine uyan dosyalar filtrelenir (`.bak`/`.7z` + `_Full_/_Differential_/_Incremental_/Files_`)
 
-### v0.71.0 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
-- Mega çöp kutusu: Yedekleme sonrası birikmiş çöp öğeleri otomatik kalıcı siliniyor
+### v0.71.0 — Bulut Çöp Kutusu Otomatik Temizleme (Google Drive)
 - Google Drive çöp kutusu: Files.EmptyTrash() API ile tek çağrıda temizleniyor
 - ICloudProvider: SupportsTrash + EmptyTrashAsync arayüzü
 - Orkestrasyon: EmptyTrashForAllAsync — sadece uygun hedefleri filtreler
 - Pipeline: Her yedekleme sonrası otomatik çöp temizliği (hata güvenli)
-
-### v0.70.0 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
-- Mega oturum önbellekleme: Login/logout her dosyada değil, 15 dakika boyunca yeniden kullanılıyor
-- SemaphoreSlim ile eşzamanlı upload serializasyonu
-- MegaProvider diagnostik logları Information seviyesine yükseltildi (Service loglarında görünür)
-- DPAPI şifre çözme null kontrolü + rate limiting ipucu mesajı
-- MainWindow: CloudUploadStarted/CloudUploadCompleted switch case'leri eklendi (uyarı logları kaldırıldı)
-
-### v0.69.0 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
-- Mega retry: Non-exception başarısızlıklarda exponential backoff (2s/4s/8s) eklendi
-- Bulut yükleme hata detayı log panelinde görünür ("Başarısız ✕ — {neden}")
-- VSS kaynaklı hızlı retry → rate limiting sorunu çözüldü
 
 ### v0.68.5 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
 - "Express VSS" → "VSS" tüm log mesajlarında güncellendi
 - Bulut yükleme başarısız olduğunda tamamlanma durumu doğru gösteriliyor (⚠ uyarı ikonu + mesaj)
 - Grid ve log panelinde bulut başarısızlığı renk ve ikon ile ayrışıyor
 
-### v0.68.0 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
-- Mega.io bulut depolama: Email/şifre auth, upload (ilerleme), silme (çöp/kalıcı), klasör yönetimi
-- MegaApiClient v1.10.5 NuGet paketi
+### v0.68.0 — OneDrive/Workspace/LocalPath Kaldırma
 - OneDrive desteği tamamen kaldırıldı (Microsoft.Graph, Azure.Identity, MSAL)
 - GoogleDriveWorkspace enum değeri kaldırıldı, Google Drive tek tip
 - CloudProviderType.LocalPath bulut hedeflerinden kaldırıldı (yerel yedekleme etkilenmedi)
-- CloudTargetEditDialog: Mega.io combobox, FTP grubu Mega için yeniden kullanım
 
 ### v0.66.0 — Şifre Koruması Aktif/Pasif Toggle
 - Şifre aktif/pasif toggle: Şifreyi kaldırmadan korumayı geçici olarak devre dışı bırakma

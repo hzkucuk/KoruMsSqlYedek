@@ -179,8 +179,8 @@ namespace KoruMsSqlYedek.Tests
 
             _mockHistoryManager.Verify(h => h.SaveResult(It.IsAny<BackupResult>()), Times.Once);
 
-            _mockNotification.Verify(n => n.NotifyAsync(
-                It.IsAny<BackupResult>(), plan.Notifications,
+            _mockNotification.Verify(n => n.NotifyJobCompletedAsync(
+                It.IsAny<JobNotificationData>(), plan.Notifications,
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -206,11 +206,9 @@ namespace KoruMsSqlYedek.Tests
 
             // Assert — başarısız olsa bile History ve Notify çağrılmalı
             _mockHistoryManager.Verify(h => h.SaveResult(It.IsAny<BackupResult>()), Times.Once);
-            _mockNotification.Verify(n => n.NotifyAsync(
-                It.IsAny<BackupResult>(), plan.Notifications,
+            _mockNotification.Verify(n => n.NotifyJobCompletedAsync(
+                It.IsAny<JobNotificationData>(), plan.Notifications,
                 It.IsAny<CancellationToken>()), Times.Once);
-
-            // Compress ve Retention çağrılMAMALI
             _mockCompression.Verify(c => c.CompressAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -785,13 +783,13 @@ namespace KoruMsSqlYedek.Tests
                 h => h.SaveResult(It.Is<BackupResult>(r => r.VerifyResult == false)),
                 Times.Once);
             _mockRetention.Verify(r => r.CleanupAsync(plan, It.IsAny<CancellationToken>()), Times.Once);
-            _mockNotification.Verify(n => n.NotifyAsync(
-                It.IsAny<BackupResult>(), plan.Notifications, It.IsAny<CancellationToken>()),
+            _mockNotification.Verify(n => n.NotifyJobCompletedAsync(
+                It.IsAny<JobNotificationData>(), plan.Notifications, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
         [TestMethod]
-        public async Task Execute_VerifyAfterBackup_ArchiveVerifyFails_CompressionVerifiedSetToFalse()
+        public async Task Execute_VerifyAfterBackup_ArchiveVerifyFails()
         {
             // Arrange — Arşiv bütünlük doğrulaması başarısız; CompressionVerified=false, pipeline devam etmeli
             var plan = TestDataFactory.CreateValidPlan();
@@ -898,8 +896,8 @@ namespace KoruMsSqlYedek.Tests
             // Assert — bulut upload hatası pipeline'ı durdurmaz
             _mockRetention.Verify(r => r.CleanupAsync(plan, It.IsAny<CancellationToken>()), Times.Once);
             _mockHistoryManager.Verify(h => h.SaveResult(It.IsAny<BackupResult>()), Times.Once);
-            _mockNotification.Verify(n => n.NotifyAsync(
-                It.IsAny<BackupResult>(), plan.Notifications, It.IsAny<CancellationToken>()),
+            _mockNotification.Verify(n => n.NotifyJobCompletedAsync(
+                It.IsAny<JobNotificationData>(), plan.Notifications, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -981,8 +979,8 @@ namespace KoruMsSqlYedek.Tests
 
             // Assert — Retention hatası History ve Notify'ı durdurmaz
             _mockHistoryManager.Verify(h => h.SaveResult(It.IsAny<BackupResult>()), Times.Once);
-            _mockNotification.Verify(n => n.NotifyAsync(
-                It.IsAny<BackupResult>(), plan.Notifications, It.IsAny<CancellationToken>()),
+            _mockNotification.Verify(n => n.NotifyJobCompletedAsync(
+                It.IsAny<JobNotificationData>(), plan.Notifications, It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -1015,8 +1013,8 @@ namespace KoruMsSqlYedek.Tests
             await act.Should().NotThrowAsync();
 
             // Bildirim servisi çağrılmamalı (Notifications null)
-            _mockNotification.Verify(n => n.NotifyAsync(
-                It.IsAny<BackupResult>(), It.IsAny<NotificationConfig>(), It.IsAny<CancellationToken>()),
+            _mockNotification.Verify(n => n.NotifyJobCompletedAsync(
+                It.IsAny<JobNotificationData>(), It.IsAny<NotificationConfig>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 

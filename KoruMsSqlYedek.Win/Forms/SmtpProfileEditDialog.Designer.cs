@@ -33,12 +33,14 @@ namespace KoruMsSqlYedek.Win.Forms
             _txtSenderName = new System.Windows.Forms.TextBox();
             _lblRecipients = new System.Windows.Forms.Label();
             _txtRecipients = new System.Windows.Forms.TextBox();
+            _pnlPortRow = new System.Windows.Forms.FlowLayoutPanel();
             _pnlButtons = new System.Windows.Forms.FlowLayoutPanel();
             _btnTest = new Theme.ModernButton();
             _btnSave = new Theme.ModernButton();
             _btnCancel = new Theme.ModernButton();
 
             _tlpMain.SuspendLayout();
+            _pnlPortRow.SuspendLayout();
             _pnlButtons.SuspendLayout();
             SuspendLayout();
 
@@ -49,39 +51,48 @@ namespace KoruMsSqlYedek.Win.Forms
             _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 130F));
             _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             _tlpMain.RowCount = 10;
-            for (int i = 0; i < 9; i++)
-                _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
 
-            void AddRow(int row, System.Windows.Forms.Label lbl, System.Windows.Forms.Control ctrl)
-            {
-                lbl.AutoSize = true;
-                lbl.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-                lbl.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
-                lbl.ForeColor = Theme.ModernTheme.TextPrimary;
-                ctrl.Dock = System.Windows.Forms.DockStyle.Fill;
-                ctrl.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
-                _tlpMain.Controls.Add(lbl, 0, row);
-                _tlpMain.Controls.Add(ctrl, 1, row);
-            }
-
+            // ── Row 0: Profil Adı ──
+            _lblDisplayName.AutoSize = true;
+            _lblDisplayName.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblDisplayName.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _lblDisplayName.ForeColor = Theme.ModernTheme.TextPrimary;
             _lblDisplayName.Text = "Profil Adı:";
-            AddRow(0, _lblDisplayName, _txtDisplayName);
+            _txtDisplayName.Dock = System.Windows.Forms.DockStyle.Fill;
+            _txtDisplayName.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
+            _tlpMain.Controls.Add(_lblDisplayName, 0, 0);
+            _tlpMain.Controls.Add(_txtDisplayName, 1, 0);
 
+            // ── Row 1: SMTP Sunucu ──
+            _lblHost.AutoSize = true;
+            _lblHost.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblHost.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _lblHost.ForeColor = Theme.ModernTheme.TextPrimary;
             _lblHost.Text = "SMTP Sunucu:";
-            AddRow(1, _lblHost, _txtHost);
+            _txtHost.Dock = System.Windows.Forms.DockStyle.Fill;
+            _txtHost.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
+            _tlpMain.Controls.Add(_lblHost, 0, 1);
+            _tlpMain.Controls.Add(_txtHost, 1, 1);
 
-            // Port + SSL satırı
+            // ── Row 2: Port + SSL ──
             _lblPort.Text = "Port:";
             _lblPort.AutoSize = true;
             _lblPort.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             _lblPort.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
             _lblPort.ForeColor = Theme.ModernTheme.TextPrimary;
-
-            var pnlPortRow = new System.Windows.Forms.FlowLayoutPanel();
-            pnlPortRow.AutoSize = true;
-            pnlPortRow.Dock = System.Windows.Forms.DockStyle.Fill;
-            pnlPortRow.Margin = new System.Windows.Forms.Padding(3, 4, 3, 3);
+            _pnlPortRow.AutoSize = true;
+            _pnlPortRow.Dock = System.Windows.Forms.DockStyle.Fill;
+            _pnlPortRow.Margin = new System.Windows.Forms.Padding(3, 4, 3, 3);
             _nudPort.Minimum = 1;
             _nudPort.Maximum = 65535;
             _nudPort.Value = 587;
@@ -91,29 +102,69 @@ namespace KoruMsSqlYedek.Win.Forms
             _chkUseSsl.AutoSize = true;
             _chkUseSsl.Checked = true;
             _chkUseSsl.Margin = new System.Windows.Forms.Padding(0, 4, 0, 0);
-            pnlPortRow.Controls.Add(_nudPort);
-            pnlPortRow.Controls.Add(_chkUseSsl);
+            _pnlPortRow.Controls.Add(_nudPort);
+            _pnlPortRow.Controls.Add(_chkUseSsl);
             _tlpMain.Controls.Add(_lblPort, 0, 2);
-            _tlpMain.Controls.Add(pnlPortRow, 1, 2);
+            _tlpMain.Controls.Add(_pnlPortRow, 1, 2);
 
+            // ── Row 3: Kullanıcı Adı ──
+            _lblUsername.AutoSize = true;
+            _lblUsername.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblUsername.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _lblUsername.ForeColor = Theme.ModernTheme.TextPrimary;
             _lblUsername.Text = "Kullanıcı Adı:";
-            AddRow(3, _lblUsername, _txtUsername);
+            _txtUsername.Dock = System.Windows.Forms.DockStyle.Fill;
+            _txtUsername.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
+            _tlpMain.Controls.Add(_lblUsername, 0, 3);
+            _tlpMain.Controls.Add(_txtUsername, 1, 3);
 
+            // ── Row 4: Şifre ──
+            _lblPassword.AutoSize = true;
+            _lblPassword.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblPassword.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _lblPassword.ForeColor = Theme.ModernTheme.TextPrimary;
             _lblPassword.Text = "Şifre:";
+            _txtPassword.Dock = System.Windows.Forms.DockStyle.Fill;
+            _txtPassword.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
             _txtPassword.UseSystemPasswordChar = true;
-            AddRow(4, _lblPassword, _txtPassword);
+            _tlpMain.Controls.Add(_lblPassword, 0, 4);
+            _tlpMain.Controls.Add(_txtPassword, 1, 4);
 
+            // ── Row 5: Gönderici E-posta ──
+            _lblSenderEmail.AutoSize = true;
+            _lblSenderEmail.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblSenderEmail.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _lblSenderEmail.ForeColor = Theme.ModernTheme.TextPrimary;
             _lblSenderEmail.Text = "Gönderici E-posta:";
-            AddRow(5, _lblSenderEmail, _txtSenderEmail);
+            _txtSenderEmail.Dock = System.Windows.Forms.DockStyle.Fill;
+            _txtSenderEmail.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
+            _tlpMain.Controls.Add(_lblSenderEmail, 0, 5);
+            _tlpMain.Controls.Add(_txtSenderEmail, 1, 5);
 
+            // ── Row 6: Gönderici Adı ──
+            _lblSenderName.AutoSize = true;
+            _lblSenderName.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblSenderName.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _lblSenderName.ForeColor = Theme.ModernTheme.TextPrimary;
             _lblSenderName.Text = "Gönderici Adı:";
+            _txtSenderName.Dock = System.Windows.Forms.DockStyle.Fill;
+            _txtSenderName.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
             _txtSenderName.Text = "Koru MsSql Yedek";
-            AddRow(6, _lblSenderName, _txtSenderName);
+            _tlpMain.Controls.Add(_lblSenderName, 0, 6);
+            _tlpMain.Controls.Add(_txtSenderName, 1, 6);
 
+            // ── Row 7: Alıcılar ──
+            _lblRecipients.AutoSize = true;
+            _lblRecipients.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
+            _lblRecipients.Margin = new System.Windows.Forms.Padding(3, 8, 8, 3);
+            _lblRecipients.ForeColor = Theme.ModernTheme.TextPrimary;
             _lblRecipients.Text = "Alıcılar:";
-            AddRow(7, _lblRecipients, _txtRecipients);
+            _txtRecipients.Dock = System.Windows.Forms.DockStyle.Fill;
+            _txtRecipients.Margin = new System.Windows.Forms.Padding(3, 6, 3, 3);
+            _tlpMain.Controls.Add(_lblRecipients, 0, 7);
+            _tlpMain.Controls.Add(_txtRecipients, 1, 7);
 
-            // ── Buttons ──
+            // ── Row 9: Buttons ──
             _pnlButtons.Dock = System.Windows.Forms.DockStyle.Fill;
             _pnlButtons.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
             _pnlButtons.Margin = new System.Windows.Forms.Padding(3, 8, 3, 3);
@@ -151,12 +202,13 @@ namespace KoruMsSqlYedek.Win.Forms
             Text = "SMTP Profili";
             StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 
+            _pnlPortRow.ResumeLayout(false);
             _tlpMain.ResumeLayout(false);
             _pnlButtons.ResumeLayout(false);
             ResumeLayout(false);
-            }
+        }
 
-            private System.Windows.Forms.TableLayoutPanel _tlpMain;
+        private System.Windows.Forms.TableLayoutPanel _tlpMain;
         private System.Windows.Forms.Label _lblDisplayName;
         private System.Windows.Forms.TextBox _txtDisplayName;
         private System.Windows.Forms.Label _lblHost;
@@ -174,6 +226,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private System.Windows.Forms.TextBox _txtSenderName;
         private System.Windows.Forms.Label _lblRecipients;
         private System.Windows.Forms.TextBox _txtRecipients;
+        private System.Windows.Forms.FlowLayoutPanel _pnlPortRow;
         private System.Windows.Forms.FlowLayoutPanel _pnlButtons;
         private Theme.ModernButton _btnTest;
         private Theme.ModernButton _btnSave;

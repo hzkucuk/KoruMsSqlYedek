@@ -126,7 +126,7 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("displayName")]
         public string DisplayName { get; set; }
 
-        /// <summary>Google Drive veya Mega klasör yolu.</summary>
+        /// <summary>Google Drive / FTP uzak klasör yolu.</summary>
         [JsonProperty("remoteFolderPath")]
         public string RemoteFolderPath { get; set; }
 

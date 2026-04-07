@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Serilog;
 
 namespace KoruMsSqlYedek.Core;
 
@@ -9,17 +10,20 @@ namespace KoruMsSqlYedek.Core;
 /// bulut yükleme, dilimin ikinci yarısına eşlenir.
 /// </summary>
 /// <remarks>
-/// Ağırlık modeli:
+/// Ağırlık modeli (konsolide bulut yükleme):
 /// <list type="bullet">
 ///   <item>SQL-only (bulut yok): her DB eşit dilim (100%), adım bazlı: SQL=%50, Doğrulama=%65, Sıkıştırma=%80, Arşiv=%88, Temizlik=%95</item>
 ///   <item>SQL+Dosya (bulut yok): SQL fazı %80, dosya fazı %20</item>
-///   <item>SQL+Bulut (dosya yok): VSS yok → SQL=%30 + Bulut=%70 | VSS var → SQL=%20 + Ana=%50 + VSS=%30</item>
-///   <item>SQL+Bulut+Dosya: SQL %80, dosya kopyalama %5, dosya bulut %15</item>
-///   <item>Dosya-only: kopyalama %25, bulut %75</item>
+///   <item>SQL+Bulut (dosya yok): SQL lokal %0→40, konsolide bulut %40→100</item>
+///   <item>SQL+Bulut+Dosya: SQL lokal %0→45, dosya lokal %45→50, konsolide bulut %50→100</item>
+///   <item>Dosya-only+Bulut: dosya lokal %0→25, konsolide bulut %25→100</item>
+///   <item>Dosya-only (bulut yok): kopyalama %50, sıkıştırma %85, temizlik %90</item>
 /// </list>
 /// </remarks>
 public sealed class PlanProgressTracker
 {
+    private static readonly ILogger Log = Serilog.Log.ForContext<PlanProgressTracker>();
+
     /// <summary>1 tabanlı, şu anki veritabanı sırası.</summary>
     public int DbIndex;
 
@@ -47,13 +51,28 @@ public sealed class PlanProgressTracker
     /// <summary>Plan en az bir etkin bulut hedefi içeriyor.</summary>
     public bool HasCloudTargets;
 
+    /// <summary>Konsolide bulut yükleme fazına girildi.</summary>
+    public bool IsConsolidatedCloudPhase;
+
+    /// <summary>Konsolide bulut fazı başlangıç yüzdesi (lokal fazlar bittiğinde kaydedilir).</summary>
+    public int CloudPhaseBase;
+
+    /// <summary>Bulut fazı içinde monoton artış için kullanılan ayrı izleyici (global MaxPercent'ten bağımsız).</summary>
+    private int _maxCloudPercent;
+
     // ── Sabitler ──────────────────────────────────────────────────────────
 
-    /// <summary>Dosya yedekleme varsa SQL fazına ayrılan üst sınır yüzdesi.</summary>
+    /// <summary>Dosya yedekleme varsa SQL fazına ayrılan üst sınır yüzdesi (bulut yok).</summary>
     public const int SqlRangeWithFileBackup = 80;
 
-    /// <summary>Dosya yedekleme yoksa SQL fazına ayrılan üst sınır yüzdesi.</summary>
+    /// <summary>Dosya yedekleme yoksa SQL fazına ayrılan üst sınır yüzdesi (bulut yok).</summary>
     public const int SqlRangeWithoutFileBackup = 100;
+
+    /// <summary>SQL-only + bulut hedefi: SQL lokal fazı üst sınır.</summary>
+    public const int SqlRangeWithCloudNoFile = 40;
+
+    /// <summary>SQL+Dosya + bulut hedefi: SQL lokal fazı üst sınır.</summary>
+    public const int SqlRangeWithCloudAndFile = 45;
 
     // Local-mode step weights (bulut hedefsiz)
     internal static readonly IReadOnlyDictionary<string, double> LocalStepWeights =
@@ -65,6 +84,59 @@ public sealed class PlanProgressTracker
             ["Arşiv Doğrulama"] = 0.88,
             ["Temizlik"] = 0.95
         };
+
+    // ── Yardımcı Metotlar ─────────────────────────────────────────────────
+
+    /// <summary>Mevcut duruma göre SQL fazının kullanacağı üst sınır yüzdesini döndürür.</summary>
+    private int GetEffectiveSqlRange()
+    {
+        if (HasCloudTargets)
+            return HasFileBackup ? SqlRangeWithCloudAndFile : SqlRangeWithCloudNoFile;
+
+        return HasFileBackup ? SqlRangeWithFileBackup : SqlRangeWithoutFileBackup;
+    }
+
+    /// <summary>Dosya fazının başlangıç yüzdesini döndürür (file-only ise 0, değilse SQL fazı sonu).</summary>
+    private int GetEffectiveFileBase(bool isFileOnly) =>
+        isFileOnly ? 0 : GetEffectiveSqlRange();
+
+    /// <summary>
+    /// Konsolide bulut yükleme fazını başlatır.
+    /// CloudPhaseBase daima ağırlık modelinin beklediği değeri kullanır;
+    /// MaxPercent'in şişmiş olması bulut fazını etkilemez.
+    /// </summary>
+    /// <returns>Bulut fazının başlangıç yüzdesi.</returns>
+    public int StartConsolidatedCloudPhase()
+    {
+        IsConsolidatedCloudPhase = true;
+        int expectedBase = CalculateExpectedCloudBase();
+
+        Log.Debug(
+            "[ProgressTracker] StartConsolidatedCloudPhase: MaxPercent={MaxPercent}, expectedBase={ExpectedBase}, " +
+            "HasCloudTargets={HasCloud}, HasFileBackup={HasFile}, SqlDbCount={SqlCount}",
+            MaxPercent, expectedBase, HasCloudTargets, HasFileBackup, SqlDbCount);
+
+        // Daima ağırlık modelinin beklediği base'i kullan.
+        // MaxPercent şişmiş olsa bile bulut fazı doğru noktadan başlar.
+        CloudPhaseBase = expectedBase;
+        _maxCloudPercent = CloudPhaseBase;
+        MaxPercent = Math.Max(MaxPercent, CloudPhaseBase);
+        return CloudPhaseBase;
+    }
+
+    /// <summary>
+    /// Ağırlık modeline göre bulut fazı öncesi beklenen maksimum lokal yüzdeyi hesaplar.
+    /// </summary>
+    private int CalculateExpectedCloudBase()
+    {
+        if (HasFileBackup)
+        {
+            bool isFileOnly = SqlDbCount == 0;
+            int fileBase = GetEffectiveFileBase(isFileOnly);
+            return fileBase + GetFileCopyWeight(isFileOnly) + GetFileCompressWeight(isFileOnly);
+        }
+        return GetEffectiveSqlRange();
+    }
 
     // ── Hesaplama Metotları ───────────────────────────────────────────────
 
@@ -83,10 +155,15 @@ public sealed class PlanProgressTracker
         HasVssUpload = false;
         IsVssPhase = false;
 
-        int maxSqlRange = HasFileBackup ? SqlRangeWithFileBackup : SqlRangeWithoutFileBackup;
+        int maxSqlRange = GetEffectiveSqlRange();
         int pct = (int)(((currentIndex - 1.0) / totalCount) * maxSqlRange);
         pct = Math.Max(pct, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
+
+        Log.Debug(
+            "[ProgressTracker] DatabaseProgress: idx={Idx}/{Total}, sqlRange={Range}, pct={Pct}, prevMax={PrevMax}",
+            currentIndex, totalCount, maxSqlRange, pct, MaxPercent);
+
         MaxPercent = pct;
         return pct;
     }
@@ -99,107 +176,178 @@ public sealed class PlanProgressTracker
     {
         IsFileBackupPhase = true;
         bool isFileOnly = SqlDbCount == 0;
-        int fileBase = isFileOnly ? 0 : SqlRangeWithFileBackup;
+        int fileBase = GetEffectiveFileBase(isFileOnly);
+        int prevMax = MaxPercent;
         int pct = Math.Max(fileBase, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
+
+        Log.Debug(
+            "[ProgressTracker] FileBackupPhaseStart: isFileOnly={IsFileOnly}, fileBase={FileBase}, " +
+            "prevMax={PrevMax}, result={Result}, HasCloudTargets={HasCloud}",
+            isFileOnly, fileBase, prevMax, pct, HasCloudTargets);
+
         MaxPercent = pct;
         return pct;
     }
 
     /// <summary>
     /// Dosya sıkıştırma adımı yüzdesini hesaplar.
+    /// Bulut hedefi yoksa sıkıştırma fazı daha geniş bir dilim alır.
     /// </summary>
     /// <returns>Klamplanmış, monoton artan yüzde [0-100].</returns>
     public int CalculateFileCompressionProgress()
     {
         bool isFileOnly = SqlDbCount == 0;
-        int fileBase = isFileOnly ? 0 : SqlRangeWithFileBackup;
-        int fileCopyWeight = isFileOnly ? 25 : 5;
-        int pct = fileBase + fileCopyWeight;
+        int fileBase = GetEffectiveFileBase(isFileOnly);
+        int fileCopyWeight = GetFileCopyWeight(isFileOnly);
+        int fileCompressWeight = GetFileCompressWeight(isFileOnly);
+        int pct = fileBase + fileCopyWeight + fileCompressWeight;
         pct = Math.Max(pct, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
         MaxPercent = pct;
         return pct;
+    }
+
+    /// <summary>
+    /// Dosya yedekleme fazında kaynak bazlı ilerleme yüzdesini hesaplar.
+    /// Her kaynak, dosya kopyalama ağırlığının eşit bir dilimini alır.
+    /// Bulut hedefi yoksa kopyalama fazı daha geniş bir dilim alır.
+    /// </summary>
+    /// <param name="sourceIndex">1 tabanlı tamamlanan kaynak sırası.</param>
+    /// <param name="totalSources">Toplam aktif kaynak sayısı.</param>
+    /// <returns>Klamplanmış, monoton artan yüzde [0-100] veya -1 (faz uyumsuz).</returns>
+    public int CalculateFileSourceProgress(int sourceIndex, int totalSources)
+    {
+        if (!IsFileBackupPhase || totalSources <= 0 || sourceIndex <= 0)
+            return -1;
+
+        bool isFileOnly = SqlDbCount == 0;
+        int fileBase = GetEffectiveFileBase(isFileOnly);
+        int fileCopyWeight = GetFileCopyWeight(isFileOnly);
+
+        int pct = fileBase + (int)((double)sourceIndex / totalSources * fileCopyWeight);
+        int prevMax = MaxPercent;
+        pct = Math.Max(pct, MaxPercent);
+        pct = Math.Clamp(pct, 0, 100);
+
+        Log.Debug(
+            "[ProgressTracker] FileSource: src={Src}/{Total}, fileBase={Base}, copyW={CopyW}, " +
+            "prevMax={PrevMax}, result={Result}",
+            sourceIndex, totalSources, fileBase, fileCopyWeight, prevMax, pct);
+
+        MaxPercent = pct;
+        return pct;
+    }
+
+    /// <summary>
+    /// Dosya yedekleme temizlik adımı yüzdesini hesaplar (bulut hedefsiz mod).
+    /// Dosya kopyalama + sıkıştırma sonrasında temizlik adımını temsil eder.
+    /// </summary>
+    /// <returns>Klamplanmış, monoton artan yüzde [0-100] veya -1 (faz uyumsuz veya bulut var).</returns>
+    public int CalculateFileCleanupProgress()
+    {
+        if (!IsFileBackupPhase || HasCloudTargets)
+            return -1;
+
+        bool isFileOnly = SqlDbCount == 0;
+        int fileBase = GetEffectiveFileBase(isFileOnly);
+        int fileCopyWeight = GetFileCopyWeight(isFileOnly);
+        int fileCompressWeight = GetFileCompressWeight(isFileOnly);
+        int fileCleanupWeight = isFileOnly ? 5 : 2;
+        int pct = fileBase + fileCopyWeight + fileCompressWeight + fileCleanupWeight;
+        pct = Math.Max(pct, MaxPercent);
+        pct = Math.Clamp(pct, 0, 100);
+        MaxPercent = pct;
+        return pct;
+    }
+
+    // ── Dosya fazı ağırlık yardımcıları ───────────────────────────────────
+
+    /// <summary>Dosya kopyalama ağırlığı — bulut yoksa daha geniş dilim.</summary>
+    private int GetFileCopyWeight(bool isFileOnly)
+    {
+        if (HasCloudTargets)
+            return isFileOnly ? 25 : 5;
+
+        // Bulut yok: kopyalama + sıkıştırma + temizlik tüm dosya aralığını doldurmalı
+        return isFileOnly ? 50 : 10;
+    }
+
+    /// <summary>Dosya sıkıştırma ağırlığı — bulut yoksa sıkıştırma daha ağır.</summary>
+    private int GetFileCompressWeight(bool isFileOnly)
+    {
+        if (HasCloudTargets)
+            return 0; // Bulut varken sıkıştırma ayrı ağırlık almaz, copy sonrası cloud başlar
+
+        return isFileOnly ? 35 : 7;
     }
 
     /// <summary>
     /// Bulut hedefsiz (local-mode) SQL adım bazlı ilerleme yüzdesini hesaplar.
     /// </summary>
     /// <param name="stepName">Adım adı (SQL Yedekleme, Doğrulama, Sıkıştırma, Arşiv Doğrulama, Temizlik).</param>
-    /// <returns>Klamplanmış, monoton artan yüzde [0-100] veya -1 (bilinmeyen adım).</returns>
+    /// <returns>Klamplanmış, monoton artan yüzde [0-100] veya -1 (bilinmeyen adım veya bulut/dosya fazında).</returns>
     public int CalculateLocalStepProgress(string stepName)
     {
-        if (HasCloudTargets || IsFileBackupPhase || DbTotal <= 0 || DbIndex <= 0)
+        if (IsFileBackupPhase || IsConsolidatedCloudPhase || DbTotal <= 0 || DbIndex <= 0)
             return -1;
 
         if (!LocalStepWeights.TryGetValue(stepName, out double stepWeight))
             return -1;
 
-        double maxSqlRange = HasFileBackup ? (double)SqlRangeWithFileBackup : SqlRangeWithoutFileBackup;
+        double maxSqlRange = GetEffectiveSqlRange();
         double slicePerDb = maxSqlRange / DbTotal;
         double dbBase = (DbIndex - 1) * slicePerDb;
         int pct = (int)(dbBase + slicePerDb * stepWeight);
+        int prevMax = MaxPercent;
         pct = Math.Max(pct, MaxPercent);
         pct = Math.Clamp(pct, 0, 100);
+
+        Log.Debug(
+            "[ProgressTracker] LocalStep: step={Step}, weight={Weight:F2}, sqlRange={Range}, " +
+            "slice={Slice:F1}, dbBase={DbBase:F1}, raw={Raw}, prevMax={PrevMax}, result={Result}",
+            stepName, stepWeight, maxSqlRange, slicePerDb, dbBase,
+            (int)(dbBase + slicePerDb * stepWeight), prevMax, pct);
+
         MaxPercent = pct;
         return pct;
     }
 
     /// <summary>
-    /// Bulut yükleme (CloudUploadProgress) ilerleme yüzdesini hesaplar.
+    /// Konsolide bulut yükleme ilerlemesini hesaplar.
+    /// Batch progress (0-100) değerini [CloudPhaseBase, 100] aralığına eşler.
+    /// Bulut fazı kendi monoton artış izleyicisini (_maxCloudPercent) kullanır;
+    /// global MaxPercent'in önceden şişmiş olması bulut ilerlemesini etkilemez.
     /// </summary>
-    /// <param name="progressPercent">Tek hedef upload yüzdesi (0-100).</param>
-    /// <param name="cloudTargetIndex">1 tabanlı hedef sırası.</param>
-    /// <param name="cloudTargetTotal">Toplam hedef sayısı.</param>
+    /// <param name="batchProgressPercent">Toplam batch yükleme yüzdesi (0-100).</param>
     /// <returns>Klamplanmış, monoton artan yüzde [0-100].</returns>
-    public int CalculateCloudUploadProgress(int progressPercent, int cloudTargetIndex, int cloudTargetTotal)
+    public int CalculateCloudUploadProgress(int batchProgressPercent)
     {
-        double overallCloudPct = progressPercent;
-        if (cloudTargetTotal > 1)
-            overallCloudPct = ((cloudTargetIndex - 1) * 100.0 + progressPercent) / cloudTargetTotal;
-
-        int cumPct;
-
-        if (DbTotal <= 0)
+        if (!IsConsolidatedCloudPhase)
         {
-            cumPct = progressPercent;
-        }
-        else if (IsFileBackupPhase)
-        {
-            bool isFileOnly = SqlDbCount == 0;
-            int fileBase = isFileOnly ? 0 : SqlRangeWithFileBackup;
-            int fileCopyWeight = isFileOnly ? 25 : 5;
-            int fileCloudWeight = isFileOnly ? 75 : 15;
-            cumPct = fileBase + fileCopyWeight + (int)(overallCloudPct / 100.0 * fileCloudWeight);
-        }
-        else
-        {
-            double totalSqlRange = HasFileBackup ? (double)SqlRangeWithFileBackup : SqlRangeWithoutFileBackup;
-            double slicePerDb = totalSqlRange / DbTotal;
-            double dbBase = (DbIndex - 1) * slicePerDb;
-
-            if (HasVssUpload)
-            {
-                double sqlPortion = slicePerDb * 0.20;
-                double mainCloudPortion = slicePerDb * 0.50;
-                double vssCloudPortion = slicePerDb * 0.30;
-
-                if (IsVssPhase)
-                    cumPct = (int)(dbBase + sqlPortion + mainCloudPortion + (overallCloudPct / 100.0) * vssCloudPortion);
-                else
-                    cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * mainCloudPortion);
-            }
-            else
-            {
-                double sqlPortion = slicePerDb * 0.30;
-                double cloudPortion = slicePerDb * 0.70;
-                cumPct = (int)(dbBase + sqlPortion + (overallCloudPct / 100.0) * cloudPortion);
-            }
+            Log.Warning(
+                "[ProgressTracker] CloudUploadProgress called but IsConsolidatedCloudPhase=false! " +
+                "batchPct={BatchPct}, MaxPercent={MaxPercent}",
+                batchProgressPercent, MaxPercent);
+            return MaxPercent;
         }
 
-        cumPct = Math.Max(cumPct, MaxPercent);
-        cumPct = Math.Clamp(cumPct, 0, 100);
-        MaxPercent = cumPct;
+        int cloudRange = 100 - CloudPhaseBase;
+        int cumPct = CloudPhaseBase + (int)(batchProgressPercent / 100.0 * cloudRange);
+        cumPct = Math.Max(cumPct, _maxCloudPercent);
+        cumPct = Math.Clamp(cumPct, CloudPhaseBase, 100);
+
+        // İlk birkaç cloud progress logla (tanılama için)
+        if (_maxCloudPercent == CloudPhaseBase || cumPct != _maxCloudPercent)
+        {
+            Log.Debug(
+                "[ProgressTracker] CloudUpload: batchPct={BatchPct}, base={Base}, range={Range}, " +
+                "cumPct={CumPct}, prevCloudMax={PrevCloud}, MaxPercent={MaxPercent}",
+                batchProgressPercent, CloudPhaseBase, cloudRange, cumPct, _maxCloudPercent, MaxPercent);
+        }
+
+        _maxCloudPercent = cumPct;
+        MaxPercent = Math.Max(cumPct, MaxPercent);
         return cumPct;
     }
 }

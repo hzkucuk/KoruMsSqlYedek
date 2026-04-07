@@ -43,9 +43,6 @@
     <!-- Cloud: Google Drive -->
     <PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3568" />
 
-    <!-- Cloud: Mega.io -->
-    <PackageReference Include="MegaApiClient" Version="1.10.5" />
-
     <!-- Cloud: FTP/SFTP -->
     <PackageReference Include="FluentFTP" Version="51.0.0" />
     <PackageReference Include="SSH.NET" Version="2025.1.0" />

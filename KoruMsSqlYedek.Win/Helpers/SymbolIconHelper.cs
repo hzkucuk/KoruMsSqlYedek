@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Drawing.Text;
+using System.IO;
 using System.Windows.Forms;
 
 namespace KoruMsSqlYedek.Win.Helpers
@@ -42,8 +44,7 @@ namespace KoruMsSqlYedek.Win.Helpers
             int effectiveSize = size > 0 ? size : TrayIconSize;
             using (var bitmap = RenderBitmap(symbol, effectiveSize, effectiveSize, foreColor, backColor))
             {
-                var hIcon = bitmap.GetHicon();
-                return Icon.FromHandle(hIcon);
+                return CloneIconFromBitmap(bitmap);
             }
         }
 
@@ -96,6 +97,17 @@ namespace KoruMsSqlYedek.Win.Helpers
         }
 
         /// <summary>
+        /// Bitmap'ten yönetilen (managed) Icon oluşturur — native handle sızıntısını önler.
+        /// </summary>
+        private static Icon CloneIconFromBitmap(Bitmap bitmap)
+        {
+            var hIcon = bitmap.GetHicon();
+            var icon = (Icon)Icon.FromHandle(hIcon).Clone();
+            NativeMethods.DestroyIcon(hIcon);
+            return icon;
+        }
+
+        /// <summary>
         /// Tray ikonu için varsayılan ikonunu oluşturur (DPI-aware).
         /// </summary>
         internal static Icon CreateTrayIcon()
@@ -128,8 +140,8 @@ namespace KoruMsSqlYedek.Win.Helpers
         }
 
         /// <summary>
-        /// Modern circular badge ikonu — gradient arka plan + beyaz sembol.
-        /// Koyu ve açık taskbar'larda yüksek kontrast sağlar.
+        /// Modern circular badge ikonu — flat gradient arka plan + beyaz sembol.
+        /// Windows 11 taskbar'da (koyu/açık) yüksek kontrast sağlar.
         /// </summary>
         private static Icon CreateBadgeIcon(string symbol, Color gradientTop, Color gradientBottom)
         {
@@ -138,39 +150,37 @@ namespace KoruMsSqlYedek.Win.Helpers
             using (var g = Graphics.FromImage(bitmap))
             {
                 g.SmoothingMode = SmoothingMode.HighQuality;
-                g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                 g.Clear(Color.Transparent);
 
-                float pad = size * 0.04f;
+                float pad = size * 0.06f;
                 var badgeRect = new RectangleF(pad, pad, size - pad * 2, size - pad * 2);
 
-                // Dış koyu halka (shadow/depth efekti)
-                using (var shadowPath = CreateRoundedRect(new RectangleF(0, 0.5f, size, size), size / 2f))
-                using (var shadowBrush = new SolidBrush(Color.FromArgb(80, 0, 0, 0)))
+                // Hafif dış gölge (modern flat stil)
+                using (var shadowPath = CreateRoundedRect(new RectangleF(pad, pad + 0.5f, badgeRect.Width, badgeRect.Height), badgeRect.Width / 2f))
+                using (var shadowBrush = new SolidBrush(Color.FromArgb(40, 0, 0, 0)))
                 {
                     g.FillPath(shadowBrush, shadowPath);
                 }
 
-                // Ana daire — gradient arka plan
+                // Ana daire — yumuşak gradient
                 using (var circlePath = CreateRoundedRect(badgeRect, badgeRect.Width / 2f))
                 using (var gradBrush = new LinearGradientBrush(
-                    badgeRect, gradientTop, gradientBottom, LinearGradientMode.ForwardDiagonal))
+                    badgeRect, gradientTop, gradientBottom, LinearGradientMode.Vertical))
                 {
                     g.FillPath(gradBrush, circlePath);
                 }
 
-                // İnce parlak kenar (iç highlight)
-                using (var innerRect = CreateRoundedRect(
-                    new RectangleF(pad + 0.5f, pad + 0.5f, badgeRect.Width - 1, badgeRect.Height - 1),
-                    (badgeRect.Width - 1) / 2f))
-                using (var highlightPen = new Pen(Color.FromArgb(60, 255, 255, 255), 0.7f))
+                // İnce yarı-şeffaf kenar (taskbar kontrastı)
+                using (var borderPath = CreateRoundedRect(badgeRect, badgeRect.Width / 2f))
+                using (var borderPen = new Pen(Color.FromArgb(80, 255, 255, 255), 0.8f))
                 {
-                    g.DrawPath(highlightPen, innerRect);
+                    g.DrawPath(borderPen, borderPath);
                 }
 
-                // Beyaz sembol
-                float fontSize = size * 0.52f;
+                // Beyaz sembol — gölgesiz, temiz
+                float fontSize = size * 0.50f;
                 string fontFamily = IsFontAvailable(PrimaryFontFamily) ? PrimaryFontFamily : FallbackFontFamily;
                 using (var font = new Font(fontFamily, fontSize, FontStyle.Regular, GraphicsUnit.Pixel))
                 {
@@ -180,13 +190,6 @@ namespace KoruMsSqlYedek.Win.Helpers
                         LineAlignment = StringAlignment.Center
                     };
 
-                    // Sembol gölgesi
-                    using (var sBrush = new SolidBrush(Color.FromArgb(60, 0, 0, 0)))
-                    {
-                        g.DrawString(symbol, font, sBrush,
-                            new RectangleF(0.5f, 0.5f, size, size), sf);
-                    }
-
                     using (var brush = new SolidBrush(Color.White))
                     {
                         g.DrawString(symbol, font, brush,
@@ -194,24 +197,23 @@ namespace KoruMsSqlYedek.Win.Helpers
                     }
                 }
 
-                var hIcon = bitmap.GetHicon();
-                return Icon.FromHandle(hIcon);
+                return CloneIconFromBitmap(bitmap);
             }
         }
 
         /// <summary>
-        /// Yedekleme animasyonu için modern dönen ark kareleri oluşturur.
-        /// Mavi gradient daire + üzerinde dönen beyaz ark (progress spinner).
+        /// Yedekleme animasyonu için modern dönen spinner kareleri oluşturur.
+        /// Windows 11 tarzı mavi daire + ince dönen beyaz ark (progress spinner).
         /// </summary>
         internal static Icon[] CreateAnimationFrames(int frameCount = 12)
         {
             int size = TrayIconSize;
             var frames = new Icon[frameCount];
-            float sweepAngle = 270f;
+            float sweepAngle = 120f;  // Daha kısa ark — modern spinner stili
             float step = 360f / frameCount;
 
-            Color bgTop = Color.FromArgb(33, 150, 243);
-            Color bgBottom = Color.FromArgb(13, 71, 161);
+            Color bgTop = Color.FromArgb(56, 152, 236);   // Windows 11 accent blue
+            Color bgBottom = Color.FromArgb(24, 90, 189);
 
             for (int i = 0; i < frameCount; i++)
             {
@@ -222,39 +224,46 @@ namespace KoruMsSqlYedek.Win.Helpers
                     g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                     g.Clear(Color.Transparent);
 
-                    float pad = size * 0.04f;
+                    float pad = size * 0.06f;
                     var badgeRect = new RectangleF(pad, pad, size - pad * 2, size - pad * 2);
 
-                    // Arka plan dairesi
+                    // Arka plan dairesi — yumuşak gradient
                     using (var circlePath = CreateRoundedRect(badgeRect, badgeRect.Width / 2f))
                     using (var gradBrush = new LinearGradientBrush(
-                        badgeRect, bgTop, bgBottom, LinearGradientMode.ForwardDiagonal))
+                        badgeRect, bgTop, bgBottom, LinearGradientMode.Vertical))
                     {
                         g.FillPath(gradBrush, circlePath);
                     }
 
-                    // Dönen ark — yarı-şeffaf beyaz track
-                    float arcPad = size * 0.18f;
-                    var arcRect = new RectangleF(arcPad, arcPad, size - arcPad * 2, size - arcPad * 2);
+                    // Kenar — yarı şeffaf beyaz
+                    using (var borderPath = CreateRoundedRect(badgeRect, badgeRect.Width / 2f))
+                    using (var borderPen = new Pen(Color.FromArgb(50, 255, 255, 255), 0.6f))
+                    {
+                        g.DrawPath(borderPen, borderPath);
+                    }
 
-                    using (var trackPen = new Pen(Color.FromArgb(40, 255, 255, 255), Math.Max(size * 0.1f, 1.5f)))
+                    // Dönen ark — ince yarı-şeffaf beyaz track (360°)
+                    float arcPad = size * 0.20f;
+                    var arcRect = new RectangleF(arcPad, arcPad, size - arcPad * 2, size - arcPad * 2);
+                    float arcThickness = Math.Max(size * 0.09f, 1.5f);
+
+                    using (var trackPen = new Pen(Color.FromArgb(35, 255, 255, 255), arcThickness))
                     {
                         trackPen.StartCap = LineCap.Round;
                         trackPen.EndCap = LineCap.Round;
                         g.DrawArc(trackPen, arcRect, 0, 360);
                     }
 
-                    // Aktif dönen ark — parlak beyaz
+                    // Aktif dönen ark — parlak beyaz, kısa yay
                     float startAngle = i * step - 90;
-                    using (var arcPen = new Pen(Color.FromArgb(240, 255, 255, 255), Math.Max(size * 0.12f, 2f)))
+                    using (var arcPen = new Pen(Color.FromArgb(230, 255, 255, 255), arcThickness))
                     {
                         arcPen.StartCap = LineCap.Round;
                         arcPen.EndCap = LineCap.Round;
                         g.DrawArc(arcPen, arcRect, startAngle, sweepAngle);
                     }
 
-                    var hIcon = bitmap.GetHicon();
-                    frames[i] = Icon.FromHandle(hIcon);
+                    frames[i] = CloneIconFromBitmap(bitmap);
                 }
             }
 
@@ -299,8 +308,7 @@ namespace KoruMsSqlYedek.Win.Helpers
                     }
                 }
 
-                var hIcon = bitmap.GetHicon();
-                return Icon.FromHandle(hIcon);
+                return CloneIconFromBitmap(bitmap);
             }
         }
 
@@ -323,6 +331,57 @@ namespace KoruMsSqlYedek.Win.Helpers
             {
                 return string.Equals(testFont.Name, familyName, StringComparison.OrdinalIgnoreCase);
             }
+        }
+
+        /// <summary>
+        /// Gömülü animated GIF dosyasından tray ikonu boyutuna uygun Icon[] çıkarır.
+        /// </summary>
+        /// <param name="gifResourceName">Embedded resource adı (örn. "CloudSync.gif")</param>
+        internal static Icon[] ExtractGifFrames(string gifResourceName)
+        {
+            var asm = typeof(SymbolIconHelper).Assembly;
+            string fullName = $"KoruMsSqlYedek.Win.Resources.TrayIcons.{gifResourceName}";
+            using var stream = asm.GetManifestResourceStream(fullName);
+            if (stream is null)
+                return CreateAnimationFrames(); // Fallback — spinner
+
+            return ExtractGifFramesFromStream(stream);
+        }
+
+        /// <summary>
+        /// Stream'den animated GIF karelerini tray ikonu boyutuna ölçekleyerek Icon[] döndürür.
+        /// </summary>
+        private static Icon[] ExtractGifFramesFromStream(Stream stream)
+        {
+            int targetSize = TrayIconSize;
+
+            using var gif = Image.FromStream(stream);
+            var dimension = new FrameDimension(gif.FrameDimensionsList[0]);
+            int frameCount = gif.GetFrameCount(dimension);
+
+            if (frameCount <= 0)
+                return CreateAnimationFrames(); // Fallback
+
+            var frames = new Icon[frameCount];
+
+            for (int i = 0; i < frameCount; i++)
+            {
+                gif.SelectActiveFrame(dimension, i);
+
+                using var resized = new Bitmap(targetSize, targetSize);
+                using (var g = Graphics.FromImage(resized))
+                {
+                    g.SmoothingMode = SmoothingMode.HighQuality;
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.Clear(Color.Transparent);
+                    g.DrawImage(gif, 0, 0, targetSize, targetSize);
+                }
+
+                frames[i] = CloneIconFromBitmap(resized);
+            }
+
+            return frames;
         }
     }
 

@@ -123,11 +123,9 @@
             _nudKeepLastN = new Theme.ModernNumericUpDown();
             _lblDeleteDays = new System.Windows.Forms.Label();
             _nudDeleteDays = new Theme.ModernNumericUpDown();
-            _lblStep4PwHeader = new System.Windows.Forms.Label();
-            _lblPlanPasswordStatus = new System.Windows.Forms.Label();
-            _lblPlanPassword = new System.Windows.Forms.Label();
+            _chkProtectPlan = new System.Windows.Forms.CheckBox();
             _txtPlanPassword = new System.Windows.Forms.TextBox();
-            _btnRemovePlanPassword = new Theme.ModernButton();
+            _txtRecoveryPassword = new System.Windows.Forms.TextBox();
 
             // ========== STEP 5: Hedefler (Bulut/Uzak) ==========
             _lblStep5Header = new System.Windows.Forms.Label();
@@ -424,24 +422,24 @@
 
             ConfigLabel(_lblFullCron, "Tam Yedek Görevi:", lx, y, step3);
             _cronFull.Location = new System.Drawing.Point(tx, y);
-            _cronFull.Size = new System.Drawing.Size(tw, 100);
+            _cronFull.Size = new System.Drawing.Size(tw, 80);
             _toolTip.SetToolTip(_cronFull, "Tam yedeğin çalışacağı zamanı belirleyin.\nTüm veritabanı verisini içerir — geri yüklemede tek başına yeterli.\nÖneri: Haftada 1 (örn. Pazar gece 02:00)");
             step3.Controls.Add(_cronFull);
-            y += 90;
+            y += 84;
 
             ConfigLabel(_lblDiffCron, "Fark Yedek Görevi:", lx, y, step3);
             _cronDiff.Location = new System.Drawing.Point(tx, y);
-            _cronDiff.Size = new System.Drawing.Size(tw, 100);
+            _cronDiff.Size = new System.Drawing.Size(tw, 80);
             _toolTip.SetToolTip(_cronDiff, "Son tam yedekten bu yana değişen verileri yedekler.\nGeri yüklemede: Tam + son Fark yedek gerekir.\nÖneri: Günde 1 (örn. her gece 02:00)");
             step3.Controls.Add(_cronDiff);
-            y += 90;
+            y += 84;
 
             ConfigLabel(_lblIncrCron, "Artırımlı Görevi:", lx, y, step3);
             _cronIncr.Location = new System.Drawing.Point(tx, y);
-            _cronIncr.Size = new System.Drawing.Size(tw, 100);
+            _cronIncr.Size = new System.Drawing.Size(tw, 80);
             _toolTip.SetToolTip(_cronIncr, "Son yedekten (tam veya artırımlı) bu yana\ndeğişen verileri yedekler. En küçük boyut.\nGeri yüklemede: Tam + Fark + tüm Artırımlı zincir gerekir.\nÖneri: Saatte 1 (örn. mesai saatleri 09-18)");
             step3.Controls.Add(_cronIncr);
-            y += 96;
+            y += 86;
 
             ConfigLabel(_lblAutoPromote, "Oto. Tam Yedek Eşiği:", lx, y, step3);
             _nudAutoPromote.Location = new System.Drawing.Point(tx, y);
@@ -476,9 +474,12 @@
             step3.Controls.Add(_lblStep3FileSchedHeader);
             y += 26;
 
+            // Dosya yedekleme her zaman Tam (Full) — strateji seçimi kaldırıldı
+            y += 36;
+
             ConfigLabel(_lblFileSchedule, "Dosya Görevi:", lx, y, step3);
             _cronFileSchedule.Location = new System.Drawing.Point(tx, y);
-            _cronFileSchedule.Size = new System.Drawing.Size(tw, 100);
+            _cronFileSchedule.Size = new System.Drawing.Size(tw, 80);
             _toolTip.SetToolTip(_cronFileSchedule, "Dosya yedekleme görevinin çalışacağı zamanı belirleyin.\nSQL yedek görevinden bağımsız çalışır.\nAdım 2'de tanımlanan dosya kaynakları bu zamanda yedeklenir.\nÖneri: Günde 1 (örn. her gece 03:00)");
             step3.Controls.Add(_cronFileSchedule);
 
@@ -557,33 +558,32 @@
             step4.Controls.Add(_nudDeleteDays);
             y += 48;
 
-            _lblStep4PwHeader.Text = "\U0001f512 Plan \u015eifre Korumas\u0131";
-            _lblStep4PwHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep4PwHeader.ForeColor = Theme.ModernTheme.AccentPrimary;
-            _lblStep4PwHeader.AutoSize = true;
-            _lblStep4PwHeader.Location = new System.Drawing.Point(lx, y);
-            step4.Controls.Add(_lblStep4PwHeader);
-            y += 28;
+            _chkProtectPlan.AutoSize = true;
+            _chkProtectPlan.Location = new System.Drawing.Point(lx, y);
+            _chkProtectPlan.Text = "\U0001f512 Bu g\u00f6revi \u015fifre ile koru";
+            _chkProtectPlan.Font = new System.Drawing.Font("Segoe UI", 10F);
+            _chkProtectPlan.ForeColor = Theme.ModernTheme.TextPrimary;
+            _chkProtectPlan.CheckedChanged += OnProtectPlanChanged;
+            _toolTip.SetToolTip(_chkProtectPlan, "\u0130\u015faretlerseniz plan d\u00fczenleme ve silme i\u015flemlerinde \u015fifre sorulur.");
+            step4.Controls.Add(_chkProtectPlan);
+            y += 30;
 
-            _lblPlanPasswordStatus.AutoSize = true;
-            _lblPlanPasswordStatus.Location = new System.Drawing.Point(lx, y);
-            _lblPlanPasswordStatus.ForeColor = Theme.ModernTheme.TextSecondary;
-            step4.Controls.Add(_lblPlanPasswordStatus);
-            y += 28;
-
-            ConfigLabel(_lblPlanPassword, "Yeni \u015eifre:", lx, y, step4);
-            _txtPlanPassword.Location = new System.Drawing.Point(tx, y);
-            _txtPlanPassword.Size = new System.Drawing.Size(tw - 120, 23);
+            _txtPlanPassword.Location = new System.Drawing.Point(lx + 24, y);
+            _txtPlanPassword.Size = new System.Drawing.Size(tw, 23);
             _txtPlanPassword.UseSystemPasswordChar = true;
-            _toolTip.SetToolTip(_txtPlanPassword, "Bu plana \u00f6zel \u015fifre belirleyin.\nPlan d\u00fczenleme ve silme i\u015flemlerinde sorulur.\nBo\u015f b\u0131rak\u0131rsan\u0131z mevcut \u015fifre korunur.");
+            _txtPlanPassword.PlaceholderText = "\u015eifre girin...";
+            _txtPlanPassword.Visible = false;
+            _toolTip.SetToolTip(_txtPlanPassword, "Plan d\u00fczenleme ve silme i\u015flemlerinde sorulacak \u015fifre.");
             step4.Controls.Add(_txtPlanPassword);
+            y += 28;
 
-            _btnRemovePlanPassword.Location = new System.Drawing.Point(tx + tw - 110, y);
-            _btnRemovePlanPassword.Size = new System.Drawing.Size(110, 26);
-            _btnRemovePlanPassword.Text = "\u015eifreyi Kald\u0131r";
-            _btnRemovePlanPassword.Click += OnRemovePlanPasswordClick;
-            _toolTip.SetToolTip(_btnRemovePlanPassword, "Mevcut plan \u015fifresini kald\u0131r\u0131r.");
-            step4.Controls.Add(_btnRemovePlanPassword);
+            _txtRecoveryPassword.Location = new System.Drawing.Point(lx + 24, y);
+            _txtRecoveryPassword.Size = new System.Drawing.Size(tw, 23);
+            _txtRecoveryPassword.UseSystemPasswordChar = true;
+            _txtRecoveryPassword.PlaceholderText = "Kurtarma \u015fifresi (iste\u011fe ba\u011fl\u0131)...";
+            _txtRecoveryPassword.Visible = false;
+            _toolTip.SetToolTip(_txtRecoveryPassword, "Plan \u015fifresini unutursan\u0131z bu \u015fifre ile eri\u015fim sa\u011flayabilirsiniz.");
+            step4.Controls.Add(_txtRecoveryPassword);
 
             // ===================================================================
             // STEP 5: Hedefler (Bulut / Uzak)
@@ -599,7 +599,7 @@
             step5.Controls.Add(_lblStep5Header);
             y += 26;
 
-            _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri yönetin.\nGoogle Drive, Mega.io, FTP/SFTP ve UNC a\u011f paylas\u0131m\u0131 desteklenir.";
+            _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri yönetin.\nGoogle Drive, FTP/SFTP ve UNC a\u011f paylas\u0131m\u0131 desteklenir.";
             _lblStep5Hint.AutoSize = true;
             _lblStep5Hint.ForeColor = Theme.ModernTheme.TextSecondary;
             _lblStep5Hint.Location = new System.Drawing.Point(lx, y);
@@ -760,13 +760,13 @@
             _btnSave.Dock = System.Windows.Forms.DockStyle.Right;
             _btnSave.Click += OnSaveClick;
 
-            _btnNext.Text = "\u0130leri \u25ba";
+            _btnNext.Text = "\u0130leri";
             _btnNext.ButtonStyle = Theme.ModernButtonStyle.Primary;
             _btnNext.Size = new System.Drawing.Size(100, 34);
             _btnNext.Dock = System.Windows.Forms.DockStyle.Right;
             _btnNext.Click += OnNextClick;
 
-            _btnBack.Text = "\u25c4 Geri";
+            _btnBack.Text = "Geri";
             _btnBack.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnBack.Size = new System.Drawing.Size(100, 34);
             _btnBack.Dock = System.Windows.Forms.DockStyle.Right;
@@ -793,12 +793,13 @@
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             BackColor = Theme.ModernTheme.BackgroundColor;
-            ClientSize = new System.Drawing.Size(760, 680);
+            ClientSize = new System.Drawing.Size(760, 740);
+            MinimumSize = new System.Drawing.Size(780, 700);
             Controls.Add(_pnlContent);
             Controls.Add(_pnlStepIndicator);
             Controls.Add(_pnlNavigation);
             Font = Theme.ModernTheme.FontBody;
-            FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "PlanEditForm";
@@ -915,11 +916,9 @@
         private Theme.ModernNumericUpDown _nudKeepLastN;
         private System.Windows.Forms.Label _lblDeleteDays;
         private Theme.ModernNumericUpDown _nudDeleteDays;
-        private System.Windows.Forms.Label _lblStep4PwHeader;
-        private System.Windows.Forms.Label _lblPlanPasswordStatus;
-        private System.Windows.Forms.Label _lblPlanPassword;
+        private System.Windows.Forms.CheckBox _chkProtectPlan;
         private System.Windows.Forms.TextBox _txtPlanPassword;
-        private Theme.ModernButton _btnRemovePlanPassword;
+        private System.Windows.Forms.TextBox _txtRecoveryPassword;
 
         // Step 5: Hedefler
         private System.Windows.Forms.Label _lblStep5Header;

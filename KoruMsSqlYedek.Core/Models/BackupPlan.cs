@@ -105,8 +105,19 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("passwordHash", NullValueHandling = NullValueHandling.Ignore)]
         public string PasswordHash { get; set; }
 
+        /// <summary>
+        /// Kurtarma şifresi (SHA256 hash, DPAPI ile korumalı).
+        /// Plan şifresi unutulduğunda bu şifre ile erişim sağlanır.
+        /// </summary>
+        [JsonProperty("recoveryPasswordHash", NullValueHandling = NullValueHandling.Ignore)]
+        public string RecoveryPasswordHash { get; set; }
+
         /// <summary>Plan bazlı şifre tanımlı mı?</summary>
         [JsonIgnore]
         public bool HasPlanPassword => !string.IsNullOrEmpty(PasswordHash);
+
+        /// <summary>Kurtarma şifresi tanımlı mı?</summary>
+        [JsonIgnore]
+        public bool HasRecoveryPassword => !string.IsNullOrEmpty(RecoveryPasswordHash);
     }
 }

@@ -10,17 +10,21 @@
 
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
-#define MyAppVersion "0.76.0"
+#define MyAppVersion "0.94.0"
 #define MyAppPublisher "HZK"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"
 #define MyServiceExeName "KoruMsSqlYedek.Service.exe"
 #define MyServiceName "KoruMsSqlYedekService"
 
-; Publish klasörleri (Build-Release.ps1 çıktısı)
-; Bu yolları kendi ortamınıza göre güncelleyin
-#define WinPublishDir "..\publish\Win"
-#define ServicePublishDir "..\publish\Service"
+; Publish klasörleri — Build-Release.ps1 tarafından /D parametresiyle geçilir.
+; Manuel derleme için: ISCC.exe KoruMsSqlYedek.iss /DWinPublishDir=...absolute... /DServicePublishDir=...absolute...
+#ifndef WinPublishDir
+  #define WinPublishDir "..\..\publish\Win"
+#endif
+#ifndef ServicePublishDir
+  #define ServicePublishDir "..\..\publish\Service"
+#endif
 
 [Setup]
 AppId={{8F2C7A1E-3D5B-4E6F-A8C9-1B2D3E4F5A6B}
@@ -133,8 +137,8 @@ Filename: "sc.exe"; Parameters: "config {#MyServiceName} obj= ""LocalSystem"""; 
 Filename: "sc.exe"; Parameters: "description {#MyServiceName} ""Koru MsSql Yedek — SQL Server Yedekleme & Bulut Senkronizasyon Servisi"""; Components: service; Flags: runhidden waituntilterminated
 ; Servisi başlat
 Filename: "sc.exe"; Parameters: "start {#MyServiceName}"; StatusMsg: "{cm:ServiceStart}"; Components: service; Flags: runhidden waituntilterminated
-; İsteğe bağlı: Kurulum sonrası Tray uygulamasını başlat
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: nowait postinstall skipifsilent
+; İsteğe bağlı: Kurulum sonrası Tray uygulamasını başlat (asInvoker — normal kullanıcı olarak)
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall skipifsilent
 
 [UninstallRun]
 ; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)

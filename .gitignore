@@ -370,4 +370,4 @@ MigrationBackup/
 FodyWeavers.xsd
 # Build/Publish output
 publish/
-installer/output/
+releases/

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace KoruMsSqlYedek.Core.Events
 {
@@ -10,6 +11,7 @@ namespace KoruMsSqlYedek.Core.Events
         CloudUploadStarted,   // Bir bulut hedefine upload başladı
         CloudUploadProgress,  // Upload yüzdesi güncellendi
         CloudUploadCompleted, // Bir bulut hedefine upload bitti
+        CloudUploadAbandoned, // Maks deneme aşıldı, dosya terk edildi
         Completed,
         Failed,
         Cancelled
@@ -39,6 +41,17 @@ namespace KoruMsSqlYedek.Core.Events
         public long SpeedBytesPerSecond { get; set; }
 
         /// <summary>
+        /// Toplu bulut yüklemede şu an yüklenen dosyanın adı.
+        /// </summary>
+        public string CloudFileName { get; set; }
+
+        /// <summary>Toplu bulut yüklemede kaçıncı dosya (1 tabanlı).</summary>
+        public int CloudFileIndex { get; set; }
+
+        /// <summary>Toplu bulut yüklemede toplam dosya sayısı.</summary>
+        public int CloudFileTotal { get; set; }
+
+        /// <summary>
         /// Plan bu çalışmada dosya yedekleme fazı içeriyorsa true.
         /// İlerleme çubuğu hesabında SQL ve dosya arasında ağırlık dağılımı yapar.
         /// </summary>
@@ -57,6 +70,12 @@ namespace KoruMsSqlYedek.Core.Events
         /// Varsayılan true — plan bilgisi yoksa her zaman göster.
         /// </summary>
         public bool ToastEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Maks deneme aşılarak terk edilen dosya bilgileri.
+        /// CloudUploadAbandoned olaylarında doldurulur.
+        /// </summary>
+        public List<string> AbandonedFiles { get; set; }
     }
 
     /// <summary>

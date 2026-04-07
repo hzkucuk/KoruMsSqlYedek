@@ -1,4 +1,485 @@
-﻿## [0.76.0] - 2026-04-06 — Servis Veri Yolu Düzeltmesi & DPAPI Migrasyon
+﻿## [0.94.0] - 2026-04-07 — Mega.io Kaldırma, Sekme Geçiş Seçimi, CLAUDE.md
+
+### Kaldırılan
+- **Mega.io bulut desteği tamamen kaldırıldı** — MegaProvider.cs, MegaProvider.Operations.cs silinip enum/factory/UI/test/dökümantasyondan tüm referanslar temizlendi. MegaApiClient NuGet paketi kaldırıldı.
+- **Eski installer klasörü kaldırıldı** — `installer/build.ps1`, `installer/setup.iss` ve eski Setup.exe temizlendi. Güncel yapı `Deployment/` altında.
+
+### Düzeltmeler
+- **Sekme geçişinde görev seçimi korunuyor** — Planlar sekmesine geri dönüldüğünde `_viewingPlanId` ile önceki seçim restore ediliyor (eskiden ilk satıra sıfırlanıyordu).
+- **Build-Release.ps1 PowerShell 5.1 uyumu** — `?.Source` null-conditional operatörü `if ($cmd) { $cmd.Source }` ile değiştirildi.
+- **`.gitignore` güncellendi** — `installer/output/` → `releases/`.
+
+### Eklenen
+- **CLAUDE.md** — Claude Code için proje rehberi oluşturuldu.
+
+---
+
+## [0.93.0] - 2026-04-07 — Paralel Görev UI Senkron, Express Sıkıştırma, Dosya Strateji Kaldırma
+
+### Yeni Özellikler
+- **Paralel görev UI senkronizasyonu** — Görev listesinde plan seçildiğinde tüm kontroller (progress bar, log, butonlar) seçili plana göre güncellenir. Başlat/İptal butonları yanlış görevi etkilemez.
+- **SQL native sıkıştırma (non-Express)** — SQL Server Standard/Enterprise'da `WITH COMPRESSION` ile daha küçük .bak dosyaları oluşturulur. Express'te otomatik atlanır.
+- **VSS detayları e-postada** — Başarılı yedekleme bildiriminde VSS dosya kopyası detayları (dosya adı, boyut) ayrı tabloda gösterilir.
+
+### Düzeltme
+- **Kısmi başarısızlıkta e-posta gönderilmiyordu** — Exception/iptal durumunda `SendConsolidatedNotificationAsync` çağrılmıyordu. Artık catch bloklarında da bildirim gönderilir.
+- **İptal butonu yanlış görevi sonlandırıyordu** — `_viewingPlanId` fallback'i kaldırıldı, sadece grid'de seçili plan iptal edilir.
+
+### Kaldırılan
+- **Dosya yedekleme stratejisi (Fark/Artırımlı)** — `FileBackupStrategy` enum, `FileBackupManifestManager` sınıfı, manifest dosyaları (file_full.json, file_last.json) ve UI kontrolleri kaldırıldı. Dosya yedekleme artık her zaman Tam (Full) yedek alır.
+
+### Etkilenen Dosyalar
+- `FileBackupModels.cs` — FileBackupStrategy enum, Strategy property, BackedUpFilePaths kaldırıldı
+- `FileBackupManifestManager.cs` — Dosya silindi
+- `FileBackupService.cs` — Manifest mantığı kaldırıldı, sadeleştirildi
+- `BackupJobExecutor.FilePipeline.cs` — Strateji etiketi kaldırıldı
+- `BackupJobExecutor.cs` — Catch bloklarına bildirim eklendi, logLines/jobStartedAt dış scope'a taşındı
+- `SqlBackupService.cs` — Express kontrolü ile CompressionOption.On eklendi
+- `EmailNotificationService.JobNotification.cs` — VSS detay tablosu eklendi
+- `MainWindow.Plans.cs` — OnPlanGridSelectionChanged: _viewingPlanId güncelleme + RestoreProgressBarForPlan
+- `MainWindow.BackupActivity.cs` — UpdatePlanRowProgress: _planProgress dictionary kaydı, Started handler düzeltmesi
+- `MainWindow.BackupExecution.cs` — OnCancelBackupClick: _viewingPlanId fallback kaldırıldı
+- `PlanEditForm.PlanBinding.cs` — Strateji combobox kaldırıldı
+- `PlanEditForm.Designer.cs` — _cmbFileStrategy/_lblFileStrategy kontrolleri kaldırıldı
+- `PlanEditForm.Visibility.cs` — Strateji görünürlük kaldırıldı
+
+---
+
+## [0.92.2] - 2026-06-28 — Progress Bar %100 Hatası Kesin Düzeltme + Diagnostik Loglama
+
+### Düzeltme
+- **Progress bar Completed öncesi asla %100 göstermez** — Tüm ara hesaplamalar (DatabaseProgress, StepChanged, CloudUploadProgress) artık Math.Min(pct, 99) ile sınırlanıyor. Sadece Completed eventi %100 ayarlıyor.
+- **StartConsolidatedCloudPhase artık expectedBase kullanıyor** — CloudPhaseBase = expectedBase (ağırlık modelinin deterministik değeri). MaxPercent şişmesine karşı bağışık.
+- **Progress bar bulut yükleme metni düzeltildi** — Bar metni artık ham batch yüzdesini (e.ProgressPercent) gösteriyor, kümülatif değil.
+
+### Diagnostik
+- PlanProgressTracker: 6 metoda Serilog debug loglama eklendi (StartConsolidatedCloudPhase, CalculateDatabaseProgress, CalculateLocalStepProgress, CalculateCloudUploadProgress, CalculateFileBackupPhaseStart, CalculateFileSourceProgress)
+- MainWindow.BackupActivity: Tüm _progressBar.Value atamalarına debug loglama eklendi
+- Sonraki çalıştırmada kök neden kesin olarak tespit edilecek
+
+### Test
+- 2 test güncellendi (CloudPhaseBase artık expectedBase kullanıyor): StartConsolidatedCloudPhase_RecordsBasePercent, CloudUpload_Consolidated_WeightDistribution_SqlOnly
+- 56 test geçiyor
+
+### Etkilenen Dosyalar
+- `PlanProgressTracker.cs` — StartConsolidatedCloudPhase fix + 6 metoda diagnostik loglama
+- `MainWindow.BackupActivity.cs` — Safety cap (99) + diagnostik loglama + bar metin düzeltmesi
+- `PlanProgressTrackerTests.cs` — 2 test güncellendi
+
+---
+
+## [0.92.1] - 2026-06-27 — Progress Bar Bulut Yükleme Sırasında %100 Gösterme Hatası Düzeltildi
+
+### Düzeltme
+- **Progress bar bulut yükleme sırasında %100 gösteriyordu** — Bulut yükleme %11 iken progress bar %100 gösteriyordu. Kök neden: `CalculateCloudUploadProgress` global `MaxPercent` değerini taban olarak kullanıyordu (`Math.Max(cumPct, MaxPercent)`). MaxPercent herhangi bir nedenle şiştiğinde bulut ilerlemesi hep 100 dönerdi.
+- **3 katmanlı savunma düzeltmesi:**
+  1. `CloudPhaseBase` artık ağırlık modelinin beklenen tavanı ile sınırlanıyor (`Math.Min(MaxPercent, expectedBase)`)
+  2. Bulut fazı kendi monoton artış izleyicisini (`_maxCloudPercent`) kullanıyor — global `MaxPercent` şişmesinden etkilenmiyor
+  3. `CalculateLocalStepProgress` bulut fazı sırasında devre dışı (`IsConsolidatedCloudPhase` guard)
+
+### Test
+- 4 yeni test eklendi (56 toplam):
+  - `CloudUpload_InflatedMaxPercent_DoesNotCorruptCloudProgress`
+  - `CloudUpload_InflatedMaxPercent_SqlOnlyPlan_CappedTo40`
+  - `CloudUpload_InflatedMaxPercent_FileOnlyPlan_CappedTo25`
+  - `LocalStepProgress_InConsolidatedCloudPhase_ReturnsMinusOne`
+
+### Etkilenen Dosyalar
+- `PlanProgressTracker.cs` — 3 katmanlı savunma: CloudPhaseBase cap, _maxCloudPercent, IsConsolidatedCloudPhase guard
+- `PlanProgressTrackerTests.cs` — 4 yeni test
+
+---
+
+## [0.92.0] - 2026-06-27 — Konsolide Bulut Yükleme: Tek Seferde Toplu Upload
+
+### Yeni Özellik
+- **SQL ve dosya yedeklerinin bulut yüklemeleri tek bir toplu fazda birleştirildi** — Daha önce her SQL veritabanı yedeklemesinden sonra ayrı ayrı buluta yükleniyor ve dosya yedekleri de ayrı bir fazda yükleniyordu. Artık tüm yedek dosyaları (SQL + dosya) yerel işlemler tamamlandıktan sonra tek bir toplu fazda buluta gönderiliyor.
+- **UploadBatchToAllAsync**: CloudUploadOrchestrator'a yeni toplu yükleme metodu eklendi — tüm dosyaları tüm hedeflere sırayla yükler, kümülatif byte-bazlı ilerleme raporlar
+- **UploadAllPendingAsync**: BackupJobExecutor'a konsolide yükleme yardımcı metodu eklendi — SQL pending uploads + dosya arşivini birleştirip toplu yüklemeye gönderir
+- **PlanProgressTracker konsolide model**: Yeni ağırlık modeli — SQL lokal → Dosya lokal → Konsolide bulut fazı. Progress bar artık %100'e ulaşır
+- **CloudFileName / CloudFileIndex / CloudFileTotal**: BackupActivityEventArgs'a yeni özellikler — hangi dosyanın yüklendiği ve toplam dosya sayısı UI'da gösterilir
+- **ICloudUploadOrchestrator**: UploadBatchToAllAsync interface metodu eklendi
+
+### Düzeltme
+- **Progress bar %100'e ulaşmıyordu** — Ayrı SQL ve dosya bulut fazları arasındaki ağırlık model karmaşıklığı nedeniyle progress bar %100'e ulaşamıyordu. Konsolide model ile düzeltildi.
+
+### Etkilenen Dosyalar
+- `BackupActivityEvent.cs` — CloudFileName, CloudFileIndex, CloudFileTotal eklendi
+- `ICloudUploadOrchestrator.cs` — UploadBatchToAllAsync eklendi
+- `CloudUploadOrchestrator.cs` — UploadBatchToAllAsync implementasyonu
+- `BackupJobExecutor.SqlPipeline.cs` — Bulut yükleme kaldırıldı, pending uploads döndürüyor
+- `BackupJobExecutor.FilePipeline.cs` — Bulut yükleme kaldırıldı, arşiv yolu döndürüyor
+- `BackupJobExecutor.Helpers.cs` — UploadAllPendingAsync eklendi
+- `BackupJobExecutor.cs` — Execute() konsolide pipeline'a yeniden bağlandı
+- `PlanProgressTracker.cs` — Konsolide bulut ağırlık modeli
+- `MainWindow.BackupActivity.cs` — Konsolide bulut fazı UI desteği
+- `PlanProgressTrackerTests.cs` — Konsolide model testleri
+
+## [0.91.0] - 2026-06-26 — Büyük Dosya Refactoring: Partial Class Ayrımı
+
+### Yeni Özellik
+- **12 büyük dosya partial class'lara ayrıldı** — Kod okunabilirliği ve bakım kolaylığı için tüm büyük dosyalar mantıksal birimlere bölündü:
+  1. `MainWindow.cs` (2197→350 satır) + 6 partial: Dashboard, Plans, BackupExecution, BackupActivity, LogViewer, Settings
+  2. `BackupJobExecutor.cs` (1043→278 satır) + 3 partial: SqlPipeline, FilePipeline, Helpers
+  3. `EmailNotificationService.cs` (956→126 satır) + 4 partial: SqlNotification, FileNotification, CloudNotification, JobNotification
+  4. `PlanEditForm.cs` (959→129 satır) + 4 partial: WizardNavigation, PlanBinding, CloudAndFileSources, Visibility
+  5. `TrayApplicationContext.cs` (788→307 satır) + 3 partial: ServiceControl, BackupActivity, UpdateCheck
+  6. `SqlBackupService.cs` (877→186 satır) + 3 partial: Operations, VssBackup, Helpers
+  7. `FileSystemCheckedTreeView.cs` (928→321 satır) + 3 partial: NodeLoading, Filtering, SizeCalculation
+  8. `CloudUploadOrchestrator.cs` (638→234 satır) + 2 partial: CloudOperations, RetryAndRecovery
+  9. `MegaProvider.cs` (629→261 satır) + 1 partial: Operations (4 kritik pattern korundu)
+  10. `GoogleDriveProvider.cs` (608→238 satır) + 1 partial: Operations
+  11. `FtpSftpProvider.cs` (594→226 satır) + 2 partial: Ftp, Sftp
+  12. `FileBackupService.cs` (523→288 satır) + 2 partial: CopyAndVerify, FileCollection
+- Toplam **30+ yeni partial dosya** oluşturuldu
+- Tüm mevcut davranış ve public API'ler korundu, breaking change yok
+
+## [0.90.3] - 2026-06-25 — IsSuccess Hesaplama Düzeltmesi
+
+### Düzeltme
+- **E-posta bildirimi SQL/dosya başarısızlığında "Başarılı" gösteriyordu** — `IsSuccess` hesaplaması yalnızca bulut upload sonucunu kontrol ediyordu. SQL yedekleme veya dosya yedekleme başarısız olduğunda bile bildirim "Başarılı" olarak gönderiliyordu. `overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed` formülü ile düzeltildi. Her iki yol da (SQL+Dosya ve sadece Dosya) güncellenip test edildi.
+
+## [0.90.2] - 2026-06-24 — ListView Grup Expand/Collapse P/Invoke Düzeltmesi
+
+### Düzeltme
+- **ListView grup expand/collapse çalışmıyordu** — .NET'in `ShowGroups` setter'ı `value == current` ise `LVM_ENABLEGROUPVIEW` mesajını göndermiyordu. `Groups.Clear()` sonrası grup görünümü kayboluyordu. `ListViewHeaderPainter.EnableGroupView()` ile doğrudan P/Invoke üzerinden `LVM_ENABLEGROUPVIEW(TRUE)` gönderilerek düzeltildi. ShowGroups force-toggle + P/Invoke belt-and-suspenders yaklaşımı ile her çağrıda garanti edildi.
+
+## [0.90.1] - 2026-06-24 — ListView Grup Görünümü Kök Neden Düzeltmesi
+
+### Düzeltme
+- **ListView grupları görünmüyordu (kök neden)** — `ShowGroups = true` atandığında `Groups.Count == 0` olduğu için .NET dahili olarak `LVM_ENABLEGROUPVIEW(FALSE)` gönderiyordu. `ShowGroups` ataması, gruplar eklendikten sonraya taşınarak düzeltildi. Collapsible grup başlıkları artık doğru çalışıyor.
+
+## [0.90.0] - 2026-06-23 — ListView Grup Başlıkları + SMTP Profil Ekleme
+
+### Düzeltme
+- **ListView grup başlıkları görünmüyor** — `SetWindowTheme("DarkMode_Explorer")` uygulanarak native grup başlıkları dark modda düzgün render edilir hale getirildi. Collapsible grup başlıkları artık görünür.
+- **LVS_EX_DOUBLEBUFFER** eklendi — ListView grup ve item geçişlerinde flicker önlendi.
+
+### İyileştirme
+- **SMTP profil linki çalışır hale getirildi** — PlanEditForm'da "Profil ekle / düzenle" linki artık MessageBox yerine SmtpProfileEditDialog açar. Yeni profil oluşturulunca ComboBox otomatik güncellenir ve yeni profil seçilir.
+
+## [0.89.0] - 2026-06-22 — UI Düzeltmeleri: Ayarlar ComboBox, Yedek Türü Genişlik, Navigasyon İkonları
+
+### Düzeltme
+- **Ayarlar > Genel sekmesinde görünmeyen ComboBox'lar** — Dil, Tema ve Log Konsol Teması ComboBox'ları 1px genişlikteydi (Size=1,34). `Dock=Fill` eklenerek TLP sütununa tam genişletildi.
+- **"Yedek Türü" ComboBox'u çok dar** — "Incremental (Artırımlı)" metni sığmıyordu. `Dock=Fill` eklenerek genişletildi.
+
+### İyileştirme
+- **İleri/Geri butonlarına DevExpress ikonları** — PlanEditForm navigasyon butonlarına Import_16x16.png (Geri) ve Export_16x16.png (İleri) ikonları eklendi. Unicode ok karakterleri kaldırıldı.
+
+## [0.88.0] - 2026-06-22 — Konsolide Bildirim: Tek E-posta
+
+### Yeni Özellik
+- **Konsolide e-posta bildirimi** — Görev tamamlandığında SQL yedekleme, dosya yedekleme ve bulut yükleme sonuçları tek bir e-posta olarak gönderilir (eskiden 2+ ayrı e-posta gidiyordu).
+- E-postada **görev logu** bölümü — Log ekranındaki tüm adım bilgileri e-postaya dahil edilir.
+- `JobNotificationData` modeli — Tüm görev sonuçlarını (SQL + dosya + bulut) tek nesnede toplar.
+- `INotificationService.NotifyJobCompletedAsync` — Yeni konsolide bildirim metodu.
+- E-posta şablonu: SQL veritabanı tablosu, dosya yedek özeti, bulut yükleme detayları ve görev logu bölümleri.
+
+### Değişiklik
+- `BackupJobExecutor.Execute()` — Per-DB ve per-component bildirimler kaldırıldı; tüm sonuçlar toplanıp görev sonunda tek bildirim gönderilir.
+- `BackupJobExecutor.ExecuteSqlBackupAsync` — `(bool, List<BackupResult>)` tuple döndürür.
+- `BackupJobExecutor.ExecuteFileBackupAsync` — `(bool, List<FileBackupResult>, List<CloudUploadResult>, string)` tuple döndürür.
+- `NotifyIfConfigured` ve `NotifyFileBackupIfConfiguredAsync` metotları kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/JobNotificationData.cs` — Yeni model
+- `KoruMsSqlYedek.Core/Interfaces/INotificationService.cs` — NotifyJobCompletedAsync eklendi
+- `KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs` — NotifyJobCompletedAsync + BuildJobCompletedEmailBody
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — Konsolide bildirim akışı
+
+## [0.87.0] - 2026-06-22 — DevExpress PNG İkonları Tüm Formlara + Animasyonlu Tray İkonları + ListView Grup Collapse Düzeltmesi
+
+### Yeni Özellik
+- **DevExpress PNG ikonları tüm formlara** — MainWindow, PlanEditForm, CloudTargetEditDialog, FileBackupSourceEditDialog'daki tüm PhosphorIcons kullanımları DevExpress Images kütüphanesi PNG'lerine değiştirildi (23 ikon).
+- **Animasyonlu tray ikonları** — Yedekleme sırasında Icons8 CloudSync animasyonlu GIF, tamamlanınca CheckMark animasyonlu GIF tray'de gösterilir.
+- `SymbolIconHelper.ExtractGifFrames` — Gömülü GIF dosyasından tray ikonu boyutunda kareler çıkarır.
+- Tamamlanma animasyonu bitince otomatik idle ikona döner.
+
+### Düzeltme
+- **ListView grup collapse/expand (+/−) butonları** — `OwnerDraw=true` native grup header renderını engelliyordu. `OwnerDraw` kaldırıldı, kolon başlık boyama `ListViewHeaderPainter` NativeWindow subclass'ına taşındı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs` — ApplyIcons (PhosphorIcons→DevExpress PNG)
+- `KoruMsSqlYedek.Win/MainWindow.Designer.cs` — OwnerDraw, DrawItem/DrawSubItem kaldırıldı
+- `KoruMsSqlYedek.Win/Theme/ListViewHeaderPainter.cs` — Yeni: NativeWindow header custom draw
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs` — ApplyIcons (DevExpress PNG)
+- `KoruMsSqlYedek.Win/Forms/CloudTargetEditDialog.cs` — ApplyIcons (DevExpress PNG)
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — ApplyIcons (DevExpress PNG)
+- `KoruMsSqlYedek.Win/TrayApplicationContext.cs` — GIF animasyon, completion animation
+- `KoruMsSqlYedek.Win/Helpers/SymbolIconHelper.cs` — ExtractGifFrames
+- `KoruMsSqlYedek.Win/Resources/Icons/` — 16 yeni PNG ikon
+- `KoruMsSqlYedek.Win/Resources/TrayIcons/` — CloudSync.gif, CheckMark.gif
+
+## [0.86.0] - 2026-06-21 — Toolbar: DevExpress PNG İkonları + Şifre Butonları Kaldırıldı
+
+### Yeni Özellik
+- **DevExpress PNG ikonları** — Toolbar butonları DevExpress Images kütüphanesinden renkli 16x16 PNG ikonlar kullanıyor (New, Edit, Delete, Export, Import, Refresh, Find).
+- `LoadToolStripIcon` yardımcı metodu — EmbeddedResource’tan ikon yükleme.
+
+### Kaldırılan
+- Toolbar’dan şifre butonları kaldırıldı (`_tsbPassword`, `_tsmiPasswordToggle`, `_tsmiPasswordSetup`).
+- `UpdatePasswordButtonIcon` metodu ve `OnPasswordSetupClick`, `OnPasswordToggleClick` handler’ları kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs` — ApplyToolStripIcons, LoadToolStripIcon
+- `KoruMsSqlYedek.Win/MainWindow.Designer.cs` — Şifre butonları kaldırıldı
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — EmbeddedResource Icons/*.png
+- `KoruMsSqlYedek.Win/Resources/Icons/` — 7 adet PNG ikon dosyası
+
+## [0.85.1] - 2026-06-21 — Fix: Zamanlanmış görev manualTrigger KeyNotFoundException
+
+### Düzeltme
+- `BackupJobExecutor.Execute` — `context.MergedJobDataMap.GetString("manualTrigger")` zamanlanmış tetiklemede `KeyNotFoundException` fırlatıyordu. `ContainsKey` kontrolü eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs`
+
+## [0.85.0] - 2026-06-21 — Dashboard: Plan Bazlı Gruplandırma
+
+### Yeni Özellik
+- **ListView grup görünümü** — "Son Yedeklemeler" listesi plan adına göre gruplandırıldı. Her grup başlığında plan adı ve yedekleme sayısı gösterilir.
+- **Açılır/kapanır gruplar** — `ListViewGroupCollapsedState.Expanded` ile +/− butonlarıyla gruplar daraltılıp genişletilebilir.
+- `BeginUpdate/EndUpdate` ile performans optimizasyonu.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/MainWindow.cs` — `LoadRecentBackups()` grup mantığı
+- `KoruMsSqlYedek.Win/Properties/Resources.resx` — `Dashboard_GroupBackupCount` eklendi
+- `KoruMsSqlYedek.Win/Properties/Resources.tr-TR.resx` — `Dashboard_GroupBackupCount` eklendi
+
+## [0.84.0] - 2026-06-21 — E-posta Şablonları: Bulut Yükleme Detayları & Hata Kodları
+
+### Yeni Özellik
+- **SQL yedekleme bildirimi — bulut yükleme detayları** — Başarılı yüklemelerde uzak dosya yolu (`RemoteFilePath`) ve boyutu, başarısız yüklemelerde detaylı hata mesajı ve deneme sayısı gösterilir.
+- **Dosya yedekleme bildirimi — zengin içerik** — Arşiv dosyası adı/boyutu, kaynak başına süre/boyut, başarısız dosya listesi (`FailedFiles`), bulut yükleme sonuçları (uzak yol, boyut, hata). Daha önce gönderilmeyen dosya yedek bildirimi artık `BackupJobExecutor`'dan çağrılıyor.
+- **Bulut başarısızlık bildirimi — detaylı hata** — Provider türü, başarısız hedef sayısı, hata mesajı limiti 300→500 karakter.
+- **Periyodik rapor — bulut & hata bölümleri** — Detay tablosuna “Bulut” kolonu (başarılı/toplam), “Hata Detayları” bölümü (başarısız yedeklemelerin hata mesajları), “Başarısız Bulut Yüklemeleri” bölümü (hedef, deneme, hata).
+
+### Değişiklik
+- `INotificationService` — `NotifyFileBackupAsync` metodu eklendi (bulut sonuçları + arşiv bilgisi parametreleri).
+- `EmailNotificationService` — `FormatErrorDetail`, `FormatBytes` yardımcı metotları.
+- `ReportingService` — `SanitizeForReport` yardımcı metodu.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Interfaces/INotificationService.cs` — NotifyFileBackupAsync eklendi
+- `KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs` — Tüm e-posta şablonları zenginleştirildi
+- `KoruMsSqlYedek.Engine/Notification/ReportingService.cs` — Rapor şablonu güncellendi
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — NotifyFileBackupIfConfiguredAsync eklendi
+
+## [0.83.1] - 2026-06-21 — İlerleme Çubuğu Ağırlık Modeli Düzeltmesi
+
+### Düzeltme
+- **İlerleme çubuğu dosya yedeklemede %100'e zıplıyor** — Bulut hedefi olmayan planlarda dosya yedekleme aşamaları (kopyalama, sıkıştırma, temizlik) için ağırlık dağılımı düzeltildi.
+  - Bulut yokken: Dosya-only planlarda copy=%50, compress=%35, cleanup=%5 (toplam %90).
+  - Bulut yokken: SQL+Dosya planlarda copy=%10, compress=%7, cleanup=%2 (toplam %19, SQL üstüne eklenir).
+  - `PlanProgressTracker`: `GetFileCopyWeight`/`GetFileCompressWeight` helper metotları, `CalculateFileCleanupProgress` yeni metot.
+  - `MainWindow`: StepChanged handler'a dosya temizlik case'i eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/PlanProgressTracker.cs` — Cloud-aware ağırlık modeli
+- `KoruMsSqlYedek.Win/MainWindow.cs` — Dosya temizlik ilerleme handler
+
+## [0.83.0] - 2026-06-21 — Dosya Yedekleme Fark/Artırımlı Strateji & İlerleme Çubuğu Düzeltmesi
+
+### Yeni Özellik
+- **Dosya yedekleme stratejisi (Tam/Fark/Artırımlı)** — Dosya yedekleme görevleri artık üç strateji destekliyor:
+  - **Tam Yedek:** Her seferinde tüm dosyalar yedeklenir (varsayılan).
+  - **Fark Yedek:** Son tam yedekten bu yana değişen dosyalar yedeklenir.
+  - **Artırımlı Yedek:** Son yedekten (tam veya artırımlı) bu yana değişen dosyalar yedeklenir.
+  - JSON manifest sistemi: `{LocalPath}/Manifests/file_full.json` (son tam yedek) + `file_last.json` (son herhangi yedek).
+  - Dosya karşılaştırma: `LastWriteTimeUtc` + `Size` üzerinden (hash yok, performans için).
+  - Fark/artırımlı yedekte değişen dosya yoksa manifest güncellenir, boş arşiv oluşturulmaz.
+- **Plan düzenleme formunda strateji seçimi** — Adım 3'te dosya yedekleme bölümüne "Strateji" ComboBox eklendi.
+
+### Düzeltme
+- **İlerleme çubuğu dosya yedeklemeyi yansıtmıyor** — Dosya kaynaklarının kopyalanma ilerlemesi artık ilerleme çubuğuna yansıtılıyor.
+  - `PlanProgressTracker.CalculateFileSourceProgress`: Dosya-only planlarda %0-25, SQL+dosya planlarda %80-85 aralığında kaynak bazlı ilerleme.
+  - `BackupJobExecutor`: Her kaynak için `CurrentIndex`/`TotalCount` event parametreleri eklendi.
+  - `MainWindow`: StepChanged handler'a dosya kaynak ilerleme hesaplaması eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/FileBackupModels.cs` — FileBackupStrategy enum, Strategy property, BackedUpFilePaths
+- `KoruMsSqlYedek.Core/PlanProgressTracker.cs` — CalculateFileSourceProgress metodu
+- `KoruMsSqlYedek.Engine/FileBackup/FileBackupManifestManager.cs` — YENİ DOSYA: Manifest model ve yönetici
+- `KoruMsSqlYedek.Engine/FileBackup/FileBackupService.cs` — Strateji tabanlı filtreleme, manifest kaydetme
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — Strateji etiketi, kaynak bazlı event'ler
+- `KoruMsSqlYedek.Win/MainWindow.cs` — Dosya kaynak ilerleme handler
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs` — Strateji ComboBox kontrolleri
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs` — Strateji yükleme/kaydetme
+- `KoruMsSqlYedek.Win/Properties/Resources.resx` — FileStrat resource key'leri
+- `KoruMsSqlYedek.Win/Properties/Resources.tr-TR.resx` — FileStrat Türkçe çeviriler
+
+## [0.82.0] - 2026-04-05 — Bulut Yükleme Hata Yönetimi & Bildirim
+
+### Yeni Özellik
+- **Maksimum deneme ile vazgeçme** — Bulut yükleme 10 kurtarma denemesinden sonra otomatik terk edilir (`MaxRecoveryAttempts=10`).
+  - `RecoverPendingUploadsAsync` artık `AttemptCount >= 10` olan dosyaları siler ve `CloudUploadAbandoned` event'i fırlatır.
+  - Terk edilen dosya isimleri `AbandonedFiles` listesiyle UI'ya iletilir.
+- **Bulut yükleme başarısızlık e-posta bildirimi** — Tüm bulut hedeflerine yükleme başarısız olduğunda detaylı HTML e-posta gönderilir.
+  - Plan adı, dosya adı, tarih, sağlayıcı detayları tablosu (deneme sayısı, hata mesajları), aksiyon önerileri.
+  - Hem SQL yedekleme (ana + VSS başarısız) hem dosya yedekleme senaryolarında aktif.
+- **Dosya yedek arşiv adı log'da görünür** — Bulut yükleme tamamlanma mesajında arşiv dosya adı (`archiveFileName`) eklendi.
+
+### Düzeltme
+- **Servis sonsuz yeniden deneme** — Önceden başarısız yükleme kayıtları sonsuza kadar tekrar deneniyor, artık 10 denemeden sonra terk ediliyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.cs` — MaxRecoveryAttempts, abandon logic, CloudUploadAbandoned event
+- `KoruMsSqlYedek.Core/Events/BackupActivityEvent.cs` — CloudUploadAbandoned enum, AbandonedFiles property
+- `KoruMsSqlYedek.Core/Interfaces/INotificationService.cs` — NotifyCloudUploadFailureAsync method
+- `KoruMsSqlYedek.Engine/Notification/EmailNotificationService.cs` — NotifyCloudUploadFailureAsync implementasyonu
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs` — Dosya+SQL yedek cloud failure notification, archiveFileName log
+- `KoruMsSqlYedek.Win/MainWindow.cs` — CloudUploadAbandoned UI handler (OnBackupActivityChanged, BuildActivityLogLine, GetLogColor)
+
+## [0.81.0] - 2026-06-18 — Tahmini 7z Sıkıştırılmış Boyut Gösterimi
+
+### Yeni Özellik
+- **Tahmini 7z boyut hesaplaması** — Seçili dosyaların gerçek boyutunun yanına tahmini 7z sıkıştırılmış boyutu eklendi.
+  - Dosya uzantısına göre 30+ kategori: metin (~%12), veritabanı/bak (~%20), sıkıştırılmış (~%99), görsel (~%98), exe (~%45).
+  - `SizeCalculationResult` record ile hem gerçek hem tahmini boyut iletilir.
+  - Durum çubuğu formatı: "✅ 3 klasör, 12 dosya seçili — 1.99 GB (~890 MB 7z)".
+  - Arka plan `Task.Run` ile hesaplama, `CancellationToken` debounce.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Theme/FileSystemCheckedTreeView.cs` — SizeCalculationResult, Estimate7zRatio, GetFolderEstimated7zSize
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — UpdateStatusLabel tahmini 7z gösterimi
+
+## [0.80.0] - 2026-06-18 — TreeView Kaynak Seçimi Mimarisi
+
+### Yeni Özellik
+- **TreeView kaynak gerçeği (source of truth)** — Dizin Yolu textbox'ı kaldırıldı, TreeView seçimleri artık dosya yedekleme kaynağının tek belirleyicisi.
+  - `SelectedPaths` modele eklendi — TreeView'da seçilen klasör/dosya yolları JSON'da saklanır.
+  - `SourcePath` otomatik türetilir (`DeriveCommonRoot`) — VSS volume tespiti ve geriye uyumluluk için.
+  - "📁 Konuma Git..." butonu ile TreeView'da navigasyon (FolderBrowserDialog → NavigateAndExpand).
+  - Kaydet validasyonu: en az bir seçim zorunlu (path textbox yerine TreeView kontrol edilir).
+- **Engine SelectedPaths desteği** — `CollectFiles` artık `SelectedPaths` listesini doğrudan kullanır.
+  - Her seçili yol: dosya ise doğrudan eklenir, klasör ise include pattern'larla taranır.
+  - Eski format uyumu: `SelectedPaths` boşsa `SourcePath` ile çalışır.
+  - `CollectFilesFromDirectory` helper metodu çıkarıldı.
+  - VSS volume tespiti `SelectedPaths[0]` fallback'i eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/FileBackupModels.cs` — `SelectedPaths` property eklendi
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — Tamamen yeniden yazıldı (TreeView = kaynak gerçeği)
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs` — Path row kaldırıldı, navigate butonu eklendi
+- `KoruMsSqlYedek.Engine/FileBackup/FileBackupService.cs` — CollectFiles SelectedPaths desteği, CollectFilesFromDirectory helper
+
+## [0.79.0] - 2026-06-18 — Mega Login Düzeltmesi & TreeView Boyut Hesaplaması
+
+### Düzeltme
+- **Mega login timeout** — Login zaman aşımı 30s→90s'ye çıkarıldı (hashcash/PBKDF2 hesaplaması için yeterli süre).
+  - `LoginAsync` çağrısı `Task.Run` ile sarımlandı — .NET 10'da kütüphanenin dahili sync-over-async çağrıları güvenle çalışır.
+  - `SynchronizeApiRequests=false` ile oluşturma — semafor ile zaten kontrol edildiği için gereksiz iç kilitleme kaldırıldı.
+  - Şifre çözüleme kontrolü eklendi (null/empty ise açıklayıcı hata mesajı).
+  - Giriş öncesi teşhis log'u eklendi (email + şifre uzunluğu).
+
+### Yeni Özellik
+- **TreeView disk boyut hesaplaması** — Seçilen dosya ve klasörlerin toplam boyutu arka planda hesaplanır ve status bar'da gösterilir.
+  - `ConcurrentDictionary` önbelleği: dosya boyutları `LoadChildren` sırasında, klasör boyutları ilk erişimde cache'lenir.
+  - Arka plan `Task.Run` ile hesaplama, `CancellationToken` ile debounce.
+  - `SizeCalculated` event'i ile UI güncelleme ("3 klasör, 12 dosya seçili — 1.45 GB").
+  - `GetCheckedTotalSize()` API metodu.
+  - Okunabilir boyut formatı: B, KB, MB, GB.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/MegaProvider.cs` — Login timeout artırımı, Task.Run sarmalama, Options, teşhis log
+- `KoruMsSqlYedek.Core/Constants/TimeoutConstants.cs` — `MegaLoginTimeoutSeconds = 90` eklendi
+- `KoruMsSqlYedek.Win/Theme/FileSystemCheckedTreeView.cs` — Boyut cache, arka plan hesaplama, SizeCalculated event
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — Boyut gösterimi, FormatFileSize, SizeCalculated handler
+
+## [0.78.0] - 2026-06-18 — TreeView Checkbox Dosya Seçimi
+
+### Yeni Özellik
+- **FileSystemCheckedTreeView kontrolü** — Dosya yedekleme kaynak seçimi için checkbox destekli TreeView kontrolü eklendi.
+  - Lazy-load dizin yapısı (BeforeExpand ile talep üzerine yükleme)
+  - Tri-state checkbox desteği (ebeveyn↔çocuk propagasyonu)
+  - Include/Exclude filtre kalıpları ile görsel filtreleme (hariç tutulan dosyalar soluk görünür)
+  - Wildcard eşleme (*, ?) desteği
+  - Sürücü/Klasör/Dosya simgeleri (Segoe MDL2 Assets)
+  - `GetCheckedPaths()`, `SetCheckedPaths()`, `GetCheckedCounts()`, `NavigateAndExpand()` API'leri
+- **FileBackupSourceEditDialog yeniden tasarlandı** — Yeni TreeView kontrolü ile dosya sistemi gezgini, gerçek zamanlı filtre önizlemesi ve durum çubuğu eklendi.
+  - Form boyutlandırılabilir (800×700, min 680×560)
+  - Include/Exclude kalıpları değiştiğinde TreeView anlık güncellenir
+  - Dizin yolu Enter ile veya Browse butonu ile TreeView'da navigasyon
+  - Seçili klasör/dosya sayısı durum etiketinde gösterilir
+  - Seçenekler yatay düzende (tek satırda) gösterilir
+
+### Düzeltme
+- `MainWindow.BackupLog.resx` çift kaynak çıktısı hatası düzeltildi (MSB3577)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Theme/FileSystemCheckedTreeView.cs` — Yeni custom TreeView kontrolü
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.Designer.cs` — Yeniden tasarlanmış layout
+- `KoruMsSqlYedek.Win/Forms/FileBackupSourceEditDialog.cs` — TreeView entegrasyonu, yeni event handler'lar
+- `MainWindow.BackupLog.resx` — Kaldırıldı (çift kaynak çakışması)
+
+---
+
+## [0.77.3] - 2026-04-06 — Kurtarma Şifresi (Recovery Password)
+
+### Yeni Özellik
+- **Plan bazlı kurtarma şifresi** — Plan şifresini unutan kullanıcılar, önceden tanımladıkları kurtarma şifresiyle erişim sağlayabilir.
+- `BackupPlan.RecoveryPasswordHash` modele eklendi (JSON: `recoveryPasswordHash`)
+- Plan düzenleme formunda checkbox aktifken ikinci bir "Kurtarma şifresi" alanı gösterilir
+- Şifre doğrulama dialogu önce plan şifresini, eşleşmezse kurtarma şifresini dener
+- Güvenlik sorusu ile sıfırlamada kurtarma şifresi de temizlenir
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/BackupPlan.cs` — RecoveryPasswordHash + HasRecoveryPassword
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs` — _txtRecoveryPassword kontrolü
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs` — Load/Save/Toggle mantığı
+- `KoruMsSqlYedek.Win/Forms/PasswordDialog.cs` — Kurtarma şifresi doğrulama
+- `KoruMsSqlYedek.Win/MainWindow.cs` — RecoveryHash aktarımı
+
+---
+
+## [0.77.2] - 2026-04-06 — Plan Şifre UX Sadeleştirme
+
+### İyileştirme
+- **Plan şifre koruması basitleştirildi** — Karmaşık durum etiketi + kaldır butonu yerine tek bir **"🔒 Bu görevi şifre ile koru"** checkbox'u eklendi. Tikle, şifre gir, kaydet — bu kadar.
+- 5 kontrol (header, status, label, textbox, button) yerine 2 kontrol (checkbox + textbox)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs` — Checkbox tabanlı layout
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs` — Checkbox olay mantığı
+
+---
+
+## [0.77.1] - 2026-04-06 — Plan Bazlı Şifre İzolasyonu
+
+### Düzeltme
+- **Plan bazlı şifre artık gerçekten izole çalışıyor** — Plan şifresi tanımlı planlarda artık yalnızca plan şifresi kabul edilir; global (master) şifre plan bazlı korumayı geçersiz kılamaz.
+- **Güvenlik sorusu kurtarma akışı iyileştirildi** — Plan şifresi olan bir görevde güvenlik sorusu ile kurtarma yapıldığında, plan şifresi de otomatik sıfırlanır.
+- **Şifremi Unuttum config yolu düzeltildi** — `%AppData%` → `%ProgramData%` (v0.76.0 migrasyonu ile uyumlu hale getirildi).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/Forms/PasswordDialog.cs` — İzole doğrulama + PlanPasswordReset flag
+- `KoruMsSqlYedek.Win/MainWindow.cs` — CheckPlanPassword kurtarma akışı
+
+---
+
+## [0.77.0] - 2026-04-06 — Post-Install Düzeltmeleri & Modern Tray İkonları
+
+### Düzeltme
+- **Error 740 (admin yetki hatası) çözüldü** — app.manifest `requireAdministrator` → `asInvoker` olarak değiştirildi. Tray uygulaması artık normal kullanıcı olarak çalışır, servis kontrolü (başlat/durdur) sc.exe + UAC ile yükseltilir.
+- **Tray ikonu görünmüyor sorunu çözüldü** — `Icon.FromHandle(hIcon)` native handle sızıntısı düzeltildi. Tüm ikon üretim metotlarında clone + DestroyIcon pattern'i uygulandı.
+- **Görev zamanlama (Step 3) layout sorunu çözüldü** — CronBuilderPanel boyutu (100→80px) ve y-offset çakışması düzeltildi. Form yüksekliği artırıldı (680→740px), Sizable yapıldı.
+
+### İyileştirme
+- **Modern tray ikonları** — Windows 11 flat stil: dikey gradient, ince kenar, gölgesiz sembol. Animasyon: kısa yay (120°) spinner stili.
+- **ServiceController bağımlılığı kaldırıldı** — Servis durumu sc.exe query ile sorgulanır (admin gerektirmez), Start/Stop/Restart için sc.exe + `runas` verb (UAC) kullanılır.
+- `System.ServiceProcess.ServiceController` NuGet paketi kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win/app.manifest` — asInvoker
+- `KoruMsSqlYedek.Win/TrayApplicationContext.cs` — sc.exe service kontrol
+- `KoruMsSqlYedek.Win/Helpers/SymbolIconHelper.cs` — icon handle fix + modern stil
+- `KoruMsSqlYedek.Win/Controls/CronBuilderPanel.cs` — Height 80px
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs` — layout + form boyutu
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` — ServiceController paketi kaldırıldı
+- `Deployment/InnoSetup/KoruMsSqlYedek.iss` — shellexec flag
+
+## [0.76.0] - 2026-04-06 — Servis Veri Yolu Düzeltmesi & DPAPI Migrasyon
 
 ### Düzeltme (Kritik)
 - **Servis %APPDATA% yol uyumsuzluğu çözüldü** — Windows Service (LocalSystem) ile Tray uygulaması (kullanıcı) farklı %APPDATA% kullandığı için plan dosyaları servis tarafından bulunamıyordu. Tüm paylaşılan veriler artık %ProgramData%\KoruMsSqlYedek altında saklanır.

@@ -162,9 +162,9 @@ namespace KoruMsSqlYedek.Tests
                 },
                 new CloudTargetConfig
                 {
-                    Type = CloudProviderType.Mega,
+                    Type = CloudProviderType.Ftp,
                     IsEnabled = false,
-                    DisplayName = "Mega (Disabled)"
+                    DisplayName = "FTP (Disabled)"
                 }
             };
             plan.FileBackup = new FileBackupConfig

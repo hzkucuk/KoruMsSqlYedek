@@ -23,13 +23,6 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
-        public void Constructor_MegaType_ThrowsArgumentException()
-        {
-            Action act = () => new GoogleDriveProvider(CloudProviderType.Mega);
-            act.Should().Throw<ArgumentException>();
-        }
-
-        [TestMethod]
         public void Constructor_InvalidType_ThrowsArgumentException()
         {
             Action act = () => new GoogleDriveProvider(CloudProviderType.Ftp);

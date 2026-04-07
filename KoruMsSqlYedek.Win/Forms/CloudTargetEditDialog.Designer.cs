@@ -17,113 +17,91 @@
         {
             components = new System.ComponentModel.Container();
             _toolTipRemotePath = new System.Windows.Forms.ToolTip(components);
-
             _lblDisplayName = new System.Windows.Forms.Label();
             _txtDisplayName = new System.Windows.Forms.TextBox();
             _lblProviderType = new System.Windows.Forms.Label();
             _cmbProviderType = new System.Windows.Forms.ComboBox();
             _chkEnabled = new System.Windows.Forms.CheckBox();
-
-            // FTP/SFTP grubu
             _grpFtp = new System.Windows.Forms.GroupBox();
             _lblHost = new System.Windows.Forms.Label();
             _txtHost = new System.Windows.Forms.TextBox();
             _lblPort = new System.Windows.Forms.Label();
-            _nudPort = new Theme.ModernNumericUpDown();
+            _nudPort = new KoruMsSqlYedek.Win.Theme.ModernNumericUpDown();
             _lblUsername = new System.Windows.Forms.Label();
             _txtUsername = new System.Windows.Forms.TextBox();
             _lblPassword = new System.Windows.Forms.Label();
             _txtPassword = new System.Windows.Forms.TextBox();
-
-            // OAuth grubu
             _grpOAuth = new System.Windows.Forms.GroupBox();
-            _btnGoogleAuth = new Theme.ModernButton();
+            _btnGoogleAuth = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _lblAuthStatus = new System.Windows.Forms.Label();
-            _btnOAuthSettings = new Theme.ModernButton();
-
-            // Yerel/UNC grubu
+            _btnOAuthSettings = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _grpLocal = new System.Windows.Forms.GroupBox();
             _lblLocalOrUncPath = new System.Windows.Forms.Label();
             _txtLocalOrUncPath = new System.Windows.Forms.TextBox();
-            _btnBrowseLocal = new Theme.ModernButton();
+            _btnBrowseLocal = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _lblUncUser = new System.Windows.Forms.Label();
             _txtUncUser = new System.Windows.Forms.TextBox();
             _lblUncPassword = new System.Windows.Forms.Label();
             _txtUncPassword = new System.Windows.Forms.TextBox();
-
-            // Ortak alanlar
             _lblRemotePath = new System.Windows.Forms.Label();
             _txtRemotePath = new System.Windows.Forms.TextBox();
             _lblBandwidth = new System.Windows.Forms.Label();
-            _nudBandwidth = new Theme.ModernNumericUpDown();
+            _nudBandwidth = new KoruMsSqlYedek.Win.Theme.ModernNumericUpDown();
             _chkPermanentDelete = new System.Windows.Forms.CheckBox();
-
-            // Butonlar
-            _btnSave = new Theme.ModernButton();
-            _btnCancel = new Theme.ModernButton();
-
+            _btnSave = new KoruMsSqlYedek.Win.Theme.ModernButton();
+            _btnCancel = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _grpFtp.SuspendLayout();
             _grpOAuth.SuspendLayout();
             _grpLocal.SuspendLayout();
             SuspendLayout();
-
-            int lx = 15, tx = 145, tw = 280;
-
-            // Görünen Ad
-            _lblDisplayName.Text = "Görünen Ad:";
+            // 
+            // _lblDisplayName
+            // 
             _lblDisplayName.AutoSize = true;
-            _lblDisplayName.Location = new System.Drawing.Point(lx, 18);
-            _txtDisplayName.Location = new System.Drawing.Point(tx, 15);
-            _txtDisplayName.Size = new System.Drawing.Size(tw, 23);
-
-            // Provider Türü
-            _lblProviderType.Text = "Sağlayıcı Türü:";
+            _lblDisplayName.Location = new System.Drawing.Point(15, 20);
+            _lblDisplayName.Name = "_lblDisplayName";
+            _lblDisplayName.Size = new System.Drawing.Size(81, 17);
+            _lblDisplayName.TabIndex = 0;
+            _lblDisplayName.Text = "Görünen Ad:";
+            // 
+            // _txtDisplayName
+            // 
+            _txtDisplayName.Location = new System.Drawing.Point(145, 17);
+            _txtDisplayName.Name = "_txtDisplayName";
+            _txtDisplayName.Size = new System.Drawing.Size(280, 24);
+            _txtDisplayName.TabIndex = 1;
+            // 
+            // _lblProviderType
+            // 
             _lblProviderType.AutoSize = true;
-            _lblProviderType.Location = new System.Drawing.Point(lx, 53);
-            _cmbProviderType.Location = new System.Drawing.Point(tx, 50);
-            _cmbProviderType.Size = new System.Drawing.Size(tw, 23);
+            _lblProviderType.Location = new System.Drawing.Point(15, 60);
+            _lblProviderType.Name = "_lblProviderType";
+            _lblProviderType.Size = new System.Drawing.Size(91, 17);
+            _lblProviderType.TabIndex = 2;
+            _lblProviderType.Text = "Sağlayıcı Türü:";
+            // 
+            // _cmbProviderType
+            // 
             _cmbProviderType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            _cmbProviderType.Location = new System.Drawing.Point(145, 57);
+            _cmbProviderType.Name = "_cmbProviderType";
+            _cmbProviderType.Size = new System.Drawing.Size(280, 25);
+            _cmbProviderType.TabIndex = 3;
             _cmbProviderType.SelectedIndexChanged += OnProviderTypeChanged;
-
-            // Aktif
-            _chkEnabled.Text = "Aktif";
-            _chkEnabled.Checked = true;
-            _chkEnabled.Location = new System.Drawing.Point(tx, 80);
+            // 
+            // _chkEnabled
+            // 
             _chkEnabled.AutoSize = true;
-
-            // === FTP/SFTP Grubu ===
-            _grpFtp.Text = "FTP / SFTP Ayarları";
-            _grpFtp.Location = new System.Drawing.Point(lx, 110);
-            _grpFtp.Size = new System.Drawing.Size(tw + 140, 145);
-
-            _lblHost.Text = "Sunucu:";
-            _lblHost.AutoSize = true;
-            _lblHost.Location = new System.Drawing.Point(6, 25);
-            _txtHost.Location = new System.Drawing.Point(130, 22);
-            _txtHost.Size = new System.Drawing.Size(200, 23);
-
-            _lblPort.Text = "Port:";
-            _lblPort.AutoSize = true;
-            _lblPort.Location = new System.Drawing.Point(6, 55);
-            _nudPort.Location = new System.Drawing.Point(130, 52);
-            _nudPort.Size = new System.Drawing.Size(80, 23);
-            _nudPort.Minimum = 1;
-            _nudPort.Maximum = 65535;
-            _nudPort.Value = 21;
-
-            _lblUsername.Text = "Kullanıcı Adı:";
-            _lblUsername.AutoSize = true;
-            _lblUsername.Location = new System.Drawing.Point(6, 85);
-            _txtUsername.Location = new System.Drawing.Point(130, 82);
-            _txtUsername.Size = new System.Drawing.Size(200, 23);
-
-            _lblPassword.Text = "Şifre:";
-            _lblPassword.AutoSize = true;
-            _lblPassword.Location = new System.Drawing.Point(6, 115);
-            _txtPassword.Location = new System.Drawing.Point(130, 112);
-            _txtPassword.Size = new System.Drawing.Size(200, 23);
-            _txtPassword.UseSystemPasswordChar = true;
-
+            _chkEnabled.Checked = true;
+            _chkEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
+            _chkEnabled.Location = new System.Drawing.Point(145, 91);
+            _chkEnabled.Name = "_chkEnabled";
+            _chkEnabled.Size = new System.Drawing.Size(52, 21);
+            _chkEnabled.TabIndex = 4;
+            _chkEnabled.Text = "Aktif";
+            // 
+            // _grpFtp
+            // 
             _grpFtp.Controls.Add(_lblHost);
             _grpFtp.Controls.Add(_txtHost);
             _grpFtp.Controls.Add(_lblPort);
@@ -132,60 +110,134 @@
             _grpFtp.Controls.Add(_txtUsername);
             _grpFtp.Controls.Add(_lblPassword);
             _grpFtp.Controls.Add(_txtPassword);
-
-            // === OAuth Grubu ===
-            _grpOAuth.Text = "Hesap Ba\u011flama";
-            _grpOAuth.Location = new System.Drawing.Point(lx, 110);
-            _grpOAuth.Size = new System.Drawing.Size(tw + 140, 60);
-
-            _btnGoogleAuth.Text = "Hesab\u0131 Ba\u011fla";
-            _btnGoogleAuth.ButtonStyle = Theme.ModernButtonStyle.Secondary;
-            _btnGoogleAuth.Size = new System.Drawing.Size(160, 28);
-            _btnGoogleAuth.Location = new System.Drawing.Point(6, 24);
-            _btnGoogleAuth.Click += OnGoogleAuthClick;
-
-            _lblAuthStatus.AutoSize = true;
-            _lblAuthStatus.Location = new System.Drawing.Point(174, 29);
-            _lblAuthStatus.Text = "Hen\u00fcz do\u011frulanmad\u0131";
-
-            _btnOAuthSettings.ButtonStyle = Theme.ModernButtonStyle.Secondary;
-            _btnOAuthSettings.Size = new System.Drawing.Size(30, 28);
-            _btnOAuthSettings.Location = new System.Drawing.Point(380, 24);
-            _btnOAuthSettings.Click += OnOAuthSettingsClick;
-
+            _grpFtp.Location = new System.Drawing.Point(15, 125);
+            _grpFtp.Name = "_grpFtp";
+            _grpFtp.Size = new System.Drawing.Size(420, 164);
+            _grpFtp.TabIndex = 5;
+            _grpFtp.TabStop = false;
+            _grpFtp.Text = "FTP / SFTP Ayarları";
+            // 
+            // _lblHost
+            // 
+            _lblHost.AutoSize = true;
+            _lblHost.Location = new System.Drawing.Point(6, 28);
+            _lblHost.Name = "_lblHost";
+            _lblHost.Size = new System.Drawing.Size(52, 17);
+            _lblHost.TabIndex = 0;
+            _lblHost.Text = "Sunucu:";
+            // 
+            // _txtHost
+            // 
+            _txtHost.Location = new System.Drawing.Point(130, 25);
+            _txtHost.Name = "_txtHost";
+            _txtHost.Size = new System.Drawing.Size(200, 24);
+            _txtHost.TabIndex = 1;
+            // 
+            // _lblPort
+            // 
+            _lblPort.AutoSize = true;
+            _lblPort.Location = new System.Drawing.Point(6, 62);
+            _lblPort.Name = "_lblPort";
+            _lblPort.Size = new System.Drawing.Size(35, 17);
+            _lblPort.TabIndex = 2;
+            _lblPort.Text = "Port:";
+            // 
+            // _nudPort
+            // 
+            _nudPort.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
+            _nudPort.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _nudPort.Location = new System.Drawing.Point(130, 59);
+            _nudPort.Maximum = new decimal(new int[] { 65535, 0, 0, 0 });
+            _nudPort.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            _nudPort.MinimumSize = new System.Drawing.Size(60, 27);
+            _nudPort.Name = "_nudPort";
+            _nudPort.Size = new System.Drawing.Size(80, 27);
+            _nudPort.TabIndex = 3;
+            _nudPort.Value = new decimal(new int[] { 21, 0, 0, 0 });
+            // 
+            // _lblUsername
+            // 
+            _lblUsername.AutoSize = true;
+            _lblUsername.Location = new System.Drawing.Point(6, 96);
+            _lblUsername.Name = "_lblUsername";
+            _lblUsername.Size = new System.Drawing.Size(81, 17);
+            _lblUsername.TabIndex = 4;
+            _lblUsername.Text = "Kullanıcı Adı:";
+            // 
+            // _txtUsername
+            // 
+            _txtUsername.Location = new System.Drawing.Point(130, 93);
+            _txtUsername.Name = "_txtUsername";
+            _txtUsername.Size = new System.Drawing.Size(200, 24);
+            _txtUsername.TabIndex = 5;
+            // 
+            // _lblPassword
+            // 
+            _lblPassword.AutoSize = true;
+            _lblPassword.Location = new System.Drawing.Point(6, 130);
+            _lblPassword.Name = "_lblPassword";
+            _lblPassword.Size = new System.Drawing.Size(37, 17);
+            _lblPassword.TabIndex = 6;
+            _lblPassword.Text = "Şifre:";
+            // 
+            // _txtPassword
+            // 
+            _txtPassword.Location = new System.Drawing.Point(130, 127);
+            _txtPassword.Name = "_txtPassword";
+            _txtPassword.Size = new System.Drawing.Size(200, 24);
+            _txtPassword.TabIndex = 7;
+            _txtPassword.UseSystemPasswordChar = true;
+            // 
+            // _grpOAuth
+            // 
             _grpOAuth.Controls.Add(_btnGoogleAuth);
             _grpOAuth.Controls.Add(_lblAuthStatus);
             _grpOAuth.Controls.Add(_btnOAuthSettings);
-
-            // === Yerel/UNC Grubu ===
-            _grpLocal.Text = "Yerel / Ağ Yolu";
-            _grpLocal.Location = new System.Drawing.Point(lx, 110);
-            _grpLocal.Size = new System.Drawing.Size(tw + 140, 145);
-
-            _lblLocalOrUncPath.Text = "Yol:";
-            _lblLocalOrUncPath.AutoSize = true;
-            _lblLocalOrUncPath.Location = new System.Drawing.Point(6, 25);
-            _txtLocalOrUncPath.Location = new System.Drawing.Point(130, 22);
-            _txtLocalOrUncPath.Size = new System.Drawing.Size(235, 23);
-            _btnBrowseLocal.Text = "...";
-            _btnBrowseLocal.ButtonStyle = Theme.ModernButtonStyle.Secondary;
-            _btnBrowseLocal.Size = new System.Drawing.Size(30, 28);
-            _btnBrowseLocal.Location = new System.Drawing.Point(370, 22);
-            _btnBrowseLocal.Click += OnBrowseLocalPath;
-
-            _lblUncUser.Text = "Kullanıcı Adı:";
-            _lblUncUser.AutoSize = true;
-            _lblUncUser.Location = new System.Drawing.Point(6, 55);
-            _txtUncUser.Location = new System.Drawing.Point(130, 52);
-            _txtUncUser.Size = new System.Drawing.Size(200, 23);
-
-            _lblUncPassword.Text = "Şifre:";
-            _lblUncPassword.AutoSize = true;
-            _lblUncPassword.Location = new System.Drawing.Point(6, 85);
-            _txtUncPassword.Location = new System.Drawing.Point(130, 82);
-            _txtUncPassword.Size = new System.Drawing.Size(200, 23);
-            _txtUncPassword.UseSystemPasswordChar = true;
-
+            _grpOAuth.Location = new System.Drawing.Point(15, 125);
+            _grpOAuth.Name = "_grpOAuth";
+            _grpOAuth.Size = new System.Drawing.Size(280, 68);
+            _grpOAuth.TabIndex = 6;
+            _grpOAuth.TabStop = false;
+            _grpOAuth.Text = "Hesap Bağlama";
+            // 
+            // _btnGoogleAuth
+            // 
+            _btnGoogleAuth.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnGoogleAuth.CornerRadius = 6;
+            _btnGoogleAuth.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            _btnGoogleAuth.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _btnGoogleAuth.IconSymbol = "";
+            _btnGoogleAuth.Location = new System.Drawing.Point(6, 27);
+            _btnGoogleAuth.Name = "_btnGoogleAuth";
+            _btnGoogleAuth.Size = new System.Drawing.Size(160, 32);
+            _btnGoogleAuth.TabIndex = 0;
+            _btnGoogleAuth.Text = "Hesabı Bağla";
+            _btnGoogleAuth.Click += OnGoogleAuthClick;
+            // 
+            // _lblAuthStatus
+            // 
+            _lblAuthStatus.AutoSize = true;
+            _lblAuthStatus.Location = new System.Drawing.Point(174, 33);
+            _lblAuthStatus.Name = "_lblAuthStatus";
+            _lblAuthStatus.Size = new System.Drawing.Size(130, 17);
+            _lblAuthStatus.TabIndex = 1;
+            _lblAuthStatus.Text = "Henüz doğrulanmadı";
+            // 
+            // _btnOAuthSettings
+            // 
+            _btnOAuthSettings.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnOAuthSettings.CornerRadius = 6;
+            _btnOAuthSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            _btnOAuthSettings.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _btnOAuthSettings.IconSymbol = "";
+            _btnOAuthSettings.Location = new System.Drawing.Point(380, 27);
+            _btnOAuthSettings.Name = "_btnOAuthSettings";
+            _btnOAuthSettings.Size = new System.Drawing.Size(30, 32);
+            _btnOAuthSettings.TabIndex = 2;
+            _btnOAuthSettings.Click += OnOAuthSettingsClick;
+            // 
+            // _grpLocal
+            // 
             _grpLocal.Controls.Add(_lblLocalOrUncPath);
             _grpLocal.Controls.Add(_txtLocalOrUncPath);
             _grpLocal.Controls.Add(_btnBrowseLocal);
@@ -193,45 +245,156 @@
             _grpLocal.Controls.Add(_txtUncUser);
             _grpLocal.Controls.Add(_lblUncPassword);
             _grpLocal.Controls.Add(_txtUncPassword);
-
-            // === Ortak Alanlar (grup altında) ===
-            _lblRemotePath.Text = "Uzak Klasör Yolu:";
+            _grpLocal.Location = new System.Drawing.Point(15, 125);
+            _grpLocal.Name = "_grpLocal";
+            _grpLocal.Size = new System.Drawing.Size(280, 164);
+            _grpLocal.TabIndex = 7;
+            _grpLocal.TabStop = false;
+            _grpLocal.Text = "Yerel / Ağ Yolu";
+            // 
+            // _lblLocalOrUncPath
+            // 
+            _lblLocalOrUncPath.AutoSize = true;
+            _lblLocalOrUncPath.Location = new System.Drawing.Point(6, 28);
+            _lblLocalOrUncPath.Name = "_lblLocalOrUncPath";
+            _lblLocalOrUncPath.Size = new System.Drawing.Size(28, 17);
+            _lblLocalOrUncPath.TabIndex = 0;
+            _lblLocalOrUncPath.Text = "Yol:";
+            // 
+            // _txtLocalOrUncPath
+            // 
+            _txtLocalOrUncPath.Location = new System.Drawing.Point(130, 25);
+            _txtLocalOrUncPath.Name = "_txtLocalOrUncPath";
+            _txtLocalOrUncPath.Size = new System.Drawing.Size(235, 24);
+            _txtLocalOrUncPath.TabIndex = 1;
+            // 
+            // _btnBrowseLocal
+            // 
+            _btnBrowseLocal.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnBrowseLocal.CornerRadius = 6;
+            _btnBrowseLocal.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            _btnBrowseLocal.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _btnBrowseLocal.IconSymbol = "";
+            _btnBrowseLocal.Location = new System.Drawing.Point(370, 25);
+            _btnBrowseLocal.Name = "_btnBrowseLocal";
+            _btnBrowseLocal.Size = new System.Drawing.Size(30, 32);
+            _btnBrowseLocal.TabIndex = 2;
+            _btnBrowseLocal.Text = "...";
+            _btnBrowseLocal.Click += OnBrowseLocalPath;
+            // 
+            // _lblUncUser
+            // 
+            _lblUncUser.AutoSize = true;
+            _lblUncUser.Location = new System.Drawing.Point(6, 62);
+            _lblUncUser.Name = "_lblUncUser";
+            _lblUncUser.Size = new System.Drawing.Size(81, 17);
+            _lblUncUser.TabIndex = 3;
+            _lblUncUser.Text = "Kullanıcı Adı:";
+            // 
+            // _txtUncUser
+            // 
+            _txtUncUser.Location = new System.Drawing.Point(130, 59);
+            _txtUncUser.Name = "_txtUncUser";
+            _txtUncUser.Size = new System.Drawing.Size(200, 24);
+            _txtUncUser.TabIndex = 4;
+            // 
+            // _lblUncPassword
+            // 
+            _lblUncPassword.AutoSize = true;
+            _lblUncPassword.Location = new System.Drawing.Point(6, 96);
+            _lblUncPassword.Name = "_lblUncPassword";
+            _lblUncPassword.Size = new System.Drawing.Size(37, 17);
+            _lblUncPassword.TabIndex = 5;
+            _lblUncPassword.Text = "Şifre:";
+            // 
+            // _txtUncPassword
+            // 
+            _txtUncPassword.Location = new System.Drawing.Point(130, 93);
+            _txtUncPassword.Name = "_txtUncPassword";
+            _txtUncPassword.Size = new System.Drawing.Size(200, 24);
+            _txtUncPassword.TabIndex = 6;
+            _txtUncPassword.UseSystemPasswordChar = true;
+            // 
+            // _lblRemotePath
+            // 
             _lblRemotePath.AutoSize = true;
-            _lblRemotePath.Location = new System.Drawing.Point(lx, 270);
-            _txtRemotePath.Location = new System.Drawing.Point(tx, 267);
-            _txtRemotePath.Size = new System.Drawing.Size(tw, 23);
-
-            _lblBandwidth.Text = "Hız Limiti (MB/s):";
+            _lblRemotePath.Location = new System.Drawing.Point(15, 306);
+            _lblRemotePath.Name = "_lblRemotePath";
+            _lblRemotePath.Size = new System.Drawing.Size(108, 17);
+            _lblRemotePath.TabIndex = 8;
+            _lblRemotePath.Text = "Uzak Klasör Yolu:";
+            // 
+            // _txtRemotePath
+            // 
+            _txtRemotePath.Location = new System.Drawing.Point(145, 303);
+            _txtRemotePath.Name = "_txtRemotePath";
+            _txtRemotePath.Size = new System.Drawing.Size(280, 24);
+            _txtRemotePath.TabIndex = 9;
+            // 
+            // _lblBandwidth
+            // 
             _lblBandwidth.AutoSize = true;
-            _lblBandwidth.Location = new System.Drawing.Point(lx, 303);
-            _nudBandwidth.Location = new System.Drawing.Point(tx, 300);
-            _nudBandwidth.Size = new System.Drawing.Size(80, 23);
-            _nudBandwidth.Minimum = 0;
-            _nudBandwidth.Maximum = 10000;
-            _nudBandwidth.Value = 0;
-
-            _chkPermanentDelete.Text = "Silinen dosyaları çöp kutusundan kalıcı temizle";
-            _chkPermanentDelete.Location = new System.Drawing.Point(tx, 330);
+            _lblBandwidth.Location = new System.Drawing.Point(15, 343);
+            _lblBandwidth.Name = "_lblBandwidth";
+            _lblBandwidth.Size = new System.Drawing.Size(105, 17);
+            _lblBandwidth.TabIndex = 10;
+            _lblBandwidth.Text = "Hız Limiti (MB/s):";
+            // 
+            // _nudBandwidth
+            // 
+            _nudBandwidth.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
+            _nudBandwidth.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _nudBandwidth.Location = new System.Drawing.Point(145, 340);
+            _nudBandwidth.Maximum = new decimal(new int[] { 10000, 0, 0, 0 });
+            _nudBandwidth.MinimumSize = new System.Drawing.Size(60, 27);
+            _nudBandwidth.Name = "_nudBandwidth";
+            _nudBandwidth.Size = new System.Drawing.Size(80, 27);
+            _nudBandwidth.TabIndex = 11;
+            // 
+            // _chkPermanentDelete
+            // 
             _chkPermanentDelete.AutoSize = true;
             _chkPermanentDelete.Checked = true;
-
-            // === Butonlar ===
-            _btnSave.Text = "💾 Kaydet";
+            _chkPermanentDelete.CheckState = System.Windows.Forms.CheckState.Checked;
+            _chkPermanentDelete.Location = new System.Drawing.Point(145, 374);
+            _chkPermanentDelete.Name = "_chkPermanentDelete";
+            _chkPermanentDelete.Size = new System.Drawing.Size(294, 21);
+            _chkPermanentDelete.TabIndex = 12;
+            _chkPermanentDelete.Text = "Silinen dosyaları çöp kutusundan kalıcı temizle";
+            // 
+            // _btnSave
+            // 
             _btnSave.ButtonStyle = Theme.ModernButtonStyle.Primary;
-            _btnSave.Size = new System.Drawing.Size(100, 34);
-            _btnSave.Location = new System.Drawing.Point(235, 370);
+            _btnSave.CornerRadius = 6;
+            _btnSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            _btnSave.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _btnSave.IconSymbol = "";
+            _btnSave.Location = new System.Drawing.Point(235, 419);
+            _btnSave.Name = "_btnSave";
+            _btnSave.Size = new System.Drawing.Size(100, 39);
+            _btnSave.TabIndex = 13;
+            _btnSave.Text = "💾 Kaydet";
             _btnSave.Click += OnSaveClick;
-
-            _btnCancel.Text = "İptal";
+            // 
+            // _btnCancel
+            // 
             _btnCancel.ButtonStyle = Theme.ModernButtonStyle.Secondary;
-            _btnCancel.Size = new System.Drawing.Size(90, 34);
-            _btnCancel.Location = new System.Drawing.Point(345, 370);
+            _btnCancel.CornerRadius = 6;
+            _btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            _btnCancel.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _btnCancel.IconSymbol = "";
+            _btnCancel.Location = new System.Drawing.Point(345, 419);
+            _btnCancel.Name = "_btnCancel";
+            _btnCancel.Size = new System.Drawing.Size(90, 39);
+            _btnCancel.TabIndex = 14;
+            _btnCancel.Text = "İptal";
             _btnCancel.Click += OnCancelClick;
-
-            // === Form ===
-            AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            // 
+            // CloudTargetEditDialog
+            // 
+            AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(450, 415);
+            ClientSize = new System.Drawing.Size(450, 470);
             Controls.Add(_lblDisplayName);
             Controls.Add(_txtDisplayName);
             Controls.Add(_lblProviderType);
@@ -247,15 +410,12 @@
             Controls.Add(_chkPermanentDelete);
             Controls.Add(_btnSave);
             Controls.Add(_btnCancel);
-            Font = Theme.ModernTheme.FontBody;
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            BackColor = Theme.ModernTheme.BackgroundColor;
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "CloudTargetEditDialog";
             StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             Text = "Bulut Hedef";
-
             _grpFtp.ResumeLayout(false);
             _grpFtp.PerformLayout();
             _grpOAuth.ResumeLayout(false);
