@@ -1,4 +1,16 @@
-﻿## [0.95.0] - 2026-04-07 — SQL Yetki Otomatik Kontrolü, UI Düzeltmeleri
+﻿## [0.96.0] - 2026-04-08 — Dashboard ObjectListView Geçişi
+
+### Yeni Özellikler
+- **Dashboard ListView → ObjectListView geçişi** — Son Yedeklemeler gridi, `ObjectListView.Repack.NET6Plus` v2.9.5 NuGet paketi ile yeniden yazıldı. Yerleşik sıralama, plan adına göre gruplama, AspectName veri bağlama ve satır düzeyinde renklendirme (FormatRow) aktif.
+- **Dark theme uyumu** — ObjectListView header, alternatif satır, seçim renkleri ModernTheme'den otomatik uygulanıyor.
+
+### Kaldırılan
+- Dashboard'daki eski ListView (`_lvLastBackups`), 6 adet ColumnHeader, `LastBackupsItemComparer`, `OnLastBackupsColumnClick`, `AutoResizeListViewColumns` ve manuel grup yönetimi kodu kaldırıldı.
+- `_headerPainter` (ListViewHeaderPainter) Dashboard'dan kaldırıldı.
+
+---
+
+## [0.95.0] - 2026-04-07 — SQL Yetki Otomatik Kontrolü, UI Düzeltmeleri
 
 ### Yeni Özellikler
 - **SQL Server yetki otomatik kontrolü** — Servis modunda (NT AUTHORITY\SYSTEM) yedekleme başlamadan önce SQL Server erişim yetkisi kontrol edilir ve gerekirse otomatik sysadmin rolü verilir. Başarısızlıkta kullanıcıya bilgi logu yazılır.

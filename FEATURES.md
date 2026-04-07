@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.96.0 — Dashboard ObjectListView Geçişi
+- Dashboard Son Yedeklemeler gridi `ObjectListView.Repack.NET6Plus` v2.9.5 ile değiştirildi
+- Yerleşik sıralama, plan bazlı gruplama, AspectName veri bağlama, FormatRow satır renklendirme
+- Dark theme tam uyum (header, alternatif satır, seçim renkleri)
+
 ### v0.92.0 — Konsolide Bulut Yükleme: Tek Seferde Toplu Upload
 - [x] SQL + dosya yedeklerinin bulut yüklemeleri tek toplu fazda birleştirildi
 - [x] `UploadBatchToAllAsync` — CloudUploadOrchestrator'a toplu yükleme metodu

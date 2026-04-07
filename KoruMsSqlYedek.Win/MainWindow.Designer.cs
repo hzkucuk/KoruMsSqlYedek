@@ -23,13 +23,13 @@
             _tabDashboard = new System.Windows.Forms.TabPage();
             _pnlGrid = new KoruMsSqlYedek.Win.Theme.ModernCardPanel();
             _lblGridTitle = new System.Windows.Forms.Label();
-            _lvLastBackups = new System.Windows.Forms.ListView();
-            _colDate = new System.Windows.Forms.ColumnHeader();
-            _colPlan = new System.Windows.Forms.ColumnHeader();
-            _colDatabase = new System.Windows.Forms.ColumnHeader();
-            _colType = new System.Windows.Forms.ColumnHeader();
-            _colResult = new System.Windows.Forms.ColumnHeader();
-            _colSize = new System.Windows.Forms.ColumnHeader();
+            _olvLastBackups = new BrightIdeasSoftware.ObjectListView();
+            _olvColDate = new BrightIdeasSoftware.OLVColumn();
+            _olvColPlan = new BrightIdeasSoftware.OLVColumn();
+            _olvColDatabase = new BrightIdeasSoftware.OLVColumn();
+            _olvColType = new BrightIdeasSoftware.OLVColumn();
+            _olvColResult = new BrightIdeasSoftware.OLVColumn();
+            _olvColSize = new BrightIdeasSoftware.OLVColumn();
             _tlpCards = new System.Windows.Forms.TableLayoutPanel();
             _cardStatus = new KoruMsSqlYedek.Win.Theme.ModernCardPanel();
             _lblStatusIcon = new System.Windows.Forms.PictureBox();
@@ -225,7 +225,7 @@
             _pnlGrid.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _pnlGrid.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _pnlGrid.Controls.Add(_lblGridTitle);
-            _pnlGrid.Controls.Add(_lvLastBackups);
+            _pnlGrid.Controls.Add(_olvLastBackups);
             _pnlGrid.CornerRadius = 8;
             _pnlGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             _pnlGrid.HeaderIcon = "";
@@ -247,49 +247,62 @@
             _lblGridTitle.TabIndex = 0;
             _lblGridTitle.Text = "Son Yedeklemeler";
             // 
-            // _lvLastBackups
+            // _olvLastBackups
             // 
-            _lvLastBackups.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            _lvLastBackups.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] { _colDate, _colPlan, _colDatabase, _colType, _colResult, _colSize });
-            _lvLastBackups.Dock = System.Windows.Forms.DockStyle.Fill;
-            _lvLastBackups.FullRowSelect = true;
-            _lvLastBackups.Location = new System.Drawing.Point(0, 39);
-            _lvLastBackups.Name = "_lvLastBackups";
-            _lvLastBackups.Size = new System.Drawing.Size(1016, 557);
-            _lvLastBackups.TabIndex = 1;
-            _lvLastBackups.UseCompatibleStateImageBehavior = false;
-            _lvLastBackups.View = System.Windows.Forms.View.Details;
-            _lvLastBackups.ColumnClick += OnLastBackupsColumnClick;
+            _olvLastBackups.AllColumns.Add(_olvColDate);
+            _olvLastBackups.AllColumns.Add(_olvColPlan);
+            _olvLastBackups.AllColumns.Add(_olvColDatabase);
+            _olvLastBackups.AllColumns.Add(_olvColType);
+            _olvLastBackups.AllColumns.Add(_olvColResult);
+            _olvLastBackups.AllColumns.Add(_olvColSize);
+            _olvLastBackups.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            _olvLastBackups.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] { _olvColDate, _olvColPlan, _olvColDatabase, _olvColType, _olvColResult, _olvColSize });
+            _olvLastBackups.Dock = System.Windows.Forms.DockStyle.Fill;
+            _olvLastBackups.FullRowSelect = true;
+            _olvLastBackups.Location = new System.Drawing.Point(0, 39);
+            _olvLastBackups.Name = "_olvLastBackups";
+            _olvLastBackups.ShowGroups = true;
+            _olvLastBackups.ShowItemCountOnGroups = true;
+            _olvLastBackups.Size = new System.Drawing.Size(1016, 557);
+            _olvLastBackups.TabIndex = 1;
+            _olvLastBackups.UseCompatibleStateImageBehavior = false;
+            _olvLastBackups.View = System.Windows.Forms.View.Details;
             // 
-            // _colDate
+            // _olvColDate
             // 
-            _colDate.Text = "Tarih";
-            _colDate.Width = 140;
+            _olvColDate.AspectName = "StartedAt";
+            _olvColDate.Text = "Tarih";
+            _olvColDate.Width = 150;
             // 
-            // _colPlan
+            // _olvColPlan
             // 
-            _colPlan.Text = "Plan";
-            _colPlan.Width = 130;
+            _olvColPlan.AspectName = "PlanName";
+            _olvColPlan.Text = "Plan";
+            _olvColPlan.Width = 130;
             // 
-            // _colDatabase
+            // _olvColDatabase
             // 
-            _colDatabase.Text = "Veritabanı";
-            _colDatabase.Width = 130;
+            _olvColDatabase.AspectName = "DatabaseName";
+            _olvColDatabase.Text = "Veritabanı";
+            _olvColDatabase.Width = 140;
             // 
-            // _colType
+            // _olvColType
             // 
-            _colType.Text = "Tür";
-            _colType.Width = 80;
+            _olvColType.AspectName = "BackupType";
+            _olvColType.Text = "Tür";
+            _olvColType.Width = 80;
             // 
-            // _colResult
+            // _olvColResult
             // 
-            _colResult.Text = "Sonuç";
-            _colResult.Width = 90;
+            _olvColResult.AspectName = "Status";
+            _olvColResult.Text = "Sonuç";
+            _olvColResult.Width = 90;
             // 
-            // _colSize
+            // _olvColSize
             // 
-            _colSize.Text = "Boyut";
-            _colSize.Width = 80;
+            _olvColSize.AspectName = "FileSizeBytes";
+            _olvColSize.Text = "Boyut";
+            _olvColSize.Width = 100;
             // 
             // _tlpCards
             // 
@@ -1835,13 +1848,13 @@
         private System.Windows.Forms.Label _lblActivePlansValue;
         private Theme.ModernCardPanel _pnlGrid;
         private System.Windows.Forms.Label _lblGridTitle;
-        private System.Windows.Forms.ListView _lvLastBackups;
-        private System.Windows.Forms.ColumnHeader _colDate;
-        private System.Windows.Forms.ColumnHeader _colPlan;
-        private System.Windows.Forms.ColumnHeader _colDatabase;
-        private System.Windows.Forms.ColumnHeader _colType;
-        private System.Windows.Forms.ColumnHeader _colResult;
-        private System.Windows.Forms.ColumnHeader _colSize;
+        private BrightIdeasSoftware.ObjectListView _olvLastBackups;
+        private BrightIdeasSoftware.OLVColumn _olvColDate;
+        private BrightIdeasSoftware.OLVColumn _olvColPlan;
+        private BrightIdeasSoftware.OLVColumn _olvColDatabase;
+        private BrightIdeasSoftware.OLVColumn _olvColType;
+        private BrightIdeasSoftware.OLVColumn _olvColResult;
+        private BrightIdeasSoftware.OLVColumn _olvColSize;
 
         // Plans
         private System.Windows.Forms.SplitContainer _splitPlans;
