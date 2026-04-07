@@ -107,6 +107,7 @@ namespace KoruMsSqlYedek.Win
 
             // Header custom draw (NativeWindow) — OwnerDraw kullanmadan dark theme header boyama
             _headerPainter = new Theme.ListViewHeaderPainter(_lvLastBackups);
+            _headerPainter.GroupHeaderColor = Color.FromArgb(0, 180, 90);
 
             // Versiyon metnini runtime'da ayarla (Designer'da statik metinlere izin verilmiyor)
             string ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
@@ -142,6 +143,8 @@ namespace KoruMsSqlYedek.Win
 
         private void ApplyIcons()
         {
+            this.Icon = Helpers.SymbolIconHelper.CreateTrayIcon();
+
             _btnStart.Image = LoadToolStripIcon("Apply_16x16.png");
             _btnStart.Text = "Yedeklemeyi Baslat";
             _btnStart.TextImageRelation = TextImageRelation.ImageBeforeText;

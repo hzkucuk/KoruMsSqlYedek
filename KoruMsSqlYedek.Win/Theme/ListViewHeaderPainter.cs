@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -21,9 +22,13 @@ internal sealed class ListViewHeaderPainter : NativeWindow, IDisposable
     private const int HDM_GETITEMW = 0x120B;
     private const int NM_CUSTOMDRAW = -12;
     private const int CDDS_PREPAINT = 0x00000001;
+    private const int CDDS_POSTPAINT = 0x00000002;
     private const int CDDS_ITEMPREPAINT = 0x00010001;
     private const int CDRF_NOTIFYITEMDRAW = 0x00000020;
+    private const int CDRF_NOTIFYPOSTPAINT = 0x00000010;
     private const int CDRF_SKIPDEFAULT = 0x00000004;
+    private const int LVM_GETGROUPRECT = LVM_FIRST + 98;
+    private const int LVGGR_LABEL = 2;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct NMHDR
@@ -89,11 +94,19 @@ internal sealed class ListViewHeaderPainter : NativeWindow, IDisposable
     private const int LVM_ENABLEGROUPVIEW = LVM_FIRST + 157;
     private const int LVS_EX_DOUBLEBUFFER = 0x00010000;
 
+    private static readonly PropertyInfo? s_groupIdProp =
+        typeof(ListViewGroup).GetProperty("ID", BindingFlags.Instance | BindingFlags.NonPublic);
+
     private readonly ListView _listView;
     private HeaderNativeWindow? _headerWindow;
     private int _sortColumn = -1;
     private bool _sortAscending;
     private bool _disposed;
+
+    /// <summary>
+    /// Ayarlanırsa tüm grup başlıkları bu renkte çizilir.
+    /// </summary>
+    public Color? GroupHeaderColor { get; set; }
 
     public ListViewHeaderPainter(ListView listView)
     {
@@ -180,6 +193,23 @@ internal sealed class ListViewHeaderPainter : NativeWindow, IDisposable
                     return;
                 }
             }
+
+            // ListView grup başlık renklendirme — NM_CUSTOMDRAW post-paint
+            if (GroupHeaderColor.HasValue && nmhdr.hwndFrom == _listView.Handle && nmhdr.code == NM_CUSTOMDRAW)
+            {
+                var nmcd = Marshal.PtrToStructure<NMCUSTOMDRAW>(m.LParam);
+                if (nmcd.dwDrawStage == CDDS_PREPAINT)
+                {
+                    m.Result = (IntPtr)CDRF_NOTIFYPOSTPAINT;
+                    return;
+                }
+                if (nmcd.dwDrawStage == CDDS_POSTPAINT)
+                {
+                    PaintGroupHeaders(nmcd.hdc);
+                    m.Result = IntPtr.Zero;
+                    return;
+                }
+            }
         }
 
         base.WndProc(ref m);
@@ -233,6 +263,38 @@ internal sealed class ListViewHeaderPainter : NativeWindow, IDisposable
         }
 
         g.ResetClip();
+    }
+
+    private void PaintGroupHeaders(IntPtr hdc)
+    {
+        if (!GroupHeaderColor.HasValue || _listView.Groups.Count == 0) return;
+
+        using var g = Graphics.FromHdc(hdc);
+        using var bgBrush = new SolidBrush(_listView.BackColor);
+        using var textBrush = new SolidBrush(GroupHeaderColor.Value);
+        using var font = new Font(_listView.Font.FontFamily, _listView.Font.Size + 1f, FontStyle.Bold);
+        using var sf = new StringFormat
+        {
+            LineAlignment = StringAlignment.Center,
+            Trimming = StringTrimming.EllipsisCharacter,
+            FormatFlags = StringFormatFlags.NoWrap
+        };
+
+        foreach (ListViewGroup group in _listView.Groups)
+        {
+            int groupId = s_groupIdProp != null ? (int)(s_groupIdProp.GetValue(group) ?? -1) : -1;
+            if (groupId < 0) continue;
+
+            var rect = new RECT { left = LVGGR_LABEL };
+            if (SendMessage(_listView.Handle, LVM_GETGROUPRECT, (IntPtr)groupId, ref rect) == IntPtr.Zero)
+                continue;
+
+            var bounds = Rectangle.FromLTRB(rect.left, rect.top, rect.right, rect.bottom);
+            if (bounds.Width <= 0 || bounds.Height <= 0) continue;
+
+            g.FillRectangle(bgBrush, bounds);
+            g.DrawString(group.Header, font, textBrush, bounds, sf);
+        }
     }
 
     private string GetHeaderItemText(int itemIndex)

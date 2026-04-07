@@ -1,4 +1,16 @@
-﻿## [0.94.0] - 2026-04-07 — Mega.io Kaldırma, Sekme Geçiş Seçimi, CLAUDE.md
+﻿## [0.95.0] - 2026-04-07 — SQL Yetki Otomatik Kontrolü, UI Düzeltmeleri
+
+### Yeni Özellikler
+- **SQL Server yetki otomatik kontrolü** — Servis modunda (NT AUTHORITY\SYSTEM) yedekleme başlamadan önce SQL Server erişim yetkisi kontrol edilir ve gerekirse otomatik sysadmin rolü verilir. Başarısızlıkta kullanıcıya bilgi logu yazılır.
+- **Dashboard grup başlıkları yeşil renk** — Son Yedeklemeler listesindeki plan grup başlıkları (Google, Mega vs.) artık yeşil renkte gösterilir. Win32 NM_CUSTOMDRAW post-paint ile tema üzerine özel çizim.
+
+### Düzeltmeler
+- **Sonraki Çalışma sütunu güncellenmeme hatası** — Plan düzenle/yeni/sil/import sonrası "Sonraki Çalışma" sütunu artık anında güncellenir (`RequestNextFireTimesAsync` çağrısı eklendi).
+- **Taskbar ikonu görünmüyor** — Ana form `Icon` property'si `SymbolIconHelper.CreateTrayIcon()` ile atanarak taskbar'da program simgesi gösteriliyor.
+
+---
+
+## [0.94.0] - 2026-04-07 — Mega.io Kaldırma, Sekme Geçiş Seçimi, CLAUDE.md
 
 ### Kaldırılan
 - **Mega.io bulut desteği tamamen kaldırıldı** — MegaProvider.cs, MegaProvider.Operations.cs silinip enum/factory/UI/test/dökümantasyondan tüm referanslar temizlendi. MegaApiClient NuGet paketi kaldırıldı.

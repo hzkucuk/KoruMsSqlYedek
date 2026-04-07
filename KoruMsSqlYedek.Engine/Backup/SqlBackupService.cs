@@ -64,6 +64,9 @@ namespace KoruMsSqlYedek.Engine.Backup
             {
                 Directory.CreateDirectory(destinationPath);
 
+                // NT AUTHORITY\SYSTEM hesabının SQL Server erişimini kontrol et (servis modunda)
+                EnsureSystemLoginPermission(connectionInfo);
+
                 using var sqlConn1 = new SqlConnection(BuildConnectionString(connectionInfo));
                 var serverConnection = new ServerConnection(sqlConn1);
                 var server = new Server(serverConnection);

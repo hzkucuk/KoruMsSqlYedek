@@ -272,6 +272,7 @@ namespace KoruMsSqlYedek.Win
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     RefreshPlanList();
+                    RequestNextFireTimesAsync();
                 }
             }
         }
@@ -288,6 +289,7 @@ namespace KoruMsSqlYedek.Win
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     RefreshPlanList();
+                    RequestNextFireTimesAsync();
                 }
             }
         }
@@ -311,6 +313,7 @@ namespace KoruMsSqlYedek.Win
                     _planManager.DeletePlan(plan.PlanId);
                     Log.Information("Plan silindi: {PlanName} ({PlanId})", plan.PlanName, plan.PlanId);
                     RefreshPlanList();
+                    RequestNextFireTimesAsync();
                 }
                 catch (Exception ex)
                 {
@@ -364,6 +367,7 @@ namespace KoruMsSqlYedek.Win
                         var plan = _planManager.ImportPlan(ofd.FileName);
                         Log.Information("Plan içe aktarıldı: {PlanName} ({PlanId})", plan.PlanName, plan.PlanId);
                         RefreshPlanList();
+                        RequestNextFireTimesAsync();
                         Theme.ModernMessageBox.Show(Res.Format("PlanList_ImportSuccess", plan.PlanName), Res.Get("Info"),
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
