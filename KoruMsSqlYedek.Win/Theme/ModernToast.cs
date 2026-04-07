@@ -33,15 +33,20 @@ namespace KoruMsSqlYedek.Win.Theme
             TopMost = true;
             StartPosition = FormStartPosition.Manual;
             Size = new Size(ToastWidth, ToastHeight);
-            BackColor = Color.Magenta;
-            TransparencyKey = Color.Magenta;
-            Opacity = 0.01; // 0 yerine 0.01 — Windows alpha=0 pencereyi render etmeyebilir
+            BackColor = ModernTheme.SurfaceColor;
+            Opacity = 0.01;
 
             SetStyle(
                 ControlStyles.AllPaintingInWmPaint |
                 ControlStyles.UserPaint |
-                ControlStyles.DoubleBuffer,
+                ControlStyles.OptimizedDoubleBuffer,
                 true);
+
+            // Rounded corners via Region — TransparencyKey+Opacity combo,
+            // tray-only (ownerless) modda layered window render sorununa neden oluyordu.
+            using var regionPath = ModernTheme.CreateRoundedRectanglePath(
+                new Rectangle(0, 0, ToastWidth, ToastHeight), Radius);
+            Region = new Region(regionPath);
 
             // Pozisyon — sağ alt köşe
             var workingArea = Screen.PrimaryScreen.WorkingArea;
@@ -124,15 +129,7 @@ namespace KoruMsSqlYedek.Win.Theme
             string iconSymbol;
             GetTypeVisuals(out accentColor, out iconSymbol);
 
-            // Gölge
-            var shadowRect = new Rectangle(2, 2, rect.Width, rect.Height);
-            using (var shadowPath = ModernTheme.CreateRoundedRectanglePath(shadowRect, Radius))
-            using (var shadowBrush = new SolidBrush(Color.FromArgb(40, 0, 0, 0)))
-            {
-                g.FillPath(shadowBrush, shadowPath);
-            }
-
-            // Ana arkaplan
+            // Ana arkaplan (Region zaten formu yuvarlak klipliyor)
             using (var bgPath = ModernTheme.CreateRoundedRectanglePath(rect, Radius))
             {
                 using (var bgBrush = new SolidBrush(ModernTheme.SurfaceColor))

@@ -1,4 +1,9 @@
-﻿## [0.99.6] - 2026-04-09 — UI Thread Marshal Crash + Toast Düzeltmesi
+﻿## [0.99.7] - 2026-04-09 — ModernToast Render Düzeltmesi
+
+### Düzeltme
+- **ModernToast tray-only modda görünmüyor (kök neden)** — `TransparencyKey = Color.Magenta` + `Opacity` birleşimi (`LWA_COLORKEY | LWA_ALPHA`) tray-only (owner form yok) modda layered window render başarısız oluyordu; `OnPaint` çalışsa bile tüm içerik Magenta TransparencyKey nedeniyle şeffaf render ediliyordu. `TransparencyKey` kaldırıldı, yuvarlak köşeler için `Region` + `GraphicsPath` kullanıldı. `DoubleBuffer` → `OptimizedDoubleBuffer` olarak güncellendi.
+
+## [0.99.6] - 2026-04-09 — UI Thread Marshal Crash + Toast Düzeltmesi
 
 ### Düzeltme
 - **Uygulama açılmıyor (crash) — SynchronizationContext referans karşılaştırma hatası** — v0.99.5'te eklenen `_syncContext != SynchronizationContext.Current` kontrolü `WindowsFormsSynchronizationContext` referans eşitliği garanti etmediğinden UI thread'de bile `true` dönüyor ve sonsuz `Post` döngüsü oluşturuyordu. Düzeltme: `_uiThreadId` (ManagedThreadId) yakalanarak `Thread.CurrentThread.ManagedThreadId != _uiThreadId` kontrolüne geçildi.
