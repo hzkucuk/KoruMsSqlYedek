@@ -26,12 +26,17 @@ namespace KoruMsSqlYedek.Win
 
             if (connected)
             {
-                UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
+                UpdateTrayStatus(TrayIconStatus.Success, Res.Get("Tray_Tooltip"));
                 ShowBalloonTip(
                     Res.Get("Tray_ServiceConnectionTitle"),
                     Res.Get("Tray_ServiceConnected"),
                     ToolTipIcon.Info, 3000);
                 Log.Information("Servis pipe bağlandı.");
+
+                // 3 sn sonra normal Idle ikonuna dön
+                _ = Task.Delay(3000).ContinueWith(_ =>
+                    _syncContext.Post(__ =>
+                        UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip")), null));
             }
             else
             {
