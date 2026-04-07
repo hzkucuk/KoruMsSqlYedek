@@ -106,6 +106,9 @@ namespace KoruMsSqlYedek.Win
             // Versiyon metnini runtime'da ayarla (Designer'da statik metinlere izin verilmiyor)
             string ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
             _tslVersion.Text = $"v{ver}";
+            _tslVersion.IsLink = true;
+            _tslVersion.LinkBehavior = LinkBehavior.HoverUnderline;
+            _tslVersion.Click += OnVersionLabelClick;
 
             ApplyIcons();
 
@@ -252,6 +255,13 @@ namespace KoruMsSqlYedek.Win
                 Activate();
             else
                 Show();
+        }
+
+        /// <summary>Versiyon label'ına tıklanınca Hakkında diyalogunu açar.</summary>
+        private void OnVersionLabelClick(object? sender, EventArgs e)
+        {
+            using Forms.AboutForm aboutForm = new();
+            aboutForm.ShowDialog(this);
         }
 
         protected override void OnShown(EventArgs e)

@@ -2,6 +2,10 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.98.0 — Hakkında Formu
+- Hakkında diyalogu: uygulama adı, versiyon, GDI+ kalkan logo, telif hakkı, GitHub linki, .NET runtime bilgisi
+- Tray menü + status bar versiyon etiketi ile erişim
+
 ### v0.97.0 — Yeşil Grup Başlıkları (ObjectListView)
 - ThemedObjectListView alt sınıfı: NM_CUSTOMDRAW ile grup başlık rengini özelleştirme
 - Dashboard grup başlıkları emerald yeşil (AccentPrimaryHover)

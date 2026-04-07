@@ -1,4 +1,14 @@
-﻿## [0.97.0] - 2026-04-08 — Yeşil Grup Başlıkları (ObjectListView)
+﻿## [0.98.0] - 2026-04-08 — Hakkında Formu
+
+### Yeni Özellikler
+- **Hakkında Diyalogu** — Uygulama adı, versiyon, telif hakkı, geliştirici bilgisi, GitHub bağlantısı ve .NET runtime bilgisini gösteren modern Hakkında formu eklendi.
+- **GDI+ Kalkan Logosu** — Hakkında formunda emerald gradient kalkan ikonu GDI+ ile çiziliyor.
+- **Tray Menü Erişimi** — System tray sağ tık menüsünde “Hakkında” öğesi eklendi.
+- **Status Bar Erişimi** — Ana pencere durum çubuğundaki versiyon etiketine tıklanarak Hakkında diyalogu açılabilir.
+
+---
+
+## [0.97.0] - 2026-04-08 — Yeşil Grup Başlıkları (ObjectListView)
 
 ### Yeni Özellikler
 - **ThemedObjectListView** — ObjectListView için NM_CUSTOMDRAW WndProc interception ile grup başlık metin rengini özelleştiren alt sınıf oluşturuldu.
