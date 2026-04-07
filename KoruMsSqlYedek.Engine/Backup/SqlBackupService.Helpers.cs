@@ -12,6 +12,81 @@ namespace KoruMsSqlYedek.Engine.Backup
 {
     public partial class SqlBackupService
     {
+        #region SQL Server Permission Helpers
+
+        /// <summary>
+        /// Uygulama ömrü boyunca yalnızca bir kez çalışır.
+        /// </summary>
+        private static volatile bool _systemPermissionChecked;
+
+        /// <summary>
+        /// NT AUTHORITY\SYSTEM hesabının SQL Server'da sysadmin rolüne sahip olup olmadığını kontrol eder.
+        /// Yoksa otomatik olarak eklemeye çalışır. Windows Auth kullanılmıyorsa atlanır.
+        /// </summary>
+        internal static void EnsureSystemLoginPermission(SqlConnInfo connectionInfo)
+        {
+            if (_systemPermissionChecked) return;
+            if (connectionInfo.AuthMode != SqlAuthMode.Windows) { _systemPermissionChecked = true; return; }
+
+            try
+            {
+                var builder = new SqlConnectionStringBuilder
+                {
+                    DataSource = connectionInfo.Server,
+                    IntegratedSecurity = true,
+                    InitialCatalog = "master",
+                    ConnectTimeout = connectionInfo.ConnectionTimeoutSeconds,
+                    TrustServerCertificate = connectionInfo.TrustServerCertificate,
+                    Encrypt = connectionInfo.TrustServerCertificate
+                        ? SqlConnectionEncryptOption.Optional
+                        : SqlConnectionEncryptOption.Mandatory
+                };
+
+                using var conn = new SqlConnection(builder.ConnectionString);
+                conn.Open();
+
+                // Önce login var mı kontrol et
+                const string checkLoginSql =
+                    "SELECT COUNT(*) FROM sys.server_principals WHERE name = 'NT AUTHORITY\\SYSTEM'";
+                using var checkCmd = new SqlCommand(checkLoginSql, conn);
+                int loginExists = (int)checkCmd.ExecuteScalar();
+
+                if (loginExists == 0)
+                {
+                    using var createCmd = new SqlCommand(
+                        "CREATE LOGIN [NT AUTHORITY\\SYSTEM] FROM WINDOWS", conn);
+                    createCmd.ExecuteNonQuery();
+                    Log.Information("SQL Server login oluşturuldu: NT AUTHORITY\\SYSTEM");
+                }
+
+                // sysadmin rolünde mi kontrol et
+                const string checkRoleSql =
+                    "SELECT IS_SRVROLEMEMBER('sysadmin', 'NT AUTHORITY\\SYSTEM')";
+                using var roleCmd = new SqlCommand(checkRoleSql, conn);
+                var roleResult = roleCmd.ExecuteScalar();
+                bool isSysAdmin = roleResult != null && roleResult != DBNull.Value && Convert.ToInt32(roleResult) == 1;
+
+                if (!isSysAdmin)
+                {
+                    using var grantCmd = new SqlCommand(
+                        "ALTER SERVER ROLE [sysadmin] ADD MEMBER [NT AUTHORITY\\SYSTEM]", conn);
+                    grantCmd.ExecuteNonQuery();
+                    Log.Information("NT AUTHORITY\\SYSTEM hesabına sysadmin rolü verildi.");
+                }
+
+                _systemPermissionChecked = true;
+            }
+            catch (Exception ex)
+            {
+                _systemPermissionChecked = true; // Tekrar denememek için
+                Log.Warning(ex,
+                    "NT AUTHORITY\\SYSTEM için SQL Server yetki kontrolü başarısız. " +
+                    "Manuel olarak şu komutu çalıştırın: ALTER SERVER ROLE [sysadmin] ADD MEMBER [NT AUTHORITY\\SYSTEM]");
+            }
+        }
+
+        #endregion
+
         #region Retry & Error Helpers
 
         /// <summary>

@@ -197,6 +197,13 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         var (allCloudOk, fileCloudResults2) = await UploadAllPendingAsync(
                             plan, sqlPendingUploads, fileArchivePath2, cts.Token);
 
+                        // Tüm SQL sonuçlarını history'e kaydet (cloud sonuçları UploadAllPendingAsync içinde atandı)
+                        if (sqlResults != null)
+                        {
+                            foreach (var sqlResult in sqlResults)
+                                SaveHistory(sqlResult);
+                        }
+
                         bool anySqlFailed = sqlResults != null && sqlResults.Any(r => r.Status != BackupResultStatus.Success);
                         bool anyFileFailed = fileResults2 != null && fileResults2.Any(r => r.Status != BackupResultStatus.Success);
                         bool overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed;

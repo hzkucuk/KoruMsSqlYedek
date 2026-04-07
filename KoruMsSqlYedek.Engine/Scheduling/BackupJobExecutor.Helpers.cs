@@ -237,16 +237,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     }
                 }
 
-                // History'yi güncelle (cloud sonuçları artık atandı)
-                if (sqlPendingUploads != null)
-                {
-                    var processedResults = new HashSet<BackupResult>();
-                    foreach (var pending in sqlPendingUploads)
-                    {
-                        if (pending.SqlResult != null && processedResults.Add(pending.SqlResult))
-                            SaveHistory(pending.SqlResult);
-                    }
-                }
+                // History artık ana executor'da kaydediliyor (UploadAllPendingAsync sonrası)
 
                 int totalSuccess = batchResults.Sum(r => r.Count(x => x.IsSuccess));
                 int totalTargets = batchResults.Sum(r => r.Count);

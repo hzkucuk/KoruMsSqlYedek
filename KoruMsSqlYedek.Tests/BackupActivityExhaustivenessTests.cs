@@ -29,6 +29,7 @@ namespace KoruMsSqlYedek.Tests
             BackupActivityType.CloudUploadStarted,
             BackupActivityType.CloudUploadProgress,
             BackupActivityType.CloudUploadCompleted,
+            BackupActivityType.CloudUploadAbandoned,
             BackupActivityType.Completed,
             BackupActivityType.Failed,
             BackupActivityType.Cancelled
@@ -48,8 +49,8 @@ namespace KoruMsSqlYedek.Tests
         public void BackupActivityType_ShouldHaveExactly9Values()
         {
             var allValues = Enum.GetValues(typeof(BackupActivityType)).Cast<BackupActivityType>().ToArray();
-            allValues.Should().HaveCount(9,
-                "BackupActivityType 9 değer içermeli. Yeni değer eklendiğinde bu test + 5 sorumluluk noktası güncellenmelidir.");
+            allValues.Should().HaveCount(10,
+                "BackupActivityType 10 değer içermeli. Yeni değer eklendiğinde bu test + 5 sorumluluk noktası güncellenmelidir.");
         }
 
         [TestMethod]
