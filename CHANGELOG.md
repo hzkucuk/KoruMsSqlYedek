@@ -1,4 +1,13 @@
-﻿## [0.99.1] - 2026-04-08 — CI/CD Release Workflow Düzeltmeleri
+﻿## [0.99.2] - 2026-04-08 — GitHub Actions Kesin Düzetme
+
+### Düzetme
+- **`choco install innosetup` kaldırıldı** — `windows-latest` runner’ında Inno Setup 6 zaten pre-installed geliyor (`C:\Program Files (x86)\Inno Setup 6\ISCC.exe`). `choco` bu kurulumu tanımıyor ve çakışıyor; bu nedenle v0.94.0’dan beri hiçbir release oluşmuyordu.
+- **ISCC.exe tam yol** — `& $iscc` ile pre-installed binary doğrudan çağrılıyor.
+- **Exit code kontrolü** — ISCC başarısız olursa workflow açıkca hata veriyor.
+
+---
+
+## [0.99.1] - 2026-04-08 — CI/CD Release Workflow Düzeltmeleri
 
 ### Düzeltmeler
 - **Inno Setup mutlak yol hatası** — `WinPublishDir`/`ServicePublishDir` parametreleri artık `${{ github.workspace }}` ile mutlak yol olarak geçiliyor; önceki relative path `.iss` konumuna göre çözülüyor ve yanlış klasör bulunuyordu.
