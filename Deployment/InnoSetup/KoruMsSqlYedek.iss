@@ -1,4 +1,4 @@
-﻿; KoruMsSqlYedek — Inno Setup Script
+; KoruMsSqlYedek — Inno Setup Script
 ; SQL Server Yedekleme & Bulut Senkronizasyon Sistemi
 ;
 ; Kullanım:
@@ -10,7 +10,7 @@
 
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
-#define MyAppVersion "0.99.2"
+#define MyAppVersion "0.99.3"
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"
