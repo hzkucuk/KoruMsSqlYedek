@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.5 — Per-Type Retention Şablonları
+- `RetentionScheme`: SQL Full / Diff / Log ve Files arşivi için bağımsız retention politikaları
+- Hazır şablonlar: Minimal, Standard (★ öneri), Extended, GFS — `RetentionTemplates.FromType()` factory
+- `BackupPlan.GetEffectiveRetention(BackupFileType)` — per-type; eski planlarda `Retention` fallback
+- `RetentionCleanupService` refactor: `_Full_`, `_Differential_`, `_Log_` dosya adı parse ile tip tespiti
+- PlanEditForm Step 4: şablon dropdown + info etiketi + Özel mod için mevcut kontroller korundu
+
 ### v0.99.4 — Güncelleme Kontrol Düzeltmesi
 - `InstallerPrefix` `"KoruMsSqlYedek_v"` olarak düzeltildi; artık GitHub asset eşleşiyor ve güncelleme bildirimi çalışıyor
 

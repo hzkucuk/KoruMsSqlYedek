@@ -113,6 +113,105 @@ namespace KoruMsSqlYedek.Core.Models
     }
 
     /// <summary>
+    /// Dosya tipine göre ayrı retention politikaları tanımlayan şema.
+    /// Null olduğunda BackupPlan.Retention (eski alan) fallback olarak kullanılır.
+    /// </summary>
+    public class RetentionScheme
+    {
+        /// <summary>Hangi hazır şablondan türetildiği (bilgi amaçlı).</summary>
+        [JsonProperty("template")]
+        public RetentionTemplateType Template { get; set; } = RetentionTemplateType.Custom;
+
+        /// <summary>SQL Server tam yedekler için retention politikası.</summary>
+        [JsonProperty("sqlFull")]
+        public RetentionPolicy SqlFull { get; set; } = new RetentionPolicy { KeepLastN = 7 };
+
+        /// <summary>SQL Server fark yedekler için retention politikası.</summary>
+        [JsonProperty("sqlDifferential")]
+        public RetentionPolicy SqlDifferential { get; set; } = new RetentionPolicy { KeepLastN = 14 };
+
+        /// <summary>SQL Server log/artırımlı yedekler için retention politikası.</summary>
+        [JsonProperty("sqlLog")]
+        public RetentionPolicy SqlLog { get; set; } = new RetentionPolicy { KeepLastN = 30 };
+
+        /// <summary>Dosya/klasör yedekleme arşivleri (Files_*.7z) için retention politikası.</summary>
+        [JsonProperty("fileBackup")]
+        public RetentionPolicy FileBackup { get; set; } = new RetentionPolicy { KeepLastN = 14 };
+    }
+
+    /// <summary>
+    /// Hazır retention şablonlarını üreten factory.
+    /// </summary>
+    public static class RetentionTemplates
+    {
+        /// <summary>Az yer: Full×3, Diff×7, Log×14, Files×5.</summary>
+        public static RetentionScheme Minimal => new RetentionScheme
+        {
+            Template = RetentionTemplateType.Minimal,
+            SqlFull = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 3 },
+            SqlDifferential = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 7 },
+            SqlLog = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 14 },
+            FileBackup = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 5 }
+        };
+
+        /// <summary>Dengeli (önerilen): Full×7, Diff×14, Log×30, Files×14.</summary>
+        public static RetentionScheme Standard => new RetentionScheme
+        {
+            Template = RetentionTemplateType.Standard,
+            SqlFull = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 7 },
+            SqlDifferential = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 14 },
+            SqlLog = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 30 },
+            FileBackup = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 14 }
+        };
+
+        /// <summary>Kapsamlı: Full×14, Diff×30, Log×90, Files×30.</summary>
+        public static RetentionScheme Extended => new RetentionScheme
+        {
+            Template = RetentionTemplateType.Extended,
+            SqlFull = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 14 },
+            SqlDifferential = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 30 },
+            SqlLog = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 90 },
+            FileBackup = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 30 }
+        };
+
+        /// <summary>GFS rotasyonu — tüm tipler için Grandfather-Father-Son.</summary>
+        public static RetentionScheme GFS => new RetentionScheme
+        {
+            Template = RetentionTemplateType.GFS,
+            SqlFull = new RetentionPolicy
+            {
+                Type = RetentionPolicyType.GFS,
+                GfsKeepDaily = 7, GfsKeepWeekly = 4, GfsKeepMonthly = 12, GfsKeepYearly = 2
+            },
+            SqlDifferential = new RetentionPolicy
+            {
+                Type = RetentionPolicyType.GFS,
+                GfsKeepDaily = 14, GfsKeepWeekly = 4, GfsKeepMonthly = 3, GfsKeepYearly = 0
+            },
+            SqlLog = new RetentionPolicy
+            {
+                Type = RetentionPolicyType.GFS,
+                GfsKeepDaily = 30, GfsKeepWeekly = 4, GfsKeepMonthly = 2, GfsKeepYearly = 0
+            },
+            FileBackup = new RetentionPolicy
+            {
+                Type = RetentionPolicyType.GFS,
+                GfsKeepDaily = 7, GfsKeepWeekly = 4, GfsKeepMonthly = 6, GfsKeepYearly = 1
+            }
+        };
+
+        /// <summary>Şablon türüne göre hazır RetentionScheme döndürür.</summary>
+        public static RetentionScheme FromType(RetentionTemplateType type) => type switch
+        {
+            RetentionTemplateType.Minimal => Minimal,
+            RetentionTemplateType.Standard => Standard,
+            RetentionTemplateType.Extended => Extended,
+            RetentionTemplateType.GFS => GFS,
+            _ => Standard
+        };
+    }
+
+    /// <summary>
     /// Bulut hedef yapılandırması.
     /// </summary>
     public class CloudTargetConfig

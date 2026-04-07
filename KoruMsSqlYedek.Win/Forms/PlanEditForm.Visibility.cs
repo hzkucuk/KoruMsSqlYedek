@@ -67,11 +67,33 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void UpdateRetentionFieldsVisibility()
         {
-            int idx = _cmbRetention.SelectedIndex;
-            _lblKeepLastN.Visible = idx == 0 || idx == 2;
-            _nudKeepLastN.Visible = idx == 0 || idx == 2;
-            _lblDeleteDays.Visible = idx == 1 || idx == 2;
-            _nudDeleteDays.Visible = idx == 1 || idx == 2;
+            // Özel mod (index=4) olduğunda manuel kontroller görünür
+            bool isCustom = _cmbRetentionTemplate.SelectedIndex < 0 ||
+                            _cmbRetentionTemplate.SelectedIndex == 4;
+
+            _lblRetention.Visible = isCustom;
+            _cmbRetention.Visible = isCustom;
+
+            int retIdx = _cmbRetention.SelectedIndex;
+            _lblKeepLastN.Visible = isCustom && (retIdx == 0 || retIdx == 2);
+            _nudKeepLastN.Visible = isCustom && (retIdx == 0 || retIdx == 2);
+            _lblDeleteDays.Visible = isCustom && (retIdx == 1 || retIdx == 2);
+            _nudDeleteDays.Visible = isCustom && (retIdx == 1 || retIdx == 2);
+        }
+
+        private void OnRetentionTemplateChanged(object? sender, EventArgs e)
+        {
+            // Info etiketi: seçili şablonun açıklaması
+            int idx = _cmbRetentionTemplate.SelectedIndex;
+            _lblRetentionTemplateInfo.Text = idx switch
+            {
+                0 => "SQL Full: en son 3 • Diff: 7 • Log: 14 • Dosya arşivi: 5 yedek",
+                1 => "SQL Full: en son 7 • Diff: 14 • Log: 30 • Dosya arşivi: 14 yedek",
+                2 => "SQL Full: en son 14 • Diff: 30 • Log: 90 • Dosya arşivi: 30 yedek",
+                3 => "GFS — Günlük 7 / Haftalık 4 / Aylık 12 / Yıllık 2 (Full için)",
+                _ => "Temizlik kuralını ve saklanacak yedek sayısını elle belirleyin."
+            };
+            UpdateRetentionFieldsVisibility();
         }
 
         private void OnProtectPlanChanged(object? sender, EventArgs e)

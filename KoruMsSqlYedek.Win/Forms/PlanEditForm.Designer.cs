@@ -123,6 +123,9 @@
             _nudKeepLastN = new Theme.ModernNumericUpDown();
             _lblDeleteDays = new System.Windows.Forms.Label();
             _nudDeleteDays = new Theme.ModernNumericUpDown();
+            _lblRetentionTemplate = new System.Windows.Forms.Label();
+            _cmbRetentionTemplate = new System.Windows.Forms.ComboBox();
+            _lblRetentionTemplateInfo = new System.Windows.Forms.Label();
             _chkProtectPlan = new System.Windows.Forms.CheckBox();
             _txtPlanPassword = new System.Windows.Forms.TextBox();
             _txtRecoveryPassword = new System.Windows.Forms.TextBox();
@@ -910,6 +913,9 @@
         private System.Windows.Forms.Label _lblArchivePassword;
         private System.Windows.Forms.TextBox _txtArchivePassword;
         private System.Windows.Forms.Label _lblStep4RetHeader;
+        private System.Windows.Forms.Label _lblRetentionTemplate;
+        private System.Windows.Forms.ComboBox _cmbRetentionTemplate;
+        private System.Windows.Forms.Label _lblRetentionTemplateInfo;
         private System.Windows.Forms.Label _lblRetention;
         private System.Windows.Forms.ComboBox _cmbRetention;
         private System.Windows.Forms.Label _lblKeepLastN;

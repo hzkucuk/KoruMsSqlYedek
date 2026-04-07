@@ -1,4 +1,22 @@
-﻿## [0.99.4] - 2026-04-08 — Güncelleme Kontrol Düzeltmesi
+﻿## [0.99.5] - 2026-04-09 — Per-Type Retention Şablonları
+
+### Yeni Özellik
+- **`RetentionScheme` (per-type retention)** — SQL Full, Diff, Log ve dosya arşivi (Files_*.7z) için artık ayrı bağımsız retention politikaları tanımlanabiliyor.
+- **Hazır şablonlar** — `RetentionTemplates` factory: Minimal, Standard, Extended, GFS şablonları. Her şablon dosya tipine göre optimize edilmiş KeepLastN değerleri içeriyor.
+- **`BackupPlan.GetEffectiveRetention(BackupFileType)`** — Dosya tipine göre etkin politikayı döndürür; `RetentionScheme` yoksa eski `Retention` alanına fallback yaparak geriye uyumluluğu korur.
+- **`RetentionCleanupService` refactor** — `CleanupForDatabaseByType` ile her tip kendi havuzunda sayılıyor; Full dosyaları silinirken Log dosya sayısı hesaba katılmıyor.
+- **PlanEditForm Şablon Seçici** — Adım 4'te Minimal / Standard ★ / Extended / GFS / Özel dropdown; seçime göre info etiketi ve custom panel görünürlüğü yönetiliyor.
+- **9 yeni test** — Per-type scheme, fallback, şablon factory testleri (32/32 geçti).
+
+### Teknik
+- `BackupFileType` enum eklendi: SqlFull / SqlDifferential / SqlLog / FileBackup
+- `RetentionTemplateType` enum eklendi: Custom / Minimal / Standard / Extended / GFS
+- `RetentionScheme` model `ConfigModels.cs`'e eklendi (JSON: `retentionScheme`)
+- `BackupPlan.RetentionScheme` alanı `NullValueHandling.Ignore` ile eklendi (yeni alan, eski planları kırmaz)
+
+---
+
+## [0.99.4] - 2026-04-08 — Güncelleme Kontrol Düzeltmesi
 
 ### Düzeltme
 - **`InstallerPrefix` hatası** — `UpdateChecker` GitHub asset'ini `"KoruMsSqlYedek_Setup_"` prefix'i ile arıyordu; ancak installer dosya adı `KoruMsSqlYedek_v{sürüm}_Setup.exe` formatında. Prefix `"KoruMsSqlYedek_v"` olarak düzeltildi. Bu hata yüzünden güncelleme her zaman "bulunamadı" olarak dönüyordu.
