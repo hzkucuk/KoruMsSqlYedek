@@ -17,10 +17,14 @@
 #define MyServiceExeName "KoruMsSqlYedek.Service.exe"
 #define MyServiceName "KoruMsSqlYedekService"
 
-; Publish klasörleri (Build-Release.ps1 çıktısı)
-; Bu yolları kendi ortamınıza göre güncelleyin
-#define WinPublishDir "..\publish\Win"
-#define ServicePublishDir "..\publish\Service"
+; Publish klasörleri — Build-Release.ps1 tarafından /D parametresiyle geçilir.
+; Manuel derleme için: ISCC.exe KoruMsSqlYedek.iss /DWinPublishDir=...absolute... /DServicePublishDir=...absolute...
+#ifndef WinPublishDir
+  #define WinPublishDir "..\..\publish\Win"
+#endif
+#ifndef ServicePublishDir
+  #define ServicePublishDir "..\..\publish\Service"
+#endif
 
 [Setup]
 AppId={{8F2C7A1E-3D5B-4E6F-A8C9-1B2D3E4F5A6B}
