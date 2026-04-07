@@ -276,6 +276,19 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
+        private void OnPasswordSetupClick(object sender, EventArgs e)
+        {
+            var settings = _settingsManager.Load();
+            using (var dlg = new Forms.PasswordSetupDialog(settings, _settingsManager))
+            {
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    // Ayarları yeniden yükle (şifre durumu değişmiş olabilir)
+                    LoadSettings();
+                }
+            }
+        }
+
         #endregion
 
         #region ── Localization ────────────────────────────────────────────────────

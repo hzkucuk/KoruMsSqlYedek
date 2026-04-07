@@ -83,6 +83,33 @@ jobs:
              /DServicePublishDir=publish\service `
              Deployment\InnoSetup\KoruMsSqlYedek.iss
 
+    # ── ZIP Paketi ────────────────────────────────────────────────
+    - name: Create ZIP package
+      shell: pwsh
+      run: |
+        $ver = "${{ steps.version.outputs.VERSION }}"
+        New-Item -ItemType Directory -Force -Path releases | Out-Null
+        Compress-Archive -Path publish\win\*, publish\service\* `
+          -DestinationPath "releases\KoruMsSqlYedek_v${ver}.zip" -Force
+        Write-Host "ZIP created: releases\KoruMsSqlYedek_v${ver}.zip"
+
+    # ── Değişiklik notlarını çıkar ────────────────────────────────
+    - name: Extract changelog notes
+      id: changelog
+      shell: pwsh
+      run: |
+        $ver = "${{ steps.version.outputs.VERSION }}"
+        $content = Get-Content CHANGELOG.md -Raw
+        # Versiyon başlığını bul, bir sonraki başlığa kadar al
+        if ($content -match "(?s)## \[$ver\][^\n]*\n(.*?)(?=\n## \[|\z)") {
+          $notes = $Matches[1].Trim()
+        } else {
+          $notes = "Bkz: [CHANGELOG.md](https://github.com/hzkucuk/KoruMsSqlYedek/blob/master/CHANGELOG.md)"
+        }
+        # Multiline output
+        $notes = $notes -replace '%', '%25' -replace "`n", '%0A' -replace "`r", ''
+        echo "NOTES=$notes" >> $env:GITHUB_OUTPUT
+
     # ── GitHub Release ────────────────────────────────────────────
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
@@ -92,18 +119,18 @@ jobs:
         body: |
           ## Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}
 
+          ${{ steps.changelog.outputs.NOTES }}
+
+          ---
           ### Kurulum
-          1. `KoruMsSqlYedek_Setup_v${{ steps.version.outputs.VERSION }}.exe` dosyasını indirin
-          2. Yönetici olarak çalıştırın
-          3. Kurulum sihirbazını takip edin
+          1. `KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe` indirin ve yönetici olarak çalıştırın
+          2. Kurulum sihirbazını takip edin
 
           ### Gereksinimler
           - Windows 10/11 (x64)
-          - .NET 10 Runtime
+          - [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
 
-          ### Notlar
-          - Güncelleme yapıyorsanız mevcut ayarlarınız korunur
-          - Değişiklikler için [CHANGELOG.md](https://github.com/hzkucuk/KoruMsSqlYedek/blob/master/CHANGELOG.md) dosyasına bakın
+          > Güncelleme yapıyorsanız mevcut ayarlarınız korunur.
         draft: false
         prerelease: false
         files: |

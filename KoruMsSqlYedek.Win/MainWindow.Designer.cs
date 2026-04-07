@@ -144,6 +144,11 @@
             _btnSmtpEdit = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _btnSmtpDelete = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _btnSmtpTest = new KoruMsSqlYedek.Win.Theme.ModernButton();
+            _tabSecurity = new System.Windows.Forms.TabPage();
+            _tlpSecurity = new System.Windows.Forms.TableLayoutPanel();
+            _lblSecurityTitle = new System.Windows.Forms.Label();
+            _btnPasswordSetup = new KoruMsSqlYedek.Win.Theme.ModernButton();
+            _lblSecurityInfo = new System.Windows.Forms.Label();
             _flpSettingsButtons = new System.Windows.Forms.FlowLayoutPanel();
             _btnCancelSettings = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _btnSaveSettings = new KoruMsSqlYedek.Win.Theme.ModernButton();
@@ -1247,6 +1252,7 @@
             _tabSettings2.ActiveTabColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _tabSettings2.Controls.Add(_tabGeneral);
             _tabSettings2.Controls.Add(_tabSmtp);
+            _tabSettings2.Controls.Add(_tabSecurity);
             _tabSettings2.Dock = System.Windows.Forms.DockStyle.Fill;
             _tabSettings2.DrawMode = System.Windows.Forms.TabDrawMode.OwnerDrawFixed;
             _tabSettings2.Font = new System.Drawing.Font("Segoe UI", 9.5F);
@@ -1680,6 +1686,71 @@
             _btnSmtpTest.Text = "✉ Test";
             _btnSmtpTest.Click += OnSmtpTestClick;
             // 
+            // _tabSecurity
+            // 
+            _tabSecurity.Controls.Add(_tlpSecurity);
+            _tabSecurity.Location = new System.Drawing.Point(4, 40);
+            _tabSecurity.Name = "_tabSecurity";
+            _tabSecurity.Padding = new System.Windows.Forms.Padding(8, 9, 8, 9);
+            _tabSecurity.Size = new System.Drawing.Size(1002, 590);
+            _tabSecurity.TabIndex = 2;
+            _tabSecurity.Text = "Güvenlik";
+            // 
+            // _tlpSecurity
+            // 
+            _tlpSecurity.ColumnCount = 1;
+            _tlpSecurity.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            _tlpSecurity.Controls.Add(_lblSecurityTitle, 0, 0);
+            _tlpSecurity.Controls.Add(_btnPasswordSetup, 0, 1);
+            _tlpSecurity.Controls.Add(_lblSecurityInfo, 0, 2);
+            _tlpSecurity.Dock = System.Windows.Forms.DockStyle.Fill;
+            _tlpSecurity.Location = new System.Drawing.Point(8, 9);
+            _tlpSecurity.Name = "_tlpSecurity";
+            _tlpSecurity.RowCount = 4;
+            _tlpSecurity.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            _tlpSecurity.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            _tlpSecurity.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            _tlpSecurity.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            _tlpSecurity.Size = new System.Drawing.Size(986, 572);
+            _tlpSecurity.TabIndex = 0;
+            // 
+            // _lblSecurityTitle
+            // 
+            _lblSecurityTitle.AutoSize = true;
+            _lblSecurityTitle.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
+            _lblSecurityTitle.Location = new System.Drawing.Point(3, 5);
+            _lblSecurityTitle.Margin = new System.Windows.Forms.Padding(3, 5, 3, 15);
+            _lblSecurityTitle.Name = "_lblSecurityTitle";
+            _lblSecurityTitle.Size = new System.Drawing.Size(116, 20);
+            _lblSecurityTitle.TabIndex = 0;
+            _lblSecurityTitle.Text = "Şifre Koruması";
+            // 
+            // _btnPasswordSetup
+            // 
+            _btnPasswordSetup.ButtonStyle = Theme.ModernButtonStyle.Primary;
+            _btnPasswordSetup.CornerRadius = 6;
+            _btnPasswordSetup.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            _btnPasswordSetup.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _btnPasswordSetup.IconSymbol = "";
+            _btnPasswordSetup.Location = new System.Drawing.Point(3, 45);
+            _btnPasswordSetup.Margin = new System.Windows.Forms.Padding(3, 5, 3, 10);
+            _btnPasswordSetup.Name = "_btnPasswordSetup";
+            _btnPasswordSetup.Size = new System.Drawing.Size(200, 41);
+            _btnPasswordSetup.TabIndex = 1;
+            _btnPasswordSetup.Text = "Şifre Belirle / Değiştir";
+            _btnPasswordSetup.Click += OnPasswordSetupClick;
+            // 
+            // _lblSecurityInfo
+            // 
+            _lblSecurityInfo.AutoSize = true;
+            _lblSecurityInfo.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblSecurityInfo.Location = new System.Drawing.Point(3, 101);
+            _lblSecurityInfo.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
+            _lblSecurityInfo.Name = "_lblSecurityInfo";
+            _lblSecurityInfo.Size = new System.Drawing.Size(550, 34);
+            _lblSecurityInfo.TabIndex = 2;
+            _lblSecurityInfo.Text = "Uygulama açılışında ve kritik işlemlerde (görev silme vb.) şifre sorulmasını sağlar.\r\nŞifrenizi unutursanız güvenlik sorusu ile sıfırlayabilirsiniz.";
+            // 
             // _flpSettingsButtons
             // 
             _flpSettingsButtons.AutoSize = true;
@@ -1935,6 +2006,11 @@
         private Theme.ModernTabControl _tabSettings2;
         private System.Windows.Forms.TabPage _tabGeneral;
         private System.Windows.Forms.TabPage _tabSmtp;
+        private System.Windows.Forms.TabPage _tabSecurity;
+        private System.Windows.Forms.TableLayoutPanel _tlpSecurity;
+        private System.Windows.Forms.Label _lblSecurityTitle;
+        private Theme.ModernButton _btnPasswordSetup;
+        private System.Windows.Forms.Label _lblSecurityInfo;
         private System.Windows.Forms.TableLayoutPanel _tlpGeneral;
         private System.Windows.Forms.Label _lblLanguage;
         private Theme.ModernComboBox _cmbLanguage;
