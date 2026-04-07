@@ -34,9 +34,14 @@ namespace KoruMsSqlYedek.Win
                 Log.Information("Servis pipe bağlandı.");
 
                 // 3 sn sonra normal Idle ikonuna dön
-                _ = Task.Delay(3000).ContinueWith(_ =>
-                    _syncContext.Post(__ =>
-                        UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip")), null));
+                var timer = new System.Windows.Forms.Timer { Interval = 3000 };
+                timer.Tick += (s, ev) =>
+                {
+                    timer.Stop();
+                    timer.Dispose();
+                    UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
+                };
+                timer.Start();
             }
             else
             {
