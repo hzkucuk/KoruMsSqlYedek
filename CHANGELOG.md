@@ -1,7 +1,10 @@
 ﻿## [0.99.7] - 2026-04-09 — ModernToast Render Düzeltmesi
 
 ### Düzeltme
-- **ModernToast tray-only modda görünmüyor (kök neden)** — `TransparencyKey = Color.Magenta` + `Opacity` birleşimi (`LWA_COLORKEY | LWA_ALPHA`) tray-only (owner form yok) modda layered window render başarısız oluyordu; `OnPaint` çalışsa bile tüm içerik Magenta TransparencyKey nedeniyle şeffaf render ediliyordu. `TransparencyKey` kaldırıldı, yuvarlak köşeler için `Region` + `GraphicsPath` kullanıldı. `DoubleBuffer` → `OptimizedDoubleBuffer` olarak güncellendi.
+- **ModernToast tray-only modda görünmüyor (kök neden çift)** —
+  1. `TransparencyKey = Color.Magenta` + `Opacity` birleşimi (`LWA_COLORKEY | LWA_ALPHA`) tray-only modda layered window render başarısız oluyordu. `TransparencyKey` kaldırıldı, yuvarlak köşeler `Region` + `GraphicsPath` ile sağlandı.
+  2. `OnShown` override'ı `BeginInvoke` ile asenkron tetiklendiğinden tray-only modda hiç fire etmiyordu → `_fadeTimer` başlamıyordu → form `Opacity=0.01`'de sonsuza dek takılıyordu. Fade-in tamamen kaldırıldı, form `Opacity=1` ile direkt gösterilir; `_closeTimer` `Show()` factory'sinden başlatılır, `OnShown` bağımlılığı sıfırlandı. Sadece fade-out (kapanırken) animasyonu korundu.
+  3. `DoubleBuffer` → `OptimizedDoubleBuffer` olarak güncellendi.
 
 ## [0.99.6] - 2026-04-09 — UI Thread Marshal Crash + Toast Düzeltmesi
 

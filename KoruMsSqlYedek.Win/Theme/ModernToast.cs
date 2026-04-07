@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using Serilog;
 
 namespace KoruMsSqlYedek.Win.Theme
 {
@@ -13,8 +14,7 @@ namespace KoruMsSqlYedek.Win.Theme
     {
         private readonly Timer _fadeTimer;
         private readonly Timer _closeTimer;
-        private float _opacity = 0f;
-        private bool _fadingIn = true;
+        private float _opacity = 1f;
         private readonly string _message;
         private readonly string _title;
         private readonly ToastType _toastType;
@@ -34,7 +34,6 @@ namespace KoruMsSqlYedek.Win.Theme
             StartPosition = FormStartPosition.Manual;
             Size = new Size(ToastWidth, ToastHeight);
             BackColor = ModernTheme.SurfaceColor;
-            Opacity = 0.01;
 
             SetStyle(
                 ControlStyles.AllPaintingInWmPaint |
@@ -54,7 +53,7 @@ namespace KoruMsSqlYedek.Win.Theme
                 workingArea.Right - ToastWidth - 16,
                 workingArea.Bottom - ToastHeight - 16);
 
-            // Fade-in timer
+            // Fade-out timer (kapanırken opacity azaltma)
             _fadeTimer = new Timer { Interval = 16 };
             _fadeTimer.Tick += OnFadeTick;
 
@@ -63,7 +62,6 @@ namespace KoruMsSqlYedek.Win.Theme
             _closeTimer.Tick += (s, e) =>
             {
                 _closeTimer.Stop();
-                _fadingIn = false;
                 _fadeTimer.Start();
             };
         }
@@ -85,34 +83,14 @@ namespace KoruMsSqlYedek.Win.Theme
             }
         }
 
-        protected override void OnShown(EventArgs e)
+        private void OnFadeTick(object? sender, EventArgs e)
         {
-            base.OnShown(e);
-            _fadeTimer.Start();
-        }
-
-        private void OnFadeTick(object sender, EventArgs e)
-        {
-            if (_fadingIn)
+            _opacity -= 0.06f;
+            if (_opacity <= 0f)
             {
-                _opacity += 0.08f;
-                if (_opacity >= 1.0f)
-                {
-                    _opacity = 1.0f;
-                    _fadeTimer.Stop();
-                    _closeTimer.Start();
-                }
-            }
-            else
-            {
-                _opacity -= 0.06f;
-                if (_opacity <= 0f)
-                {
-                    _opacity = 0f;
-                    _fadeTimer.Stop();
-                    Close();
-                    return;
-                }
+                _fadeTimer.Stop();
+                Close();
+                return;
             }
 
             Opacity = _opacity;
@@ -176,7 +154,7 @@ namespace KoruMsSqlYedek.Win.Theme
         protected override void OnClick(EventArgs e)
         {
             base.OnClick(e);
-            _fadingIn = false;
+            _closeTimer.Stop();
             _fadeTimer.Start();
         }
 
@@ -222,6 +200,10 @@ namespace KoruMsSqlYedek.Win.Theme
         {
             var toast = new ModernToast(title, message, type, durationMs);
             toast.Show();
+            toast._closeTimer.Start();
+
+            Log.Debug("ModernToast gösterildi: Bounds={Bounds}, Visible={Visible}, Handle={Handle}",
+                toast.Bounds, toast.Visible, toast.IsHandleCreated);
         }
 
         /// <summary>Başarı bildirimi.</summary>
