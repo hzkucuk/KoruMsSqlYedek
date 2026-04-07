@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -254,6 +255,11 @@ namespace KoruMsSqlYedek.Tests
             _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
 
             var result = TestDataFactory.CreateSuccessResult(plan.PlanId);
+            // Pipeline File.Exists kontrolü için geçici dosyalar oluştur
+            var tempBak = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid():N}.bak");
+            File.WriteAllBytes(tempBak, Array.Empty<byte>());
+            File.WriteAllBytes(Path.ChangeExtension(tempBak, ".7z"), Array.Empty<byte>());
+            result.BackupFilePath = tempBak;
             _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
                     It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
                     It.IsAny<SqlBackupType>(), It.IsAny<string>(),
@@ -265,21 +271,21 @@ namespace KoruMsSqlYedek.Tests
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1024L * 1024 * 30);
 
-            _mockCloudOrchestrator.Setup(c => c.UploadToAllAsync(
-                    It.IsAny<string>(), It.IsAny<string>(),
+            _mockCloudOrchestrator.Setup(c => c.UploadBatchToAllAsync(
+                    It.IsAny<List<(string LocalFilePath, string RemoteFileName)>>(),
                     It.IsAny<List<CloudTargetConfig>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<CancellationToken>(),
                     It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(TestDataFactory.CreateCloudUploadResults());
+                .ReturnsAsync(new List<List<CloudUploadResult>> { TestDataFactory.CreateCloudUploadResults() });
 
             // Act
             await _executor.Execute(_mockJobContext.Object);
 
-            // Assert — cloud orchestrator çağrılmalı
-            _mockCloudOrchestrator.Verify(c => c.UploadToAllAsync(
-                It.IsAny<string>(), It.IsAny<string>(),
+            // Assert — cloud orchestrator batch upload çağrılmalı
+            _mockCloudOrchestrator.Verify(c => c.UploadBatchToAllAsync(
+                It.IsAny<List<(string LocalFilePath, string RemoteFileName)>>(),
                 plan.CloudTargets,
-                It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                It.IsAny<CancellationToken>(),
                 It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
@@ -916,18 +922,19 @@ namespace KoruMsSqlYedek.Tests
             // Executor sıkıştırma yapmadığından CompressedFilePath boş olmalı
             successResult.CompressedFilePath = null;
             successResult.CompressedSizeBytes = 0;
+            successResult.BackupFilePath = Path.GetTempFileName();
             _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
                     It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
                     It.IsAny<SqlBackupType>(), It.IsAny<string>(),
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(successResult);
 
-            _mockCloudOrchestrator.Setup(c => c.UploadToAllAsync(
-                    It.IsAny<string>(), It.IsAny<string>(),
+            _mockCloudOrchestrator.Setup(c => c.UploadBatchToAllAsync(
+                    It.IsAny<List<(string LocalFilePath, string RemoteFileName)>>(),
                     It.IsAny<List<CloudTargetConfig>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<CancellationToken>(),
                     It.IsAny<string>(), It.IsAny<string>()))
-                .ReturnsAsync(TestDataFactory.CreateCloudUploadResults());
+                .ReturnsAsync(new List<List<CloudUploadResult>> { TestDataFactory.CreateCloudUploadResults() });
 
             // Act
             await _executor.Execute(_mockJobContext.Object);
@@ -939,11 +946,11 @@ namespace KoruMsSqlYedek.Tests
                 Times.Never);
 
             _mockCloudOrchestrator.Verify(
-                c => c.UploadToAllAsync(
-                    successResult.BackupFilePath,
-                    It.IsAny<string>(),
+                c => c.UploadBatchToAllAsync(
+                    It.Is<List<(string LocalFilePath, string RemoteFileName)>>(files =>
+                        files.Any(f => f.LocalFilePath == successResult.BackupFilePath)),
                     It.IsAny<List<CloudTargetConfig>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<CancellationToken>(),
                     It.IsAny<string>(), It.IsAny<string>()),
                 Times.Once);
         }
@@ -1362,21 +1369,27 @@ namespace KoruMsSqlYedek.Tests
             SetJobData(plan.PlanId, "Full");
             _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
 
+            var result = TestDataFactory.CreateSuccessResult(plan.PlanId);
+            // Pipeline File.Exists kontrolü için geçici dosyalar oluştur
+            var tempBak = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid():N}.bak");
+            File.WriteAllBytes(tempBak, Array.Empty<byte>());
+            File.WriteAllBytes(Path.ChangeExtension(tempBak, ".7z"), Array.Empty<byte>());
+            result.BackupFilePath = tempBak;
             _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
                     It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
                     It.IsAny<SqlBackupType>(), It.IsAny<string>(),
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(TestDataFactory.CreateSuccessResult(plan.PlanId));
+                .ReturnsAsync(result);
 
             _mockCompression.Setup(c => c.CompressAsync(
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1024L * 1024 * 30);
 
-            _mockCloudOrchestrator.Setup(c => c.UploadToAllAsync(
-                    It.IsAny<string>(), It.IsAny<string>(),
+            _mockCloudOrchestrator.Setup(c => c.UploadBatchToAllAsync(
+                    It.IsAny<List<(string LocalFilePath, string RemoteFileName)>>(),
                     It.IsAny<List<CloudTargetConfig>>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<CancellationToken>(),
                     It.IsAny<string>(), It.IsAny<string>()))
                 .ThrowsAsync(new OperationCanceledException());
 

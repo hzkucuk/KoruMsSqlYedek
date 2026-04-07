@@ -103,7 +103,6 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         StepName = "SQL Yedekleme",
                         Message = $"Yedekleme başarısız: {dbName} — {result.ErrorMessage}"
                     });
-                    SaveHistory(result);
                     sqlResults.Add(result);
                     continue;
                 }
