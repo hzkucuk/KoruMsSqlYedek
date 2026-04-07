@@ -35,7 +35,7 @@ namespace KoruMsSqlYedek.Win.Theme
             Size = new Size(ToastWidth, ToastHeight);
             BackColor = Color.Magenta;
             TransparencyKey = Color.Magenta;
-            Opacity = 0;
+            Opacity = 0.01; // 0 yerine 0.01 — Windows alpha=0 pencereyi render etmeyebilir
 
             SetStyle(
                 ControlStyles.AllPaintingInWmPaint |
@@ -61,6 +61,23 @@ namespace KoruMsSqlYedek.Win.Theme
                 _fadingIn = false;
                 _fadeTimer.Start();
             };
+        }
+
+        /// <summary>Tray-only modda (owner form yok) form aktivasyonu engeller — toast focus çalmasın.</summary>
+        protected override bool ShowWithoutActivation => true;
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                const int WS_EX_TOPMOST    = 0x00000008;
+                const int WS_EX_TOOLWINDOW  = 0x00000080;
+                const int WS_EX_NOACTIVATE  = 0x08000000;
+
+                var cp = base.CreateParams;
+                cp.ExStyle |= WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE;
+                return cp;
+            }
         }
 
         protected override void OnShown(EventArgs e)

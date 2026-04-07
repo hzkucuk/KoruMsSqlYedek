@@ -3,6 +3,7 @@
 ### Düzeltme
 - **Uygulama açılmıyor (crash) — SynchronizationContext referans karşılaştırma hatası** — v0.99.5'te eklenen `_syncContext != SynchronizationContext.Current` kontrolü `WindowsFormsSynchronizationContext` referans eşitliği garanti etmediğinden UI thread'de bile `true` dönüyor ve sonsuz `Post` döngüsü oluşturuyordu. Düzeltme: `_uiThreadId` (ManagedThreadId) yakalanarak `Thread.CurrentThread.ManagedThreadId != _uiThreadId` kontrolüne geçildi.
 - **Toast bildirimi hâlâ gösterilmiyor — SynchronizationContext install edilmemişti** — Constructor `Application.Run()` öncesinde çalıştığından `SynchronizationContext.Current` null'dı; `new WindowsFormsSynchronizationContext()` oluşturulup field'a atanıyor ama install edilmiyordu. `Application.Run` kendi context'ini kurduğunda eski `_syncContext.Post()` callback'leri düzgün iletilemiyordu. Düzeltme: Context oluşturulup `SetSynchronizationContext()` ile install edildi; böylece `Application.Run` tekrar oluşturmuyor.
+- **ModernToast tray-only modda görünmüyor** — `Opacity=0` ile başlayan form, `ShowWithoutActivation` override'ı ve `WS_EX_NOACTIVATE` stili olmadığından tray app bağlamında (owner form yok) pencere yöneticisi tarafından düzgün gösterilmiyordu. `ShowWithoutActivation => true`, `CreateParams` override (`WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE`) ve `Opacity = 0.01` düzeltmesi uygulandı.
 
 ## [0.99.5] - 2026-04-09 — Per-Type Retention Şablonları + IPC Eş Zamanlılık Düzeltmesi
 
