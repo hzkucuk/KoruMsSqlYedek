@@ -27,16 +27,10 @@ namespace KoruMsSqlYedek.Win
             if (connected)
             {
                 UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
-                try
-                {
-                    Theme.ModernToast.Success(
-                        Res.Get("Tray_ServiceConnectionTitle"),
-                        Res.Get("Tray_ServiceConnected"));
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "ModernToast gösterilemedi.");
-                }
+                ShowBalloonTip(
+                    Res.Get("Tray_ServiceConnectionTitle"),
+                    Res.Get("Tray_ServiceConnected"),
+                    ToolTipIcon.Info, 3000);
                 Log.Information("Servis pipe bağlandı.");
             }
             else

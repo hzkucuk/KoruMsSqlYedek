@@ -1,4 +1,9 @@
-﻿## [0.99.7] - 2026-04-09 — ModernToast Render Düzeltmesi
+﻿## [0.99.8] - 2026-04-09 — Bağlantı Bildirimi ShowBalloonTip
+
+### Düzeltme
+- **Servis bağlantı bildirimi ModernToast → ShowBalloonTip** — ModernToast tray-only modda 4 denemeye rağmen render edilemiyordu. Bağlantı bildirimi, uygulamanın geri kalanında sorunsuz çalışan `NotifyIcon.ShowBalloonTip` ile değiştirildi. Standart Windows balloon tip ile güvenilir bildirim sağlandı.
+
+## [0.99.7] - 2026-04-09 — ModernToast Render Düzeltmesi
 
 ### Düzeltme
 - **ModernToast tray-only modda görünmüyor (kök neden çift)** —
