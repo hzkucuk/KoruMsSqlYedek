@@ -424,10 +424,16 @@ namespace KoruMsSqlYedek.Win
 
         private void OnPlanGridSelectionChanged(object sender, EventArgs e)
         {
-            UpdateBackupButtonStates();
-
             var selected = GetSelectedPlanSilent();
             if (selected == null) return;
+
+            // Seçilen planı aktif olarak takip et
+            _viewingPlanId = selected.PlanId;
+
+            // Seçilen planın progress durumunu göster
+            RestoreProgressBarForPlan(selected.PlanId);
+
+            UpdateBackupButtonStates();
 
             // Seçilen plana ait renkli log buffer'ını göster
             _txtBackupLog.Clear();
@@ -445,6 +451,26 @@ namespace KoruMsSqlYedek.Win
                 _txtBackupLog.SelectionStart = _txtBackupLog.TextLength;
                 _txtBackupLog.ScrollToCaret();
                 _txtBackupLog.ResumeLayout();
+            }
+        }
+
+        /// <summary>
+        /// Seçilen planın mevcut progress durumunu ana progress bar'a yansıtır.
+        /// Çalışan plan varsa tracker'dan son değeri alır, yoksa sıfırlar.
+        /// </summary>
+        private void RestoreProgressBarForPlan(string planId)
+        {
+            if (_runningPlanIds.Contains(planId) && _planProgress.TryGetValue(planId, out int pct))
+            {
+                _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                _progressBar.ShowPercentage = true;
+                _progressBar.Value = pct;
+            }
+            else if (!_runningPlanIds.Contains(planId))
+            {
+                _progressBar.ShowPercentage = false;
+                _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                _progressBar.Value = 0;
             }
         }
     }

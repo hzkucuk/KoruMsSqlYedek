@@ -16,13 +16,12 @@ namespace KoruMsSqlYedek.Engine.FileBackup
     /// Dosya/klasör yedekleme servisi.
     /// VSS desteği ile açık/kilitli dosyaları (Outlook PST/OST vb.) yedekler.
     /// VSS başarısız olursa normal kopyalama denenir.
-    /// Diferansiyel/artırımlı strateji desteği ile yalnızca değişen dosyaları yedekler.
+    /// Her zaman tam (Full) yedekleme yapar.
     /// </summary>
     public partial class FileBackupService : IFileBackupService
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<FileBackupService>();
         private readonly IVssService _vssService;
-        private readonly FileBackupManifestManager _manifestManager = new();
         private const double BytesPerMb = 1048576.0;
 
         public FileBackupService(IVssService vssService)
@@ -44,58 +43,20 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             string basePath = Path.Combine(plan.LocalPath, "Files");
             Directory.CreateDirectory(basePath);
 
-            // Strateji bazlı manifest yükleme
-            var strategy = plan.FileBackup.Strategy;
-            FileBackupManifest referenceManifest = null;
-            if (strategy != FileBackupStrategy.Full)
-            {
-                referenceManifest = _manifestManager.LoadReferenceManifest(plan.LocalPath, strategy);
-                if (referenceManifest is null)
-                {
-                    Log.Warning(
-                        "Referans manifest bulunamadı, tam yedek olarak çalışılacak: Strategy={Strategy}, Plan={PlanName}",
-                        strategy, plan.PlanName);
-                    strategy = FileBackupStrategy.Full;
-                }
-            }
-
             int totalSources = plan.FileBackup.Sources.Count(s => s.IsEnabled);
             int processed = 0;
-            var allBackedUpFiles = new List<string>();
 
             foreach (var source in plan.FileBackup.Sources.Where(s => s.IsEnabled))
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var result = await BackupSourceInternalAsync(source, basePath, null, cancellationToken,
-                    verifyAfterCopy: plan.VerifyAfterBackup,
-                    referenceManifest: referenceManifest);
+                    verifyAfterCopy: plan.VerifyAfterBackup);
                 result.PlanId = plan.PlanId;
                 results.Add(result);
 
-                // Başarıyla yedeklenen dosyaları manifest için topla
-                if (result.BackedUpFilePaths is not null)
-                    allBackedUpFiles.AddRange(result.BackedUpFilePaths);
-
                 processed++;
                 progress?.Report((int)((double)processed / totalSources * 100));
-            }
-
-            // Manifest kaydet (başarılı yedekleme sonrası)
-            if (allBackedUpFiles.Count > 0 || strategy == FileBackupStrategy.Full)
-            {
-                try
-                {
-                    // Full manifest'te referans manifest yerine tüm toplanan dosyalar kullanılır
-                    var fullManifest = strategy == FileBackupStrategy.Full ? null : referenceManifest;
-                    var manifest = _manifestManager.BuildManifest(
-                        plan.PlanId, strategy, allBackedUpFiles, fullManifest);
-                    _manifestManager.SaveManifest(plan.LocalPath, manifest);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Dosya yedekleme manifest kaydedilemedi: {PlanName}", plan.PlanName);
-                }
             }
 
             return results;
@@ -109,7 +70,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             bool verifyAfterCopy = false)
         {
             return await BackupSourceInternalAsync(source, destinationBasePath, progress,
-                cancellationToken, verifyAfterCopy, referenceManifest: null);
+                cancellationToken, verifyAfterCopy);
         }
 
         private async Task<FileBackupResult> BackupSourceInternalAsync(
@@ -117,8 +78,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             string destinationBasePath,
             IProgress<int> progress,
             CancellationToken cancellationToken,
-            bool verifyAfterCopy,
-            FileBackupManifest referenceManifest)
+            bool verifyAfterCopy)
         {
             var result = new FileBackupResult
             {
@@ -134,16 +94,6 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             try
             {
                 var filesToBackup = CollectFiles(source);
-
-                // Diferansiyel/artırımlı: yalnızca değişen dosyaları filtrele
-                int totalCollected = filesToBackup.Count;
-                if (referenceManifest is not null)
-                {
-                    filesToBackup = _manifestManager.FilterChangedFiles(filesToBackup, referenceManifest);
-                    Log.Information(
-                        "Strateji filtresi uygulandı: {SourceName} — {Total} → {Changed} dosya",
-                        source.SourceName, totalCollected, filesToBackup.Count);
-                }
 
                 Log.Information(
                     "Dosya yedekleme başlıyor: {SourceName} — {FileCount} dosya bulundu",
@@ -213,7 +163,6 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                         if (copied)
                         {
                             result.FilesCopied++;
-                            result.BackedUpFilePaths.Add(sourceFile);
                             var fi = new FileInfo(destFile);
                             result.TotalSizeBytes += fi.Length;
 

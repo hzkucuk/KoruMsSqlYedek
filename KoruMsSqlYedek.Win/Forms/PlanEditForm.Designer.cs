@@ -105,8 +105,6 @@
             _chkVerify = new System.Windows.Forms.CheckBox();
             _lblStep3FileSchedHeader = new System.Windows.Forms.Label();
             _lblStep3FileSep = new System.Windows.Forms.Label();
-            _lblFileStrategy = new System.Windows.Forms.Label();
-            _cmbFileStrategy = new System.Windows.Forms.ComboBox();
             _lblFileSchedule = new System.Windows.Forms.Label();
             _cronFileSchedule = new Controls.CronBuilderPanel();
 
@@ -476,12 +474,7 @@
             step3.Controls.Add(_lblStep3FileSchedHeader);
             y += 26;
 
-            ConfigLabel(_lblFileStrategy, "Strateji:", lx, y, step3);
-            _cmbFileStrategy.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            _cmbFileStrategy.Location = new System.Drawing.Point(tx, y);
-            _cmbFileStrategy.Size = new System.Drawing.Size(200, 28);
-            _toolTip.SetToolTip(_cmbFileStrategy, "Dosya yedekleme stratejisi:\n• Tam: Her seferinde tüm dosyalar yedeklenir.\n• Fark: Son tam yedekten bu yana değişen dosyalar.\n• Artırımlı: Son yedekten bu yana değişen dosyalar.");
-            step3.Controls.Add(_cmbFileStrategy);
+            // Dosya yedekleme her zaman Tam (Full) — strateji seçimi kaldırıldı
             y += 36;
 
             ConfigLabel(_lblFileSchedule, "Dosya Görevi:", lx, y, step3);
@@ -905,8 +898,6 @@
         private System.Windows.Forms.CheckBox _chkVerify;
         private System.Windows.Forms.Label _lblStep3FileSchedHeader;
         private System.Windows.Forms.Label _lblStep3FileSep;
-        private System.Windows.Forms.Label _lblFileStrategy;
-        private System.Windows.Forms.ComboBox _cmbFileStrategy;
         private System.Windows.Forms.Label _lblFileSchedule;
         private Controls.CronBuilderPanel _cronFileSchedule;
 

@@ -1,4 +1,35 @@
-﻿## [0.92.2] - 2026-06-28 — Progress Bar %100 Hatası Kesin Düzeltme + Diagnostik Loglama
+﻿## [0.93.0] - 2026-04-07 — Paralel Görev UI Senkron, Express Sıkıştırma, Dosya Strateji Kaldırma
+
+### Yeni Özellikler
+- **Paralel görev UI senkronizasyonu** — Görev listesinde plan seçildiğinde tüm kontroller (progress bar, log, butonlar) seçili plana göre güncellenir. Başlat/İptal butonları yanlış görevi etkilemez.
+- **SQL native sıkıştırma (non-Express)** — SQL Server Standard/Enterprise'da `WITH COMPRESSION` ile daha küçük .bak dosyaları oluşturulur. Express'te otomatik atlanır.
+- **VSS detayları e-postada** — Başarılı yedekleme bildiriminde VSS dosya kopyası detayları (dosya adı, boyut) ayrı tabloda gösterilir.
+
+### Düzeltme
+- **Kısmi başarısızlıkta e-posta gönderilmiyordu** — Exception/iptal durumunda `SendConsolidatedNotificationAsync` çağrılmıyordu. Artık catch bloklarında da bildirim gönderilir.
+- **İptal butonu yanlış görevi sonlandırıyordu** — `_viewingPlanId` fallback'i kaldırıldı, sadece grid'de seçili plan iptal edilir.
+
+### Kaldırılan
+- **Dosya yedekleme stratejisi (Fark/Artırımlı)** — `FileBackupStrategy` enum, `FileBackupManifestManager` sınıfı, manifest dosyaları (file_full.json, file_last.json) ve UI kontrolleri kaldırıldı. Dosya yedekleme artık her zaman Tam (Full) yedek alır.
+
+### Etkilenen Dosyalar
+- `FileBackupModels.cs` — FileBackupStrategy enum, Strategy property, BackedUpFilePaths kaldırıldı
+- `FileBackupManifestManager.cs` — Dosya silindi
+- `FileBackupService.cs` — Manifest mantığı kaldırıldı, sadeleştirildi
+- `BackupJobExecutor.FilePipeline.cs` — Strateji etiketi kaldırıldı
+- `BackupJobExecutor.cs` — Catch bloklarına bildirim eklendi, logLines/jobStartedAt dış scope'a taşındı
+- `SqlBackupService.cs` — Express kontrolü ile CompressionOption.On eklendi
+- `EmailNotificationService.JobNotification.cs` — VSS detay tablosu eklendi
+- `MainWindow.Plans.cs` — OnPlanGridSelectionChanged: _viewingPlanId güncelleme + RestoreProgressBarForPlan
+- `MainWindow.BackupActivity.cs` — UpdatePlanRowProgress: _planProgress dictionary kaydı, Started handler düzeltmesi
+- `MainWindow.BackupExecution.cs` — OnCancelBackupClick: _viewingPlanId fallback kaldırıldı
+- `PlanEditForm.PlanBinding.cs` — Strateji combobox kaldırıldı
+- `PlanEditForm.Designer.cs` — _cmbFileStrategy/_lblFileStrategy kontrolleri kaldırıldı
+- `PlanEditForm.Visibility.cs` — Strateji görünürlük kaldırıldı
+
+---
+
+## [0.92.2] - 2026-06-28 — Progress Bar %100 Hatası Kesin Düzeltme + Diagnostik Loglama
 
 ### Düzeltme
 - **Progress bar Completed öncesi asla %100 göstermez** — Tüm ara hesaplamalar (DatabaseProgress, StepChanged, CloudUploadProgress) artık Math.Min(pct, 99) ile sınırlanıyor. Sadece Completed eventi %100 ayarlıyor.

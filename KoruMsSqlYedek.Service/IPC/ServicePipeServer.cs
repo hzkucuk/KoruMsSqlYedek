@@ -205,17 +205,17 @@ namespace KoruMsSqlYedek.Service.IPC
                         "Manuel yedek komutu alındı: PlanId={PlanId}, Tür={BackupType}",
                         cmd.PlanId, cmd.BackupType);
 
-                    if (_cancellationRegistry.IsAnyRunning())
+                    if (_cancellationRegistry.IsRunning(cmd.PlanId))
                     {
                         Log.Warning(
-                            "Manuel yedek reddedildi — başka bir yedekleme zaten çalışıyor: PlanId={PlanId}",
+                            "Manuel yedek reddedildi — bu plan zaten çalışıyor: PlanId={PlanId}",
                             cmd.PlanId);
                         break;
                     }
 
                     try
                     {
-                        await _schedulerService.TriggerPlanNowAsync(cmd.PlanId, ct);
+                        await _schedulerService.TriggerPlanNowAsync(cmd.PlanId, ct, cmd.BackupType);
                     }
                     catch (Exception ex)
                     {

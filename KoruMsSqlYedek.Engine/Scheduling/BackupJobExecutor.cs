@@ -56,6 +56,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             BackupPlan plan = null;
             bool lockAcquired = false;
             var cleanupPaths = new List<string>();
+            var logLines = new List<string>();
+            DateTime jobStartedAt = DateTime.Now;
             try
             {
                 plan = PlanManager.GetPlanById(planId);
@@ -108,12 +110,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 var cts = CancellationTokenSource.CreateLinkedTokenSource(
                     context.CancellationToken);
 
+                jobStartedAt = DateTime.Now;
+
                 CancellationRegistry?.Register(planId, cts);
                 try
                 {
-                        // Log satırlarını topla (konsolide bildirim için)
-                        var logLines = new List<string>();
-                        DateTime jobStartedAt = DateTime.Now;
 
                         void OnActivity(object sender, BackupActivityEventArgs ae)
                         {
@@ -249,6 +250,21 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 Log.Warning("Job iptal edildi: Plan={PlanId}, CorrelationId={CorrelationId}", planId, correlationId);
                 CleanupOnFailure(cleanupPaths, planId);
                 if (plan != null)
+                {
+                    logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme iptal edildi.");
+
+                    await SendConsolidatedNotificationAsync(plan, new JobNotificationData
+                    {
+                        PlanName = plan.PlanName,
+                        PlanId = plan.PlanId,
+                        BackupType = backupType,
+                        CorrelationId = correlationId,
+                        StartedAt = jobStartedAt,
+                        CompletedAt = DateTime.Now,
+                        IsSuccess = false,
+                        LogLines = logLines
+                    }, CancellationToken.None);
+
                     BackupActivityHub.Raise(new BackupActivityEventArgs
                     {
                         PlanId = plan.PlanId,
@@ -258,12 +274,28 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             ? $"{cleanupPaths.Count} ara dosya/klasör temizlendi"
                             : null
                     });
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Job hatası: Plan={PlanId}, CorrelationId={CorrelationId}", planId, correlationId);
                 CleanupOnFailure(cleanupPaths, planId);
                 if (plan != null)
+                {
+                    logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme başarısız: {ex.Message}");
+
+                    await SendConsolidatedNotificationAsync(plan, new JobNotificationData
+                    {
+                        PlanName = plan.PlanName,
+                        PlanId = plan.PlanId,
+                        BackupType = backupType,
+                        CorrelationId = correlationId,
+                        StartedAt = jobStartedAt,
+                        CompletedAt = DateTime.Now,
+                        IsSuccess = false,
+                        LogLines = logLines
+                    }, CancellationToken.None);
+
                     BackupActivityHub.Raise(new BackupActivityEventArgs
                     {
                         PlanId = plan.PlanId,
@@ -271,6 +303,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         ActivityType = BackupActivityType.Failed,
                         Message = ex.Message
                     });
+                }
             }
             finally
             {

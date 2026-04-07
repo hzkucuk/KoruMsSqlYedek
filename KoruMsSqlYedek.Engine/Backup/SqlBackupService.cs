@@ -131,6 +131,17 @@ namespace KoruMsSqlYedek.Engine.Backup
                     CopyOnly = false   // Zamanlanmış yedekler differential baseline'ı güncellemelidir
                 };
 
+                // SQL Server Express sıkıştırmayı desteklemez — sadece non-Express'te etkinleştir
+                if (!isExpress)
+                {
+                    backup.CompressionOption = BackupCompressionOptions.On;
+                    Log.Debug("SQL native sıkıştırma etkin: {Database} ({Edition})", databaseName, sqlEdition);
+                }
+                else
+                {
+                    Log.Debug("SQL native sıkıştırma atlandı (Express): {Database}", databaseName);
+                }
+
                 if (effectiveBackupType == SqlBackupType.Incremental)
                 {
                     backup.Action = BackupActionType.Log;

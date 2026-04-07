@@ -50,14 +50,16 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         .ConfigureAwait(false);
 
                     result.IsSuccess = true;
-                    result.RemoteFilePath = fileId;
+                    result.RemoteFilePath = string.IsNullOrWhiteSpace(config.RemoteFolderPath)
+                        ? remoteFileName
+                        : $"{config.RemoteFolderPath}/{remoteFileName}";
                     result.RemoteFileSizeBytes = remoteSize;
                     result.UploadedAt = DateTime.UtcNow;
 
                     var fileInfo = new FileInfo(localFilePath);
                     Log.Information(
-                        "Google Drive upload başarılı: {FileName} → {FileId} ({Size:N0} bytes, uzak={RemoteSize:N0} bytes)",
-                        remoteFileName, fileId, fileInfo.Length, remoteSize);
+                        "Google Drive upload başarılı: {FileName} → {FileId} ({Size:N0} bytes, uzak={RemoteSize:N0} bytes), yol={RemotePath}",
+                        remoteFileName, fileId, fileInfo.Length, remoteSize, result.RemoteFilePath);
                 }
             }
             catch (OperationCanceledException)

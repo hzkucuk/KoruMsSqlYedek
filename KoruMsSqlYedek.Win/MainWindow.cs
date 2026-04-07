@@ -263,6 +263,11 @@ namespace KoruMsSqlYedek.Win
             ApplySplitRatio();
             LoadDashboardData();
             _dashboardTimer.Start();
+
+            // Yedek Türü combobox varsayılan seçimi (Full)
+            if (_cmbBackupType.Items.Count > 0 && _cmbBackupType.SelectedIndex < 0)
+                _cmbBackupType.SelectedIndex = 0;
+
             Log.Debug("MainWindow gösterildi.");
         }
 

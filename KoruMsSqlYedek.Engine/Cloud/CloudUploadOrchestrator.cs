@@ -353,6 +353,39 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                     targetCompleted++;
 
+                    // Hedef tamamlandıktan sonra batch progress güncelle — sonraki hedefe kadar "duraklama" önlenir
+                    {
+                        double fileProgress = (targetCompleted * 100.0) / enabledTargets.Count;
+                        long fileBytesSent = (long)(currentFileSize * fileProgress / 100.0);
+                        long totalSent = capturedCompletedBytes + fileBytesSent;
+                        int batchPct = totalBatchBytes > 0
+                            ? (int)(totalSent * 100.0 / totalBatchBytes)
+                            : 100;
+                        batchPct = Math.Clamp(batchPct, 0, 100);
+
+                        double elapsedSec = (DateTime.UtcNow - uploadStartTime).TotalSeconds;
+                        long speedBps = elapsedSec > 0.5 && totalSent > 0
+                            ? (long)(totalSent / elapsedSec)
+                            : 0L;
+
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = planId,
+                            PlanName = planName,
+                            ActivityType = BackupActivityType.CloudUploadProgress,
+                            CloudTargetName = effectiveTarget.DisplayName,
+                            CloudFileName = remoteFileName,
+                            CloudFileIndex = fileIdx + 1,
+                            CloudFileTotal = files.Count,
+                            CloudTargetIndex = targetCompleted,
+                            CloudTargetTotal = enabledTargets.Count,
+                            ProgressPercent = batchPct,
+                            BytesSent = totalSent,
+                            BytesTotal = totalBatchBytes,
+                            SpeedBytesPerSecond = speedBps
+                        });
+                    }
+
                     BackupActivityHub.Raise(new BackupActivityEventArgs
                     {
                         PlanId = planId,

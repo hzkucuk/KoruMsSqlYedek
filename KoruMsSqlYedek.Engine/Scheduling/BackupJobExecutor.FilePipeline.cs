@@ -39,14 +39,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             }
 
             int enabledSources = plan.FileBackup.Sources?.Count(s => s.IsEnabled) ?? 0;
-            string strategyLabel = plan.FileBackup.Strategy switch
-            {
-                FileBackupStrategy.Differential => "Fark",
-                FileBackupStrategy.Incremental => "Artırımlı",
-                _ => "Tam"
-            };
-            Log.Information("Dosya yedekleme başlıyor: Plan={PlanName}, Strateji={Strategy}, Kaynaklar={SourceCount}, CorrelationId={CorrelationId}",
-                plan.PlanName, strategyLabel, enabledSources, correlationId);
+            Log.Information("Dosya yedekleme başlıyor: Plan={PlanName}, Kaynaklar={SourceCount}, CorrelationId={CorrelationId}",
+                plan.PlanName, enabledSources, correlationId);
 
             BackupActivityHub.Raise(new BackupActivityEventArgs
             {
@@ -54,7 +48,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 PlanName = plan.PlanName,
                 ActivityType = BackupActivityType.StepChanged,
                 StepName = "Dosya Yedekleme",
-                Message = $"Dosya yedekleme başlıyor ({strategyLabel}): {enabledSources} kaynak"
+                Message = $"Dosya yedekleme başlıyor: {enabledSources} kaynak"
             });
 
             var results = await FileBackupService.BackupFilesAsync(plan, null, ct);

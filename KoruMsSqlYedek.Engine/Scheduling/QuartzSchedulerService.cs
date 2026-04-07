@@ -136,26 +136,51 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             Log.Information("Plan zamanlaması kaldırıldı: {PlanId}", planId);
         }
 
-        public async Task TriggerPlanNowAsync(string planId, CancellationToken cancellationToken)
+        public async Task TriggerPlanNowAsync(string planId, CancellationToken cancellationToken, string backupType = null)
         {
             if (_scheduler == null)
                 throw new InvalidOperationException("Scheduler henüz başlatılmamış.");
 
             bool sqlTriggered = false;
 
-            // SQL yedek: Full > Differential > Incremental (en yüksek öncelikliyi tetikle)
-            string[] sqlTypes = { "Full", "Differential", "Incremental" };
-            foreach (string type in sqlTypes)
+            // Belirli bir yedek türü istendiyse önce onu dene
+            if (!string.IsNullOrEmpty(backupType) && backupType != "FileBackup")
             {
-                var jobKey = new JobKey($"{planId}_{type}", "BackupJobs");
+                var jobKey = new JobKey($"{planId}_{backupType}", "BackupJobs");
                 if (await _scheduler.CheckExists(jobKey, cancellationToken))
                 {
-                    // manualTrigger flag: SQL job bitince FileBackup'ı da çalıştır
-                    var data = new JobDataMap { { "manualTrigger", "true" } };
+                    var data = new JobDataMap
+                    {
+                        { "manualTrigger", "true" },
+                        { "backupType", backupType }
+                    };
                     await _scheduler.TriggerJob(jobKey, data, cancellationToken);
-                    Log.Information("Plan manuel tetiklendi: {PlanId} ({BackupType})", planId, type);
+                    Log.Information("Plan manuel tetiklendi: {PlanId} ({BackupType})", planId, backupType);
                     sqlTriggered = true;
-                    break;
+                }
+                else
+                {
+                    Log.Warning(
+                        "İstenen yedek türü için job bulunamadı: {PlanId} ({BackupType}), otomatik seçime düşülüyor",
+                        planId, backupType);
+                }
+            }
+
+            // Belirli tür yoksa veya bulunamadıysa: Full > Differential > Incremental
+            if (!sqlTriggered)
+            {
+                string[] sqlTypes = { "Full", "Differential", "Incremental" };
+                foreach (string type in sqlTypes)
+                {
+                    var jobKey = new JobKey($"{planId}_{type}", "BackupJobs");
+                    if (await _scheduler.CheckExists(jobKey, cancellationToken))
+                    {
+                        var data = new JobDataMap { { "manualTrigger", "true" } };
+                        await _scheduler.TriggerJob(jobKey, data, cancellationToken);
+                        Log.Information("Plan manuel tetiklendi (otomatik seçim): {PlanId} ({BackupType})", planId, type);
+                        sqlTriggered = true;
+                        break;
+                    }
                 }
             }
 

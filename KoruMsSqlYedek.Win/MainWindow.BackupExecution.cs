@@ -37,7 +37,13 @@ namespace KoruMsSqlYedek.Win
 
             try
             {
-                await _pipeClient.SendManualBackupCommandAsync(plan.PlanId, "Full");
+                string backupType = _cmbBackupType.SelectedIndex switch
+                {
+                    1 => "Differential",
+                    2 => "Incremental",
+                    _ => "Full"
+                };
+                await _pipeClient.SendManualBackupCommandAsync(plan.PlanId, backupType);
             }
             catch (Exception ex)
             {
@@ -51,9 +57,10 @@ namespace KoruMsSqlYedek.Win
         private async void OnCancelBackupClick(object sender, EventArgs e)
         {
             var plan = GetSelectedPlanSilent();
-            string targetPlanId = plan?.PlanId ?? _viewingPlanId;
-            if (string.IsNullOrEmpty(targetPlanId) || !_runningPlanIds.Contains(targetPlanId))
+            if (plan == null || !_runningPlanIds.Contains(plan.PlanId))
                 return;
+
+            string targetPlanId = plan.PlanId;
 
             try
             {

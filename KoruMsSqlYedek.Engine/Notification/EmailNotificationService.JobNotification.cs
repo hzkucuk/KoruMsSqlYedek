@@ -166,6 +166,27 @@ namespace KoruMsSqlYedek.Engine.Notification
 
                 tmpl.EndDetailTable();
 
+                // ── VSS Dosya Kopyası Detayları ──
+                var vssResults = data.SqlResults
+                    .Where(r => r.VssFileCopySizeBytes > 0 && !string.IsNullOrEmpty(r.VssFileCopyPath))
+                    .ToList();
+                if (vssResults.Count > 0)
+                {
+                    tmpl.WriteSectionTitle("VSS Dosya Kopyası Detayları");
+                    tmpl.BeginDetailTable("Veritabanı", "Dosya", "Boyut");
+
+                    int vIdx = 0;
+                    foreach (var r in vssResults)
+                    {
+                        tmpl.WriteDetailRow(vIdx++,
+                            (EmailTemplateBuilder.Encode(r.DatabaseName), null),
+                            (EmailTemplateBuilder.Encode(System.IO.Path.GetFileName(r.VssFileCopyPath)), null),
+                            (FormatBytes(r.VssFileCopySizeBytes), null));
+                    }
+
+                    tmpl.EndDetailTable();
+                }
+
                 // SQL bulut detayları (tüm DB'lerin bulut sonuçları birleşik)
                 var allSqlCloudResults = new List<CloudUploadResult>();
                 foreach (var r in data.SqlResults)

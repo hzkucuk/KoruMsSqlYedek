@@ -23,7 +23,10 @@ namespace KoruMsSqlYedek.Core.Interfaces
         Task UnschedulePlanAsync(string planId, CancellationToken cancellationToken);
 
         /// <summary>Planı hemen çalıştırır (manuel tetikleme).</summary>
-        Task TriggerPlanNowAsync(string planId, CancellationToken cancellationToken);
+        /// <param name="planId">Plan kimliği.</param>
+        /// <param name="cancellationToken">İptal belirteci.</param>
+        /// <param name="backupType">Yedek türü (Full, Differential, Incremental). null ise en yüksek öncelikli tetiklenir.</param>
+        Task TriggerPlanNowAsync(string planId, CancellationToken cancellationToken, string backupType = null);
 
         /// <summary>Planın bir sonraki tetiklenme zamanını döndürür. Plan zamanlanmamışsa null döner.</summary>
         Task<DateTimeOffset?> GetNextFireTimeAsync(string planId, CancellationToken cancellationToken);

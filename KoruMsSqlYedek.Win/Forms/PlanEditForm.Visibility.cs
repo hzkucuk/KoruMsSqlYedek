@@ -121,8 +121,6 @@ namespace KoruMsSqlYedek.Win.Forms
             bool enabled = _chkFileBackupEnabled.Checked;
             _lblStep3FileSep.Visible = enabled;
             _lblStep3FileSchedHeader.Visible = enabled;
-            _lblFileStrategy.Visible = enabled;
-            _cmbFileStrategy.Visible = enabled;
             _lblFileSchedule.Visible = enabled;
             _cronFileSchedule.Visible = enabled;
         }

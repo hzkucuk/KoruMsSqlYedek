@@ -145,13 +145,35 @@ namespace KoruMsSqlYedek.Engine.Cloud
             cancellationToken.ThrowIfCancellationRequested();
 
             string email = config.Username;
-            string password = PasswordProtector.Unprotect(config.Password);
 
-            if (string.IsNullOrEmpty(password))
+            // ── Şifre çözme (DPAPI) ─────────────────────────────────
+            string password;
+            try
+            {
+                password = PasswordProtector.Unprotect(config.Password);
+            }
+            catch (System.Security.Cryptography.CryptographicException ex)
+            {
+                Log.Error(ex, "Mega şifre DPAPI çözme başarısız: {Email}", email);
+                throw new InvalidOperationException(
+                    "Mega şifresi çözülemedi — şifre bu makinede açılamıyor. " +
+                    "Olası nedenler: (1) Şifre farklı bir bilgisayarda kaydedildi, " +
+                    "(2) Windows yeniden kuruldu veya DPAPI anahtarları değişti. " +
+                    "Çözüm: Mega bulut hedef ayarlarından şifreyi yeniden girin.", ex);
+            }
+            catch (FormatException ex)
+            {
+                Log.Error(ex, "Mega şifre Base64 format hatası: {Email}", email);
+                throw new InvalidOperationException(
+                    "Mega şifresi bozuk formatta — şifre verisi geçersiz. " +
+                    "Mega bulut hedef ayarlarından şifreyi yeniden girin.", ex);
+            }
+
+            if (string.IsNullOrWhiteSpace(password))
             {
                 throw new InvalidOperationException(
-                    "Mega şifresi çözülemedi — şifre DPAPI ile korunmuş olabilir ve farklı bir makinede çözülemez. " +
-                    "Mega hesap ayarlarından şifreyi yeniden girin.");
+                    "Mega şifresi boş veya çözülemedi. " +
+                    "Mega bulut hedef ayarlarından şifreyi yeniden girin.");
             }
 
             Log.Debug("Mega login başlıyor: email={Email}, şifre uzunluk={PasswordLength}",
@@ -183,14 +205,61 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 throw new TimeoutException(
                     $"Mega giriş zaman aşımına uğradı ({LoginTimeoutSeconds} saniye). " +
                     "Sunucu erişilebilir ancak giriş yanıt vermiyor. " +
-                    "Olası nedenler: (1) Email/şifre hatalı, (2) Hesap kilitli/2FA aktif, " +
-                    "(3) Mega sunucu yoğunluğu. Email/şifre bilgilerinizi kontrol edin.");
+                    "Olası nedenler: (1) Mega sunucu yoğunluğu, (2) Ağ bağlantısı yavaş. " +
+                    "Email/şifre doğruluğundan eminseniz lütfen daha sonra tekrar deneyin.");
             }
 
             // loginTask faulted olabilir — await ile exception'ı yakala
-            await loginTask.ConfigureAwait(false);
+            try
+            {
+                await loginTask.ConfigureAwait(false);
+            }
+            catch (ApiException ex)
+            {
+                throw new InvalidOperationException(TranslateMegaApiError(ex.ApiResultCode, email), ex);
+            }
 
             Log.Information("Mega login başarılı: {Email}", email);
+        }
+
+        /// <summary>
+        /// Mega API hata kodlarını kullanıcı dostu Türkçe mesajlara çevirir.
+        /// </summary>
+        private static string TranslateMegaApiError(ApiResultCode code, string email)
+        {
+            return code switch
+            {
+                ApiResultCode.BadArguments =>
+                    $"Mega email veya şifre hatalı. Email: {email} — " +
+                    "Lütfen bulut hedef ayarlarından email ve şifrenizi kontrol edin.",
+
+                ApiResultCode.ResourceNotExists =>
+                    $"Mega hesabı bulunamadı: {email} — " +
+                    "Bu email adresiyle kayıtlı bir Mega hesabı yok.",
+
+                ApiResultCode.TooManyRequests =>
+                    "Mega hesabına çok fazla giriş denemesi yapıldı — hesap geçici olarak kilitlendi. " +
+                    "Lütfen birkaç dakika bekleyip tekrar deneyin.",
+
+                ApiResultCode.ResourceAdministrativelyBlocked =>
+                    $"Mega hesabı engellenmiş: {email} — " +
+                    "Hesabınız Mega tarafından kısıtlanmış olabilir. Mega destek ile iletişime geçin.",
+
+                ApiResultCode.TwoFactorAuthenticationError =>
+                    "Mega hesabında iki faktörlü doğrulama (2FA) aktif. " +
+                    "Bu uygulama henüz 2FA desteklemiyor. " +
+                    "Mega hesap ayarlarından 2FA'yı devre dışı bırakın veya uygulama şifresi oluşturun.",
+
+                ApiResultCode.BadSessionId =>
+                    "Mega oturumu geçersiz veya süresi dolmuş — yeniden giriş deneniyor.",
+
+                ApiResultCode.RequestFailedRetry =>
+                    "Mega sunucusu geçici olarak meşgul. Lütfen birkaç dakika sonra tekrar deneyin.",
+
+                _ =>
+                    $"Mega API hatası: {code} — " +
+                    "Beklenmeyen bir hata oluştu. Lütfen email/şifre bilgilerinizi kontrol edin ve tekrar deneyin."
+            };
         }
 
         /// <summary>

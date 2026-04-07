@@ -10,6 +10,9 @@ namespace KoruMsSqlYedek.Win
     // Backup activity event handler, plan satır durumu, log satır oluşturma, renk eşlemesi.
     public partial class MainWindow
     {
+        /// <summary>Completed sonrası %100'ü 3 saniye gösterip sıfırlayan timer.</summary>
+        private System.Windows.Forms.Timer _progressResetTimer;
+
         private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
         {
             if (InvokeRequired)
@@ -34,10 +37,13 @@ namespace KoruMsSqlYedek.Win
                             HasCloudTargets = e.HasCloudTargets
                         };
                     }
-                    _viewingPlanId = e.PlanId;
-                    _progressBar.Value = 0;
-                    _progressBar.ShowPercentage = true;
-                    _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                    // Progress bar'ı sadece şu an görüntülenen plan başlıyorsa sıfırla
+                    if (e.PlanId == _viewingPlanId)
+                    {
+                        _progressBar.Value = 0;
+                        _progressBar.ShowPercentage = true;
+                        _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                    }
                     UpdatePlanRowProgress(e.PlanId, 0);
                     break;
 
@@ -77,6 +83,8 @@ namespace KoruMsSqlYedek.Win
                                 stepTracker.IsVssPhase = true;
                             else if (e.StepName == "Bulut Yükleme" && !stepTracker.IsConsolidatedCloudPhase)
                                 stepPct = stepTracker.StartConsolidatedCloudPhase();
+                            else if (e.StepName == "Bulut Yükleme" && stepTracker.IsConsolidatedCloudPhase)
+                                stepPct = 99; // Bulut yükleme fazı tamamlandı — Completed'a kadar %99'da tut
                             else if (e.StepName == "Dosya Yedekleme" && !stepTracker.IsFileBackupPhase)
                                 stepPct = stepTracker.CalculateFileBackupPhaseStart();
                             else if (e.StepName == "Dosya Yedekleme" && stepTracker.IsFileBackupPhase && e.TotalCount > 0)
@@ -142,7 +150,7 @@ namespace KoruMsSqlYedek.Win
                             {
                                 _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.CustomText;
                                 _progressBar.Text = string.Format("%{0}  {1}/{2}  {3}/s",
-                                    e.ProgressPercent,
+                                    cumPct,
                                     FormatFileSize(e.BytesSent),
                                     FormatFileSize(e.BytesTotal),
                                     FormatFileSize(e.SpeedBytesPerSecond));
@@ -168,15 +176,51 @@ namespace KoruMsSqlYedek.Win
                         _runningPlanIds.Remove(e.PlanId);
                         _planProgressTracker.Remove(e.PlanId);
                     }
-                    if (e.PlanId == _viewingPlanId)
+
+                    if (e.ActivityType == BackupActivityType.Completed && e.IsSuccess)
                     {
-                        if (e.ActivityType == BackupActivityType.Completed)
+                        // Başarılı tamamlanma: %100'ü 3 saniye göster, sonra sıfırla
+                        if (e.PlanId == _viewingPlanId)
+                        {
+                            _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                            _progressBar.ShowPercentage = true;
                             _progressBar.Value = 100;
-                        _progressBar.ShowPercentage = false;
-                        _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
-                        _progressBar.Value = 0;
+                        }
+                        UpdatePlanRowProgress(e.PlanId, 100);
+
+                        // Önceki timer'ı iptal et
+                        _progressResetTimer?.Stop();
+                        _progressResetTimer?.Dispose();
+
+                        string completedPlanId = e.PlanId;
+                        _progressResetTimer = new System.Windows.Forms.Timer { Interval = 3000 };
+                        _progressResetTimer.Tick += (_, _) =>
+                        {
+                            _progressResetTimer.Stop();
+                            _progressResetTimer.Dispose();
+                            _progressResetTimer = null;
+
+                            if (completedPlanId == _viewingPlanId)
+                            {
+                                _progressBar.ShowPercentage = false;
+                                _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                                _progressBar.Value = 0;
+                            }
+                            UpdatePlanRowProgress(completedPlanId, 0);
+                        };
+                        _progressResetTimer.Start();
                     }
-                    UpdatePlanRowProgress(e.PlanId, 0);
+                    else
+                    {
+                        // Failed/Cancelled veya başarısız Completed: hemen sıfırla
+                        if (e.PlanId == _viewingPlanId)
+                        {
+                            _progressBar.ShowPercentage = false;
+                            _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                            _progressBar.Value = 0;
+                        }
+                        UpdatePlanRowProgress(e.PlanId, 0);
+                    }
 
                     if (e.ActivityType == BackupActivityType.Completed && !e.IsSuccess && !string.IsNullOrEmpty(e.Message))
                         UpdatePlanRowStatusCustom(e.PlanId, "⚠ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.LogWarning);
@@ -232,6 +276,10 @@ namespace KoruMsSqlYedek.Win
         private void UpdatePlanRowProgress(string planId, int percent)
         {
             if (string.IsNullOrEmpty(planId)) return;
+
+            // Per-plan progress değerini sakla (plan değişiminde geri yüklemek için)
+            _planProgress[planId] = percent;
+
             foreach (DataGridViewRow row in _dgvPlans.Rows)
             {
                 var p = row.Tag as BackupPlan;

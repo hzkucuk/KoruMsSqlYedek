@@ -35,44 +35,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 if (!File.Exists(localFilePath))
                     throw new FileNotFoundException("Kaynak dosya bulunamadı.", localFilePath);
 
-                var client = await GetOrCreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                Log.Debug("Mega hedef klasör kontrol ediliyor: {Path}", config.RemoteFolderPath ?? "(kök)");
-                var targetFolder = await EnsureFolderExistsAsync(client, config.RemoteFolderPath, cancellationToken)
+                result = await UploadCoreAsync(localFilePath, remoteFileName, config, progress, cancellationToken)
                     .ConfigureAwait(false);
-                Log.Debug("Mega hedef klasör hazır: {FolderId}", targetFolder.Id);
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                long fileSize = new FileInfo(localFilePath).Length;
-
-                // Progress adaptörü: MegaApiClient IProgress<double> (0.0-1.0) → IProgress<int> (0-100)
-                var megaProgress = progress is not null
-                    ? new Progress<double>(d => progress.Report((int)(d * 100)))
-                    : null;
-
-                Log.Debug("Mega upload başlıyor: {FileName} ({Size:N0} bytes)", remoteFileName, fileSize);
-
-                INode uploadedNode;
-                using (var stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    uploadedNode = await UploadWithCancellationAsync(
-                        client, stream, remoteFileName, targetFolder, megaProgress, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-
-                _sessionLastUsedUtc = DateTime.UtcNow;
-
-                result.IsSuccess = true;
-                result.RemoteFilePath = uploadedNode.Id;
-                result.RemoteFileSizeBytes = uploadedNode.Size;
-                result.UploadedAt = DateTime.UtcNow;
-
-                Log.Information(
-                    "Mega upload başarılı: {FileName} → {NodeId} ({Size:N0} bytes)",
-                    remoteFileName, uploadedNode.Id, fileSize);
             }
             catch (OperationCanceledException)
             {
@@ -86,6 +50,43 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 result.ErrorMessage = ex.Message;
                 Log.Error("Mega zaman aşımı: {FileName} — {Message}", remoteFileName, ex.Message);
                 await InvalidateSessionInternalAsync().ConfigureAwait(false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // LoginWithTimeoutAsync'ten gelen spesifik hatalar (yanlış şifre, DPAPI, 2FA vb.)
+                result.IsSuccess = false;
+                result.ErrorMessage = ex.Message;
+                Log.Error("Mega giriş hatası: {FileName} — {Message}", remoteFileName, ex.Message);
+                await InvalidateSessionInternalAsync().ConfigureAwait(false);
+            }
+            catch (ApiException ex)
+            {
+                // Stale session — oturumu sıfırla ve 1 kez yeniden dene
+                if (ex.ApiResultCode == ApiResultCode.BadSessionId)
+                {
+                    Log.Warning("Mega oturum geçersiz, yeniden giriş deneniyor: {FileName}", remoteFileName);
+                    await InvalidateSessionInternalAsync().ConfigureAwait(false);
+
+                    try
+                    {
+                        result = await UploadCoreAsync(localFilePath, remoteFileName, config, progress, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception retryEx)
+                    {
+                        result.IsSuccess = false;
+                        result.ErrorMessage = $"Yeniden deneme başarısız: {retryEx.Message}";
+                        Log.Error(retryEx, "Mega upload yeniden deneme başarısız: {FileName}", remoteFileName);
+                        await InvalidateSessionInternalAsync().ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    result.IsSuccess = false;
+                    result.ErrorMessage = TranslateMegaApiError(ex.ApiResultCode, config.Username);
+                    Log.Error("Mega API hatası: {FileName} — {Code}: {Message}", remoteFileName, ex.ApiResultCode, result.ErrorMessage);
+                    await InvalidateSessionInternalAsync().ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {
@@ -102,6 +103,66 @@ namespace KoruMsSqlYedek.Engine.Cloud
             return result;
         }
 
+        /// <summary>
+        /// Upload işleminin çekirdek mantığı. Retry mekanizması için ayrı metot.
+        /// </summary>
+        private async Task<CloudUploadResult> UploadCoreAsync(
+            string localFilePath,
+            string remoteFileName,
+            CloudTargetConfig config,
+            IProgress<int> progress,
+            CancellationToken cancellationToken)
+        {
+            var result = new CloudUploadResult
+            {
+                ProviderType = CloudProviderType.Mega,
+                DisplayName = DisplayName
+            };
+
+            var client = await GetOrCreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            Log.Debug("Mega hedef klasör kontrol ediliyor: {Path}", config.RemoteFolderPath ?? "(kök)");
+            var targetFolder = await EnsureFolderExistsAsync(client, config.RemoteFolderPath, cancellationToken)
+                .ConfigureAwait(false);
+            Log.Debug("Mega hedef klasör hazır: {FolderId}", targetFolder.Id);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            long fileSize = new FileInfo(localFilePath).Length;
+
+            // Progress adaptörü: MegaApiClient IProgress<double> (0.0-1.0) → IProgress<int> (0-100)
+            var megaProgress = progress is not null
+                ? new Progress<double>(d => progress.Report((int)(d * 100)))
+                : null;
+
+            Log.Debug("Mega upload başlıyor: {FileName} ({Size:N0} bytes)", remoteFileName, fileSize);
+
+            INode uploadedNode;
+            using (var stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                uploadedNode = await UploadWithCancellationAsync(
+                    client, stream, remoteFileName, targetFolder, megaProgress, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            _sessionLastUsedUtc = DateTime.UtcNow;
+
+            result.IsSuccess = true;
+            result.RemoteFilePath = string.IsNullOrWhiteSpace(config.RemoteFolderPath)
+                ? remoteFileName
+                : $"{config.RemoteFolderPath}/{remoteFileName}";
+            result.RemoteFileSizeBytes = uploadedNode.Size;
+            result.UploadedAt = DateTime.UtcNow;
+
+            Log.Information(
+                "Mega upload başarılı: {FileName} → {NodeId} ({Size:N0} bytes), yol={RemotePath}",
+                remoteFileName, uploadedNode.Id, fileSize, result.RemoteFilePath);
+
+            return result;
+        }
+
         public async Task<bool> DeleteAsync(
             string remoteFileIdentifier,
             CloudTargetConfig config,
@@ -110,33 +171,36 @@ namespace KoruMsSqlYedek.Engine.Cloud
             await _sessionSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                var client = await GetOrCreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
-
-                var nodes = await client.GetNodesAsync().ConfigureAwait(false);
-                var targetNode = nodes.FirstOrDefault(n => n.Id == remoteFileIdentifier);
-
-                if (targetNode is null)
-                {
-                    Log.Debug("Mega dosyası zaten mevcut değil: {NodeId}", remoteFileIdentifier);
-                    return true;
-                }
-
-                bool moveToTrash = !config.PermanentDeleteFromTrash;
-                await client.DeleteAsync(targetNode, moveToTrash).ConfigureAwait(false);
-
-                _sessionLastUsedUtc = DateTime.UtcNow;
-
-                Log.Information(
-                    moveToTrash
-                        ? "Mega dosyası çöp kutusuna taşındı: {NodeId}"
-                        : "Mega dosyası kalıcı olarak silindi: {NodeId}",
-                    remoteFileIdentifier);
-
-                return true;
+                return await DeleteCoreAsync(remoteFileIdentifier, config, cancellationToken)
+                    .ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
                 Log.Warning("Mega silme iptal edildi: {NodeId}", remoteFileIdentifier);
+                return false;
+            }
+            catch (ApiException ex) when (ex.ApiResultCode == ApiResultCode.BadSessionId)
+            {
+                // Stale session — oturumu sıfırla ve 1 kez yeniden dene
+                Log.Warning("Mega oturum geçersiz, silme yeniden deneniyor: {NodeId}", remoteFileIdentifier);
+                await InvalidateSessionInternalAsync().ConfigureAwait(false);
+
+                try
+                {
+                    return await DeleteCoreAsync(remoteFileIdentifier, config, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception retryEx)
+                {
+                    Log.Warning(retryEx, "Mega silme yeniden deneme başarısız: {NodeId}", remoteFileIdentifier);
+                    await InvalidateSessionInternalAsync().ConfigureAwait(false);
+                    return false;
+                }
+            }
+            catch (ApiException ex)
+            {
+                Log.Warning("Mega API hatası (silme): {NodeId} — {Code}", remoteFileIdentifier, ex.ApiResultCode);
+                await InvalidateSessionInternalAsync().ConfigureAwait(false);
                 return false;
             }
             catch (Exception ex)
@@ -149,6 +213,39 @@ namespace KoruMsSqlYedek.Engine.Cloud
             {
                 _sessionSemaphore.Release();
             }
+        }
+
+        /// <summary>
+        /// Silme işleminin çekirdek mantığı. Retry mekanizması için ayrı metot.
+        /// </summary>
+        private async Task<bool> DeleteCoreAsync(
+            string remoteFileIdentifier,
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
+        {
+            var client = await GetOrCreateSessionAsync(config, cancellationToken).ConfigureAwait(false);
+
+            var nodes = await client.GetNodesAsync().ConfigureAwait(false);
+            var targetNode = nodes.FirstOrDefault(n => n.Id == remoteFileIdentifier);
+
+            if (targetNode is null)
+            {
+                Log.Debug("Mega dosyası zaten mevcut değil: {NodeId}", remoteFileIdentifier);
+                return true;
+            }
+
+            bool moveToTrash = !config.PermanentDeleteFromTrash;
+            await client.DeleteAsync(targetNode, moveToTrash).ConfigureAwait(false);
+
+            _sessionLastUsedUtc = DateTime.UtcNow;
+
+            Log.Information(
+                moveToTrash
+                    ? "Mega dosyası çöp kutusuna taşındı: {NodeId}"
+                    : "Mega dosyası kalıcı olarak silindi: {NodeId}",
+                remoteFileIdentifier);
+
+            return true;
         }
 
         public async Task<bool> TestConnectionAsync(
@@ -178,6 +275,12 @@ namespace KoruMsSqlYedek.Engine.Cloud
             catch (OperationCanceledException)
             {
                 return false;
+            }
+            catch (InvalidOperationException ex)
+            {
+                // LoginWithTimeoutAsync'ten gelen spesifik hatalar (yanlış şifre, DPAPI, 2FA vb.)
+                Log.Warning("Mega bağlantı testi başarısız: {Message}", ex.Message);
+                throw; // UI katmanına ilet — kullanıcı spesifik mesajı görsün
             }
             catch (Exception ex)
             {
