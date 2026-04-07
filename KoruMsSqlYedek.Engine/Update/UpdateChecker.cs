@@ -23,7 +23,7 @@ namespace KoruMsSqlYedek.Engine.Update
         private const string GitHubApiUrl =
             "https://api.github.com/repos/hzkucuk/KoruMsSqlYedek/releases/latest";
 
-        private const string InstallerPrefix = "KoruMsSqlYedek_Setup_";
+        private const string InstallerPrefix = "KoruMsSqlYedek_v";
 
         private static readonly HttpClient Http;
 
