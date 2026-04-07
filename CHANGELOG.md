@@ -1,4 +1,10 @@
-﻿## [0.99.5] - 2026-04-09 — Per-Type Retention Şablonları + IPC Eş Zamanlılık Düzeltmesi
+﻿## [0.99.6] - 2026-04-09 — UI Thread Marshal Crash + Toast Düzeltmesi
+
+### Düzeltme
+- **Uygulama açılmıyor (crash) — SynchronizationContext referans karşılaştırma hatası** — v0.99.5'te eklenen `_syncContext != SynchronizationContext.Current` kontrolü `WindowsFormsSynchronizationContext` referans eşitliği garanti etmediğinden UI thread'de bile `true` dönüyor ve sonsuz `Post` döngüsü oluşturuyordu. Düzeltme: `_uiThreadId` (ManagedThreadId) yakalanarak `Thread.CurrentThread.ManagedThreadId != _uiThreadId` kontrolüne geçildi.
+- **Toast bildirimi hâlâ gösterilmiyor — SynchronizationContext install edilmemişti** — Constructor `Application.Run()` öncesinde çalıştığından `SynchronizationContext.Current` null'dı; `new WindowsFormsSynchronizationContext()` oluşturulup field'a atanıyor ama install edilmiyordu. `Application.Run` kendi context'ini kurduğunda eski `_syncContext.Post()` callback'leri düzgün iletilemiyordu. Düzeltme: Context oluşturulup `SetSynchronizationContext()` ile install edildi; böylece `Application.Run` tekrar oluşturmuyor.
+
+## [0.99.5] - 2026-04-09 — Per-Type Retention Şablonları + IPC Eş Zamanlılık Düzeltmesi
 
 ### Düzeltme
 - **`ServicePipeClient.SendAsync` eş zamanlı yazma hatası** — Plan kaydedilince tetiklenen `RequestStatusAsync()` ile `ConnectLoopAsync` içindeki eş zamanlı `WriteLineAsync` çağrıları `InvalidOperationException: The stream is currently in use by a previous operation on the stream` üretiyordu. `SemaphoreSlim _writeLock(1,1)` kilidi eklendi; tüm yazma işlemleri `WaitAsync → try/finally → Release` kalıbıyla serialze edildi.

@@ -15,19 +15,28 @@ namespace KoruMsSqlYedek.Win
         private void OnPipeConnectionChanged(object sender, bool connected)
         {
             // Arka plan thread'inden gelebilir — UI thread'e aktar
-            // Tray app'te OpenForms bos olabilir, SynchronizationContext kullaniyoruz
-            if (_syncContext != SynchronizationContext.Current)
+            if (Thread.CurrentThread.ManagedThreadId != _uiThreadId)
             {
+                Log.Debug("OnPipeConnectionChanged: background thread → UI post (connected={Connected})", connected);
                 _syncContext.Post(_ => OnPipeConnectionChanged(sender, connected), null);
                 return;
             }
 
+            Log.Debug("OnPipeConnectionChanged: UI thread (connected={Connected})", connected);
+
             if (connected)
             {
                 UpdateTrayStatus(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
-                Theme.ModernToast.Success(
-                    Res.Get("Tray_ServiceConnectionTitle"),
-                    Res.Get("Tray_ServiceConnected"));
+                try
+                {
+                    Theme.ModernToast.Success(
+                        Res.Get("Tray_ServiceConnectionTitle"),
+                        Res.Get("Tray_ServiceConnected"));
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "ModernToast gösterilemedi.");
+                }
                 Log.Information("Servis pipe bağlandı.");
             }
             else
@@ -44,7 +53,7 @@ namespace KoruMsSqlYedek.Win
         private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
         {
             // Arka plan thread'inden gelebilir — UI thread'e aktar
-            if (_syncContext != SynchronizationContext.Current)
+            if (Thread.CurrentThread.ManagedThreadId != _uiThreadId)
             {
                 _syncContext.Post(_ => OnBackupActivityChanged(sender, e), null);
                 return;

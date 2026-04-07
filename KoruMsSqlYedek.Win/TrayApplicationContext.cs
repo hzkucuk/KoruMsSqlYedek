@@ -58,6 +58,7 @@ namespace KoruMsSqlYedek.Win
 
         // UI thread marshal desteği — tray app'te OpenForms boş olabilir
         private readonly SynchronizationContext _syncContext;
+        private readonly int _uiThreadId;
 
         /// <summary>Günlük güncelleme kontrolü aralığı (ms) — 24 saat.</summary>
         private const int UpdateCheckIntervalMs = 24 * 60 * 60 * 1000;
@@ -75,7 +76,20 @@ namespace KoruMsSqlYedek.Win
             _scope = scope;
             _pipeClient = pipeClient;
             _updateService = scope.Resolve<IUpdateService>();
-            _syncContext = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
+            _uiThreadId = Thread.CurrentThread.ManagedThreadId;
+
+            // Application.Run henüz çağrılmadığından SynchronizationContext.Current null olabilir.
+            // Context'i oluştur + install et; Application.Run tekrar oluşturmasın.
+            if (SynchronizationContext.Current is WindowsFormsSynchronizationContext ctx)
+            {
+                _syncContext = ctx;
+            }
+            else
+            {
+                var newCtx = new WindowsFormsSynchronizationContext();
+                SynchronizationContext.SetSynchronizationContext(newCtx);
+                _syncContext = newCtx;
+            }
 
             Log.Information("KoruMsSqlYedek Tray uygulaması başlatılıyor...");
 
