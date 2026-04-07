@@ -1,9 +1,151 @@
 # ═══════════════════════════════════════════════════════════════════
 # GitHub Actions — Koru MsSql Yedek Release Workflow
 # ═══════════════════════════════════════════════════════════════════
-# Tetik: vX.Y.Z tag push (ör: git tag v0.63.0 && git push --tags)
-# Adımlar: dotnet publish → Inno Setup compile → GitHub Release + asset
+# Tetik: vX.Y.Z tag push (ör: git tag v0.99.1 && git push --tags)
+# Adımlar: dotnet publish → Inno Setup compile → ZIP → GitHub Release
 # ═══════════════════════════════════════════════════════════════════
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION_FILE: 'KoruMsSqlYedek.slnx'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+
+    # ── Checkout ──────────────────────────────────────────────────
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # ── .NET SDK ──────────────────────────────────────────────────
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    # ── Versiyon çıkar ────────────────────────────────────────────
+    - name: Extract version from tag
+      id: version
+      shell: pwsh
+      run: |
+        $ver = "${{ github.ref_name }}" -replace '^v', ''
+        "VERSION=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        Write-Host "Version: $ver"
+
+    # ── Restore + Build ───────────────────────────────────────────
+    - name: Restore
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+    - name: Build
+      run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore
+
+    # ── Test ──────────────────────────────────────────────────────
+    - name: Test
+      run: dotnet test ${{ env.SOLUTION_FILE }} -c Release --no-build --logger "trx;LogFileName=test-results.trx"
+      continue-on-error: true
+
+    # ── Publish Win ───────────────────────────────────────────────
+    - name: Publish Win
+      run: dotnet publish KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj -c Release -o publish\win --self-contained false -p:PublishSingleFile=false
+
+    # ── Publish Service ───────────────────────────────────────────
+    - name: Publish Service
+      run: dotnet publish KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj -c Release -o publish\service --self-contained false -p:PublishSingleFile=false
+
+    # ── Output klasörünü hazırla ───────────────────────────────────
+    # BUG FIX: releases/ Inno Setup'tan ÖNCE yaratılmalı;
+    #          aksi hâlde compiler output yazamaz.
+    - name: Prepare releases directory
+      shell: pwsh
+      run: New-Item -ItemType Directory -Force -Path releases | Out-Null
+
+    # ── Inno Setup ────────────────────────────────────────────────
+    - name: Install Inno Setup
+      shell: pwsh
+      run: |
+        choco install innosetup -y --no-progress
+        "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
+    - name: Compile Installer
+      shell: pwsh
+      run: |
+        $ver = "${{ steps.version.outputs.VERSION }}"
+        # BUG FIX: Inno Setup kaynak dosyaları .iss konumuna göre çözer;
+        #          /D parametresine mutlak yol verilmeli.
+        $winDir = "${{ github.workspace }}\publish\win"
+        $svcDir = "${{ github.workspace }}\publish\service"
+        & iscc `
+            "/DMyAppVersion=$ver" `
+            "/DWinPublishDir=$winDir" `
+            "/DServicePublishDir=$svcDir" `
+            "Deployment\InnoSetup\KoruMsSqlYedek.iss"
+
+    # ── ZIP Paketi ────────────────────────────────────────────────
+    # BUG FIX: Wildcard ile çoklu path yerine dizin dizisi kullan.
+    - name: Create ZIP package
+      shell: pwsh
+      run: |
+        $ver = "${{ steps.version.outputs.VERSION }}"
+        Compress-Archive -Path @("publish\win", "publish\service") `
+          -DestinationPath "releases\KoruMsSqlYedek_v${ver}.zip" -Force
+        Write-Host "ZIP created: releases\KoruMsSqlYedek_v${ver}.zip"
+
+    # ── Değişiklik notlarını çıkar ────────────────────────────────
+    # BUG FIX: Çok satırlı output için heredoc delimiter syntax kullan.
+    - name: Extract changelog notes
+      id: changelog
+      shell: pwsh
+      run: |
+        $ver = "${{ steps.version.outputs.VERSION }}"
+        $content = Get-Content CHANGELOG.md -Raw
+        if ($content -match "(?s)## \[$ver\][^\n]*\n(.*?)(?=\n## \[|\z)") {
+          $notes = $Matches[1].Trim()
+        } else {
+          $notes = "Bkz: [CHANGELOG.md](https://github.com/hzkucuk/KoruMsSqlYedek/blob/master/CHANGELOG.md)"
+        }
+        $delim = "NOTES_DELIM_$(New-Guid)"
+        "NOTES<<$delim"  | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        $notes           | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        "$delim"         | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+    # ── GitHub Release ────────────────────────────────────────────
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: "Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}"
+        body: |
+          ## Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}
+
+          ${{ steps.changelog.outputs.NOTES }}
+
+          ---
+          ### Kurulum
+          1. `KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe` indirin ve yönetici olarak çalıştırın
+          2. Kurulum sihirbazını takip edin
+
+          ### Gereksinimler
+          - Windows 10/11 (x64)
+          - [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+
+          > Güncelleme yapıyorsanız mevcut ayarlarınız korunur.
+        draft: false
+        prerelease: false
+        files: |
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}.zip
+
 
 name: Release
 

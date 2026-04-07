@@ -1,4 +1,14 @@
-﻿## [0.99.0] - 2026-04-08 — Telif Hakkı & Açık Kaynak Atıfları
+﻿## [0.99.1] - 2026-04-08 — CI/CD Release Workflow Düzeltmeleri
+
+### Düzeltmeler
+- **Inno Setup mutlak yol hatası** — `WinPublishDir`/`ServicePublishDir` parametreleri artık `${{ github.workspace }}` ile mutlak yol olarak geçiliyor; önceki relative path `.iss` konumuna göre çözülüyor ve yanlış klasör bulunuyordu.
+- **`releases/` klasörü sırası** — Klasör Inno Setup'tan önce yaratılıyor; önceden compiler output yazamıyordu.
+- **Çok satırlı `GITHUB_OUTPUT`** — CHANGELOG notları için heredoc delimiter syntax kullanılıyor; önceki `echo "KEY=value"` multi-line içerikle çalışmıyordu.
+- **`Compress-Archive` çoklu path** — Wildcard yerine dizi syntax `@("dir1", "dir2")` kullanılıyor.
+
+---
+
+## [0.99.0] - 2026-04-08 — Telif Hakkı & Açık Kaynak Atıfları
 
 ### Değişiklikler
 - **Telif hakkı güncellendi** — Tüm proje genelinde telif hakkı "© 2026 Zafer Bilgisayar" olarak güncellendi. Geliştirici: Hüzeyin Küçük.
