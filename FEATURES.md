@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.2 — GitHub Actions Kesin Düzeltme
+- choco install innosetup kaldırıldı (windows-latest’ta pre-installed)
+- ISCC.exe tam mutlak yol kullanımı
+- Exit code kontrolü eklendi
+- v0.94.0’dan beri release oluşmama sorunu çözüldü
+
 ### v0.99.1 — CI/CD Release Workflow Düzeltmeleri
 - Inno Setup mutlak yol (github.workspace) düzeltmesi
 - releases/ klasörü sıralama düzeltmesi

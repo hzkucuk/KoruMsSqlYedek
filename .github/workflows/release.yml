@@ -71,25 +71,23 @@ jobs:
       run: New-Item -ItemType Directory -Force -Path releases | Out-Null
 
     # ── Inno Setup ────────────────────────────────────────────────
-    - name: Install Inno Setup
-      shell: pwsh
-      run: |
-        choco install innosetup -y --no-progress
-        "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+    # NOT: windows-latest runner'ında Inno Setup 6 pre-installed gelir.
+    # choco install GEREKSİZ ve runner'daki kurulumla ÇAKİŞİYOR — kaldırıldı.
 
     - name: Compile Installer
       shell: pwsh
       run: |
-        $ver = "${{ steps.version.outputs.VERSION }}"
-        # BUG FIX: Inno Setup kaynak dosyaları .iss konumuna göre çözer;
-        #          /D parametresine mutlak yol verilmeli.
+        $ver    = "${{ steps.version.outputs.VERSION }}"
         $winDir = "${{ github.workspace }}\publish\win"
         $svcDir = "${{ github.workspace }}\publish\service"
-        & iscc `
+        # Pre-installed path — GitHub windows-latest runner'da garântili mevcut
+        $iscc   = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+        & $iscc `
             "/DMyAppVersion=$ver" `
             "/DWinPublishDir=$winDir" `
             "/DServicePublishDir=$svcDir" `
             "Deployment\InnoSetup\KoruMsSqlYedek.iss"
+        if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
 
     # ── ZIP Paketi ────────────────────────────────────────────────
     # BUG FIX: Wildcard ile çoklu path yerine dizin dizisi kullan.
