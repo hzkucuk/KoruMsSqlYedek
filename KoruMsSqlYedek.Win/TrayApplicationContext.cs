@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -30,31 +31,31 @@ namespace KoruMsSqlYedek.Win
         private readonly ContextMenuStrip _contextMenu;
         private readonly ILifetimeScope _scope;
         private readonly ServicePipeClient _pipeClient;
-        private MainWindow _mainWindow;
+        private MainWindow? _mainWindow;
 
         // Servis kontrol menü öğeleri
-        private ToolStripMenuItem _tsmServiceStatus;
-        private ToolStripMenuItem _tsmServiceStart;
-        private ToolStripMenuItem _tsmServiceStop;
-        private ToolStripMenuItem _tsmServiceRestart;
+        private ToolStripMenuItem? _tsmServiceStatus;
+        private ToolStripMenuItem? _tsmServiceStart;
+        private ToolStripMenuItem? _tsmServiceStop;
+        private ToolStripMenuItem? _tsmServiceRestart;
 
         // Yedekleme animasyon durumu
         private readonly System.Windows.Forms.Timer _animTimer;
-        private Icon[] _animFrames;
+        private Icon[]? _animFrames;
         private int _animFrameIndex;
         private bool _isAnimating;
 
         // Tamamlanma animasyonu — kısa süre gösterilir, sonra idle'a döner
         private readonly System.Windows.Forms.Timer _completionTimer;
-        private Icon[] _completionFrames;
+        private Icon[]? _completionFrames;
         private int _completionFrameIndex;
         private bool _isCompletionAnimating;
 
         // Güncelleme kontrolü
         private readonly IUpdateService _updateService;
         private readonly System.Windows.Forms.Timer _updateTimer;
-        private ToolStripMenuItem _tsmCheckUpdate;
-        private UpdateInfo _pendingUpdate;
+        private ToolStripMenuItem? _tsmCheckUpdate;
+        private UpdateInfo? _pendingUpdate;
 
         // UI thread marshal desteği — tray app'te OpenForms boş olabilir
         private readonly SynchronizationContext _syncContext;
@@ -236,7 +237,7 @@ namespace KoruMsSqlYedek.Win
 
         #region Exit
 
-        private void OnExitClick(object sender, EventArgs e)
+        private void OnExitClick(object? sender, EventArgs e)
         {
             Log.Information("Kullanıcı çıkış isteğinde bulundu.");
 
@@ -294,7 +295,7 @@ namespace KoruMsSqlYedek.Win
         /// <summary>
         /// Tray ikonunu durum bazlı günceller.
         /// </summary>
-        internal void UpdateTrayStatus(TrayIconStatus status, string tooltipText = null)
+        internal void UpdateTrayStatus(TrayIconStatus status, string? tooltipText = null)
         {
             var oldIcon = _notifyIcon.Icon;
             _notifyIcon.Icon = SymbolIconHelper.CreateStatusIcon(status);

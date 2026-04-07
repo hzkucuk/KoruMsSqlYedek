@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,7 +54,7 @@ namespace KoruMsSqlYedek.Win.Forms
         public BackupPlan SavedPlan => _plan;
 
         /// <summary>Mevcut planı düzenleme. null ise yeni plan.</summary>
-        public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, IAppSettingsManager settingsManager, BackupPlan existingPlan)
+        public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, IAppSettingsManager settingsManager, BackupPlan? existingPlan)
         {
             ArgumentNullException.ThrowIfNull(planManager);
             ArgumentNullException.ThrowIfNull(sqlBackupService);

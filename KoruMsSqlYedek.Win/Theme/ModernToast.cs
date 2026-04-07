@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -48,7 +49,7 @@ namespace KoruMsSqlYedek.Win.Theme
             Region = new Region(regionPath);
 
             // Pozisyon — sağ alt köşe
-            var workingArea = Screen.PrimaryScreen.WorkingArea;
+            var workingArea = (Screen.PrimaryScreen ?? Screen.AllScreens[0]).WorkingArea;
             Location = new Point(
                 workingArea.Right - ToastWidth - 16,
                 workingArea.Bottom - ToastHeight - 16);

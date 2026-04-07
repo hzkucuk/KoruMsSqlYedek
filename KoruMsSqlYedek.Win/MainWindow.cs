@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -50,11 +51,11 @@ namespace KoruMsSqlYedek.Win
             RegexOptions.Compiled);
 
         // Settings state
-        private AppSettings _settings;
+        private AppSettings? _settings;
 
         // Backup state — per-plan tracking
         private readonly HashSet<string> _runningPlanIds = new HashSet<string>();
-        private string _viewingPlanId;
+        private string? _viewingPlanId;
 
         // Per-plan grid progress (planId → yüzde 0-100)
         private readonly Dictionary<string, int> _planProgress = new Dictionary<string, int>();
@@ -278,7 +279,7 @@ namespace KoruMsSqlYedek.Win
             Log.Debug("MainWindow gösterildi.");
         }
 
-        private void OnSplitPlansResize(object sender, EventArgs e)
+        private void OnSplitPlansResize(object? sender, EventArgs e)
         {
             ApplySplitRatio();
         }
@@ -323,7 +324,7 @@ namespace KoruMsSqlYedek.Win
             base.OnFormClosing(e);
         }
 
-        private void OnTabChanged(object sender, EventArgs e)
+        private void OnTabChanged(object? sender, EventArgs e)
         {
             int idx = _tabControl.SelectedIndex;
 

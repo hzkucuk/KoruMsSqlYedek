@@ -30,7 +30,7 @@ namespace KoruMsSqlYedek.Win
                 ShowBalloonTip(
                     Res.Get("Tray_ServiceConnectionTitle"),
                     Res.Get("Tray_ServiceConnected"),
-                    ToolTipIcon.Info, 3000);
+                    ToolTipIcon.None, 3000);
                 Log.Information("Servis pipe bağlandı.");
 
                 // 3 sn sonra normal Idle ikonuna dön

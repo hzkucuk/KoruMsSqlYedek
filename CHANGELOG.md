@@ -1,4 +1,10 @@
-﻿## [0.99.8] - 2026-04-09 — Bağlantı Bildirimi ShowBalloonTip
+﻿## [0.99.9] - 2026-04-09 — Nullable Uyarı Temizliği & Yeşil Tray İkon
+
+### Düzeltme
+- **Balloon tip ikonu yeşil** — Servis bağlantı bildiriminde `ToolTipIcon.None` kullanılarak balloon tip, tray ikonunun yeşil onay işaretini gösterir.
+- **Tüm CS8632/CS8618/CS8622/CS8625/CS8602 nullable uyarıları giderildi** — 10 dosyaya `#nullable enable` eklendi; alan bildirimleri nullable yapıldı (`MainWindow?`, `Icon[]?`, `UpdateInfo?`, `ToolStripMenuItem?`); event handler `sender` parametreleri `object?` olarak güncellendi; `Screen.PrimaryScreen` null kontrolü eklendi; dialog constructor parametreleri nullable yapıldı.
+
+## [0.99.8] - 2026-04-09 — Bağlantı Bildirimi ShowBalloonTip
 
 ### Düzeltme
 - **Servis bağlantı bildirimi ModernToast → ShowBalloonTip** — ModernToast tray-only modda 4 denemeye rağmen render edilemiyordu. Bağlantı bildirimi, uygulamanın geri kalanında sorunsuz çalışan `NotifyIcon.ShowBalloonTip` ile değiştirildi. Standart Windows balloon tip ile güvenilir bildirim sağlandı.
