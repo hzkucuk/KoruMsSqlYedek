@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Threading;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Win.Helpers;
@@ -14,9 +15,9 @@ namespace KoruMsSqlYedek.Win
         private void OnPipeConnectionChanged(object sender, bool connected)
         {
             // Arka plan thread'inden gelebilir — UI thread'e aktar
-            if (Application.OpenForms.Count > 0 && Application.OpenForms[0]?.InvokeRequired == true)
+            if (SynchronizationContext.Current != _uiContext)
             {
-                Application.OpenForms[0].BeginInvoke(new Action(() => OnPipeConnectionChanged(sender, connected)));
+                _uiContext.Post(_ => OnPipeConnectionChanged(sender, connected), null);
                 return;
             }
 
@@ -42,9 +43,9 @@ namespace KoruMsSqlYedek.Win
         private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
         {
             // Arka plan thread'inden gelebilir — UI thread'e aktar
-            if (Application.OpenForms.Count > 0 && Application.OpenForms[0]?.InvokeRequired == true)
+            if (SynchronizationContext.Current != _uiContext)
             {
-                Application.OpenForms[0].BeginInvoke(new Action(() => OnBackupActivityChanged(sender, e)));
+                _uiContext.Post(_ => OnBackupActivityChanged(sender, e), null);
                 return;
             }
 
