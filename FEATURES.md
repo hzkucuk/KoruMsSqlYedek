@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.1 — CI/CD Release Workflow Düzeltmeleri
+- Inno Setup mutlak yol (github.workspace) düzeltmesi
+- releases/ klasörü sıralama düzeltmesi
+- Çok satırlı GITHUB_OUTPUT heredoc syntax
+- Compress-Archive dizi syntax düzeltmesi
+
 ### v0.99.0 — Telif Hakkı & Açık Kaynak Atıfları
 - Telif hakkı: © 2026 Zafer Bilgisayar, Geliştirici: Hüzeyin Küçük
 - Hakkında formunda 19 açık kaynak kütüphanenin adı ve lisans bilgisi
