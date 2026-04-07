@@ -1,8 +1,10 @@
 # KoruMsSqlYedek
 
+![Version](https://img.shields.io/badge/version-0.99.2-blue) ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey) ![.NET](https://img.shields.io/badge/.NET-10-purple)
+
 **SQL Server Yedekleme & Bulut Senkronizasyon Sistemi**
 
-KoruMsSqlYedek, SQL Server veritabanlarını ve dosya/klasörleri otomatik olarak yedekleyip bulut depolama servislerine gönderen, Windows tray uygulaması ve Windows Service olarak çalışan profesyonel bir yedekleme çözümüdür.
+KoruMsSqlYedek
 
 ---
 
