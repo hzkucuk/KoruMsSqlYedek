@@ -2,6 +2,10 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.3 — Başarı Bildirimleri Yeşil Checkmark
+- Bağlantı ve servis başlatma bildirimleri `ModernToast.Success` (yeşil ✓) ile gösteriliyor
+- Servis durdurma bildirimi nötr `ModernToast.Info` olarak güncellendi
+
 ### v0.99.2 — GitHub Actions Kesin Düzeltme
 - choco install innosetup kaldırıldı (windows-latest’ta pre-installed)
 - ISCC.exe tam mutlak yol kullanımı

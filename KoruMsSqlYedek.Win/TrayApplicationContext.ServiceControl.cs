@@ -84,7 +84,7 @@ namespace KoruMsSqlYedek.Win
             {
                 _tsmServiceStart.Enabled = false;
                 await RunScCommandAsync("start");
-                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStarted"), ToolTipIcon.Info, 2500);
+                Theme.ModernToast.Success(Res.Get("AppName"), Res.Get("Tray_ServiceStarted"));
                 Log.Information("Servis kullanıcı tarafından başlatıldı.");
             }
             catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
@@ -106,7 +106,7 @@ namespace KoruMsSqlYedek.Win
                 _tsmServiceStop.Enabled    = false;
                 _tsmServiceRestart.Enabled = false;
                 await RunScCommandAsync("stop");
-                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceStopped"), ToolTipIcon.Info, 2500);
+                Theme.ModernToast.Show(Res.Get("AppName"), Res.Get("Tray_ServiceStopped"), Theme.ToastType.Info);
                 Log.Information("Servis kullanıcı tarafından durduruldu.");
             }
             catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)

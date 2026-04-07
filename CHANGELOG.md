@@ -1,4 +1,12 @@
-﻿## [0.99.2] - 2026-04-08 — GitHub Actions Kesin Düzetme
+﻿## [0.99.3] - 2026-04-08 — Başarı Bildirimleri Yeşil Checkmark
+
+### Değişiklik
+- **Yeşil ✓ başarı bildirimleri** — Servis bağlantısı kuruldu ve servis başlatıldı bildirimleri artık mavi "i" yerine `ModernToast.Success` ile yeşil checkmark gösteriyor.
+- Servis durduruldu bildirimi nötr `ModernToast.Info` olarak bırakıldı.
+
+---
+
+## [0.99.2] - 2026-04-08 — GitHub Actions Kesin Düzetme
 
 ### Düzetme
 - **`choco install innosetup` kaldırıldı** — `windows-latest` runner’ında Inno Setup 6 zaten pre-installed geliyor (`C:\Program Files (x86)\Inno Setup 6\ISCC.exe`). `choco` bu kurulumu tanımıyor ve çakışıyor; bu nedenle v0.94.0’dan beri hiçbir release oluşmuyordu.
