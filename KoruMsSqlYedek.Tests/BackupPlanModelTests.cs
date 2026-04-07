@@ -99,7 +99,7 @@ namespace KoruMsSqlYedek.Tests
                 {
                     new CloudTargetConfig { IsEnabled = true, Type = CloudProviderType.Ftp },
                     new CloudTargetConfig { IsEnabled = true, Type = CloudProviderType.GoogleDrivePersonal },
-                    new CloudTargetConfig { IsEnabled = true, Type = CloudProviderType.Mega }
+                    new CloudTargetConfig { IsEnabled = true, Type = CloudProviderType.Ftps }
                 }
             };
             plan.HasCloudTargets.Should().BeTrue();
@@ -255,7 +255,7 @@ namespace KoruMsSqlYedek.Tests
                 CloudProviderType.Ftps,
                 CloudProviderType.Sftp,
                 CloudProviderType.GoogleDrivePersonal,
-                CloudProviderType.Mega,
+                CloudProviderType.Ftps,
                 CloudProviderType.UncPath
             };
 
@@ -568,7 +568,7 @@ namespace KoruMsSqlYedek.Tests
                     new CloudTargetConfig { Type = CloudProviderType.Ftp, IsEnabled = false },
                     new CloudTargetConfig { Type = CloudProviderType.Sftp, IsEnabled = true },
                     new CloudTargetConfig { Type = CloudProviderType.GoogleDrivePersonal, IsEnabled = false },
-                    new CloudTargetConfig { Type = CloudProviderType.Mega, IsEnabled = true },
+                    new CloudTargetConfig { Type = CloudProviderType.Ftps, IsEnabled = true },
                     new CloudTargetConfig { Type = CloudProviderType.UncPath, IsEnabled = false }
                 }
             };
@@ -598,7 +598,7 @@ namespace KoruMsSqlYedek.Tests
                 },
                 CloudTargets = new List<CloudTargetConfig>
                 {
-                    new CloudTargetConfig { Type = CloudProviderType.Mega, IsEnabled = true, DisplayName = "Mega" }
+                    new CloudTargetConfig { Type = CloudProviderType.Ftps, IsEnabled = true, DisplayName = "FTPS" }
                 }
             };
 

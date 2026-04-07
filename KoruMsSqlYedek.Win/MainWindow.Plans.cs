@@ -174,6 +174,21 @@ namespace KoruMsSqlYedek.Win
 
             _dgvPlans.ResumeLayout(false);
 
+            // Sekme geçişi sonrası seçili görevi geri yükle
+            if (!string.IsNullOrEmpty(_viewingPlanId))
+            {
+                for (int i = 0; i < _dgvPlans.Rows.Count; i++)
+                {
+                    if (_dgvPlans.Rows[i].Tag is BackupPlan p && p.PlanId == _viewingPlanId)
+                    {
+                        _dgvPlans.ClearSelection();
+                        _dgvPlans.Rows[i].Selected = true;
+                        _dgvPlans.FirstDisplayedScrollingRowIndex = i;
+                        break;
+                    }
+                }
+            }
+
             _tslPlanCount.Text = search.Length > 0
                 ? $"{sorted.Count} / {_allPlanRows.Count} görev"
                 : Res.Format("PlanList_TotalFormat", _allPlanRows.Count);

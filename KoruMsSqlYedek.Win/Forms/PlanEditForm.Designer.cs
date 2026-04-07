@@ -599,7 +599,7 @@
             step5.Controls.Add(_lblStep5Header);
             y += 26;
 
-            _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri yönetin.\nGoogle Drive, Mega.io, FTP/SFTP ve UNC a\u011f paylas\u0131m\u0131 desteklenir.";
+            _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri yönetin.\nGoogle Drive, FTP/SFTP ve UNC a\u011f paylas\u0131m\u0131 desteklenir.";
             _lblStep5Hint.AutoSize = true;
             _lblStep5Hint.ForeColor = Theme.ModernTheme.TextSecondary;
             _lblStep5Hint.Location = new System.Drawing.Point(lx, y);

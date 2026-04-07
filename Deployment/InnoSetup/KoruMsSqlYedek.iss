@@ -10,7 +10,7 @@
 
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
-#define MyAppVersion "0.77.0"
+#define MyAppVersion "0.94.0"
 #define MyAppPublisher "HZK"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"

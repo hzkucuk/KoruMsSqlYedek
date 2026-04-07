@@ -25,19 +25,6 @@ namespace KoruMsSqlYedek.Core.Constants
         /// <summary>SFTP işlem zaman aşımı (saniye).</summary>
         public const int SftpOperationTimeoutSeconds = 60;
 
-        // ── Mega ──────────────────────────────────────────────
-        /// <summary>Mega logout temizliği için kısa zaman aşımı (saniye).</summary>
-        public const int MegaLogoutTimeoutSeconds = 10;
-
-        /// <summary>Mega bağlantı ön kontrolü zaman aşımı (saniye).</summary>
-        public const int MegaConnectivityCheckSeconds = 10;
-
-        /// <summary>Mega login zaman aşımı (saniye). Hashcash/PBKDF2 hesaplaması nedeniyle yüksek.</summary>
-        public const int MegaLoginTimeoutSeconds = 90;
-
-        /// <summary>Mega oturum önbellek süresi (dakika).</summary>
-        public const int MegaSessionExpiryMinutes = 15;
-
         // ── Genel ─────────────────────────────────────────────
         /// <summary>Cloud upload per-target maksimum süre (dakika). Takılmayı önler.</summary>
         public const int CloudUploadPerTargetTimeoutMinutes = 60;

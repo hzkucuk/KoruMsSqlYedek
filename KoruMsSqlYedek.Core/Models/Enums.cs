@@ -42,7 +42,6 @@ namespace KoruMsSqlYedek.Core.Models
     public enum CloudProviderType
     {
         GoogleDrivePersonal = 0,
-        Mega = 2,
         Ftp = 4,
         Ftps = 5,
         Sftp = 6,

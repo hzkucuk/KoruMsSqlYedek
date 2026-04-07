@@ -1,4 +1,20 @@
-﻿## [0.93.0] - 2026-04-07 — Paralel Görev UI Senkron, Express Sıkıştırma, Dosya Strateji Kaldırma
+﻿## [0.94.0] - 2026-04-07 — Mega.io Kaldırma, Sekme Geçiş Seçimi, CLAUDE.md
+
+### Kaldırılan
+- **Mega.io bulut desteği tamamen kaldırıldı** — MegaProvider.cs, MegaProvider.Operations.cs silinip enum/factory/UI/test/dökümantasyondan tüm referanslar temizlendi. MegaApiClient NuGet paketi kaldırıldı.
+- **Eski installer klasörü kaldırıldı** — `installer/build.ps1`, `installer/setup.iss` ve eski Setup.exe temizlendi. Güncel yapı `Deployment/` altında.
+
+### Düzeltmeler
+- **Sekme geçişinde görev seçimi korunuyor** — Planlar sekmesine geri dönüldüğünde `_viewingPlanId` ile önceki seçim restore ediliyor (eskiden ilk satıra sıfırlanıyordu).
+- **Build-Release.ps1 PowerShell 5.1 uyumu** — `?.Source` null-conditional operatörü `if ($cmd) { $cmd.Source }` ile değiştirildi.
+- **`.gitignore` güncellendi** — `installer/output/` → `releases/`.
+
+### Eklenen
+- **CLAUDE.md** — Claude Code için proje rehberi oluşturuldu.
+
+---
+
+## [0.93.0] - 2026-04-07 — Paralel Görev UI Senkron, Express Sıkıştırma, Dosya Strateji Kaldırma
 
 ### Yeni Özellikler
 - **Paralel görev UI senkronizasyonu** — Görev listesinde plan seçildiğinde tüm kontroller (progress bar, log, butonlar) seçili plana göre güncellenir. Başlat/İptal butonları yanlış görevi etkilemez.

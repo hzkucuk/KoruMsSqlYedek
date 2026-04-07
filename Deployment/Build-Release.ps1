@@ -149,7 +149,8 @@ try {
     # --- 7. Inno Setup Installer (opsiyonel — ISCC.exe PATH'de olmalı) ---
     Write-Host "`n[7/7] Inno Setup installer derleniyor (opsiyonel)..." -ForegroundColor Yellow
     $issPath = Join-Path $rootDir "Deployment\InnoSetup\KoruMsSqlYedek.iss"
-    $isccExe = (Get-Command "ISCC.exe" -ErrorAction SilentlyContinue)?.Source
+    $isccCmd = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
+    $isccExe = if ($isccCmd) { $isccCmd.Source } else { $null }
     if (-not $isccExe) {
         # Inno Setup varsayilan kurulum yolu
         $defaultIscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"

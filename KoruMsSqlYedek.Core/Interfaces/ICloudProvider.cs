@@ -33,7 +33,7 @@ namespace KoruMsSqlYedek.Core.Interfaces
             Action<string> sessionUriObtained = null);
 
         /// <summary>
-        /// Uzak dosyayı siler. Google Drive ve Mega için çöp kutusuna taşıma seçeneği vardır.
+        /// Uzak dosyayı siler. Google Drive için çöp kutusuna taşıma seçeneği vardır.
         /// </summary>
         Task<bool> DeleteAsync(
             string remoteFileIdentifier,
@@ -49,14 +49,13 @@ namespace KoruMsSqlYedek.Core.Interfaces
 
         /// <summary>
         /// Provider'ın çöp kutusu desteği olup olmadığını belirtir.
-        /// Google Drive ve Mega için true, diğerleri için false.
+        /// Google Drive için true, diğerleri için false.
         /// </summary>
         bool SupportsTrash { get; }
 
         /// <summary>
         /// Çöp kutusundaki YALNIZCA bizim yedek dosyalarımızı kalıcı olarak siler.
         /// Google Drive: Bizim klasörümüzdeki (RemoteFolderPath) çöp dosyalarını siler.
-        /// Mega: Yedek dosya deseniyle eşleşen (*_Full_*, *_Differential_*, Files_*.7z vb.) çöp dosyalarını siler.
         /// Kullanıcının kişisel dosyalarına dokunmaz.
         /// </summary>
         /// <returns>Silinen dosya sayısı.</returns>

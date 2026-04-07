@@ -23,11 +23,10 @@ namespace KoruMsSqlYedek.Win.Forms
         private static readonly CloudProviderType[] ProviderMap =
         {
             CloudProviderType.GoogleDrivePersonal,  // 0: Google Drive ✓
-            CloudProviderType.Mega,                  // 1: Mega.io
-            CloudProviderType.Ftp,                   // 2: FTP
-            CloudProviderType.Ftps,                  // 3: FTPS
-            CloudProviderType.Sftp,                  // 4: SFTP
-            CloudProviderType.UncPath,               // 5: UNC Ağ Paylaşımı
+            CloudProviderType.Ftp,                   // 1: FTP
+            CloudProviderType.Ftps,                  // 2: FTPS
+            CloudProviderType.Sftp,                  // 3: SFTP
+            CloudProviderType.UncPath,               // 4: UNC Ağ Paylaşımı
         };
 
         /// <summary>Düzenlenen/oluşturulan bulut hedef yapılandırması.</summary>
@@ -105,7 +104,6 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             _cmbProviderType.Items.Clear();
             _cmbProviderType.Items.Add("Google Drive  \u2713");
-            _cmbProviderType.Items.Add("Mega.io");
             _cmbProviderType.Items.Add("FTP");
             _cmbProviderType.Items.Add("FTPS");
             _cmbProviderType.Items.Add("SFTP");
@@ -191,15 +189,6 @@ namespace KoruMsSqlYedek.Win.Forms
             {
                 _target.Host = _txtHost.Text.Trim();
                 _target.Port = (int)_nudPort.Value;
-                _target.Username = _txtUsername.Text.Trim();
-
-                if (!string.IsNullOrEmpty(_txtPassword.Text))
-                {
-                    _target.Password = PasswordProtector.Protect(_txtPassword.Text);
-                }
-            }
-            else if (IsMegaType(providerType))
-            {
                 _target.Username = _txtUsername.Text.Trim();
 
                 if (!string.IsNullOrEmpty(_txtPassword.Text))
@@ -325,21 +314,17 @@ namespace KoruMsSqlYedek.Win.Forms
             UpdateRemotePathTooltip(type);
 
             bool isFtp = IsFtpType(type);
-            bool isMega = IsMegaType(type);
             bool isOAuth = IsOAuthType(type);
             bool isLocal = IsLocalType(type);
             bool isUnc = type == CloudProviderType.UncPath;
-            bool hasTrash = isOAuth || isMega; // Google Drive ve Mega çöp kutusu desteği
 
-            // FTP/SFTP grubu (Mega için de kullanılır: email/şifre alanları)
-            _grpFtp.Visible = isFtp || isMega;
+            // FTP/SFTP grubu
+            _grpFtp.Visible = isFtp;
 
-            // Mega seçilince Host/Port gizle, Username etiketini "Email" yap
             _lblHost.Visible = isFtp;
             _txtHost.Visible = isFtp;
             _lblPort.Visible = isFtp;
             _nudPort.Visible = isFtp;
-            _lblUsername.Text = isMega ? "Email:" : "Kullanıcı Adı:";
 
             // OAuth grubu
             _grpOAuth.Visible = isOAuth;
@@ -353,10 +338,10 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblUncPassword.Visible = isUnc;
             _txtUncPassword.Visible = isUnc;
 
-            // Ortak: RemotePath (FTP + OAuth + Mega), Trash (OAuth + Mega), Bandwidth (hepsi)
-            _lblRemotePath.Visible = isFtp || isOAuth || isMega;
-            _txtRemotePath.Visible = isFtp || isOAuth || isMega;
-            _chkPermanentDelete.Visible = hasTrash;
+            // Ortak: RemotePath (FTP + OAuth), Trash (OAuth), Bandwidth (hepsi)
+            _lblRemotePath.Visible = isFtp || isOAuth;
+            _txtRemotePath.Visible = isFtp || isOAuth;
+            _chkPermanentDelete.Visible = isOAuth;
 
             // Port varsayılan değeri
             if (isFtp && (!_isNew || _nudPort.Value == 0))
@@ -383,11 +368,6 @@ namespace KoruMsSqlYedek.Win.Forms
             return type == CloudProviderType.GoogleDrivePersonal;
         }
 
-        private static bool IsMegaType(CloudProviderType type)
-        {
-            return type == CloudProviderType.Mega;
-        }
-
         private static bool IsLocalType(CloudProviderType type)
         {
             return type == CloudProviderType.UncPath;
@@ -406,21 +386,20 @@ namespace KoruMsSqlYedek.Win.Forms
 
         /// <summary>
         /// Provider türüne göre "Uzak Klasör Yolu" alanının tooltip metnini günceller.
-        /// Google Drive / Mega: slash (/) ayırıcı, başına slash konmaz.
+        /// Google Drive: slash (/) ayırıcı, başına slash konmaz.
         /// FTP / FTPS / SFTP: Unix yolu, başında slash olmalı.
         /// </summary>
         private void UpdateRemotePathTooltip(CloudProviderType type)
         {
             string tip;
 
-            if (IsOAuthType(type) || IsMegaType(type))
+            if (IsOAuthType(type))
             {
-                string providerName = IsMegaType(type) ? "Mega" : "Drive";
                 tip = "Dosyaların yükleneceği klasör adını girin.\r\n"
                     + "• Alt klasör eklemek için \"/\" ayırıcısını kullanın.\r\n"
                     + "• Başına \"/\" veya \"\\\" koymayın.\r\n"
-                    + $"Örnek:  Yedekler            → {providerName}'ın kökünde\r\n"
-                    + $"Örnek:  Yedekler/Plan1      → Yedekler altında Plan1 klasörü";
+                    + "Örnek:  Yedekler            → Drive'ın kökünde\r\n"
+                    + "Örnek:  Yedekler/Plan1      → Yedekler altında Plan1 klasörü";
             }
             else if (IsFtpType(type))
             {

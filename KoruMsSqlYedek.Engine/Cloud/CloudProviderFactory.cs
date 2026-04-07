@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Serilog;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
@@ -7,7 +7,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
 {
     /// <summary>
     /// CloudProviderType'a göre uygun ICloudProvider örneği oluşturan fabrika.
-    /// Tüm provider türlerini destekler: Google Drive, Mega.io, FTP/SFTP, UNC.
+    /// Tüm provider türlerini destekler: Google Drive, FTP/SFTP, UNC.
     /// </summary>
     public class CloudProviderFactory : ICloudProviderFactory
     {
@@ -19,9 +19,6 @@ namespace KoruMsSqlYedek.Engine.Cloud
             {
                 case CloudProviderType.GoogleDrivePersonal:
                     return new GoogleDriveProvider(type);
-
-                case CloudProviderType.Mega:
-                    return new MegaProvider();
 
                 case CloudProviderType.Ftp:
                 case CloudProviderType.Ftps:
@@ -45,7 +42,6 @@ namespace KoruMsSqlYedek.Engine.Cloud
             switch (type)
             {
                 case CloudProviderType.GoogleDrivePersonal:
-                case CloudProviderType.Mega:
                 case CloudProviderType.Ftp:
                 case CloudProviderType.Ftps:
                 case CloudProviderType.Sftp:

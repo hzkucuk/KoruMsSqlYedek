@@ -21,7 +21,6 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 - [x] SqlBackupService.cs → 3 partial (Operations, VssBackup, Helpers)
 - [x] FileSystemCheckedTreeView.cs → 3 partial (NodeLoading, Filtering, SizeCalculation)
 - [x] CloudUploadOrchestrator.cs → 2 partial (CloudOperations, RetryAndRecovery)
-- [x] MegaProvider.cs → 1 partial (Operations) — 4 kritik pattern korundu
 - [x] GoogleDriveProvider.cs → 1 partial (Operations)
 - [x] FtpSftpProvider.cs → 2 partial (Ftp, Sftp)
 - [x] FileBackupService.cs → 2 partial (CopyAndVerify, FileCollection)
@@ -150,47 +149,24 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 - `BackupMode` enum ve `Mode` property geriye dönük JSON uyumluluğu için `[Obsolete]` korunuyor
 - Wizard UX sadeleştirildi: Kullanıcı doğrudan hedef ekleyerek bulut depolama kullanabilir
 
-### v0.72.0
-- Mega oturum önbellekleme geri eklendi: 15 dakika boyunca aynı oturum yeniden kullanılıyor
-- SemaphoreSlim ile tüm Mega API çağrıları sıralı işleniyor (rate limiting önleme)
-- Hata sonrası oturum otomatik geçersizleştirme + yeni oturum açma
-- Her upload/delete/trash işleminde ayrı login/logout sorunu giderildi
-
 ### v0.71.1 — Çöp Kutusu Güvenlik Düzeltmesi
 - Google Drive: Sadece bizim klasörümüzdeki çöp dosyaları temizlenir, kullanıcının kişisel çöpüne dokunulmaz
-- Mega: Yedek dosya isim desenine uyan dosyalar filtrelenir (`.bak`/`.7z` + `_Full_/_Differential_/_Incremental_/Files_`)
 
-### v0.71.0 — Bulut Çöp Kutusu Otomatik Temizleme (Mega + Google Drive)
-- Mega çöp kutusu: Yedekleme sonrası birikmiş çöp öğeleri otomatik kalıcı siliniyor
+### v0.71.0 — Bulut Çöp Kutusu Otomatik Temizleme (Google Drive)
 - Google Drive çöp kutusu: Files.EmptyTrash() API ile tek çağrıda temizleniyor
 - ICloudProvider: SupportsTrash + EmptyTrashAsync arayüzü
 - Orkestrasyon: EmptyTrashForAllAsync — sadece uygun hedefleri filtreler
 - Pipeline: Her yedekleme sonrası otomatik çöp temizliği (hata güvenli)
-
-### v0.70.0 — Mega Oturum Önbellekleme + Diagnostik İyileştirmeler
-- Mega oturum önbellekleme: Login/logout her dosyada değil, 15 dakika boyunca yeniden kullanılıyor
-- SemaphoreSlim ile eşzamanlı upload serializasyonu
-- MegaProvider diagnostik logları Information seviyesine yükseltildi (Service loglarında görünür)
-- DPAPI şifre çözme null kontrolü + rate limiting ipucu mesajı
-- MainWindow: CloudUploadStarted/CloudUploadCompleted switch case'leri eklendi (uyarı logları kaldırıldı)
-
-### v0.69.0 — Mega Upload Retry Düzeltmesi + Hata Mesajı Görünürlüğü
-- Mega retry: Non-exception başarısızlıklarda exponential backoff (2s/4s/8s) eklendi
-- Bulut yükleme hata detayı log panelinde görünür ("Başarısız ✕ — {neden}")
-- VSS kaynaklı hızlı retry → rate limiting sorunu çözüldü
 
 ### v0.68.5 — Log Çelişkileri Düzeltildi + VSS Etiket Güncellemesi
 - "Express VSS" → "VSS" tüm log mesajlarında güncellendi
 - Bulut yükleme başarısız olduğunda tamamlanma durumu doğru gösteriliyor (⚠ uyarı ikonu + mesaj)
 - Grid ve log panelinde bulut başarısızlığı renk ve ikon ile ayrışıyor
 
-### v0.68.0 — Mega.io Bulut Desteği + OneDrive/Workspace/LocalPath Kaldırma
-- Mega.io bulut depolama: Email/şifre auth, upload (ilerleme), silme (çöp/kalıcı), klasör yönetimi
-- MegaApiClient v1.10.5 NuGet paketi
+### v0.68.0 — OneDrive/Workspace/LocalPath Kaldırma
 - OneDrive desteği tamamen kaldırıldı (Microsoft.Graph, Azure.Identity, MSAL)
 - GoogleDriveWorkspace enum değeri kaldırıldı, Google Drive tek tip
 - CloudProviderType.LocalPath bulut hedeflerinden kaldırıldı (yerel yedekleme etkilenmedi)
-- CloudTargetEditDialog: Mega.io combobox, FTP grubu Mega için yeniden kullanım
 
 ### v0.66.0 — Şifre Koruması Aktif/Pasif Toggle
 - Şifre aktif/pasif toggle: Şifreyi kaldırmadan korumayı geçici olarak devre dışı bırakma

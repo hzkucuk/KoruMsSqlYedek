@@ -18,7 +18,6 @@ KoruMsSqlYedek, SQL Server veritabanlarını ve dosya/klasörleri otomatik olara
 
 ### Bulut Senkronizasyon
 - **Google Drive:** Bireysel hesap, OAuth kimlik doğrulama, çöp kutusu temizleme
-- **Mega.io:** Email/şifre ile kimlik doğrulama, klasör yönetimi, çöp kutusu/kalıcı silme
 - **FTP/SFTP:** FluentFTP ve SSH.NET ile güvenli transfer
 - **UNC Ağ Paylaşımı:** Ağ paylaşımı desteği
 
@@ -108,7 +107,6 @@ KoruMsSqlYedek.Service.exe start
 | SevenZipSharp 1.6.2.24 | LZMA2 sıkıştırma |
 | AlphaVSS 1.4.0 | Volume Shadow Copy |
 | Google.Apis.Drive.v3 | Google Drive API |
-| MegaApiClient 1.10.5 | Mega.io API |
 | FluentFTP 51.0.0 | FTP/FTPS |
 | SSH.NET 2024.1.0 | SFTP |
 | MailKit 4.3.0 | SMTP e-posta |
