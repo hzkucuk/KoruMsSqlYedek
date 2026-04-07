@@ -23,6 +23,7 @@ namespace KoruMsSqlYedek.Win.Forms
             InitializeComponent();
             SetVersionInfo();
             SetRuntimeInfo();
+            SetOpenSourceCredits();
             _pnlLogo.Paint += OnLogoPanelPaint;
         }
 
@@ -40,6 +41,35 @@ namespace KoruMsSqlYedek.Win.Forms
             string os = RuntimeInformation.OSDescription;
             string arch = RuntimeInformation.ProcessArchitecture.ToString();
             _lblRuntime.Text = $"{runtime} ({arch}) — {os}";
+        }
+
+        /// <summary>Açık kaynak kütüphane atıflarını RichTextBox'a yazar.</summary>
+        private void SetOpenSourceCredits()
+        {
+            string[] credits =
+            [
+                "Quartz.NET — Zamanlama motoru (Apache 2.0)",
+                "Microsoft.Data.SqlClient — SQL Server bağlantısı (MIT)",
+                "Microsoft.SqlServer.SqlManagementObjects — SMO yedekleme (MIT)",
+                "Serilog — Yapısal loglama (Apache 2.0)",
+                "Serilog.Sinks.File — Dosya log hedefi (Apache 2.0)",
+                "Serilog.Sinks.Console — Konsol log hedefi (Apache 2.0)",
+                "Serilog.Extensions.Hosting — Host entegrasyonu (Apache 2.0)",
+                "Newtonsoft.Json — JSON serileştirme (MIT)",
+                "Autofac — IoC / Dependency Injection (MIT)",
+                "Google.Apis.Drive.v3 — Google Drive API (Apache 2.0)",
+                "FluentFTP — FTP istemcisi (MIT)",
+                "SSH.NET — SFTP istemcisi (MIT)",
+                "MailKit — E-posta gönderimi (MIT)",
+                "Squid-Box.SevenZipSharp — 7-Zip sıkıştırma (LGPL-2.1)",
+                "AlphaVSS — Volume Shadow Copy (MIT)",
+                "ObjectListView.Repack.NET6Plus — Gelişmiş ListView (GPL-3.0)",
+                "System.Security.Cryptography.ProtectedData — Veri koruma (MIT)",
+                "Microsoft.Extensions.Hosting — Generic Host altyapısı (MIT)",
+                "Microsoft.Extensions.Hosting.WindowsServices — Windows Servis desteği (MIT)",
+            ];
+
+            _rtbCredits.Text = string.Join(Environment.NewLine, credits);
         }
 
         /// <summary>GitHub linkine tıklandığında varsayılan tarayıcıda açar.</summary>

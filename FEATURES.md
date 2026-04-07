@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.0 — Telif Hakkı & Açık Kaynak Atıfları
+- Telif hakkı: © 2026 Zafer Bilgisayar, Geliştirici: Hüzeyin Küçük
+- Hakkında formunda 19 açık kaynak kütüphanenin adı ve lisans bilgisi
+- Tüm .csproj dosyalarında Copyright/Authors/Company metadata
+
 ### v0.98.0 — Hakkında Formu
 - Hakkında diyalogu: uygulama adı, versiyon, GDI+ kalkan logo, telif hakkı, GitHub linki, .NET runtime bilgisi
 - Tray menü + status bar versiyon etiketi ile erişim

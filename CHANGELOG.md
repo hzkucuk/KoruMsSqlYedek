@@ -1,4 +1,13 @@
-﻿## [0.98.0] - 2026-04-08 — Hakkında Formu
+﻿## [0.99.0] - 2026-04-08 — Telif Hakkı & Açık Kaynak Atıfları
+
+### Değişiklikler
+- **Telif hakkı güncellendi** — Tüm proje genelinde telif hakkı "© 2026 Zafer Bilgisayar" olarak güncellendi. Geliştirici: Hüzeyin Küçük.
+- **Açık kaynak kütüphane atıfları** — Hakkında formuna kullanılan tüm açık kaynak kütüphanelerin adı ve lisans bilgisi eklendi (19 kütüphane).
+- **Assembly metadata** — Tüm .csproj dosyalarına Copyright, Authors, Company MSBuild özellikleri eklendi.
+
+---
+
+## [0.98.0] - 2026-04-08 — Hakkında Formu
 
 ### Yeni Özellikler
 - **Hakkında Diyalogu** — Uygulama adı, versiyon, telif hakkı, geliştirici bilgisi, GitHub bağlantısı ve .NET runtime bilgisini gösteren modern Hakkında formu eklendi.
