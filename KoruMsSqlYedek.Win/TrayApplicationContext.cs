@@ -30,6 +30,7 @@ namespace KoruMsSqlYedek.Win
         private readonly ContextMenuStrip _contextMenu;
         private readonly ILifetimeScope _scope;
         private readonly ServicePipeClient _pipeClient;
+        private readonly SynchronizationContext _uiContext;
         private MainWindow _mainWindow;
 
         // Servis kontrol menü öğeleri
@@ -72,6 +73,8 @@ namespace KoruMsSqlYedek.Win
             _scope = scope;
             _pipeClient = pipeClient;
             _updateService = scope.Resolve<IUpdateService>();
+            _uiContext = SynchronizationContext.Current
+                ?? throw new InvalidOperationException("TrayApplicationContext must be created on the UI thread.");
 
             Log.Information("KoruMsSqlYedek Tray uygulaması başlatılıyor...");
 
