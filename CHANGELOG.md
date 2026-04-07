@@ -1,4 +1,46 @@
-﻿## [0.95.0] - 2026-04-07 — SQL Yetki Otomatik Kontrolü, UI Düzeltmeleri
+﻿## [0.99.0] - 2026-04-08 — Telif Hakkı & Açık Kaynak Atıfları
+
+### Değişiklikler
+- **Telif hakkı güncellendi** — Tüm proje genelinde telif hakkı "© 2026 Zafer Bilgisayar" olarak güncellendi. Geliştirici: Hüzeyin Küçük.
+- **Açık kaynak kütüphane atıfları** — Hakkında formuna kullanılan tüm açık kaynak kütüphanelerin adı ve lisans bilgisi eklendi (19 kütüphane).
+- **Assembly metadata** — Tüm .csproj dosyalarına Copyright, Authors, Company MSBuild özellikleri eklendi.
+
+---
+
+## [0.98.0] - 2026-04-08 — Hakkında Formu
+
+### Yeni Özellikler
+- **Hakkında Diyalogu** — Uygulama adı, versiyon, telif hakkı, geliştirici bilgisi, GitHub bağlantısı ve .NET runtime bilgisini gösteren modern Hakkında formu eklendi.
+- **GDI+ Kalkan Logosu** — Hakkında formunda emerald gradient kalkan ikonu GDI+ ile çiziliyor.
+- **Tray Menü Erişimi** — System tray sağ tık menüsünde “Hakkında” öğesi eklendi.
+- **Status Bar Erişimi** — Ana pencere durum çubuğundaki versiyon etiketine tıklanarak Hakkında diyalogu açılabilir.
+
+---
+
+## [0.97.0] - 2026-04-08 — Yeşil Grup Başlıkları (ObjectListView)
+
+### Yeni Özellikler
+- **ThemedObjectListView** — ObjectListView için NM_CUSTOMDRAW WndProc interception ile grup başlık metin rengini özelleştiren alt sınıf oluşturuldu.
+- **Yeşil grup başlıkları** — Dashboard Son Yedeklemeler listesinde plan grup başlıkları artık emerald yeşil renkte (AccentPrimaryHover) gösteriliyor.
+
+### Teknik
+- `UseExplorerTheme = false` ile explorer tema baskılanması, Win32 NMLVCUSTOMDRAW struct offset hesaplamaları (x64/x86 uyumlu).
+
+---
+
+## [0.96.0] - 2026-04-08 — Dashboard ObjectListView Geçişi
+
+### Yeni Özellikler
+- **Dashboard ListView → ObjectListView geçişi** — Son Yedeklemeler gridi, `ObjectListView.Repack.NET6Plus` v2.9.5 NuGet paketi ile yeniden yazıldı. Yerleşik sıralama, plan adına göre gruplama, AspectName veri bağlama ve satır düzeyinde renklendirme (FormatRow) aktif.
+- **Dark theme uyumu** — ObjectListView header, alternatif satır, seçim renkleri ModernTheme'den otomatik uygulanıyor.
+
+### Kaldırılan
+- Dashboard'daki eski ListView (`_lvLastBackups`), 6 adet ColumnHeader, `LastBackupsItemComparer`, `OnLastBackupsColumnClick`, `AutoResizeListViewColumns` ve manuel grup yönetimi kodu kaldırıldı.
+- `_headerPainter` (ListViewHeaderPainter) Dashboard'dan kaldırıldı.
+
+---
+
+## [0.95.0] - 2026-04-07 — SQL Yetki Otomatik Kontrolü, UI Düzeltmeleri
 
 ### Yeni Özellikler
 - **SQL Server yetki otomatik kontrolü** — Servis modunda (NT AUTHORITY\SYSTEM) yedekleme başlamadan önce SQL Server erişim yetkisi kontrol edilir ve gerekirse otomatik sysadmin rolü verilir. Başarısızlıkta kullanıcıya bilgi logu yazılır.

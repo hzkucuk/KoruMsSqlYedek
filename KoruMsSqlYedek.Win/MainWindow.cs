@@ -72,11 +72,6 @@ namespace KoruMsSqlYedek.Win
         private int _planSortColumn = -1;
         private bool _planSortAscending = true;
 
-        // Son yedekler ListView sıralama durumu
-        private int _lvSortColumn = 0;
-        private bool _lvSortAscending = false;
-        private Theme.ListViewHeaderPainter? _headerPainter;
-
         public MainWindow(
             IPlanManager planManager,
             IBackupHistoryManager historyManager,
@@ -105,13 +100,15 @@ namespace KoruMsSqlYedek.Win
 
             InitializeComponent();
 
-            // Header custom draw (NativeWindow) — OwnerDraw kullanmadan dark theme header boyama
-            _headerPainter = new Theme.ListViewHeaderPainter(_lvLastBackups);
-            _headerPainter.GroupHeaderColor = Color.FromArgb(0, 180, 90);
+            // ObjectListView Dashboard kurulumu — kolon, gruplama, dark theme
+            SetupDashboardOlv();
 
             // Versiyon metnini runtime'da ayarla (Designer'da statik metinlere izin verilmiyor)
             string ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
             _tslVersion.Text = $"v{ver}";
+            _tslVersion.IsLink = true;
+            _tslVersion.LinkBehavior = LinkBehavior.HoverUnderline;
+            _tslVersion.Click += OnVersionLabelClick;
 
             ApplyIcons();
 
@@ -260,6 +257,13 @@ namespace KoruMsSqlYedek.Win
                 Show();
         }
 
+        /// <summary>Versiyon label'ına tıklanınca Hakkında diyalogunu açar.</summary>
+        private void OnVersionLabelClick(object? sender, EventArgs e)
+        {
+            using Forms.AboutForm aboutForm = new();
+            aboutForm.ShowDialog(this);
+        }
+
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
@@ -313,7 +317,6 @@ namespace KoruMsSqlYedek.Win
             _dashboardTimer.Dispose();
             _logTimer.Stop();
             _logTimer.Dispose();
-            _headerPainter?.Dispose();
             BackupActivityHub.ActivityChanged -= OnBackupActivityChanged;
             _pipeClient.ConnectionChanged    -= OnPipeConnectionChanged;
             ServiceStatusHub.StatusReceived  -= OnServiceStatusReceived;

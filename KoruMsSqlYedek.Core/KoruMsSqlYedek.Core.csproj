@@ -4,6 +4,9 @@
     <RootNamespace>KoruMsSqlYedek.Core</RootNamespace>
     <AssemblyName>KoruMsSqlYedek.Core</AssemblyName>
     <LangVersion>latest</LangVersion>
+    <Copyright>Copyright © 2026 Zafer Bilgisayar</Copyright>
+    <Authors>Hüzeyin Küçük</Authors>
+    <Company>Zafer Bilgisayar</Company>
   </PropertyGroup>
 
   <ItemGroup>

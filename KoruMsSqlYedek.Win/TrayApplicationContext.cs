@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using Autofac;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Win.Forms;
 using KoruMsSqlYedek.Win.IPC;
 using KoruMsSqlYedek.Win.Helpers;
 using Serilog;
@@ -159,6 +160,8 @@ namespace KoruMsSqlYedek.Win
             menu.Items.Add(new ToolStripSeparator());
             _tsmCheckUpdate = new ToolStripMenuItem(Res.Get("Update_MenuCheckForUpdates"), null, OnCheckUpdateClick);
             menu.Items.Add(_tsmCheckUpdate);
+            var tsmAbout = new ToolStripMenuItem("Hakkında", null, OnAboutClick);
+            menu.Items.Add(tsmAbout);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmExit);
 
@@ -174,6 +177,22 @@ namespace KoruMsSqlYedek.Win
 
         private void OpenMainWindow(int tabIndex)
         {
+            // Şifre koruması kontrolü
+            var settingsManager = _scope.Resolve<IAppSettingsManager>();
+            var settings = settingsManager.Load();
+
+            if (settings.IsPasswordProtected)
+            {
+                using (var pwdDlg = new PasswordDialog(settings, settingsManager))
+                {
+                    if (pwdDlg.ShowDialog() != DialogResult.OK)
+                    {
+                        Log.Information("Şifre doğrulanmadığı için ana pencere açılmadı.");
+                        return;
+                    }
+                }
+            }
+
             if (_mainWindow == null || _mainWindow.IsDisposed)
             {
                 _mainWindow = _scope.Resolve<MainWindow>();
@@ -181,6 +200,17 @@ namespace KoruMsSqlYedek.Win
             }
 
             _mainWindow.SelectTab(tabIndex);
+        }
+
+        #endregion
+
+
+        #region About
+
+        private void OnAboutClick(object? sender, EventArgs e)
+        {
+            using AboutForm aboutForm = new();
+            aboutForm.ShowDialog();
         }
 
         #endregion

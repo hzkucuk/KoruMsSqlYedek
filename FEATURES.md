@@ -2,6 +2,25 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.0 — Telif Hakkı & Açık Kaynak Atıfları
+- Telif hakkı: © 2026 Zafer Bilgisayar, Geliştirici: Hüzeyin Küçük
+- Hakkında formunda 19 açık kaynak kütüphanenin adı ve lisans bilgisi
+- Tüm .csproj dosyalarında Copyright/Authors/Company metadata
+
+### v0.98.0 — Hakkında Formu
+- Hakkında diyalogu: uygulama adı, versiyon, GDI+ kalkan logo, telif hakkı, GitHub linki, .NET runtime bilgisi
+- Tray menü + status bar versiyon etiketi ile erişim
+
+### v0.97.0 — Yeşil Grup Başlıkları (ObjectListView)
+- ThemedObjectListView alt sınıfı: NM_CUSTOMDRAW ile grup başlık rengini özelleştirme
+- Dashboard grup başlıkları emerald yeşil (AccentPrimaryHover)
+- UseExplorerTheme=false ile explorer tema baskılama
+
+### v0.96.0 — Dashboard ObjectListView Geçişi
+- Dashboard Son Yedeklemeler gridi `ObjectListView.Repack.NET6Plus` v2.9.5 ile değiştirildi
+- Yerleşik sıralama, plan bazlı gruplama, AspectName veri bağlama, FormatRow satır renklendirme
+- Dark theme tam uyum (header, alternatif satır, seçim renkleri)
+
 ### v0.92.0 — Konsolide Bulut Yükleme: Tek Seferde Toplu Upload
 - [x] SQL + dosya yedeklerinin bulut yüklemeleri tek toplu fazda birleştirildi
 - [x] `UploadBatchToAllAsync` — CloudUploadOrchestrator'a toplu yükleme metodu

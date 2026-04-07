@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Koru MsSql Yedek")]
 [assembly: AssemblyDescription("SQL Server Yedekleme & Bulut Senkronizasyon Sistemi")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("HZK")]
+[assembly: AssemblyCompany("Zafer Bilgisayar")]
 [assembly: AssemblyProduct("Koru MsSql Yedek")]
-[assembly: AssemblyCopyright("Copyright © HZK 2025")]
+[assembly: AssemblyCopyright("Copyright © 2026 Zafer Bilgisayar")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 //      Yapı Numarası
 //      Düzeltme
 //
-[assembly: AssemblyVersion("0.95.0.0")]
-[assembly: AssemblyFileVersion("0.95.0.0")]
+[assembly: AssemblyVersion("0.99.0.0")]
+[assembly: AssemblyFileVersion("0.99.0.0")]
 
 [assembly: InternalsVisibleTo("KoruMsSqlYedek.Tests")]

@@ -3,14 +3,113 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using BrightIdeasSoftware;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Helpers;
 
 namespace KoruMsSqlYedek.Win
 {
-    // TAB 0: Dashboard — Durum özeti, son yedeklemeler, sıralama.
+    // TAB 0: Dashboard — Durum özeti, son yedeklemeler, sıralama/gruplama.
     public partial class MainWindow
     {
+        /// <summary>
+        /// ObjectListView kolonlarını, renderer'ları ve gruplama mantığını ayarlar.
+        /// Constructor'dan (InitializeComponent sonrası) bir kez çağrılır.
+        /// </summary>
+        private void SetupDashboardOlv()
+        {
+            // Tarih kolonu — AspectToStringConverter ile biçimli metin
+            _olvColDate.AspectToStringConverter = obj =>
+                obj is DateTime dt ? dt.ToString("yyyy-MM-dd HH:mm") : "—";
+
+            // Plan kolonu — null güvenliği
+            _olvColPlan.AspectToStringConverter = obj =>
+                obj is string s && !string.IsNullOrEmpty(s) ? s : "—";
+
+            // Veritabanı kolonu
+            _olvColDatabase.AspectToStringConverter = obj =>
+                obj is string s && !string.IsNullOrEmpty(s) ? s : "—";
+
+            // Tür kolonu — enum → Türkçe metin
+            _olvColType.AspectToStringConverter = obj =>
+                obj is SqlBackupType t ? GetBackupTypeName(t) : "—";
+
+            // Sonuç kolonu — enum → Türkçe metin
+            _olvColResult.AspectToStringConverter = obj =>
+                obj is BackupResultStatus st ? GetStatusName(st) : "—";
+
+            // Boyut kolonu — bayt → okunur metin
+            _olvColSize.AspectGetter = rowObj =>
+            {
+                if (rowObj is not BackupResult r) return 0L;
+                return r.CompressedSizeBytes > 0 ? r.CompressedSizeBytes : r.FileSizeBytes;
+            };
+            _olvColSize.AspectToStringConverter = obj =>
+                obj is long b ? FormatFileSize(b) : "—";
+
+            // Sıralama: varsayılan tarih azalan
+            _olvLastBackups.PrimarySortColumn = _olvColDate;
+            _olvLastBackups.PrimarySortOrder = SortOrder.Descending;
+
+            // Gruplama: Plan adına göre
+            _olvColPlan.GroupKeyGetter = rowObj =>
+                (rowObj as BackupResult)?.PlanName ?? "—";
+            _olvLastBackups.AlwaysGroupByColumn = _olvColPlan;
+            _olvLastBackups.AlwaysGroupBySortOrder = SortOrder.Ascending;
+            _olvLastBackups.ShowItemCountOnGroups = true;
+            _olvLastBackups.GroupWithItemCountFormat = "{0}  —  {1} " + Res.Get("Dashboard_GroupBackupCount");
+            _olvLastBackups.GroupWithItemCountSingularFormat = "{0}  —  {1} " + Res.Get("Dashboard_GroupBackupCount");
+
+            // Satır renklendirme — duruma göre
+            _olvLastBackups.FormatRow += (sender, e) =>
+            {
+                if (e.Model is not BackupResult r) return;
+                switch (r.Status)
+                {
+                    case BackupResultStatus.Failed:
+                        e.Item.ForeColor = Theme.ModernTheme.StatusError;
+                        break;
+                    case BackupResultStatus.PartialSuccess:
+                        e.Item.ForeColor = Theme.ModernTheme.StatusWarning;
+                        break;
+                    case BackupResultStatus.Cancelled:
+                        e.Item.ForeColor = Theme.ModernTheme.StatusCancelled;
+                        break;
+                    default:
+                        e.Item.ForeColor = Theme.ModernTheme.TextPrimary;
+                        break;
+                }
+            };
+
+            // Dark theme renkleri
+            ApplyOlvTheme();
+        }
+
+        /// <summary>
+        /// OLV'ye ModernTheme renklerini uygular. Tema değişimlerinde de çağrılabilir.
+        /// </summary>
+        private void ApplyOlvTheme()
+        {
+            _olvLastBackups.BackColor = Theme.ModernTheme.SurfaceColor;
+            _olvLastBackups.ForeColor = Theme.ModernTheme.TextPrimary;
+            _olvLastBackups.AlternateRowBackColor = Theme.ModernTheme.GridAlternateRow;
+            _olvLastBackups.UseAlternatingBackColors = true;
+
+            _olvLastBackups.HeaderUsesThemes = false;
+            _olvLastBackups.HeaderFormatStyle = new HeaderFormatStyle();
+            _olvLastBackups.HeaderFormatStyle.SetBackColor(Theme.ModernTheme.GridHeaderBack);
+            _olvLastBackups.HeaderFormatStyle.SetForeColor(Theme.ModernTheme.GridHeaderText);
+            _olvLastBackups.HeaderFormatStyle.SetFont(Theme.ModernTheme.FontCaptionBold);
+
+            _olvLastBackups.SelectedBackColor = Color.FromArgb(60, Theme.ModernTheme.AccentPrimary);
+            _olvLastBackups.SelectedForeColor = Theme.ModernTheme.TextPrimary;
+            _olvLastBackups.UnfocusedSelectedBackColor = Color.FromArgb(40, Theme.ModernTheme.AccentPrimary);
+            _olvLastBackups.UnfocusedSelectedForeColor = Theme.ModernTheme.TextPrimary;
+
+            _olvLastBackups.UseExplorerTheme = false;
+            _olvLastBackups.GroupHeaderForeColor = Theme.ModernTheme.AccentPrimaryHover;
+        }
+
         private void LoadDashboardData()
         {
             try
@@ -77,106 +176,25 @@ namespace KoruMsSqlYedek.Win
         private void LoadRecentBackups()
         {
             var history = _historyManager.GetRecentHistory(50);
-
-            _lvLastBackups.BeginUpdate();
-            _lvLastBackups.Items.Clear();
-            _lvLastBackups.Groups.Clear();
-
-            var groups = new Dictionary<string, ListViewGroup>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var result in history)
-            {
-                string planName = result.PlanName ?? "—";
-
-                if (!groups.TryGetValue(planName, out ListViewGroup? group))
-                {
-                    group = new ListViewGroup
-                    {
-                        Name = planName,
-                        Header = planName,
-                        CollapsedState = ListViewGroupCollapsedState.Expanded
-                    };
-                    groups[planName] = group;
-                    _lvLastBackups.Groups.Add(group);
-                }
-
-                var item = new ListViewItem(result.StartedAt.ToString("yyyy-MM-dd HH:mm"))
-                {
-                    Group = group,
-                    Tag = result
-                };
-                item.SubItems.Add(planName);
-                item.SubItems.Add(result.DatabaseName ?? "—");
-                item.SubItems.Add(GetBackupTypeName(result.BackupType));
-                item.SubItems.Add(GetStatusName(result.Status));
-                item.SubItems.Add(FormatFileSize(result.CompressedSizeBytes > 0
-                    ? result.CompressedSizeBytes
-                    : result.FileSizeBytes));
-
-                switch (result.Status)
-                {
-                    case BackupResultStatus.Failed:
-                        item.ForeColor = Color.Red;
-                        break;
-                    case BackupResultStatus.PartialSuccess:
-                        item.ForeColor = Color.Orange;
-                        break;
-                    case BackupResultStatus.Cancelled:
-                        item.ForeColor = SystemColors.GrayText;
-                        break;
-                }
-
-                _lvLastBackups.Items.Add(item);
-            }
-
-            // Grup başlıklarına yedekleme sayısını ekle
-            foreach (ListViewGroup grp in _lvLastBackups.Groups)
-            {
-                grp.Header = $"{grp.Name}  —  {grp.Items.Count} " + Res.Get("Dashboard_GroupBackupCount");
-            }
-
-            _lvLastBackups.ListViewItemSorter = new LastBackupsItemComparer(_lvSortColumn, _lvSortAscending);
-            _lvLastBackups.EndUpdate();
-
-            // Groups.Clear() sonrası ShowGroups hâlâ true ise .NET setter'ı tekrar true atamayı
-            // "değişiklik yok" diye yutarak LVM_ENABLEGROUPVIEW(TRUE) göndermez.
-            // Force-toggle + P/Invoke ile native grup görünümünü her çağrıda garanti et.
-            if (_lvLastBackups.Groups.Count > 0)
-            {
-                _lvLastBackups.ShowGroups = false;
-                _lvLastBackups.ShowGroups = true;
-                _headerPainter?.EnableGroupView();
-            }
-            else
-            {
-                _lvLastBackups.ShowGroups = false;
-            }
-
-            AutoResizeListViewColumns(_lvLastBackups);
+            _olvLastBackups.SetObjects(history);
         }
 
-        private static string GetBackupTypeName(SqlBackupType type)
+        private static string GetBackupTypeName(SqlBackupType type) => type switch
         {
-            switch (type)
-            {
-                case SqlBackupType.Full: return Res.Get("Dashboard_TypeFull");
-                case SqlBackupType.Differential: return Res.Get("Dashboard_TypeDiff");
-                case SqlBackupType.Incremental: return Res.Get("Dashboard_TypeInc");
-                default: return type.ToString();
-            }
-        }
+            SqlBackupType.Full => Res.Get("Dashboard_TypeFull"),
+            SqlBackupType.Differential => Res.Get("Dashboard_TypeDiff"),
+            SqlBackupType.Incremental => Res.Get("Dashboard_TypeInc"),
+            _ => type.ToString()
+        };
 
-        private static string GetStatusName(BackupResultStatus status)
+        private static string GetStatusName(BackupResultStatus status) => status switch
         {
-            switch (status)
-            {
-                case BackupResultStatus.Success: return Res.Get("Dashboard_ResultSuccess");
-                case BackupResultStatus.PartialSuccess: return Res.Get("Dashboard_ResultPartial");
-                case BackupResultStatus.Failed: return Res.Get("Dashboard_ResultFailed");
-                case BackupResultStatus.Cancelled: return Res.Get("Dashboard_ResultCancelled");
-                default: return status.ToString();
-            }
-        }
+            BackupResultStatus.Success => Res.Get("Dashboard_ResultSuccess"),
+            BackupResultStatus.PartialSuccess => Res.Get("Dashboard_ResultPartial"),
+            BackupResultStatus.Failed => Res.Get("Dashboard_ResultFailed"),
+            BackupResultStatus.Cancelled => Res.Get("Dashboard_ResultCancelled"),
+            _ => status.ToString()
+        };
 
         private static string FormatFileSize(long bytes)
         {
@@ -202,86 +220,6 @@ namespace KoruMsSqlYedek.Win
             if (span.TotalMinutes < 60) return Res.Format("Dashboard_TimeMinFormat", (int)span.TotalMinutes);
             if (span.TotalHours < 24) return Res.Format("Dashboard_TimeHourFormat", (int)span.TotalHours);
             return Res.Format("Dashboard_TimeDayFormat", (int)span.TotalDays);
-        }
-
-        private void OnLastBackupsColumnClick(object sender, ColumnClickEventArgs e)
-        {
-            if (_lvSortColumn == e.Column)
-                _lvSortAscending = !_lvSortAscending;
-            else
-            {
-                _lvSortColumn = e.Column;
-                _lvSortAscending = true;
-            }
-
-            _lvLastBackups.ListViewItemSorter = new LastBackupsItemComparer(_lvSortColumn, _lvSortAscending);
-            _headerPainter?.SetSortState(_lvSortColumn, _lvSortAscending);
-            _lvLastBackups.Invalidate();
-        }
-
-        private static void AutoResizeListViewColumns(ListView lv)
-        {
-            for (int i = 0; i < lv.Columns.Count; i++)
-            {
-                int maxWidth = TextRenderer.MeasureText(lv.Columns[i].Text, Theme.ModernTheme.FontCaptionBold).Width + 28;
-                foreach (ListViewItem item in lv.Items)
-                {
-                    if (i < item.SubItems.Count)
-                    {
-                        int w = TextRenderer.MeasureText(item.SubItems[i].Text, Theme.ModernTheme.FontBody).Width + 20;
-                        if (w > maxWidth) maxWidth = w;
-                    }
-                }
-                lv.Columns[i].Width = maxWidth;
-            }
-        }
-
-        private sealed class LastBackupsItemComparer : System.Collections.IComparer
-        {
-            private readonly int _col;
-            private readonly bool _asc;
-
-            public LastBackupsItemComparer(int column, bool ascending)
-            {
-                _col = column;
-                _asc = ascending;
-            }
-
-            public int Compare(object x, object y)
-            {
-                var ix = (ListViewItem)x;
-                var iy = (ListViewItem)y;
-                var rx = ix.Tag as BackupResult;
-                var ry = iy.Tag as BackupResult;
-                int result = CompareItems(ix, iy, rx, ry);
-                return _asc ? result : -result;
-            }
-
-            private int CompareItems(ListViewItem ix, ListViewItem iy, BackupResult rx, BackupResult ry)
-            {
-                switch (_col)
-                {
-                    case 0: // Tarih
-                        if (rx != null && ry != null)
-                            return DateTime.Compare(rx.StartedAt, ry.StartedAt);
-                        break;
-                    case 4: // Sonuç (enum sırası: Success < PartialSuccess < Failed < Cancelled)
-                        if (rx != null && ry != null)
-                            return rx.Status.CompareTo(ry.Status);
-                        break;
-                    case 5: // Boyut (bayt cinsinden)
-                        if (rx != null && ry != null)
-                        {
-                            long bx = rx.CompressedSizeBytes > 0 ? rx.CompressedSizeBytes : rx.FileSizeBytes;
-                            long by = ry.CompressedSizeBytes > 0 ? ry.CompressedSizeBytes : ry.FileSizeBytes;
-                            return bx.CompareTo(by);
-                        }
-                        break;
-                }
-                string tx = _col < ix.SubItems.Count ? ix.SubItems[_col].Text : string.Empty;
-                string ty = _col < iy.SubItems.Count ? iy.SubItems[_col].Text : string.Empty;
-                return string.Compare(tx, ty, StringComparison.CurrentCultureIgnoreCase);
-            }
         }
     }
 }

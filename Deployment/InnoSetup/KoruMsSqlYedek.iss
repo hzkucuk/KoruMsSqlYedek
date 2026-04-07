@@ -10,8 +10,8 @@
 
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
-#define MyAppVersion "0.95.0"
-#define MyAppPublisher "HZK"
+#define MyAppVersion "0.99.0"
+#define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"
 #define MyServiceExeName "KoruMsSqlYedek.Service.exe"
@@ -58,7 +58,7 @@ SetupIconFile=compiler:SetupClassicIcon.ico
 UsePreviousAppDir=yes
 ; Versiyon bilgisi
 VersionInfoVersion={#MyAppVersion}.0
-VersionInfoCompany={#MyAppPublisher}
+VersionInfoCompany=Zafer Bilgisayar
 VersionInfoProductName={#MyAppName}
 ; Lisans ve bilgi
 ; LicenseFile=..\..\LICENSE

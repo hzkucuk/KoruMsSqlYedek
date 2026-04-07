@@ -5,6 +5,9 @@
     <AssemblyName>KoruMsSqlYedek.Engine</AssemblyName>
     <LangVersion>latest</LangVersion>
     <NoWarn>$(NoWarn);NU1701</NoWarn>
+    <Copyright>Copyright © 2026 Zafer Bilgisayar</Copyright>
+    <Authors>Hüzeyin Küçük</Authors>
+    <Company>Zafer Bilgisayar</Company>
   </PropertyGroup>
 
   <ItemGroup>

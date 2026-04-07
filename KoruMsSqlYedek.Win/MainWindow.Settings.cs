@@ -276,6 +276,19 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
+        private void OnPasswordSetupClick(object sender, EventArgs e)
+        {
+            var settings = _settingsManager.Load();
+            using (var dlg = new Forms.PasswordSetupDialog(settings, _settingsManager))
+            {
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    // Ayarları yeniden yükle (şifre durumu değişmiş olabilir)
+                    LoadSettings();
+                }
+            }
+        }
+
         #endregion
 
         #region ── Localization ────────────────────────────────────────────────────
@@ -296,11 +309,11 @@ namespace KoruMsSqlYedek.Win
             _lblNextBackupCaption.Text = Res.Get("Dashboard_NextBackupCaption");
             _lblActivePlansCaption.Text = Res.Get("Dashboard_ActivePlansCaption");
             _lblGridTitle.Text = Res.Get("Dashboard_LastBackupsGroup");
-            _colDate.Text = Res.Get("Dashboard_ColDate");
-            _colPlan.Text = Res.Get("Dashboard_ColPlan");
-            _colDatabase.Text = Res.Get("Dashboard_ColDatabase");
-            _colResult.Text = Res.Get("Dashboard_ColResult");
-            _colSize.Text = Res.Get("Dashboard_ColSize");
+            _olvColDate.Text = Res.Get("Dashboard_ColDate");
+            _olvColPlan.Text = Res.Get("Dashboard_ColPlan");
+            _olvColDatabase.Text = Res.Get("Dashboard_ColDatabase");
+            _olvColResult.Text = Res.Get("Dashboard_ColResult");
+            _olvColSize.Text = Res.Get("Dashboard_ColSize");
 
             // Plans
             _tsbNew.Text = Res.Get("PlanList_BtnNew");
