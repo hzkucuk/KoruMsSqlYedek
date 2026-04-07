@@ -2,6 +2,7 @@
 
 ### Düzeltme
 - **`ServicePipeClient.SendAsync` eş zamanlı yazma hatası** — Plan kaydedilince tetiklenen `RequestStatusAsync()` ile `ConnectLoopAsync` içindeki eş zamanlı `WriteLineAsync` çağrıları `InvalidOperationException: The stream is currently in use by a previous operation on the stream` üretiyordu. `SemaphoreSlim _writeLock(1,1)` kilidi eklendi; tüm yazma işlemleri `WaitAsync → try/finally → Release` kalıbıyla serialze edildi.
+- **Toast bildirimi UI thread marshal hatası** — `OnPipeConnectionChanged` ve `OnBackupActivityChanged` handler'ları `Application.OpenForms[0].BeginInvoke` ile UI thread'e marshal ediyordu; ancak tray uygulamasında açık form olmadığında (`OpenForms.Count == 0`) marshal atlanıyor, `ModernToast` arka plan thread'inde oluşuyor ve `_fadeTimer` tick etmediği için toast görünmüyordu. `SynchronizationContext` yakalaması eklenerek her durumda UI thread'e doğru marshal sağlandı.
 
 ### Yeni Özellik
 - **`RetentionScheme` (per-type retention)** — SQL Full, Diff, Log ve dosya arşivi (Files_*.7z) için artık ayrı bağımsız retention politikaları tanımlanabiliyor.
