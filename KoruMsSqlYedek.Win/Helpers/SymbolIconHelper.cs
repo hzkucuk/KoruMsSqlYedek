@@ -108,11 +108,82 @@ namespace KoruMsSqlYedek.Win.Helpers
         }
 
         /// <summary>
-        /// Tray ikonu için varsayılan ikonunu oluşturur (DPI-aware).
+        /// Tray ikonu için kalkan + "K" ikonunu oluşturur (DPI-aware).
+        /// AboutForm'daki emerald kalkan logosu ile aynı tasarım.
         /// </summary>
         internal static Icon CreateTrayIcon()
         {
-            return CreateBadgeIcon(SymbolShield, Color.FromArgb(0, 180, 90), Color.FromArgb(0, 120, 60));
+            return CreateShieldKIcon(TrayIconSize);
+        }
+
+        /// <summary>
+        /// Belirtilen boyutta emerald kalkan + "K" harfi ikonu oluşturur.
+        /// Uygulamanın ana logosu — tray, form ve taskbar'da kullanılır.
+        /// </summary>
+        internal static Icon CreateShieldKIcon(int size)
+        {
+            using var bitmap = new Bitmap(size, size);
+            using var g = Graphics.FromImage(bitmap);
+            g.SmoothingMode = SmoothingMode.HighQuality;
+            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.Clear(Color.Transparent);
+
+            float pad = size * 0.06f;
+            float s = size - pad * 2;
+            float x = pad, y = pad;
+
+            // Kalkan şekli
+            using var shieldPath = CreateShieldPath(x, y, s);
+
+            // Emerald gradient dolgu
+            using (var gradBrush = new LinearGradientBrush(
+                new RectangleF(x, y, s, s),
+                Color.FromArgb(0, 200, 100),
+                Color.FromArgb(0, 140, 70),
+                LinearGradientMode.Vertical))
+            {
+                g.FillPath(gradBrush, shieldPath);
+            }
+
+            // İnce kenar
+            using (var borderPen = new Pen(Color.FromArgb(0, 160, 80), Math.Max(size * 0.04f, 0.8f)))
+            {
+                g.DrawPath(borderPen, shieldPath);
+            }
+
+            // "K" harfi — beyaz, kalkan ortasında
+            float fontSize = Math.Max(s * 0.48f, 4f);
+            using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
+            using var textBrush = new SolidBrush(Color.White);
+            var sf = new StringFormat
+            {
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Center
+            };
+            g.DrawString("K", font, textBrush, new RectangleF(x, y + s * 0.03f, s, s), sf);
+
+            return CloneIconFromBitmap(bitmap);
+        }
+
+        /// <summary>Kalkan (shield) şeklini GraphicsPath olarak oluşturur.</summary>
+        private static GraphicsPath CreateShieldPath(float x, float y, float size)
+        {
+            var path = new GraphicsPath();
+            float w = size, h = size;
+            float cx = x + w / 2;
+            float topHeight = h * 0.55f;
+            float radius = w * 0.15f;
+
+            path.AddArc(x, y, radius * 2, radius * 2, 180, 90);
+            path.AddArc(x + w - radius * 2, y, radius * 2, radius * 2, 270, 90);
+            path.AddLine(x + w, y + radius, x + w, y + topHeight);
+            path.AddLine(x + w, y + topHeight, cx, y + h);
+            path.AddLine(cx, y + h, x, y + topHeight);
+            path.AddLine(x, y + topHeight, x, y + radius);
+            path.CloseFigure();
+
+            return path;
         }
 
         /// <summary>
@@ -123,7 +194,7 @@ namespace KoruMsSqlYedek.Win.Helpers
             switch (status)
             {
                 case TrayIconStatus.Idle:
-                    return CreateBadgeIcon(SymbolShield, Color.FromArgb(0, 180, 90), Color.FromArgb(0, 120, 60));
+                    return CreateShieldKIcon(TrayIconSize);
                 case TrayIconStatus.Running:
                     return CreateBadgeIcon(SymbolCloudUpload, Color.FromArgb(33, 150, 243), Color.FromArgb(13, 71, 161));
                 case TrayIconStatus.Success:

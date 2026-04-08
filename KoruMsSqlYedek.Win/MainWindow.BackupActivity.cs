@@ -234,6 +234,15 @@ namespace KoruMsSqlYedek.Win
             }
 
             UpdateBackupButtonStates();
+
+            // Yedekleme tamamlandığında sonraki çalışma zamanını güncelle
+            if (e.ActivityType is BackupActivityType.Completed
+                or BackupActivityType.Failed
+                or BackupActivityType.Cancelled)
+            {
+                RequestNextFireTimesAsync();
+            }
+
             bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress;
             Color logColor = GetLogColor(e.ActivityType);
 
