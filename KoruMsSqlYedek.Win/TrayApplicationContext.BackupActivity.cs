@@ -130,7 +130,7 @@ namespace KoruMsSqlYedek.Win
             if (_isCompletionAnimating)
                 StopCompletionAnimation();
 
-            _animFrames = SymbolIconHelper.ExtractGifFrames("CloudSync.gif");
+            _animFrames = SymbolIconHelper.CreateShieldBackupAnimationFrames();
             _animFrameIndex = 0;
             _isAnimating = true;
 
@@ -172,7 +172,7 @@ namespace KoruMsSqlYedek.Win
         /// </summary>
         private void StartCompletionAnimation(string tooltipText)
         {
-            _completionFrames = SymbolIconHelper.ExtractGifFrames("CheckMark.gif");
+            _completionFrames = SymbolIconHelper.CreateShieldCompletionFrames();
             _completionFrameIndex = 0;
             _isCompletionAnimating = true;
 
