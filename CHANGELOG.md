@@ -1,4 +1,23 @@
-﻿## [0.99.17] - 2025-07-14 — Dark Scrollbar Düzeltmesi
+﻿## [0.99.20] - 2025-07-14 — Performans & Wizard Sekme Navigasyonu
+
+### İyileştirme
+- **Dashboard scroll performansı optimize edildi** — `GroupedBackupListPanel` panel reuse (dispose+recreate yerine mevcut panelleri güncelleme), `SuspendLayout/ResumeLayout` toplu işlem, ilk 5 grubun açık geri kalanın kapalı başlaması (`MaxInitialExpanded=5`).
+- **Plan düzenleme wizardına sekme tıklama navigasyonu eklendi** — Üst bardaki adım göstergeleri (dot + etiket) artık tıklanabilir. Herhangi bir adıma doğrudan geçiş yapılabilir; kontrollerin veri bağlamı korunur.
+
+## [0.99.19] - 2025-07-14 — Dashboard Collapsible Group Panel
+
+### İyileştirme
+- **Dashboard yedekleme listesi yeniden tasarlandı** — ObjectListView (OLV) grup yapısı kaldırıldı; yerine özel `CollapsibleGroupPanel` + `GroupedBackupListPanel` sistemi getirildi. Her plan adı için yeşil başlıklı (AccentPrimaryHover), açılır/kapanır grup panelleri oluşturuluyor. Grup başlıkları tam renk kontrolü sağlıyor.
+- **Kolon yapısı:** Tarih, Veritabanı, Tür, Sonuç, Boyut (plan adı grup başlığı olarak görünür).
+- **Satır renklendirme:** Başarılı/Başarısız/Kısmi/İptal durumlarına göre farklı renkler.
+- `ThemedObjectListView` kaldırıldı.
+
+## [0.99.18] - 2025-07-14 — Dashboard Grup Başlık Rengi
+
+### İyileştirme
+- **Dashboard OLV grup başlık font rengi yeşil yapıldı** — `ThemedObjectListView` CDDS_POSTPAINT + GDI+ yaklaşımına geçirildi. Explorer teması (`DarkMode_Explorer`) scrollbar için aktifken grup başlıklarını kendi renkleriyle çiziyordu; yeni yaklaşım post-paint aşamasında GDI+ ile üzerine boyayarak özel rengi (AccentPrimaryHover: emerald green) garanti ediyor.
+
+## [0.99.17] - 2025-07-14 — Dark Scrollbar Düzeltmesi
 
 ### Düzeltme
 - **Grid ve liste kontrollerinde beyaz scrollbar sorunu giderildi** — Windows `SetWindowTheme` API'si ile `DarkMode_Explorer` teması uygulanarak DataGridView, ObjectListView, ListView, RichTextBox, TreeView ve ListBox kontrollerinin scrollbar'ları dark temaya uyumlu hale getirildi.

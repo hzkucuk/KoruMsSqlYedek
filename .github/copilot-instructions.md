@@ -26,6 +26,16 @@
 - UI kontrolüne erişen her method: `if (InvokeRequired) { Invoke(...); return; }`
 - Arka plan thread'inden direkt UI erişimi yasak (timer/callback dahil).
 
+## WinForms Kontrol Özelleştirme (kritik — GDI+/P-Invoke'dan ÖNCE oku)
+Bir WinForms kontrolünün görünümünü veya davranışını değiştirmek gerektiğinde **şu sırayı izle:**
+
+1. **Önce mevcut özellikleri araştır** — Kontrolün ve üst sınıflarının tüm `Property`, `Style`, `DefaultCellStyle`, `HeaderStyle`, `Appearance`, `Theme` gibi özelliklerini incele. Hem Visual (görsel) hem Runtime (davranışsal) özellikler dahil.
+2. **Sonra event/delegate dene** — `FormatRow`, `CellFormatting`, `DrawItem`, `DrawSubItem` gibi yerleşik event'ler yeterli mi kontrol et.
+3. **Microsoft Learn dokümanlarını tara** — İlgili kontrol + istenen özelleştirme için resmi dökümanlarda hazır çözüm ara.
+4. **Son çare: GDI+/Owner-Draw/P-Invoke** — Yukarıdaki 3 adım kesinlikle yetersiz kaldığında, ancak o zaman custom draw veya Win32 API kullan.
+
+> **Gerekçe:** OLV grup başlık rengi için 8 GDI+/P-Invoke denemesi yapıldı, hepsi başarısız oldu. Kontrol sistemi düzeyinde engellenmiş bir özelliği zorlamak yerine alternatif mimari (custom panel) tercih edilmeli.
+
 ---
 
 ## ═══ REGRESYON ÖNLEME (zorunlu) ═══

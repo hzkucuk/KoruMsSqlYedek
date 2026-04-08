@@ -103,6 +103,7 @@ Detailed information is available in the log file.</value></data>
   <data name="Dashboard_ColPlan" xml:space="preserve"><value>Plan</value></data>
   <data name="Dashboard_ColDatabase" xml:space="preserve"><value>Database</value></data>
   <data name="Dashboard_ColResult" xml:space="preserve"><value>Result</value></data>
+  <data name="Dashboard_ColType" xml:space="preserve"><value>Type</value></data>
   <data name="Dashboard_ColSize" xml:space="preserve"><value>Size</value></data>
   <data name="Dashboard_LastUpdate" xml:space="preserve"><value>Last update: {0}</value></data>
   <data name="Dashboard_DataLoadError" xml:space="preserve"><value>Data load error</value></data>
