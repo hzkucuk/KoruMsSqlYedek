@@ -1,4 +1,9 @@
-﻿## [0.99.17] - 2025-07-14 — Dark Scrollbar Düzeltmesi
+﻿## [0.99.18] - 2025-07-14 — Dashboard Grup Başlık Rengi
+
+### İyileştirme
+- **Dashboard OLV grup başlık font rengi yeşil yapıldı** — `ThemedObjectListView` CDDS_POSTPAINT + GDI+ yaklaşımına geçirildi. Explorer teması (`DarkMode_Explorer`) scrollbar için aktifken grup başlıklarını kendi renkleriyle çiziyordu; yeni yaklaşım post-paint aşamasında GDI+ ile üzerine boyayarak özel rengi (AccentPrimaryHover: emerald green) garanti ediyor.
+
+## [0.99.17] - 2025-07-14 — Dark Scrollbar Düzeltmesi
 
 ### Düzeltme
 - **Grid ve liste kontrollerinde beyaz scrollbar sorunu giderildi** — Windows `SetWindowTheme` API'si ile `DarkMode_Explorer` teması uygulanarak DataGridView, ObjectListView, ListView, RichTextBox, TreeView ve ListBox kontrollerinin scrollbar'ları dark temaya uyumlu hale getirildi.
