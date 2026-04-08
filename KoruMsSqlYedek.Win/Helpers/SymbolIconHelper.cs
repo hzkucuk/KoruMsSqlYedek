@@ -129,7 +129,7 @@ namespace KoruMsSqlYedek.Win.Helpers
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.Clear(Color.Transparent);
 
-            float pad = size * 0.06f;
+            float pad = size * 0.02f;
             float s = size - pad * 2;
             float x = pad, y = pad;
 
@@ -153,7 +153,7 @@ namespace KoruMsSqlYedek.Win.Helpers
             }
 
             // "K" harfi — beyaz, kalkan ortasında
-            float fontSize = Math.Max(s * 0.48f, 4f);
+            float fontSize = Math.Max(s * 0.55f, 5f);
             using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
             using var textBrush = new SolidBrush(Color.White);
             var sf = new StringFormat
@@ -435,7 +435,7 @@ namespace KoruMsSqlYedek.Win.Helpers
                 }
 
                 // --- 2. Kalkan — nabız alan renk geçişi ---
-                float pad = size * 0.06f;
+                float pad = size * 0.02f;
                 float s = size - pad * 2;
                 float sx = pad, sy = pad;
 
@@ -495,7 +495,7 @@ namespace KoruMsSqlYedek.Win.Helpers
                 }
 
                 // --- 5. "K" harfi — parlak cyan-mavi (yeşilden ayrışır) ---
-                float fontSize = Math.Max(s * 0.48f, 4f);
+                float fontSize = Math.Max(s * 0.55f, 5f);
                 using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
                 var sf = new StringFormat
                 {
@@ -562,7 +562,7 @@ namespace KoruMsSqlYedek.Win.Helpers
                 }
 
                 // --- 3. Kalkan (parlak başlayıp normale döner) ---
-                float pad = size * 0.06f;
+                float pad = size * 0.02f;
                 float s = size - pad * 2;
                 float sx = pad, sy = pad;
 
@@ -621,7 +621,7 @@ namespace KoruMsSqlYedek.Win.Helpers
 
                 if (checkAlpha > 0.01f)
                 {
-                    float checkSize = Math.Max(s * 0.50f, 4f);
+                    float checkSize = Math.Max(s * 0.55f, 5f);
                     string fontFamily = IsFontAvailable(PrimaryFontFamily) ? PrimaryFontFamily : FallbackFontFamily;
                     using var checkFont = new Font(fontFamily, checkSize, FontStyle.Regular, GraphicsUnit.Pixel);
                     using var checkBrush = new SolidBrush(Color.FromArgb((int)(255 * checkAlpha), 255, 255, 255));
@@ -631,7 +631,7 @@ namespace KoruMsSqlYedek.Win.Helpers
 
                 if (kAlpha > 0.01f)
                 {
-                    float kFontSize = Math.Max(s * 0.48f, 4f);
+                    float kFontSize = Math.Max(s * 0.55f, 5f);
                     using var kFont = new Font("Segoe UI", kFontSize, FontStyle.Bold, GraphicsUnit.Pixel);
                     using var kBrush = new SolidBrush(Color.FromArgb((int)(255 * kAlpha), 255, 255, 255));
                     g.DrawString("K", kFont, kBrush,
