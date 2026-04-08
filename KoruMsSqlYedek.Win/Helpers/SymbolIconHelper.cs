@@ -153,7 +153,7 @@ namespace KoruMsSqlYedek.Win.Helpers
             }
 
             // "K" harfi — parlak XP mavisi + koyu kontur (yeşil üzerinde görünürlük)
-            float fontSize = Math.Max(s * 0.55f, 5f);
+            float fontSize = Math.Max(s * 0.62f, 6f);
             using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
             var sf = new StringFormat
             {
@@ -507,8 +507,8 @@ namespace KoruMsSqlYedek.Win.Helpers
                     g.DrawPath(borderPen, shieldPath);
                 }
 
-                // --- 5. "K" harfi — parlak XP mavisi + koyu kontur ---
-                float fontSize = Math.Max(s * 0.55f, 5f);
+                // --- 5. "K" harfi — kırmızı→mavi geçiş + koyu kontur ---
+                float fontSize = Math.Max(s * 0.62f, 6f);
                 using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
                 var sf = new StringFormat
                 {
@@ -527,10 +527,10 @@ namespace KoruMsSqlYedek.Win.Helpers
                     g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X, textRect.Y + o, textRect.Width, textRect.Height), sf);
                 }
 
-                // Nabızla birlikte XP mavisi ↔ parlak gökyüzü mavisi
-                int kR = (int)(80 + 60 * pulse);   // 80→140
-                int kG = (int)(150 + 50 * pulse);  // 150→200
-                int kB = (int)(240 + 15 * pulse);  // 240→255
+                // Kırmızı (trough) ↔ Mavi (peak) geçişi
+                int kR = (int)(255 - 175 * pulse);  // 255→80
+                int kG = (int)(60 + 90 * pulse);    // 60→150
+                int kB = (int)(60 + 195 * pulse);   // 60→255
                 using var textBrush = new SolidBrush(Color.FromArgb(kR, kG, kB));
                 g.DrawString("K", font, textBrush, textRect, sf);
 
@@ -644,7 +644,7 @@ namespace KoruMsSqlYedek.Win.Helpers
 
                 if (checkAlpha > 0.01f)
                 {
-                    float checkSize = Math.Max(s * 0.55f, 5f);
+                    float checkSize = Math.Max(s * 0.62f, 6f);
                     string fontFamily = IsFontAvailable(PrimaryFontFamily) ? PrimaryFontFamily : FallbackFontFamily;
                     using var checkFont = new Font(fontFamily, checkSize, FontStyle.Regular, GraphicsUnit.Pixel);
                     using var checkBrush = new SolidBrush(Color.FromArgb((int)(255 * checkAlpha), 255, 255, 255));
@@ -654,7 +654,7 @@ namespace KoruMsSqlYedek.Win.Helpers
 
                 if (kAlpha > 0.01f)
                 {
-                    float kFontSize = Math.Max(s * 0.55f, 5f);
+                    float kFontSize = Math.Max(s * 0.62f, 6f);
                     using var kFont = new Font("Segoe UI", kFontSize, FontStyle.Bold, GraphicsUnit.Pixel);
                     var kRect = new RectangleF(sx, sy + s * 0.03f, s, s);
 
