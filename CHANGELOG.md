@@ -2,6 +2,7 @@
 
 ### İyileştirme
 - **Yedekleme tray animasyonu yeniden tasarlandı** — Harici GIF dosyaları yerine tam boyut kalkan üzerinde dramatik GDI+ animasyonlar: sin-dalga nefes efekti (koyu zümrüt ↔ parlak lime renk geçişi), kalkan yüzeyinde dönen ışık taraması (`ColorBlend` highlight bandı), nabız atan dış glow aura. Tamamlanma animasyonunda parlak flaş + genişleyen başarı halkası + K→✓→K geçişi.
+- **K harfi görünürlük iyileştirmesi** — Kalkan padding azaltıldı (`0.06→0.02`), K font oranı büyütüldü (`0.48→0.62`), koyu navy kontur (4 yönde halo) eklendi. Animasyonda K harfi kırmızı↔mavi renk geçişi yapıyor (sin-dalga pulse ile senkron).
 
 ## [0.99.21] - 2025-07-14 — Installer Lisans Sayfası Düzeltme
 
