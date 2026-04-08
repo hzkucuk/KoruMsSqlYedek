@@ -1,4 +1,11 @@
-﻿## [0.99.14] - 2026-04-11 — Dosya Yedekleme SQL ile Aynı Zamanlamada
+﻿## [0.99.15] - 2025-07-14 — Kurulum Lisans Sözleşmesi & Sorumluluk Reddi
+
+### İyileştirme
+- **Lisans sözleşmesi sayfası eklendi** — Kurulum sırasında kullanıcıdan Son Kullanıcı Lisans Sözleşmesi'ni (EULA) kabul etmesi istenir. Kabul etmeden kuruluma devam edilemez.
+- **Sorumluluk reddi sayfası eklendi** — Lisans kabul edildikten sonra veri sorumluluğu, yedekleme garantisi ve sistem gereksinimleri hakkında uyarılar gösterilir.
+- **Kurulum bilgi sayfası** — Kurulum tamamlandıktan sonra uygulama bileşenleri ve yapılandırma bilgileri gösterilir.
+
+## [0.99.14] - 2026-04-11 — Dosya Yedekleme SQL ile Aynı Zamanlamada
 
 ### Düzeltme
 - **Otomatik yedeklemede dosya yedekleme atlanıyordu** — `CronBuilderPanel` her zaman geçerli bir cron ifadesi döndürdüğü için `FileBackup.Schedule` hiçbir zaman boş kalmıyordu; bu da `willRunFileBackup` koşulunun SQL job'larında daima `false` olmasına neden oluyordu. Düzeltme: Dosya yedekleme artık SQL ile aynı zamanlamayı kullanır (ayrı schedule kaldırıldı). `BackupJobExecutor.willRunFileBackup` sadeleştirildi, `QuartzSchedulerService`'den ayrı FileBackup job'u kaldırıldı, UI'da dosya zamanlama bölümü gizlendi.

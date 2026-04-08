@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.14"
+  #define MyAppVersion "0.99.15"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -63,8 +63,9 @@ VersionInfoVersion={#MyAppVersion}.0
 VersionInfoCompany=Zafer Bilgisayar
 VersionInfoProductName={#MyAppName}
 ; Lisans ve bilgi
-; LicenseFile=..\..\LICENSE
-InfoBeforeFile=setup_readme.txt
+LicenseFile=license.txt
+InfoBeforeFile=disclaimer.txt
+InfoAfterFile=setup_readme.txt
 
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
@@ -107,7 +108,9 @@ Source: "{#ServicePublishDir}\*"; DestDir: "{app}\Service"; Components: service;
 Source: "install-service.cmd"; DestDir: "{app}\Service"; Components: service; Flags: ignoreversion
 Source: "uninstall-service.cmd"; DestDir: "{app}\Service"; Components: service; Flags: ignoreversion
 
-; --- Kurulum Bilgi Dosyası ---
+; --- Kurulum Bilgi Dosyaları ---
+Source: "license.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "disclaimer.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "setup_readme.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
