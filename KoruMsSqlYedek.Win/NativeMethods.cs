@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+#nullable enable
+
 namespace KoruMsSqlYedek.Win
 {
     /// <summary>
@@ -43,5 +45,11 @@ namespace KoruMsSqlYedek.Win
 
         internal const int SW_RESTORE = 9;
         internal const int HWND_BROADCAST = 0xFFFF;
+
+        /// <summary>
+        /// Kontrol temasını değiştirir — "DarkMode_Explorer" ile dark scrollbar sağlanır.
+        /// </summary>
+        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
+        internal static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string? pszSubIdList);
     }
 }

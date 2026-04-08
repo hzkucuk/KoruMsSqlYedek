@@ -241,6 +241,8 @@ namespace KoruMsSqlYedek.Win.Theme
             dgv.RowHeadersVisible = false;
             dgv.AllowUserToResizeRows = false;
             dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+
+            ApplyScrollBarTheme(dgv);
         }
 
         internal static void StyleListView(ListView lv)
@@ -251,6 +253,8 @@ namespace KoruMsSqlYedek.Win.Theme
             lv.Font = FontBody;
             lv.ForeColor = TextPrimary;
             lv.BackColor = SurfaceColor;
+
+            ApplyScrollBarTheme(lv);
         }
 
         internal static void StyleToolStrip(ToolStrip ts)
@@ -298,6 +302,22 @@ namespace KoruMsSqlYedek.Win.Theme
             grp.Font = FontBodyBold;
             grp.ForeColor = TextPrimary;
             grp.BackColor = Color.Transparent;
+        }
+
+        // ═══════════════ SCROLLBAR DARK MODE ═══════════════
+
+        /// <summary>
+        /// Kontrolün native scrollbar'ını dark/light temaya göre ayarlar.
+        /// Dark modda "DarkMode_Explorer" teması uygulanır; light modda varsayılan "Explorer" temasına döner.
+        /// HandleCreated sonrası çağrılmalıdır.
+        /// </summary>
+        internal static void ApplyScrollBarTheme(Control control)
+        {
+            if (!control.IsHandleCreated)
+                return;
+
+            string theme = CurrentTheme == ThemeMode.Dark ? "DarkMode_Explorer" : "Explorer";
+            NativeMethods.SetWindowTheme(control.Handle, theme, null);
         }
 
         // ═══════════════ GDI+ HELPERS ═══════════════

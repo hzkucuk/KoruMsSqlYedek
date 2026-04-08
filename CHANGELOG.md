@@ -1,4 +1,9 @@
-﻿## [0.99.16] - 2025-07-14 — MIT Lisansı Entegrasyonu
+﻿## [0.99.17] - 2025-07-14 — Dark Scrollbar Düzeltmesi
+
+### Düzeltme
+- **Grid ve liste kontrollerinde beyaz scrollbar sorunu giderildi** — Windows `SetWindowTheme` API'si ile `DarkMode_Explorer` teması uygulanarak DataGridView, ObjectListView, ListView, RichTextBox, TreeView ve ListBox kontrollerinin scrollbar'ları dark temaya uyumlu hale getirildi.
+
+## [0.99.16] - 2025-07-14 — MIT Lisansı Entegrasyonu
 
 ### İyileştirme
 - **MIT Lisansı eklendi** — Repo köküne standart `LICENSE` dosyası oluşturuldu. Kurulum lisans sözleşmesi MIT Lisansı metni temel alınarak yeniden yazıldı; veri sorumluluğu, üçüncü taraf bileşenler ve garanti reddi Türkçe ek koşullar olarak eklendi.
