@@ -112,8 +112,6 @@ namespace KoruMsSqlYedek.Win
 
             _olvLastBackups.UseExplorerTheme = false;
             _olvLastBackups.GroupHeaderForeColor = Theme.ModernTheme.AccentPrimaryHover;
-
-            Theme.ModernTheme.ApplyScrollBarTheme(_olvLastBackups);
         }
 
         private void LoadDashboardData()
