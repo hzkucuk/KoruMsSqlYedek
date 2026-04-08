@@ -107,9 +107,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _cronIncr.SetCronExpression(_plan.Strategy?.IncrementalSchedule ?? "");
             _nudAutoPromote.Value = _plan.Strategy?.AutoPromoteToFullAfter ?? 7;
             _chkVerify.Checked = _plan.VerifyAfterBackup;
-            _cronFileSchedule.SetCronExpression(fb?.Schedule ?? "");
             UpdateStrategyFieldsVisibility();
-            UpdateFileScheduleVisibility();
 
             // Adım 4: Sıkıştırma + Saklama
             _cmbAlgorithm.SelectedIndex = (int)(_plan.Compression?.Algorithm ?? CompressionAlgorithm.Lzma2);
@@ -218,7 +216,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _plan.Strategy.IncrementalSchedule = _cronIncr.GetCronExpression();
             _plan.Strategy.AutoPromoteToFullAfter = (int)_nudAutoPromote.Value;
             _plan.VerifyAfterBackup = _chkVerify.Checked;
-            _plan.FileBackup.Schedule = _cronFileSchedule.GetCronExpression();
+            _plan.FileBackup.Schedule = null;
 
             // Adım 4: Sıkıştırma + Saklama
             _plan.Compression.Algorithm = (CompressionAlgorithm)_cmbAlgorithm.SelectedIndex;

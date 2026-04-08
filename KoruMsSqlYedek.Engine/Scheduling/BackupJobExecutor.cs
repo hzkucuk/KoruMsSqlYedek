@@ -85,11 +85,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 lockAcquired = true;
 
                 // Dosya yedekleme koşulunu Started event'inden ÖNCE hesapla (progress ağırlıkları için)
-                bool isManualTrigger = context.MergedJobDataMap.ContainsKey("manualTrigger")
-                    && context.MergedJobDataMap.GetString("manualTrigger") == "true";
+                // Dosya yedekleme SQL ile aynı zamanlamayı kullanır; ayrı schedule yok
                 bool willRunFileBackup = backupType == "FileBackup"
-                    || (plan.FileBackup != null && plan.FileBackup.IsEnabled
-                        && (string.IsNullOrEmpty(plan.FileBackup.Schedule) || isManualTrigger));
+                    || (plan.FileBackup != null && plan.FileBackup.IsEnabled);
 
                 int sqlDbCount = backupType == "FileBackup" ? 0 : (plan.Databases?.Count ?? 0);
 
@@ -182,7 +180,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         // SQL yedekleme tipi
                         var (sqlResults, sqlPendingUploads) = await ExecuteSqlBackupAsync(plan, backupType, correlationId, cts.Token, cleanupPaths);
 
-                        // Dosya yedekleme — ayrı zamanlama yoksa veya manuel tetikleme ise SQL yedek ile birlikte çalıştır
+                        // Dosya yedekleme — SQL yedek ile aynı zamanlamada çalıştır
                         List<FileBackupResult> fileResults2 = null;
                         string fileArchivePath2 = null;
 

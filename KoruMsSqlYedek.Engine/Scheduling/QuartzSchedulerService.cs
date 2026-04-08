@@ -89,13 +89,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     plan.PlanId, "Incremental", plan.Strategy.IncrementalSchedule, cancellationToken);
             }
 
-            // Dosya yedekleme job'u (ayrı zamanlama varsa)
-            if (plan.FileBackup != null && plan.FileBackup.IsEnabled &&
-                !string.IsNullOrEmpty(plan.FileBackup.Schedule))
-            {
-                await ScheduleJobAsync(
-                    plan.PlanId, "FileBackup", plan.FileBackup.Schedule, cancellationToken);
-            }
+            // Dosya yedekleme artık SQL ile aynı zamanlamayı kullanır (ayrı job yok)
 
             // Periyodik raporlama job'u
             if (plan.Reporting != null && plan.Reporting.IsEnabled)
@@ -184,19 +178,6 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 }
             }
 
-            // Dosya yedekleme — SQL job yoksa FileBackup'ı ayrıca tetikle
-            // SQL job varsa global lock çakışması olur, SQL job içinde çalışacak
-            if (!sqlTriggered)
-            {
-                var fileJobKey = new JobKey($"{planId}_FileBackup", "BackupJobs");
-                if (await _scheduler.CheckExists(fileJobKey, cancellationToken))
-                {
-                    await _scheduler.TriggerJob(fileJobKey, cancellationToken);
-                    Log.Information("Dosya yedekleme manuel tetiklendi: {PlanId}", planId);
-                    sqlTriggered = true;
-                }
-            }
-
             if (!sqlTriggered)
                 Log.Warning("Manuel tetikleme: Zamanlanmış job bulunamadı: {PlanId}", planId);
         }
@@ -207,7 +188,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 return null;
 
             DateTimeOffset? earliest = null;
-            string[] types = { "Full", "Differential", "Incremental", "FileBackup", "Reporting" };
+            string[] types = { "Full", "Differential", "Incremental", "Reporting" };
 
             foreach (string type in types)
             {
