@@ -1,4 +1,9 @@
-﻿## [0.99.20] - 2025-07-14 — Performans & Wizard Sekme Navigasyonu
+﻿## [0.99.21] - 2025-07-14 — Installer Lisans Sayfası Düzeltme
+
+### Düzeltme
+- **Inno Setup lisans/disclaimer/readme memo kontrolleri dark arka plandan beyaz arka plana çevrildi** — Windows dark mode etkisiyle okunmaz hale gelen metin alanları artık `clWhite` arka plan + `clBlack` yazı rengi ile gösteriliyor.
+
+## [0.99.20] - 2025-07-14 — Performans & Wizard Sekme Navigasyonu
 
 ### İyileştirme
 - **Dashboard scroll performansı optimize edildi** — `GroupedBackupListPanel` panel reuse (dispose+recreate yerine mevcut panelleri güncelleme), `SuspendLayout/ResumeLayout` toplu işlem, ilk 5 grubun açık geri kalanın kapalı başlaması (`MaxInitialExpanded=5`).
