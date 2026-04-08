@@ -1,4 +1,12 @@
-﻿## [0.99.12] - 2026-04-09 — OLV Seçili Satır Metin Hayaleti Düzeltmesi
+﻿## [0.99.13] - 2026-04-10 — Uygulama İkonu & Sonraki Çalışma Zamanı Düzeltmesi
+
+### İyileştirme
+- **Özel kalkan+K uygulama ikonu** — GDI+ ile çizilen zümrüt yeşili kalkan+K logosu artık tüm platformlarda kullanılıyor: tray ikonu, form ikonu, .exe gömülü ikon (Start Menü/Görev Çubuğu) ve kurulum dosyası. 7 çözünürlükte (16-256px) çok boyutlu .ico dosyası oluşturuldu.
+
+### Düzeltme
+- **Otomatik yedekleme sonrası "Sonraki Çalışma" tarihi güncellenmiyor** — `OnBackupActivityChanged` içinde yedekleme tamamlandığında (`Completed`/`Failed`/`Cancelled`) `RequestNextFireTimesAsync()` çağrısı eklendi. Artık otomatik görev bittikten sonra Quartz.NET scheduler'dan güncel sonraki çalışma zamanı alınarak grid güncelleniyor.
+
+## [0.99.12] - 2026-04-09 — OLV Seçili Satır Metin Hayaleti Düzeltmesi
 
 ### Düzeltme
 - **ObjectListView seçili satırda metin çakışması (ghost-text)** — `SelectedBackColor` yarı-saydam (alpha=60) renk kullanıyordu; OwnerDraw modunda GDI+ eski metni tam kapatamıyordu. `GridSelectionBack` ve `GridSelectionBackUnfocused` opak renkler ModernTheme’a eklendi (Dark: `27,66,58` / `28,54,51`, Light: `218,242,232` / `230,245,238`). Seçim artık temiz render ediliyor.
