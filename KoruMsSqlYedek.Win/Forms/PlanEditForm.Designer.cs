@@ -462,28 +462,26 @@
             step3.Controls.Add(_chkVerify);
             y += 36;
 
-            // --- Dosya Yedekleme Görevi (file backup enabled ise görünür) ---
+            // --- Dosya Yedekleme Zamanlaması (artık SQL ile aynı zamanlama — gizli) ---
             _lblStep3FileSep.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             _lblStep3FileSep.Location = new System.Drawing.Point(lx, y);
             _lblStep3FileSep.Size = new System.Drawing.Size(tw + tx - lx, 2);
+            _lblStep3FileSep.Visible = false;
             step3.Controls.Add(_lblStep3FileSep);
-            y += 10;
 
             _lblStep3FileSchedHeader.Text = "\U0001f4c1 Dosya Yedekleme Görevi";
             _lblStep3FileSchedHeader.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             _lblStep3FileSchedHeader.ForeColor = Theme.ModernTheme.AccentPrimary;
             _lblStep3FileSchedHeader.AutoSize = true;
             _lblStep3FileSchedHeader.Location = new System.Drawing.Point(lx, y);
+            _lblStep3FileSchedHeader.Visible = false;
             step3.Controls.Add(_lblStep3FileSchedHeader);
-            y += 26;
-
-            // Dosya yedekleme her zaman Tam (Full) — strateji seçimi kaldırıldı
-            y += 36;
 
             ConfigLabel(_lblFileSchedule, "Dosya Görevi:", lx, y, step3);
+            _lblFileSchedule.Visible = false;
             _cronFileSchedule.Location = new System.Drawing.Point(tx, y);
             _cronFileSchedule.Size = new System.Drawing.Size(tw, 80);
-            _toolTip.SetToolTip(_cronFileSchedule, "Dosya yedekleme görevinin çalışacağı zamanı belirleyin.\nSQL yedek görevinden bağımsız çalışır.\nAdım 2'de tanımlanan dosya kaynakları bu zamanda yedeklenir.\nÖneri: Günde 1 (örn. her gece 03:00)");
+            _cronFileSchedule.Visible = false;
             step3.Controls.Add(_cronFileSchedule);
 
             // ===================================================================

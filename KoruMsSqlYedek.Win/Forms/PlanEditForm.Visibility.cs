@@ -141,11 +141,11 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void UpdateFileScheduleVisibility()
         {
-            bool enabled = _chkFileBackupEnabled.Checked;
-            _lblStep3FileSep.Visible = enabled;
-            _lblStep3FileSchedHeader.Visible = enabled;
-            _lblFileSchedule.Visible = enabled;
-            _cronFileSchedule.Visible = enabled;
+            // Dosya yedekleme artık SQL ile aynı zamanlamayı kullanır; ayrı schedule UI'ı yok
+            _lblStep3FileSep.Visible = false;
+            _lblStep3FileSchedHeader.Visible = false;
+            _lblFileSchedule.Visible = false;
+            _cronFileSchedule.Visible = false;
         }
 
         #endregion

@@ -1,4 +1,9 @@
-﻿## [0.99.13] - 2026-04-10 — Uygulama İkonu & Sonraki Çalışma Zamanı Düzeltmesi
+﻿## [0.99.14] - 2026-04-11 — Dosya Yedekleme SQL ile Aynı Zamanlamada
+
+### Düzeltme
+- **Otomatik yedeklemede dosya yedekleme atlanıyordu** — `CronBuilderPanel` her zaman geçerli bir cron ifadesi döndürdüğü için `FileBackup.Schedule` hiçbir zaman boş kalmıyordu; bu da `willRunFileBackup` koşulunun SQL job'larında daima `false` olmasına neden oluyordu. Düzeltme: Dosya yedekleme artık SQL ile aynı zamanlamayı kullanır (ayrı schedule kaldırıldı). `BackupJobExecutor.willRunFileBackup` sadeleştirildi, `QuartzSchedulerService`'den ayrı FileBackup job'u kaldırıldı, UI'da dosya zamanlama bölümü gizlendi.
+
+## [0.99.13] - 2026-04-10 — Uygulama İkonu & Sonraki Çalışma Zamanı Düzeltmesi
 
 ### İyileştirme
 - **Özel kalkan+K uygulama ikonu** — GDI+ ile çizilen zümrüt yeşili kalkan+K logosu artık tüm platformlarda kullanılıyor: tray ikonu, form ikonu, .exe gömülü ikon (Start Menü/Görev Çubuğu) ve kurulum dosyası. 7 çözünürlükte (16-256px) çok boyutlu .ico dosyası oluşturuldu.

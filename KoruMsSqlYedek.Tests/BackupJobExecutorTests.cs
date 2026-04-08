@@ -376,9 +376,9 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
-        public async Task Execute_SqlJob_FileBackupEnabledWithDedicatedSchedule_SkipsFileBackup()
+        public async Task Execute_SqlJob_FileBackupEnabledWithSchedule_StillTriggersFileBackup()
         {
-            // Arrange — ayrı zamanlama var; FileBackup kendi Quartz job'u ile çalışır, SQL job'undan tetiklenmemeli
+            // Arrange — Schedule değeri olsa bile dosya yedekleme SQL job ile birlikte çalışmalı
             var plan = TestDataFactory.CreatePlanWithFileBackup();
             plan.Databases = new List<string> { "TestDB" };
             plan.FileBackup.Schedule = "0 0 4 ? * *";
@@ -397,13 +397,17 @@ namespace KoruMsSqlYedek.Tests
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1024L * 1024 * 30);
 
+            _mockFileBackup.Setup(f => f.BackupFilesAsync(
+                    plan, It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<FileBackupResult> { TestDataFactory.CreateSuccessFileBackupResult() });
+
             // Act
             await _executor.Execute(_mockJobContext.Object);
 
-            // Assert — kendi zamanlaması olduğu için SQL job'dan çağrılMAMALI
+            // Assert — Schedule olsa bile SQL job ile birlikte dosya yedekleme çalışmalı
             _mockFileBackup.Verify(
-                f => f.BackupFilesAsync(It.IsAny<BackupPlan>(), It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
-                Times.Never);
+                f => f.BackupFilesAsync(plan, It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [TestMethod]
