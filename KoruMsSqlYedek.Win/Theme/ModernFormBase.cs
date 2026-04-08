@@ -94,6 +94,12 @@ namespace KoruMsSqlYedek.Win.Theme
                 pnl.BackColor = ModernTheme.BackgroundColor;
                 return;
             }
+
+            // Scrollbar'lı native kontroller — dark scrollbar tema
+            if (c is RichTextBox or TreeView or ListBox)
+            {
+                ModernTheme.ApplyScrollBarTheme(c);
+            }
         }
     }
 }

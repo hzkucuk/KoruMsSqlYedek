@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.16"
+  #define MyAppVersion "0.99.17"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -206,6 +206,28 @@ begin
     // Kısa bekle (dosya kilidi serbest kalsın)
     Sleep(2000);
   end;
+end;
+
+// Wizard açıldığında memo kontrollerini dark tema ile uyumlu yap
+procedure InitializeWizard();
+var
+  DarkBg: TColor;
+  LightFg: TColor;
+begin
+  DarkBg := $2D2D2D;   // Koyu gri arka plan (#2D2D2D)
+  LightFg := $E0E0E0;  // Açık gri yazı (#E0E0E0)
+
+  // Lisans sayfası memo
+  WizardForm.LicenseMemo.Color := DarkBg;
+  WizardForm.LicenseMemo.Font.Color := LightFg;
+
+  // Kurulum öncesi bilgi sayfası memo (disclaimer)
+  WizardForm.InfoBeforeMemo.Color := DarkBg;
+  WizardForm.InfoBeforeMemo.Font.Color := LightFg;
+
+  // Kurulum sonrası bilgi sayfası memo (setup_readme)
+  WizardForm.InfoAfterMemo.Color := DarkBg;
+  WizardForm.InfoAfterMemo.Font.Color := LightFg;
 end;
 
 // Kaldırma öncesi tray uygulamasını kapat
