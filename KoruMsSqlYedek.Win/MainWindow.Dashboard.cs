@@ -18,6 +18,10 @@ namespace KoruMsSqlYedek.Win
         /// </summary>
         private void SetupDashboardOlv()
         {
+            // OwnerDraw — OLV kendi GDI+ renderer'ıyla hücre metnini kolon
+            // sınırlarına clip eder; native ListView modunda metin taşması olabiliyor.
+            _olvLastBackups.OwnerDraw = true;
+
             // Tarih kolonu — AspectToStringConverter ile biçimli metin
             _olvColDate.AspectToStringConverter = obj =>
                 obj is DateTime dt ? dt.ToString("yyyy-MM-dd HH:mm") : "—";

@@ -1,4 +1,9 @@
-﻿## [0.99.9] - 2026-04-09 — Nullable Uyarı Temizliği & Yeşil Tray İkon
+﻿## [0.99.10] - 2026-04-09 — ObjectListView Metin Taşması Düzeltmesi
+
+### Düzeltme
+- **Dashboard grid’de hücre metni yan kolonlara taşıyordu** — ObjectListView varsayılan native ListView rendering modunda (`OwnerDraw=false`) hücre metni kolon sınırlarına clip edilmiyordu. `OwnerDraw = true` ayarlanarak OLV’nin GDI+ renderer’ı etkinleştirildi; metin artık hücre sınırları içinde kalıyor.
+
+## [0.99.9] - 2026-04-09 — Nullable Uyarı Temizliği & Yeşil Tray İkon
 
 ### Düzeltme
 - **Balloon tip ikonu yeşil** — Servis bağlantı bildiriminde `ToolTipIcon.None` kullanılarak balloon tip, tray ikonunun yeşil onay işaretini gösterir.
