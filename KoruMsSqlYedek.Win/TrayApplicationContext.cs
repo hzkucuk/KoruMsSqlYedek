@@ -103,7 +103,7 @@ namespace KoruMsSqlYedek.Win
             _contextMenu = CreateContextMenu();
             _notifyIcon = CreateNotifyIcon();
 
-            ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_BalloonRunning"), ToolTipIcon.Info, 2000);
+            Theme.ModernToast.Show(Res.Get("AppName"), Res.Get("Tray_BalloonRunning"), Theme.ToastType.Info, 2000);
 
             BackupActivityHub.ActivityChanged += OnBackupActivityChanged;
             _pipeClient.ConnectionChanged    += OnPipeConnectionChanged;

@@ -28,10 +28,10 @@ namespace KoruMsSqlYedek.Win
                     _tsmCheckUpdate.Text = Res.Format("Update_BalloonMessage", info.Version);
                     _tsmCheckUpdate.Font = new Font(_tsmCheckUpdate.Font, FontStyle.Bold);
 
-                    ShowBalloonTip(
+                    Theme.ModernToast.Show(
                         Res.Get("Update_BalloonTitle"),
                         Res.Format("Update_BalloonMessage", info.Version),
-                        ToolTipIcon.Info, 5000);
+                        Theme.ToastType.Info, 5000);
 
                     Log.Information("Yeni sürüm bildirimi gösterildi: v{Version}", info.Version);
                 }
@@ -102,10 +102,10 @@ namespace KoruMsSqlYedek.Win
 
             try
             {
-                ShowBalloonTip(
+                Theme.ModernToast.Show(
                     Res.Get("AppName"),
                     Res.Format("Update_Downloading", 0),
-                    ToolTipIcon.Info, 3000);
+                    Theme.ToastType.Info);
 
                 var progress = new Progress<int>(pct =>
                 {
@@ -115,10 +115,9 @@ namespace KoruMsSqlYedek.Win
                 await _updateService.DownloadInstallerAsync(
                     info.DownloadUrl, installerPath, progress).ConfigureAwait(true);
 
-                ShowBalloonTip(
+                Theme.ModernToast.Success(
                     Res.Get("AppName"),
-                    Res.Get("Update_DownloadComplete"),
-                    ToolTipIcon.Info, 2000);
+                    Res.Get("Update_DownloadComplete"));
 
                 Log.Information("Installer indirme tamamlandı, başlatılıyor: {Path}", installerPath);
 

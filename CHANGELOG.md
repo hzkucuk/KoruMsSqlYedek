@@ -1,4 +1,9 @@
-﻿## [0.99.10] - 2026-04-09 — ObjectListView Metin Taşması Düzeltmesi
+﻿## [0.99.11] - 2026-04-09 — Tüm Bildirimler ModernToast
+
+### İyileştirme
+- **Tüm ShowBalloonTip çağrıları ModernToast’a dönüştürüldü** — Servis bağlantı/kopma, yedekleme başlatma/tamamlanma/hata/iptal, güncelleme kontrolü, indirme, servis başlat/durdur/yeniden başlat ve hata bildirimleri dahil tüm 14 `ShowBalloonTip` çağrısı modern `ModernToast` bileşenine taşındı. Uygulama genelinde tutarlı, şık ve dark-mode uyumlu bildirim deneyimi sağlandı.
+
+## [0.99.10] - 2026-04-09 — ObjectListView Metin Taşması Düzeltmesi
 
 ### Düzeltme
 - **Dashboard grid’de hücre metni yan kolonlara taşıyordu** — ObjectListView varsayılan native ListView rendering modunda (`OwnerDraw=false`) hücre metni kolon sınırlarına clip edilmiyordu. `OwnerDraw = true` ayarlanarak OLV’nin GDI+ renderer’ı etkinleştirildi; metin artık hücre sınırları içinde kalıyor.

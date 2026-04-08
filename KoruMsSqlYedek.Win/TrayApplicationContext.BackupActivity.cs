@@ -27,10 +27,9 @@ namespace KoruMsSqlYedek.Win
             if (connected)
             {
                 UpdateTrayStatus(TrayIconStatus.Success, Res.Get("Tray_Tooltip"));
-                ShowBalloonTip(
+                Theme.ModernToast.Success(
                     Res.Get("Tray_ServiceConnectionTitle"),
-                    Res.Get("Tray_ServiceConnected"),
-                    ToolTipIcon.None, 3000);
+                    Res.Get("Tray_ServiceConnected"));
                 Log.Information("Servis pipe bağlandı.");
 
                 // 3 sn sonra normal Idle ikonuna dön
@@ -46,10 +45,9 @@ namespace KoruMsSqlYedek.Win
             else
             {
                 UpdateTrayStatus(TrayIconStatus.Disconnected, Res.Get("Tray_TooltipDisconnected"));
-                ShowBalloonTip(
+                Theme.ModernToast.Warning(
                     Res.Get("Tray_ServiceConnectionTitle"),
-                    Res.Get("Tray_ServiceDisconnected"),
-                    ToolTipIcon.Warning, 3000);
+                    Res.Get("Tray_ServiceDisconnected"));
                 Log.Warning("Servis pipe bağlantısı kesildi.");
             }
         }
@@ -68,39 +66,36 @@ namespace KoruMsSqlYedek.Win
                 case BackupActivityType.Started:
                     StartTrayAnimation(Res.Format("Tray_BackupRunning", e.PlanName));
                     if (e.ToastEnabled)
-                        ShowBalloonTip(
+                        Theme.ModernToast.Show(
                             Res.Get("Toast_BackupStartedTitle"),
                             Res.Format("Toast_BackupStartedMessage", e.PlanName),
-                            ToolTipIcon.Info);
+                            Theme.ToastType.Info);
                     break;
 
                 case BackupActivityType.Completed:
                     StopTrayAnimation(TrayIconStatus.Success,
                         Res.Format("Tray_BackupCompleted", e.PlanName));
                     if (e.ToastEnabled)
-                        ShowBalloonTip(
+                        Theme.ModernToast.Success(
                             Res.Get("Toast_BackupCompletedTitle"),
-                            Res.Format("Toast_BackupCompletedMessage", e.PlanName),
-                            ToolTipIcon.Info);
+                            Res.Format("Toast_BackupCompletedMessage", e.PlanName));
                     break;
 
                 case BackupActivityType.Failed:
                     StopTrayAnimation(TrayIconStatus.Error,
                         Res.Format("Tray_BackupFailed", e.PlanName));
                     if (e.ToastEnabled)
-                        ShowBalloonTip(
+                        Theme.ModernToast.Error(
                             Res.Get("Toast_BackupFailedTitle"),
-                            Res.Format("Toast_BackupFailedMessage", e.PlanName),
-                            ToolTipIcon.Error);
+                            Res.Format("Toast_BackupFailedMessage", e.PlanName));
                     break;
 
                 case BackupActivityType.Cancelled:
                     StopTrayAnimation(TrayIconStatus.Idle, Res.Get("Tray_Tooltip"));
                     if (e.ToastEnabled)
-                        ShowBalloonTip(
+                        Theme.ModernToast.Warning(
                             Res.Get("Toast_BackupCancelledTitle"),
-                            Res.Format("Toast_BackupCancelledMessage", e.PlanName),
-                            ToolTipIcon.Warning);
+                            Res.Format("Toast_BackupCancelledMessage", e.PlanName));
                     break;
             }
         }
