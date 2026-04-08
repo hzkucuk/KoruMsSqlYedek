@@ -152,10 +152,10 @@ namespace KoruMsSqlYedek.Win.Helpers
                 g.DrawPath(borderPen, shieldPath);
             }
 
-            // "K" harfi — beyaz, kalkan ortasında
+            // "K" harfi — XP mavisi, kalkan ortasında
             float fontSize = Math.Max(s * 0.55f, 5f);
             using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-            using var textBrush = new SolidBrush(Color.White);
+            using var textBrush = new SolidBrush(Color.FromArgb(55, 120, 200));
             var sf = new StringFormat
             {
                 Alignment = StringAlignment.Center,
@@ -494,7 +494,7 @@ namespace KoruMsSqlYedek.Win.Helpers
                     g.DrawPath(borderPen, shieldPath);
                 }
 
-                // --- 5. "K" harfi — parlak cyan-mavi (yeşilden ayrışır) ---
+                // --- 5. "K" harfi — XP mavisi (yeşilden ayrışır) ---
                 float fontSize = Math.Max(s * 0.55f, 5f);
                 using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
                 var sf = new StringFormat
@@ -503,10 +503,10 @@ namespace KoruMsSqlYedek.Win.Helpers
                     LineAlignment = StringAlignment.Center
                 };
 
-                // Nabızla birlikte beyaz ↔ cyan-mavi geçişi
-                int kR = (int)(255 - 155 * pulse);  // 255→100
-                int kG = (int)(255 - 55 * pulse);   // 255→200
-                int kB = 255;                        // sabit 255
+                // Nabızla birlikte koyu XP mavisi ↔ parlak gökyüzü mavisi geçişi
+                int kR = (int)(55 + 50 * pulse);   // 55→105
+                int kG = (int)(120 + 60 * pulse);  // 120→180
+                int kB = (int)(200 + 55 * pulse);  // 200→255
                 using var textBrush = new SolidBrush(Color.FromArgb(kR, kG, kB));
                 g.DrawString("K", font, textBrush,
                     new RectangleF(sx, sy + s * 0.03f, s, s), sf);
@@ -633,7 +633,7 @@ namespace KoruMsSqlYedek.Win.Helpers
                 {
                     float kFontSize = Math.Max(s * 0.55f, 5f);
                     using var kFont = new Font("Segoe UI", kFontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-                    using var kBrush = new SolidBrush(Color.FromArgb((int)(255 * kAlpha), 255, 255, 255));
+                    using var kBrush = new SolidBrush(Color.FromArgb((int)(255 * kAlpha), 55, 120, 200));
                     g.DrawString("K", kFont, kBrush,
                         new RectangleF(sx, sy + s * 0.03f, s, s), sf);
                 }
