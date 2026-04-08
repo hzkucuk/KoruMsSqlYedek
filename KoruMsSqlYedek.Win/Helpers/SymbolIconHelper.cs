@@ -152,16 +152,29 @@ namespace KoruMsSqlYedek.Win.Helpers
                 g.DrawPath(borderPen, shieldPath);
             }
 
-            // "K" harfi — XP mavisi, kalkan ortasında
+            // "K" harfi — parlak XP mavisi + koyu kontur (yeşil üzerinde görünürlük)
             float fontSize = Math.Max(s * 0.55f, 5f);
             using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-            using var textBrush = new SolidBrush(Color.FromArgb(55, 120, 200));
             var sf = new StringFormat
             {
                 Alignment = StringAlignment.Center,
                 LineAlignment = StringAlignment.Center
             };
-            g.DrawString("K", font, textBrush, new RectangleF(x, y + s * 0.03f, s, s), sf);
+            var textRect = new RectangleF(x, y + s * 0.03f, s, s);
+
+            // Koyu kontur — 4 yönde kayma ile halo efekti
+            float o = Math.Max(size * 0.04f, 0.7f);
+            using (var outlineBrush = new SolidBrush(Color.FromArgb(220, 0, 10, 50)))
+            {
+                g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X - o, textRect.Y, textRect.Width, textRect.Height), sf);
+                g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X + o, textRect.Y, textRect.Width, textRect.Height), sf);
+                g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X, textRect.Y - o, textRect.Width, textRect.Height), sf);
+                g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X, textRect.Y + o, textRect.Width, textRect.Height), sf);
+            }
+
+            // Parlak XP mavisi dolgu
+            using var textBrush = new SolidBrush(Color.FromArgb(100, 170, 255));
+            g.DrawString("K", font, textBrush, textRect, sf);
 
             return CloneIconFromBitmap(bitmap);
         }
@@ -494,7 +507,7 @@ namespace KoruMsSqlYedek.Win.Helpers
                     g.DrawPath(borderPen, shieldPath);
                 }
 
-                // --- 5. "K" harfi — XP mavisi (yeşilden ayrışır) ---
+                // --- 5. "K" harfi — parlak XP mavisi + koyu kontur ---
                 float fontSize = Math.Max(s * 0.55f, 5f);
                 using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
                 var sf = new StringFormat
@@ -502,14 +515,24 @@ namespace KoruMsSqlYedek.Win.Helpers
                     Alignment = StringAlignment.Center,
                     LineAlignment = StringAlignment.Center
                 };
+                var textRect = new RectangleF(sx, sy + s * 0.03f, s, s);
 
-                // Nabızla birlikte koyu XP mavisi ↔ parlak gökyüzü mavisi geçişi
-                int kR = (int)(55 + 50 * pulse);   // 55→105
-                int kG = (int)(120 + 60 * pulse);  // 120→180
-                int kB = (int)(200 + 55 * pulse);  // 200→255
+                // Koyu kontur — 4 yönde kayma ile halo
+                float o = Math.Max(size * 0.04f, 0.7f);
+                using (var outlineBrush = new SolidBrush(Color.FromArgb(220, 0, 10, 50)))
+                {
+                    g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X - o, textRect.Y, textRect.Width, textRect.Height), sf);
+                    g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X + o, textRect.Y, textRect.Width, textRect.Height), sf);
+                    g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X, textRect.Y - o, textRect.Width, textRect.Height), sf);
+                    g.DrawString("K", font, outlineBrush, new RectangleF(textRect.X, textRect.Y + o, textRect.Width, textRect.Height), sf);
+                }
+
+                // Nabızla birlikte XP mavisi ↔ parlak gökyüzü mavisi
+                int kR = (int)(80 + 60 * pulse);   // 80→140
+                int kG = (int)(150 + 50 * pulse);  // 150→200
+                int kB = (int)(240 + 15 * pulse);  // 240→255
                 using var textBrush = new SolidBrush(Color.FromArgb(kR, kG, kB));
-                g.DrawString("K", font, textBrush,
-                    new RectangleF(sx, sy + s * 0.03f, s, s), sf);
+                g.DrawString("K", font, textBrush, textRect, sf);
 
                 frames[i] = CloneIconFromBitmap(bitmap);
             }
@@ -633,9 +656,20 @@ namespace KoruMsSqlYedek.Win.Helpers
                 {
                     float kFontSize = Math.Max(s * 0.55f, 5f);
                     using var kFont = new Font("Segoe UI", kFontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-                    using var kBrush = new SolidBrush(Color.FromArgb((int)(255 * kAlpha), 55, 120, 200));
-                    g.DrawString("K", kFont, kBrush,
-                        new RectangleF(sx, sy + s * 0.03f, s, s), sf);
+                    var kRect = new RectangleF(sx, sy + s * 0.03f, s, s);
+
+                    // Koyu kontur
+                    float ko = Math.Max(size * 0.04f, 0.7f);
+                    using (var kOutline = new SolidBrush(Color.FromArgb((int)(220 * kAlpha), 0, 10, 50)))
+                    {
+                        g.DrawString("K", kFont, kOutline, new RectangleF(kRect.X - ko, kRect.Y, kRect.Width, kRect.Height), sf);
+                        g.DrawString("K", kFont, kOutline, new RectangleF(kRect.X + ko, kRect.Y, kRect.Width, kRect.Height), sf);
+                        g.DrawString("K", kFont, kOutline, new RectangleF(kRect.X, kRect.Y - ko, kRect.Width, kRect.Height), sf);
+                        g.DrawString("K", kFont, kOutline, new RectangleF(kRect.X, kRect.Y + ko, kRect.Width, kRect.Height), sf);
+                    }
+
+                    using var kBrush = new SolidBrush(Color.FromArgb((int)(255 * kAlpha), 100, 170, 255));
+                    g.DrawString("K", kFont, kBrush, kRect, sf);
                 }
 
                 frames[i] = CloneIconFromBitmap(bitmap);
