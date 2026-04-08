@@ -494,7 +494,7 @@ namespace KoruMsSqlYedek.Win.Helpers
                     g.DrawPath(borderPen, shieldPath);
                 }
 
-                // --- 5. "K" harfi — beyaz, sabit ---
+                // --- 5. "K" harfi — parlak cyan-mavi (yeşilden ayrışır) ---
                 float fontSize = Math.Max(s * 0.48f, 4f);
                 using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
                 var sf = new StringFormat
@@ -502,7 +502,12 @@ namespace KoruMsSqlYedek.Win.Helpers
                     Alignment = StringAlignment.Center,
                     LineAlignment = StringAlignment.Center
                 };
-                using var textBrush = new SolidBrush(Color.White);
+
+                // Nabızla birlikte beyaz ↔ cyan-mavi geçişi
+                int kR = (int)(255 - 155 * pulse);  // 255→100
+                int kG = (int)(255 - 55 * pulse);   // 255→200
+                int kB = 255;                        // sabit 255
+                using var textBrush = new SolidBrush(Color.FromArgb(kR, kG, kB));
                 g.DrawString("K", font, textBrush,
                     new RectangleF(sx, sy + s * 0.03f, s, s), sf);
 
