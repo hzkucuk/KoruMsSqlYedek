@@ -1,4 +1,9 @@
-﻿## [0.99.21] - 2025-07-14 — Installer Lisans Sayfası Düzeltme
+﻿## [0.99.22] - 2025-07-14 — Tray İkon Animasyonu Yenileme
+
+### İyileştirme
+- **Yedekleme tray animasyonu yeniden tasarlandı** — Harici GIF dosyaları yerine tam boyut kalkan üzerinde dramatik GDI+ animasyonlar: sin-dalga nefes efekti (koyu zümrüt ↔ parlak lime renk geçişi), kalkan yüzeyinde dönen ışık taraması (`ColorBlend` highlight bandı), nabız atan dış glow aura. Tamamlanma animasyonunda parlak flaş + genişleyen başarı halkası + K→✓→K geçişi.
+
+## [0.99.21] - 2025-07-14 — Installer Lisans Sayfası Düzeltme
 
 ### Düzeltme
 - **Inno Setup lisans/disclaimer/readme memo kontrolleri dark arka plandan beyaz arka plana çevrildi** — Windows dark mode etkisiyle okunmaz hale gelen metin alanları artık `clWhite` arka plan + `clBlack` yazı rengi ile gösteriliyor.

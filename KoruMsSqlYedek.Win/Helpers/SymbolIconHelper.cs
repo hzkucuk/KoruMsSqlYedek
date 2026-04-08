@@ -405,6 +405,241 @@ namespace KoruMsSqlYedek.Win.Helpers
         }
 
         /// <summary>
+        /// Yedekleme animasyonu — tam boyut kalkan üzerinde dönen ışık taraması + nefes alan parlaklık.
+        /// Sin-dalga renk geçişi (koyu zümrüt ↔ parlak lime), dönen highlight bandı, dış glow aura.
+        /// </summary>
+        internal static Icon[] CreateShieldBackupAnimationFrames(int frameCount = 16)
+        {
+            int size = TrayIconSize;
+            var frames = new Icon[frameCount];
+
+            for (int i = 0; i < frameCount; i++)
+            {
+                using var bitmap = new Bitmap(size, size);
+                using var g = Graphics.FromImage(bitmap);
+                g.SmoothingMode = SmoothingMode.HighQuality;
+                g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.Clear(Color.Transparent);
+
+                float phase = (float)i / frameCount;
+                float pulse = (float)(0.5 + 0.5 * Math.Sin(phase * Math.PI * 2));
+                float sweepAngle = phase * 360f;
+
+                // --- 1. Dış glow aura (nabız atan) ---
+                int glowAlpha = (int)(35 + 110 * pulse);
+                using (var glowBrush = new SolidBrush(Color.FromArgb(glowAlpha, 0, 255, 120)))
+                {
+                    g.FillEllipse(glowBrush, 0, 0, size, size);
+                }
+
+                // --- 2. Kalkan — nabız alan renk geçişi ---
+                float pad = size * 0.06f;
+                float s = size - pad * 2;
+                float sx = pad, sy = pad;
+
+                using var shieldPath = CreateShieldPath(sx, sy, s);
+
+                // Renk aralığı: koyu zümrüt (trough) ↔ parlak lime-cyan (peak)
+                Color topColor = Color.FromArgb(
+                    (int)(0 + 60 * pulse),
+                    (int)(180 + 75 * pulse),
+                    (int)(85 + 85 * pulse));
+                Color botColor = Color.FromArgb(
+                    (int)(0 + 30 * pulse),
+                    (int)(120 + 100 * pulse),
+                    (int)(50 + 80 * pulse));
+
+                using (var gradBrush = new LinearGradientBrush(
+                    new RectangleF(sx, sy, s, s),
+                    topColor, botColor,
+                    LinearGradientMode.Vertical))
+                {
+                    g.FillPath(gradBrush, shieldPath);
+                }
+
+                // --- 3. Dönen ışık taraması (kalkan yüzeyinde) ---
+                g.SetClip(shieldPath);
+
+                using (var sweepBrush = new LinearGradientBrush(
+                    new RectangleF(sx - 1, sy - 1, s + 2, s + 2),
+                    Color.Transparent, Color.Transparent,
+                    sweepAngle))
+                {
+                    var blend = new ColorBlend(5);
+                    blend.Colors =
+                    [
+                        Color.Transparent,
+                        Color.FromArgb(50, 255, 255, 255),
+                        Color.FromArgb(110, 255, 255, 240),
+                        Color.FromArgb(50, 255, 255, 255),
+                        Color.Transparent
+                    ];
+                    blend.Positions = [0f, 0.30f, 0.50f, 0.70f, 1f];
+                    sweepBrush.InterpolationColors = blend;
+
+                    g.FillRectangle(sweepBrush, sx - 1, sy - 1, s + 2, s + 2);
+                }
+
+                g.ResetClip();
+
+                // --- 4. Nabız alan kenar ---
+                int borderG = (int)(150 + 90 * pulse);
+                int borderB = (int)(65 + 45 * pulse);
+                using (var borderPen = new Pen(
+                    Color.FromArgb(0, borderG, borderB),
+                    Math.Max(s * 0.05f, 0.8f)))
+                {
+                    g.DrawPath(borderPen, shieldPath);
+                }
+
+                // --- 5. "K" harfi — beyaz, sabit ---
+                float fontSize = Math.Max(s * 0.48f, 4f);
+                using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
+                var sf = new StringFormat
+                {
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
+                using var textBrush = new SolidBrush(Color.White);
+                g.DrawString("K", font, textBrush,
+                    new RectangleF(sx, sy + s * 0.03f, s, s), sf);
+
+                frames[i] = CloneIconFromBitmap(bitmap);
+            }
+
+            return frames;
+        }
+
+        /// <summary>
+        /// Tamamlanma animasyonu — parlak flaş + genişleyen başarı halkası + K→✓→K geçişi.
+        /// İlk karelerde kalkan çok parlak yanar, ✓ gösterilir, son karelerde normale döner.
+        /// </summary>
+        internal static Icon[] CreateShieldCompletionFrames(int frameCount = 10)
+        {
+            int size = TrayIconSize;
+            var frames = new Icon[frameCount];
+
+            for (int i = 0; i < frameCount; i++)
+            {
+                using var bitmap = new Bitmap(size, size);
+                using var g = Graphics.FromImage(bitmap);
+                g.SmoothingMode = SmoothingMode.HighQuality;
+                g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.Clear(Color.Transparent);
+
+                float progress = (float)i / (frameCount - 1);
+
+                // --- 1. Genişleyen başarı halkası ---
+                if (progress < 0.7f)
+                {
+                    float ringP = progress / 0.7f;
+                    float ringR = size * 0.25f + size * 0.25f * ringP;
+                    int ringAlpha = (int)(200 * (1f - ringP));
+                    float ringW = Math.Max(size * 0.08f * (1f - ringP * 0.5f), 1f);
+
+                    using var ringPen = new Pen(Color.FromArgb(ringAlpha, 100, 255, 140), ringW);
+                    g.DrawEllipse(ringPen,
+                        size / 2f - ringR, size / 2f - ringR,
+                        ringR * 2, ringR * 2);
+                }
+
+                // --- 2. Dış parlama (ilk karelerde çok parlak) ---
+                float flash = Math.Max(0f, 1f - progress * 1.8f);
+                if (flash > 0.01f)
+                {
+                    int flashAlpha = (int)(160 * flash);
+                    using var flashBrush = new SolidBrush(Color.FromArgb(flashAlpha, 120, 255, 180));
+                    g.FillEllipse(flashBrush, 0, 0, size, size);
+                }
+
+                // --- 3. Kalkan (parlak başlayıp normale döner) ---
+                float pad = size * 0.06f;
+                float s = size - pad * 2;
+                float sx = pad, sy = pad;
+
+                using var shieldPath = CreateShieldPath(sx, sy, s);
+
+                float glow = Math.Max(0f, 1f - progress * 1.5f);
+                Color topColor = Color.FromArgb(
+                    (int)(0 + 80 * glow),
+                    Math.Min((int)(200 + 55 * glow), 255),
+                    (int)(100 + 70 * glow));
+                Color botColor = Color.FromArgb(
+                    (int)(0 + 40 * glow),
+                    Math.Min((int)(140 + 60 * glow), 200),
+                    (int)(70 + 50 * glow));
+
+                using (var gradBrush = new LinearGradientBrush(
+                    new RectangleF(sx, sy, s, s),
+                    topColor, botColor,
+                    LinearGradientMode.Vertical))
+                {
+                    g.FillPath(gradBrush, shieldPath);
+                }
+
+                int bdrG = Math.Min((int)(160 + 80 * glow), 240);
+                using (var borderPen = new Pen(
+                    Color.FromArgb(0, bdrG, (int)(80 + 40 * glow)),
+                    Math.Max(s * 0.05f, 0.8f)))
+                {
+                    g.DrawPath(borderPen, shieldPath);
+                }
+
+                // --- 4. K ↔ ✓ geçişi ---
+                float checkAlpha, kAlpha;
+                if (progress < 0.15f)
+                {
+                    kAlpha = 1f - progress / 0.15f;
+                    checkAlpha = progress / 0.15f;
+                }
+                else if (progress > 0.80f)
+                {
+                    float t = (progress - 0.80f) / 0.20f;
+                    checkAlpha = 1f - t;
+                    kAlpha = t;
+                }
+                else
+                {
+                    checkAlpha = 1f;
+                    kAlpha = 0f;
+                }
+
+                var sf = new StringFormat
+                {
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
+
+                if (checkAlpha > 0.01f)
+                {
+                    float checkSize = Math.Max(s * 0.50f, 4f);
+                    string fontFamily = IsFontAvailable(PrimaryFontFamily) ? PrimaryFontFamily : FallbackFontFamily;
+                    using var checkFont = new Font(fontFamily, checkSize, FontStyle.Regular, GraphicsUnit.Pixel);
+                    using var checkBrush = new SolidBrush(Color.FromArgb((int)(255 * checkAlpha), 255, 255, 255));
+                    g.DrawString(SymbolCheckmark, checkFont, checkBrush,
+                        new RectangleF(sx, sy + s * 0.03f, s, s), sf);
+                }
+
+                if (kAlpha > 0.01f)
+                {
+                    float kFontSize = Math.Max(s * 0.48f, 4f);
+                    using var kFont = new Font("Segoe UI", kFontSize, FontStyle.Bold, GraphicsUnit.Pixel);
+                    using var kBrush = new SolidBrush(Color.FromArgb((int)(255 * kAlpha), 255, 255, 255));
+                    g.DrawString("K", kFont, kBrush,
+                        new RectangleF(sx, sy + s * 0.03f, s, s), sf);
+                }
+
+                frames[i] = CloneIconFromBitmap(bitmap);
+            }
+
+            return frames;
+        }
+
+        /// <summary>
         /// Gömülü animated GIF dosyasından tray ikonu boyutuna uygun Icon[] çıkarır.
         /// </summary>
         /// <param name="gifResourceName">Embedded resource adı (örn. "CloudSync.gif")</param>
