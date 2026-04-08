@@ -103,6 +103,7 @@ Detaylı bilgi log dosyasında bulunabilir.</value></data>
   <data name="Dashboard_ColPlan" xml:space="preserve"><value>Plan</value></data>
   <data name="Dashboard_ColDatabase" xml:space="preserve"><value>Veritabanı</value></data>
   <data name="Dashboard_ColResult" xml:space="preserve"><value>Sonuç</value></data>
+  <data name="Dashboard_ColType" xml:space="preserve"><value>Tür</value></data>
   <data name="Dashboard_ColSize" xml:space="preserve"><value>Boyut</value></data>
   <data name="Dashboard_LastUpdate" xml:space="preserve"><value>Son güncelleme: {0}</value></data>
   <data name="Dashboard_DataLoadError" xml:space="preserve"><value>Veri yükleme hatası</value></data>

@@ -309,11 +309,6 @@ namespace KoruMsSqlYedek.Win
             _lblNextBackupCaption.Text = Res.Get("Dashboard_NextBackupCaption");
             _lblActivePlansCaption.Text = Res.Get("Dashboard_ActivePlansCaption");
             _lblGridTitle.Text = Res.Get("Dashboard_LastBackupsGroup");
-            _olvColDate.Text = Res.Get("Dashboard_ColDate");
-            _olvColPlan.Text = Res.Get("Dashboard_ColPlan");
-            _olvColDatabase.Text = Res.Get("Dashboard_ColDatabase");
-            _olvColResult.Text = Res.Get("Dashboard_ColResult");
-            _olvColSize.Text = Res.Get("Dashboard_ColSize");
 
             // Plans
             _tsbNew.Text = Res.Get("PlanList_BtnNew");

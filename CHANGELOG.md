@@ -1,4 +1,12 @@
-﻿## [0.99.18] - 2025-07-14 — Dashboard Grup Başlık Rengi
+﻿## [0.99.19] - 2025-07-14 — Dashboard Collapsible Group Panel
+
+### İyileştirme
+- **Dashboard yedekleme listesi yeniden tasarlandı** — ObjectListView (OLV) grup yapısı kaldırıldı; yerine özel `CollapsibleGroupPanel` + `GroupedBackupListPanel` sistemi getirildi. Her plan adı için yeşil başlıklı (AccentPrimaryHover), açılır/kapanır grup panelleri oluşturuluyor. Grup başlıkları tam renk kontrolü sağlıyor.
+- **Kolon yapısı:** Tarih, Veritabanı, Tür, Sonuç, Boyut (plan adı grup başlığı olarak görünür).
+- **Satır renklendirme:** Başarılı/Başarısız/Kısmi/İptal durumlarına göre farklı renkler.
+- `ThemedObjectListView` kaldırıldı.
+
+## [0.99.18] - 2025-07-14 — Dashboard Grup Başlık Rengi
 
 ### İyileştirme
 - **Dashboard OLV grup başlık font rengi yeşil yapıldı** — `ThemedObjectListView` CDDS_POSTPAINT + GDI+ yaklaşımına geçirildi. Explorer teması (`DarkMode_Explorer`) scrollbar için aktifken grup başlıklarını kendi renkleriyle çiziyordu; yeni yaklaşım post-paint aşamasında GDI+ ile üzerine boyayarak özel rengi (AccentPrimaryHover: emerald green) garanti ediyor.

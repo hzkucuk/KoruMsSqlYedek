@@ -101,8 +101,8 @@ namespace KoruMsSqlYedek.Win
 
             InitializeComponent();
 
-            // ObjectListView Dashboard kurulumu — kolon, gruplama, dark theme
-            SetupDashboardOlv();
+            // Dashboard gruplanmış yedekleme listesi tema ayarları
+            // (GroupedBackupListPanel kendi temasını otomatik uygular)
 
             // Versiyon metnini runtime'da ayarla (Designer'da statik metinlere izin verilmiyor)
             string ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.18";
