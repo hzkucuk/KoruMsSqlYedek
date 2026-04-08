@@ -97,6 +97,26 @@ namespace KoruMsSqlYedek.Win.Forms
                 ShowStep(_currentStep - 1);
         }
 
+        /// <summary>
+        /// Step indicator (dot veya label) tıklanınca doğrudan ilgili adıma geçer.
+        /// Veri bağlamı korunur — yalnızca panel görünürlüğü değişir.
+        /// </summary>
+        private void OnStepIndicatorClick(object? sender, EventArgs e)
+        {
+            if (sender is not Control ctl || ctl.Tag is not int visualIndex)
+                return;
+
+            // Tıklanan görsel index, aktif adımlar listesindeki sırayı temsil eder
+            if (visualIndex < 0 || visualIndex >= _activeSteps.Count)
+                return;
+
+            // Zaten bu adımdaysa bir şey yapma
+            if (visualIndex == _currentStep)
+                return;
+
+            ShowStep(visualIndex);
+        }
+
         private async void OnNextClick(object sender, EventArgs e)
         {
             if (!ValidateCurrentStep())

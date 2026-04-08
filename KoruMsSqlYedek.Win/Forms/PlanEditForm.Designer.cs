@@ -188,6 +188,9 @@
                 _stepDots[i].Location = new System.Drawing.Point(stepStartX + i * stepW, 6);
                 _stepDots[i].TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
                 _stepDots[i].Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold);
+                _stepDots[i].Cursor = System.Windows.Forms.Cursors.Hand;
+                _stepDots[i].Tag = i;
+                _stepDots[i].Click += OnStepIndicatorClick;
                 _pnlStepIndicator.Controls.Add(_stepDots[i]);
 
                 _stepLabels[i] = new System.Windows.Forms.Label();
@@ -197,6 +200,9 @@
                 _stepLabels[i].Location = new System.Drawing.Point(stepStartX + i * stepW, 32);
                 _stepLabels[i].Font = new System.Drawing.Font("Segoe UI", 7.5F);
                 _stepLabels[i].ForeColor = Theme.ModernTheme.TextSecondary;
+                _stepLabels[i].Cursor = System.Windows.Forms.Cursors.Hand;
+                _stepLabels[i].Tag = i;
+                _stepLabels[i].Click += OnStepIndicatorClick;
                 _pnlStepIndicator.Controls.Add(_stepLabels[i]);
             }
 

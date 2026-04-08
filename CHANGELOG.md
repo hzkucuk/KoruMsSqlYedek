@@ -1,4 +1,10 @@
-﻿## [0.99.19] - 2025-07-14 — Dashboard Collapsible Group Panel
+﻿## [0.99.20] - 2025-07-14 — Performans & Wizard Sekme Navigasyonu
+
+### İyileştirme
+- **Dashboard scroll performansı optimize edildi** — `GroupedBackupListPanel` panel reuse (dispose+recreate yerine mevcut panelleri güncelleme), `SuspendLayout/ResumeLayout` toplu işlem, ilk 5 grubun açık geri kalanın kapalı başlaması (`MaxInitialExpanded=5`).
+- **Plan düzenleme wizardına sekme tıklama navigasyonu eklendi** — Üst bardaki adım göstergeleri (dot + etiket) artık tıklanabilir. Herhangi bir adıma doğrudan geçiş yapılabilir; kontrollerin veri bağlamı korunur.
+
+## [0.99.19] - 2025-07-14 — Dashboard Collapsible Group Panel
 
 ### İyileştirme
 - **Dashboard yedekleme listesi yeniden tasarlandı** — ObjectListView (OLV) grup yapısı kaldırıldı; yerine özel `CollapsibleGroupPanel` + `GroupedBackupListPanel` sistemi getirildi. Her plan adı için yeşil başlıklı (AccentPrimaryHover), açılır/kapanır grup panelleri oluşturuluyor. Grup başlıkları tam renk kontrolü sağlıyor.
