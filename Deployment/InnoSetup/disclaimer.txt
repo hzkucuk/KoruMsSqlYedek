@@ -1,0 +1,59 @@
+KORU MSSQL YEDEK — SORUMLULUK REDDİ VE KULLANIM UYARISI
+========================================================
+
+Bu yazılımı kurmadan önce lütfen aşağıdaki uyarıları dikkatle okuyun.
+
+
+ÖNEMLİ UYARILAR
+----------------
+
+1. YEDEKLEME GARANTİSİ YOKTUR
+   Bu yazılım, SQL Server veritabanlarınızı otomatik olarak yedeklemek
+   ve bulut depolama hizmetlerine senkronize etmek üzere tasarlanmıştır.
+   Ancak yedekleme işlemlerinin her koşulda başarılı olacağı garanti
+   edilmez. Donanım arızaları, ağ kesintileri, disk doluluğu, SQL Server
+   erişim sorunları veya bulut hizmeti kesintileri gibi nedenlerle
+   yedekleme başarısız olabilir.
+
+2. VERİ KAYBI RİSKİ
+   Geliştirici, herhangi bir veri kaybından, yedekleme hatasından veya
+   geri yükleme (restore) başarısızlığından sorumlu tutulamaz.
+   Kullanıcı, kritik verileri için ek yedekleme stratejileri
+   uygulamakla yükümlüdür.
+
+3. DÜZENLE KONTROL EDİN
+   Otomatik yedekleme planlarınızın doğru çalıştığından emin olmak
+   için uygulama loglarını düzenli olarak kontrol etmeniz şiddetle
+   tavsiye edilir. Yedekleme dosyalarının bütünlüğünü periyodik
+   olarak test edin.
+
+4. BULUT DEPOLAMA
+   Bulut sağlayıcılarına (Google Drive vb.) yüklenen verilerinizin
+   güvenliği ve gizliliği, ilgili bulut sağlayıcısının hizmet
+   koşullarına tabidir. Geliştirici, bulut sağlayıcısından kaynaklanan
+   sorunlardan sorumlu değildir.
+
+5. SİSTEM GEREKSİNİMLERİ
+   - Windows 10 veya üzeri (64-bit)
+   - .NET 10 Desktop Runtime
+   - SQL Server 2016 veya üzeri
+   - Yedekleme için yeterli disk alanı
+   - Bulut senkronizasyon için internet bağlantısı
+
+6. YÖNETİCİ YETKİSİ
+   Windows Service bileşeni, sistem düzeyinde çalışır ve kurulumu
+   yönetici (Administrator) yetkisi gerektirir. Service, LocalSystem
+   hesabı altında çalışarak VSS (Volume Shadow Copy) erişimi sağlar.
+
+7. GÜNCELLEME BİLDİRİMİ
+   Yazılım güncellemeleri, mevcut ayarlarınızı ve planlarınızı
+   koruyacak şekilde tasarlanmıştır. Ancak büyük sürüm
+   güncellemelerinde yapılandırma değişiklikleri gerekebilir.
+
+
+KABUL
+-----
+"İleri" düğmesine tıklayarak yukarıdaki uyarıları okuduğunuzu,
+anladığınızı ve kabul ettiğinizi beyan edersiniz. Veri güvenliği
+ve yedekleme doğrulaması konusundaki nihai sorumluluk Kullanıcı'ya
+aittir.

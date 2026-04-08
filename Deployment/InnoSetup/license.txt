@@ -1,0 +1,77 @@
+KORU MSSQL YEDEK — LİSANS SÖZLEŞMESİ
+======================================
+
+Bu yazılım MIT Lisansı altında dağıtılmaktadır.
+
+
+MIT LİSANSI (MIT LICENSE)
+--------------------------
+
+Copyright (c) 2025 Zafer Bilgisayar
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+EK KOŞULLAR VE UYARILAR
+========================
+
+Aşağıdaki ek koşullar MIT Lisansı'nın genel çerçevesini değiştirmez;
+yalnızca yazılımın kullanım bağlamına özel açıklamalar içerir.
+
+
+1. VERİ SORUMLULUĞU
+--------------------
+Yazılım, SQL Server veritabanlarını yedeklemek ve bulut depolama
+hizmetlerine senkronize etmek amacıyla kullanılmaktadır.
+
+  a) Yedekleme verilerinin bütünlüğü, güvenliği ve gizliliği
+     Kullanıcı'nın sorumluluğundadır.
+  b) Bulut depolama hizmetlerine yüklenen verilerin güvenliği, ilgili
+     bulut sağlayıcısının politikalarına tabidir.
+  c) Geliştirici, yedekleme hatalarından, veri kaybından veya yetkisiz
+     erişimden sorumlu tutulamaz.
+  d) Kullanıcı, düzenli olarak yedekleme loglarını kontrol etmekle ve
+     yedeklerin doğruluğunu test etmekle yükümlüdür.
+
+
+2. ÜÇÜNCÜ TARAF BİLEŞENLER
+----------------------------
+Yazılım, açık kaynak üçüncü taraf kütüphaneler içerebilir. Bu
+kütüphaneler kendi lisans koşullarına tabidir. Üçüncü taraf
+lisansları hakkında bilgi için yazılımın GitHub deposunu ziyaret edin:
+https://github.com/hzkucuk/KoruMsSqlYedek
+
+
+3. GARANTİ REDDİ (TÜRKÇE AÇIKLAMA)
+------------------------------------
+YAZILIM "OLDUĞU GİBİ" ("AS IS") SUNULMAKTADIR. GELİŞTİRİCİ, YAZILIMIN
+BELİRLİ BİR AMACA UYGUNLUĞU, KESİNTİSİZ ÇALIŞACAĞI, HATASIZ OLDUĞU
+VEYA TÜM SİSTEMLERLE UYUMLU OLACAĞI KONUSUNDA HİÇBİR AÇIK YA DA ZIMNİ
+GARANTİ VERMEZ.
+
+GELİŞTİRİCİ, YAZILIMIN KULLANIMI VEYA KULLANILAMAZ HALE GELMESİ
+NEDENİYLE ORTAYA ÇIKABİLECEK HİÇBİR DOĞRUDAN, DOLAYLI, ARIZİ, ÖZEL
+VEYA CEZAİ ZARARDAN (VERİ KAYBI, İŞ KAYBI, KÂR KAYBI DAHİL ANCAK
+BUNLARLA SINIRLI OLMAKSIZIN) SORUMLU TUTULAMAZ.
+
+
+Bu Sözleşme'yi kabul ederek yukarıdaki tüm koşulları okuduğunuzu,
+anladığınızı ve bunlara uymayı taahhüt ettiğinizi beyan edersiniz.
+
+© 2025 Zafer Bilgisayar — MIT Lisansı
