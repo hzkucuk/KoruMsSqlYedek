@@ -1,4 +1,9 @@
-﻿## [0.99.15] - 2025-07-14 — Kurulum Lisans Sözleşmesi & Sorumluluk Reddi
+﻿## [0.99.16] - 2025-07-14 — MIT Lisansı Entegrasyonu
+
+### İyileştirme
+- **MIT Lisansı eklendi** — Repo köküne standart `LICENSE` dosyası oluşturuldu. Kurulum lisans sözleşmesi MIT Lisansı metni temel alınarak yeniden yazıldı; veri sorumluluğu, üçüncü taraf bileşenler ve garanti reddi Türkçe ek koşullar olarak eklendi.
+
+## [0.99.15] - 2025-07-14 — Kurulum Lisans Sözleşmesi & Sorumluluk Reddi
 
 ### İyileştirme
 - **Lisans sözleşmesi sayfası eklendi** — Kurulum sırasında kullanıcıdan Son Kullanıcı Lisans Sözleşmesi'ni (EULA) kabul etmesi istenir. Kabul etmeden kuruluma devam edilemez.
