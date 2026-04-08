@@ -208,26 +208,20 @@ begin
   end;
 end;
 
-// Wizard açıldığında memo kontrollerini dark tema ile uyumlu yap
+// Wizard açıldığında memo kontrollerini okunabilir yap (standart beyaz tema)
 procedure InitializeWizard();
-var
-  DarkBg: TColor;
-  LightFg: TColor;
 begin
-  DarkBg := $2D2D2D;   // Koyu gri arka plan (#2D2D2D)
-  LightFg := $E0E0E0;  // Açık gri yazı (#E0E0E0)
-
   // Lisans sayfası memo
-  WizardForm.LicenseMemo.Color := DarkBg;
-  WizardForm.LicenseMemo.Font.Color := LightFg;
+  WizardForm.LicenseMemo.Color := clWhite;
+  WizardForm.LicenseMemo.Font.Color := clBlack;
 
   // Kurulum öncesi bilgi sayfası memo (disclaimer)
-  WizardForm.InfoBeforeMemo.Color := DarkBg;
-  WizardForm.InfoBeforeMemo.Font.Color := LightFg;
+  WizardForm.InfoBeforeMemo.Color := clWhite;
+  WizardForm.InfoBeforeMemo.Font.Color := clBlack;
 
   // Kurulum sonrası bilgi sayfası memo (setup_readme)
-  WizardForm.InfoAfterMemo.Color := DarkBg;
-  WizardForm.InfoAfterMemo.Font.Color := LightFg;
+  WizardForm.InfoAfterMemo.Color := clWhite;
+  WizardForm.InfoAfterMemo.Font.Color := clBlack;
 end;
 
 // Kaldırma öncesi tray uygulamasını kapat
