@@ -436,6 +436,229 @@ namespace KoruMsSqlYedek.Tests
             File.Exists(old).Should().BeFalse("30 gün önceki arşiv silinmeli");
         }
 
+        // ═══ RetentionScheme (per-type) testleri ═══
+
+        [TestMethod]
+        public async Task CleanupAsync_RetentionScheme_FullAndDiffKeptSeparately()
+        {
+            // Arrange — 5 Full + 5 Diff dosyası; scheme: Full×2, Diff×3
+            for (int i = 0; i < 5; i++)
+            {
+                string full = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
+                File.SetCreationTime(full, DateTime.Now.AddDays(-10 + i));
+
+                string diff = CreateBackupFile($"TestDB_Differential_2025010{i + 1}_020000.bak");
+                File.SetCreationTime(diff, DateTime.Now.AddDays(-10 + i));
+            }
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                RetentionScheme = new RetentionScheme
+                {
+                    Template = RetentionTemplateType.Custom,
+                    SqlFull = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 2 },
+                    SqlDifferential = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 3 },
+                    SqlLog = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 5 },
+                    FileBackup = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 5 }
+                }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert — Full'dan 2, Diff'den 3 kalmalı (birbirini etkilemez)
+            Directory.GetFiles(_testDir, "TestDB_Full_*.bak").Should().HaveCount(2);
+            Directory.GetFiles(_testDir, "TestDB_Differential_*.bak").Should().HaveCount(3);
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_RetentionScheme_LogFilesIndependent()
+        {
+            // Arrange — 10 Log dosyası; scheme: Log×4
+            for (int i = 0; i < 10; i++)
+            {
+                string log = CreateBackupFile($"TestDB_Log_20250101_0{i:D2}0000.bak");
+                File.SetCreationTime(log, DateTime.Now.AddHours(-10 + i));
+            }
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                RetentionScheme = new RetentionScheme
+                {
+                    Template = RetentionTemplateType.Custom,
+                    SqlFull = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 99 },
+                    SqlDifferential = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 99 },
+                    SqlLog = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 4 },
+                    FileBackup = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 99 }
+                }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert — sadece Log'lardan 4 kalmalı
+            Directory.GetFiles(_testDir, "TestDB_Log_*.bak").Should().HaveCount(4);
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_RetentionScheme_FileBackupUsesCorrectPolicy()
+        {
+            // Arrange — 6 Files arşivi; scheme: FileBackup×2
+            for (int i = 0; i < 6; i++)
+            {
+                string archive = CreateBackupFile($"Files_2025010{i + 1}_020000.7z");
+                File.SetCreationTime(archive, DateTime.Now.AddDays(-6 + i));
+            }
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                FileBackup = new FileBackupConfig { IsEnabled = true },
+                RetentionScheme = new RetentionScheme
+                {
+                    Template = RetentionTemplateType.Custom,
+                    SqlFull = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 99 },
+                    SqlDifferential = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 99 },
+                    SqlLog = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 99 },
+                    FileBackup = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 2 }
+                }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert
+            Directory.GetFiles(_testDir, "Files_*.7z").Should().HaveCount(2);
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_StandardTemplate_AppliesToAllTypes()
+        {
+            // Arrange — Standard şablon baz alınıp limitler küçültülür
+            var scheme = RetentionTemplates.Standard;
+            scheme.SqlFull.KeepLastN = 2;
+            scheme.SqlDifferential.KeepLastN = 3;
+            scheme.SqlLog.KeepLastN = 4;
+            scheme.FileBackup.KeepLastN = 2;
+
+            for (int i = 0; i < 5; i++)
+            {
+                var full = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
+                File.SetCreationTime(full, DateTime.Now.AddDays(-5 + i));
+
+                var diff = CreateBackupFile($"TestDB_Differential_2025010{i + 1}_020000.bak");
+                File.SetCreationTime(diff, DateTime.Now.AddDays(-5 + i));
+
+                var log = CreateBackupFile($"TestDB_Log_2025010{i + 1}_020000.bak");
+                File.SetCreationTime(log, DateTime.Now.AddDays(-5 + i));
+
+                var files = CreateBackupFile($"Files_2025010{i + 1}_020000.7z");
+                File.SetCreationTime(files, DateTime.Now.AddDays(-5 + i));
+            }
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                FileBackup = new FileBackupConfig { IsEnabled = true },
+                RetentionScheme = scheme
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert — her tip kendi limitine göre temizlenmeli
+            Directory.GetFiles(_testDir, "TestDB_Full_*.bak").Should().HaveCount(2);
+            Directory.GetFiles(_testDir, "TestDB_Differential_*.bak").Should().HaveCount(3);
+            Directory.GetFiles(_testDir, "TestDB_Log_*.bak").Should().HaveCount(4);
+            Directory.GetFiles(_testDir, "Files_*.7z").Should().HaveCount(2);
+        }
+
+        [TestMethod]
+        public async Task CleanupAsync_NullRetentionScheme_FallsBackToRetention()
+        {
+            // Arrange — scheme null, eski Retention alanı fallback yapmalı
+            for (int i = 0; i < 5; i++)
+            {
+                string full = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
+                File.SetCreationTime(full, DateTime.Now.AddDays(-5 + i));
+            }
+
+            var plan = new BackupPlan
+            {
+                Databases = { "TestDB" },
+                LocalPath = _testDir,
+                RetentionScheme = null,
+                Retention = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 3 }
+            };
+
+            // Act
+            await _service.CleanupAsync(plan, CancellationToken.None);
+
+            // Assert — eski Retention fallback ile 3 dosya kalmalı
+            Directory.GetFiles(_testDir, "TestDB_Full_*.bak").Should().HaveCount(3);
+        }
+
+        [TestMethod]
+        public void RetentionTemplates_Minimal_HasCorrectValues()
+        {
+            var scheme = RetentionTemplates.Minimal;
+
+            scheme.Template.Should().Be(RetentionTemplateType.Minimal);
+            scheme.SqlFull.KeepLastN.Should().Be(3);
+            scheme.SqlDifferential.KeepLastN.Should().Be(7);
+            scheme.SqlLog.KeepLastN.Should().Be(14);
+            scheme.FileBackup.KeepLastN.Should().Be(5);
+        }
+
+        [TestMethod]
+        public void RetentionTemplates_FromType_ReturnsCorrectScheme()
+        {
+            RetentionTemplates.FromType(RetentionTemplateType.Minimal).Template.Should().Be(RetentionTemplateType.Minimal);
+            RetentionTemplates.FromType(RetentionTemplateType.Standard).Template.Should().Be(RetentionTemplateType.Standard);
+            RetentionTemplates.FromType(RetentionTemplateType.Extended).Template.Should().Be(RetentionTemplateType.Extended);
+            RetentionTemplates.FromType(RetentionTemplateType.GFS).Template.Should().Be(RetentionTemplateType.GFS);
+        }
+
+        [TestMethod]
+        public void BackupPlan_GetEffectiveRetention_UsesSchemeWhenPresent()
+        {
+            var plan = new BackupPlan
+            {
+                Retention = new RetentionPolicy { KeepLastN = 99 },
+                RetentionScheme = new RetentionScheme
+                {
+                    SqlFull = new RetentionPolicy { KeepLastN = 7 },
+                    SqlDifferential = new RetentionPolicy { KeepLastN = 14 },
+                    SqlLog = new RetentionPolicy { KeepLastN = 30 },
+                    FileBackup = new RetentionPolicy { KeepLastN = 5 }
+                }
+            };
+
+            plan.GetEffectiveRetention(BackupFileType.SqlFull).KeepLastN.Should().Be(7);
+            plan.GetEffectiveRetention(BackupFileType.SqlDifferential).KeepLastN.Should().Be(14);
+            plan.GetEffectiveRetention(BackupFileType.SqlLog).KeepLastN.Should().Be(30);
+            plan.GetEffectiveRetention(BackupFileType.FileBackup).KeepLastN.Should().Be(5);
+        }
+
+        [TestMethod]
+        public void BackupPlan_GetEffectiveRetention_FallsBackWhenSchemeNull()
+        {
+            var plan = new BackupPlan
+            {
+                Retention = new RetentionPolicy { KeepLastN = 42 },
+                RetentionScheme = null
+            };
+
+            plan.GetEffectiveRetention(BackupFileType.SqlFull).KeepLastN.Should().Be(42);
+            plan.GetEffectiveRetention(BackupFileType.FileBackup).KeepLastN.Should().Be(42);
+        }
+
         private string CreateBackupFile(string fileName)
         {
             string filePath = Path.Combine(_testDir, fileName);

@@ -1,11 +1,12 @@
 ﻿# KoruMsSqlYedek — Release Build & Package Script
-# Kullanım: .\Deployment\Build-Release.ps1 [-Configuration Release] [-SkipTests] [-GitRelease]
-# Çıktı: releases\KoruMsSqlYedek_vX.Y.Z.zip + KoruMsSqlYedek_vX.Y.Z_Setup.exe
+# Kullanım: .\Deployment\Build-Release.ps1 [-Configuration Release] [-RunTests] [-GitRelease]
+# Çıktı: releases\KoruMsSqlYedek_vX.Y.Z_Setup.exe
+# -RunTests  : testleri çalıştır (varsayılan: atla)
 # -GitRelease: build sonrası develop commit, master merge, tag, push (GitHub Actions tetiklenir)
 
 param(
     [string]$Configuration = "Release",
-    [switch]$SkipTests,
+    [switch]$RunTests,
     [switch]$GitRelease
 )
 
@@ -51,27 +52,27 @@ try {
     Write-Host "========================================" -ForegroundColor Cyan
 
     # --- 1. NuGet Restore ---
-    Write-Host "`n[1/7] NuGet paketleri geri yukleniyor..." -ForegroundColor Yellow
+    Write-Host "`n[1/6] NuGet paketleri geri yukleniyor..." -ForegroundColor Yellow
     dotnet restore KoruMsSqlYedek.slnx --verbosity minimal
     if ($LASTEXITCODE -ne 0) { Write-Error "NuGet restore basarisiz."; exit 1 }
 
     # --- 2. Build ---
-    Write-Host "`n[2/7] Cozum derleniyor ($Configuration)..." -ForegroundColor Yellow
+    Write-Host "`n[2/6] Cozum derleniyor ($Configuration)..." -ForegroundColor Yellow
     dotnet build KoruMsSqlYedek.slnx -c $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { Write-Error "Build basarisiz."; exit 1 }
 
     # --- 3. Test ---
-    if (-not $SkipTests) {
-        Write-Host "`n[3/7] Testler calistiriliyor..." -ForegroundColor Yellow
+    if ($RunTests) {
+        Write-Host "`n[3/6] Testler calistiriliyor..." -ForegroundColor Yellow
         dotnet test KoruMsSqlYedek.slnx -c $Configuration --no-build --verbosity minimal
         if ($LASTEXITCODE -ne 0) { Write-Error "Testler basarisiz."; exit 1 }
     }
     else {
-        Write-Host "`n[3/7] Testler atlandi (-SkipTests)." -ForegroundColor DarkGray
+        Write-Host "`n[3/6] Testler atlandi (calistirmak icin -RunTests kullanin)." -ForegroundColor DarkGray
     }
 
     # --- 4. Publish ---
-    Write-Host "`n[4/7] Projeler publish ediliyor..." -ForegroundColor Yellow
+    Write-Host "`n[4/6] Projeler publish ediliyor..." -ForegroundColor Yellow
 
     $publishBase = Join-Path $rootDir "publish"
     $winPublish = Join-Path $publishBase "Win"
@@ -89,7 +90,7 @@ try {
     if ($LASTEXITCODE -ne 0) { Write-Error "Service publish basarisiz."; exit 1 }
 
     # --- 5. 7z.dll kopyalama (SevenZipSharp icin gerekli) ---
-    Write-Host "`n[5/7] 7z.dll dosyalari kontrol ediliyor..." -ForegroundColor Yellow
+    Write-Host "`n[5/6] 7z.dll dosyalari kontrol ediliyor..." -ForegroundColor Yellow
 
     # NuGet paketinden 7z.dll bul
     $sevenZipPkgDir = Get-ChildItem -Path (Join-Path $env:USERPROFILE ".nuget\packages\squid-box.sevenzipsharp") -Directory | Sort-Object Name -Descending | Select-Object -First 1
@@ -111,45 +112,11 @@ try {
     Write-Host "  NOT: 7z.dll dosyalarini x64/ ve x86/ klasorlerine manuel olarak ekleyin." -ForegroundColor DarkYellow
     Write-Host "  Kaynak: https://www.7-zip.org/download.html (7z Extra)" -ForegroundColor DarkGray
 
-    # --- 6. ZIP Arsiv ---
-    Write-Host "`n[6/7] ZIP arsivi olusturuluyor..." -ForegroundColor Yellow
-
     $releasesDir = Join-Path $rootDir "releases"
     if (-not (Test-Path $releasesDir)) { New-Item -Path $releasesDir -ItemType Directory -Force | Out-Null }
 
-    $zipName = "KoruMsSqlYedek_v$version.zip"
-    $zipPath = Join-Path $releasesDir $zipName
-
-    if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-
-    # Stage dizini olustur
-    $stageDir = Join-Path $publishBase "stage"
-    $stageWin = Join-Path $stageDir "KoruMsSqlYedek"
-    $stageService = Join-Path $stageDir "KoruMsSqlYedek\Service"
-
-    if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
-    New-Item -Path $stageWin -ItemType Directory -Force | Out-Null
-    New-Item -Path $stageService -ItemType Directory -Force | Out-Null
-
-    # Dosyalari kopyala
-    Copy-Item -Path "$winPublish\*" -Destination $stageWin -Recurse -Force
-    Copy-Item -Path "$servicePublish\*" -Destination $stageService -Recurse -Force
-
-    # Helper scriptleri kopyala
-    $scriptsDir = Join-Path $rootDir "Deployment"
-    if (Test-Path "$scriptsDir\install-service.cmd") {
-        Copy-Item "$scriptsDir\install-service.cmd" -Destination $stageService -Force
-    }
-    if (Test-Path "$scriptsDir\uninstall-service.cmd") {
-        Copy-Item "$scriptsDir\uninstall-service.cmd" -Destination $stageService -Force
-    }
-
-    # ZIP olustur
-    Compress-Archive -Path "$stageDir\KoruMsSqlYedek" -DestinationPath $zipPath -CompressionLevel Optimal
-    $zipSize = (Get-Item $zipPath).Length / 1MB
-
-    # --- 7. Inno Setup Installer (opsiyonel — ISCC.exe PATH'de olmalı) ---
-    Write-Host "`n[7/7] Inno Setup installer derleniyor (opsiyonel)..." -ForegroundColor Yellow
+    # --- 6. Inno Setup Installer ---
+    Write-Host "`n[6/6] Inno Setup installer derleniyor..." -ForegroundColor Yellow
     $issPath = Join-Path $rootDir "Deployment\InnoSetup\KoruMsSqlYedek.iss"
     $isccCmd = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
     $isccExe = if ($isccCmd) { $isccCmd.Source } else { $null }
@@ -178,8 +145,6 @@ try {
     Write-Host "========================================" -ForegroundColor Green
     Write-Host " Build basarili!" -ForegroundColor Green
     Write-Host " Versiyon: $version" -ForegroundColor Green
-    Write-Host " ZIP: $zipPath" -ForegroundColor Green
-    Write-Host " Boyut: $([math]::Round($zipSize, 1)) MB" -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Green
 
     # Temizlik

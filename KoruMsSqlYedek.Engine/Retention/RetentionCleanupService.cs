@@ -27,7 +27,7 @@ namespace KoruMsSqlYedek.Engine.Retention
 
         public async Task CleanupAsync(BackupPlan plan, CancellationToken cancellationToken)
         {
-            if (plan?.Retention == null || string.IsNullOrEmpty(plan.LocalPath))
+            if (plan == null || string.IsNullOrEmpty(plan.LocalPath))
                 return;
 
             Log.Information("Retention temizliği başlıyor: Plan={PlanName}, BulutHedef={HasCloud}",
@@ -45,14 +45,23 @@ namespace KoruMsSqlYedek.Engine.Retention
                 foreach (string dbName in plan.Databases)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    CleanupForDatabase(plan.LocalPath, dbName, plan.Retention, cloudProtectedFiles);
+
+                    CleanupForDatabaseByType(plan.LocalPath, dbName, BackupFileType.SqlFull,
+                        plan.GetEffectiveRetention(BackupFileType.SqlFull), cloudProtectedFiles);
+
+                    CleanupForDatabaseByType(plan.LocalPath, dbName, BackupFileType.SqlDifferential,
+                        plan.GetEffectiveRetention(BackupFileType.SqlDifferential), cloudProtectedFiles);
+
+                    CleanupForDatabaseByType(plan.LocalPath, dbName, BackupFileType.SqlLog,
+                        plan.GetEffectiveRetention(BackupFileType.SqlLog), cloudProtectedFiles);
                 }
 
                 // Dosya yedekleme arşivlerini de temizle (Files_*.7z)
                 if (plan.FileBackup?.IsEnabled == true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    CleanupFileBackupArchives(plan.LocalPath, plan.Retention, cloudProtectedFiles);
+                    CleanupFileBackupArchives(plan.LocalPath,
+                        plan.GetEffectiveRetention(BackupFileType.FileBackup), cloudProtectedFiles);
                 }
             }, cancellationToken);
         }
@@ -103,19 +112,29 @@ namespace KoruMsSqlYedek.Engine.Retention
             return protectedFiles;
         }
 
-        private void CleanupForDatabase(
+        private void CleanupForDatabaseByType(
             string localPath,
             string databaseName,
+            BackupFileType fileType,
             RetentionPolicy retention,
             HashSet<string> cloudProtectedFiles)
         {
-            if (!Directory.Exists(localPath))
+            if (retention == null || !Directory.Exists(localPath))
                 return;
 
-            // .bak ve .7z dosyalarını topla
+            // Dosya adındaki tipe göre filtre — her tip kendi havuzunda sayılır
+            string typeFilter = fileType switch
+            {
+                BackupFileType.SqlDifferential => "_Differential_",
+                BackupFileType.SqlLog => "_Log_",
+                _ => "_Full_"
+            };
+
+            // .bak ve .7z dosyalarını topla, sadece ilgili tip
             var allFiles = Directory.GetFiles(localPath, $"{databaseName}_*.*")
-                .Where(f => f.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
-                            f.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
+                .Where(f => (f.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
+                             f.EndsWith(".7z", StringComparison.OrdinalIgnoreCase)) &&
+                            Path.GetFileName(f).Contains(typeFilter, StringComparison.OrdinalIgnoreCase))
                 .Select(f => new FileInfo(f))
                 .OrderByDescending(f => f.CreationTime)
                 .ToList();
@@ -163,8 +182,8 @@ namespace KoruMsSqlYedek.Engine.Retention
             if (deletedCount > 0 || skippedCount > 0)
             {
                 Log.Information(
-                    "Retention tamamlandı: {Database} — {Deleted} silindi, {Skipped} korundu (bulut bekliyor)",
-                    databaseName, deletedCount, skippedCount);
+                    "Retention tamamlandı: {Database}/{FileType} — {Deleted} silindi, {Skipped} korundu (bulut bekliyor)",
+                    databaseName, fileType, deletedCount, skippedCount);
             }
         }
 
@@ -259,7 +278,7 @@ namespace KoruMsSqlYedek.Engine.Retention
             RetentionPolicy retention,
             HashSet<string> cloudProtectedFiles)
         {
-            if (!Directory.Exists(localPath))
+            if (retention == null || !Directory.Exists(localPath))
                 return;
 
             var allFiles = Directory.GetFiles(localPath, "Files_*.7z")

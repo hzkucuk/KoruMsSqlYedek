@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
@@ -37,7 +38,7 @@ namespace KoruMsSqlYedek.Win.Forms
             : this(appSettings, settingsManager, null) { }
 
         /// <summary>Mevcut bulut hedefi düzenleme. null ise yeni hedef.</summary>
-        public CloudTargetEditDialog(AppSettings appSettings, IAppSettingsManager settingsManager, CloudTargetConfig existing)
+        public CloudTargetEditDialog(AppSettings appSettings, IAppSettingsManager settingsManager, CloudTargetConfig? existing)
         {
             ArgumentNullException.ThrowIfNull(appSettings);
             ArgumentNullException.ThrowIfNull(settingsManager);

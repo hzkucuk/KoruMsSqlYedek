@@ -1,4 +1,67 @@
-﻿## [0.99.4] - 2026-04-08 — Güncelleme Kontrol Düzeltmesi
+﻿## [0.99.12] - 2026-04-09 — OLV Seçili Satır Metin Hayaleti Düzeltmesi
+
+### Düzeltme
+- **ObjectListView seçili satırda metin çakışması (ghost-text)** — `SelectedBackColor` yarı-saydam (alpha=60) renk kullanıyordu; OwnerDraw modunda GDI+ eski metni tam kapatamıyordu. `GridSelectionBack` ve `GridSelectionBackUnfocused` opak renkler ModernTheme’a eklendi (Dark: `27,66,58` / `28,54,51`, Light: `218,242,232` / `230,245,238`). Seçim artık temiz render ediliyor.
+
+## [0.99.11] - 2026-04-09 — Tüm Bildirimler ModernToast
+
+### İyileştirme
+- **Tüm ShowBalloonTip çağrıları ModernToast’a dönüştürüldü** — Servis bağlantı/kopma, yedekleme başlatma/tamamlanma/hata/iptal, güncelleme kontrolü, indirme, servis başlat/durdur/yeniden başlat ve hata bildirimleri dahil tüm 14 `ShowBalloonTip` çağrısı modern `ModernToast` bileşenine taşındı. Uygulama genelinde tutarlı, şık ve dark-mode uyumlu bildirim deneyimi sağlandı.
+
+## [0.99.10] - 2026-04-09 — ObjectListView Metin Taşması Düzeltmesi
+
+### Düzeltme
+- **Dashboard grid’de hücre metni yan kolonlara taşıyordu** — ObjectListView varsayılan native ListView rendering modunda (`OwnerDraw=false`) hücre metni kolon sınırlarına clip edilmiyordu. `OwnerDraw = true` ayarlanarak OLV’nin GDI+ renderer’ı etkinleştirildi; metin artık hücre sınırları içinde kalıyor.
+
+## [0.99.9] - 2026-04-09 — Nullable Uyarı Temizliği & Yeşil Tray İkon
+
+### Düzeltme
+- **Balloon tip ikonu yeşil** — Servis bağlantı bildiriminde `ToolTipIcon.None` kullanılarak balloon tip, tray ikonunun yeşil onay işaretini gösterir.
+- **Tüm CS8632/CS8618/CS8622/CS8625/CS8602 nullable uyarıları giderildi** — 10 dosyaya `#nullable enable` eklendi; alan bildirimleri nullable yapıldı (`MainWindow?`, `Icon[]?`, `UpdateInfo?`, `ToolStripMenuItem?`); event handler `sender` parametreleri `object?` olarak güncellendi; `Screen.PrimaryScreen` null kontrolü eklendi; dialog constructor parametreleri nullable yapıldı.
+
+## [0.99.8] - 2026-04-09 — Bağlantı Bildirimi ShowBalloonTip
+
+### Düzeltme
+- **Servis bağlantı bildirimi ModernToast → ShowBalloonTip** — ModernToast tray-only modda 4 denemeye rağmen render edilemiyordu. Bağlantı bildirimi, uygulamanın geri kalanında sorunsuz çalışan `NotifyIcon.ShowBalloonTip` ile değiştirildi. Standart Windows balloon tip ile güvenilir bildirim sağlandı.
+
+## [0.99.7] - 2026-04-09 — ModernToast Render Düzeltmesi
+
+### Düzeltme
+- **ModernToast tray-only modda görünmüyor (kök neden çift)** —
+  1. `TransparencyKey = Color.Magenta` + `Opacity` birleşimi (`LWA_COLORKEY | LWA_ALPHA`) tray-only modda layered window render başarısız oluyordu. `TransparencyKey` kaldırıldı, yuvarlak köşeler `Region` + `GraphicsPath` ile sağlandı.
+  2. `OnShown` override'ı `BeginInvoke` ile asenkron tetiklendiğinden tray-only modda hiç fire etmiyordu → `_fadeTimer` başlamıyordu → form `Opacity=0.01`'de sonsuza dek takılıyordu. Fade-in tamamen kaldırıldı, form `Opacity=1` ile direkt gösterilir; `_closeTimer` `Show()` factory'sinden başlatılır, `OnShown` bağımlılığı sıfırlandı. Sadece fade-out (kapanırken) animasyonu korundu.
+  3. `DoubleBuffer` → `OptimizedDoubleBuffer` olarak güncellendi.
+
+## [0.99.6] - 2026-04-09 — UI Thread Marshal Crash + Toast Düzeltmesi
+
+### Düzeltme
+- **Uygulama açılmıyor (crash) — SynchronizationContext referans karşılaştırma hatası** — v0.99.5'te eklenen `_syncContext != SynchronizationContext.Current` kontrolü `WindowsFormsSynchronizationContext` referans eşitliği garanti etmediğinden UI thread'de bile `true` dönüyor ve sonsuz `Post` döngüsü oluşturuyordu. Düzeltme: `_uiThreadId` (ManagedThreadId) yakalanarak `Thread.CurrentThread.ManagedThreadId != _uiThreadId` kontrolüne geçildi.
+- **Toast bildirimi hâlâ gösterilmiyor — SynchronizationContext install edilmemişti** — Constructor `Application.Run()` öncesinde çalıştığından `SynchronizationContext.Current` null'dı; `new WindowsFormsSynchronizationContext()` oluşturulup field'a atanıyor ama install edilmiyordu. `Application.Run` kendi context'ini kurduğunda eski `_syncContext.Post()` callback'leri düzgün iletilemiyordu. Düzeltme: Context oluşturulup `SetSynchronizationContext()` ile install edildi; böylece `Application.Run` tekrar oluşturmuyor.
+- **ModernToast tray-only modda görünmüyor** — `Opacity=0` ile başlayan form, `ShowWithoutActivation` override'ı ve `WS_EX_NOACTIVATE` stili olmadığından tray app bağlamında (owner form yok) pencere yöneticisi tarafından düzgün gösterilmiyordu. `ShowWithoutActivation => true`, `CreateParams` override (`WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE`) ve `Opacity = 0.01` düzeltmesi uygulandı.
+
+## [0.99.5] - 2026-04-09 — Per-Type Retention Şablonları + IPC Eş Zamanlılık Düzeltmesi
+
+### Düzeltme
+- **`ServicePipeClient.SendAsync` eş zamanlı yazma hatası** — Plan kaydedilince tetiklenen `RequestStatusAsync()` ile `ConnectLoopAsync` içindeki eş zamanlı `WriteLineAsync` çağrıları `InvalidOperationException: The stream is currently in use by a previous operation on the stream` üretiyordu. `SemaphoreSlim _writeLock(1,1)` kilidi eklendi; tüm yazma işlemleri `WaitAsync → try/finally → Release` kalıbıyla serialze edildi.
+- **Toast bildirimi UI thread marshal hatası** — `OnPipeConnectionChanged` ve `OnBackupActivityChanged` handler'ları `Application.OpenForms[0].BeginInvoke` ile UI thread'e marshal ediyordu; ancak tray uygulamasında açık form olmadığında (`OpenForms.Count == 0`) marshal atlanıyor, `ModernToast` arka plan thread'inde oluşuyor ve `_fadeTimer` tick etmediği için toast görünmüyordu. `SynchronizationContext` yakalaması eklenerek her durumda UI thread'e doğru marshal sağlandı.
+
+### Yeni Özellik
+- **`RetentionScheme` (per-type retention)** — SQL Full, Diff, Log ve dosya arşivi (Files_*.7z) için artık ayrı bağımsız retention politikaları tanımlanabiliyor.
+- **Hazır şablonlar** — `RetentionTemplates` factory: Minimal, Standard, Extended, GFS şablonları. Her şablon dosya tipine göre optimize edilmiş KeepLastN değerleri içeriyor.
+- **`BackupPlan.GetEffectiveRetention(BackupFileType)`** — Dosya tipine göre etkin politikayı döndürür; `RetentionScheme` yoksa eski `Retention` alanına fallback yaparak geriye uyumluluğu korur.
+- **`RetentionCleanupService` refactor** — `CleanupForDatabaseByType` ile her tip kendi havuzunda sayılıyor; Full dosyaları silinirken Log dosya sayısı hesaba katılmıyor.
+- **PlanEditForm Şablon Seçici** — Adım 4'te Minimal / Standard ★ / Extended / GFS / Özel dropdown; seçime göre info etiketi ve custom panel görünürlüğü yönetiliyor.
+- **9 yeni test** — Per-type scheme, fallback, şablon factory testleri (32/32 geçti).
+
+### Teknik
+- `BackupFileType` enum eklendi: SqlFull / SqlDifferential / SqlLog / FileBackup
+- `RetentionTemplateType` enum eklendi: Custom / Minimal / Standard / Extended / GFS
+- `RetentionScheme` model `ConfigModels.cs`'e eklendi (JSON: `retentionScheme`)
+- `BackupPlan.RetentionScheme` alanı `NullValueHandling.Ignore` ile eklendi (yeni alan, eski planları kırmaz)
+
+---
+
+## [0.99.4] - 2026-04-08 — Güncelleme Kontrol Düzeltmesi
 
 ### Düzeltme
 - **`InstallerPrefix` hatası** — `UpdateChecker` GitHub asset'ini `"KoruMsSqlYedek_Setup_"` prefix'i ile arıyordu; ancak installer dosya adı `KoruMsSqlYedek_v{sürüm}_Setup.exe` formatında. Prefix `"KoruMsSqlYedek_v"` olarak düzeltildi. Bu hata yüzünden güncelleme her zaman "bulunamadı" olarak dönüyordu.

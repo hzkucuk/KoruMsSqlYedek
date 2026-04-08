@@ -47,6 +47,8 @@ namespace KoruMsSqlYedek.Win.Theme
         // Grid
         internal static Color GridAlternateRow = Color.FromArgb(24, 24, 28);
         internal static Color GridSelection = Color.FromArgb(16, 185, 129);
+        internal static Color GridSelectionBack = Color.FromArgb(27, 66, 58);
+        internal static Color GridSelectionBackUnfocused = Color.FromArgb(28, 54, 51);
         internal static Color GridHeaderBack = Color.FromArgb(36, 36, 42);
         internal static Color GridHeaderText = Color.FromArgb(160, 160, 170);
         internal static Color GridErrorRow = Color.FromArgb(58, 20, 20);
@@ -132,6 +134,8 @@ namespace KoruMsSqlYedek.Win.Theme
 
             GridAlternateRow = Color.FromArgb(24, 24, 28);
             GridSelection = Color.FromArgb(16, 185, 129);
+            GridSelectionBack = Color.FromArgb(27, 66, 58);
+            GridSelectionBackUnfocused = Color.FromArgb(28, 54, 51);
             GridHeaderBack = Color.FromArgb(36, 36, 42);
             GridHeaderText = Color.FromArgb(160, 160, 170);
             GridErrorRow = Color.FromArgb(58, 20, 20);
@@ -163,6 +167,8 @@ namespace KoruMsSqlYedek.Win.Theme
 
             GridAlternateRow = Color.FromArgb(248, 248, 250);
             GridSelection = Color.FromArgb(0, 140, 70);
+            GridSelectionBack = Color.FromArgb(218, 242, 232);
+            GridSelectionBackUnfocused = Color.FromArgb(230, 245, 238);
             GridHeaderBack = Color.FromArgb(240, 241, 244);
             GridHeaderText = Color.FromArgb(80, 80, 90);
             GridErrorRow = Color.FromArgb(255, 232, 232);

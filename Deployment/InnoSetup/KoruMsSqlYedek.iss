@@ -53,7 +53,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ; UI
 WizardStyle=modern
-SetupIconFile=compiler:SetupClassicIcon.ico
+SetupIconFile=KoruMsSqlYedek.ico
 ; Güncelleme sırasında mevcut verileri koru
 UsePreviousAppDir=yes
 ; Versiyon bilgisi

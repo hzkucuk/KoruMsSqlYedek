@@ -47,6 +47,14 @@ namespace KoruMsSqlYedek.Win.Forms
             _cmbRetention.Items.Add(Res.Get("PlanEdit_RetDeleteOlder"));
             _cmbRetention.Items.Add(Res.Get("PlanEdit_RetBoth"));
 
+            // Retention şablonları
+            _cmbRetentionTemplate.Items.Clear();
+            _cmbRetentionTemplate.Items.Add("Minimal  (Full×3, Diff×7, Log×14, Files×5)");
+            _cmbRetentionTemplate.Items.Add("Standard  (Full×7, Diff×14, Log×30, Files×14)  ★");
+            _cmbRetentionTemplate.Items.Add("Extended  (Full×14, Diff×30, Log×90, Files×30)");
+            _cmbRetentionTemplate.Items.Add("GFS  (Grandfather-Father-Son rotasyonu)");
+            _cmbRetentionTemplate.Items.Add("Özel  (elle ayarla)");
+
             // Rapor sıklığı
             _cmbReportFreq.Items.Clear();
             _cmbReportFreq.Items.Add("Günlük");
@@ -107,6 +115,18 @@ namespace KoruMsSqlYedek.Win.Forms
             _cmbAlgorithm.SelectedIndex = (int)(_plan.Compression?.Algorithm ?? CompressionAlgorithm.Lzma2);
             _cmbLevel.SelectedIndex = (int)(_plan.Compression?.Level ?? CompressionLevel.Ultra);
             _txtArchivePassword.Text = "";
+
+            // Retention şablonu yükle
+            if (_plan.RetentionScheme != null && _plan.RetentionScheme.Template != RetentionTemplateType.Custom)
+            {
+                // Şablon indeksi: Minimal=0, Standard=1, Extended=2, GFS=3
+                _cmbRetentionTemplate.SelectedIndex = (int)_plan.RetentionScheme.Template - 1;
+            }
+            else
+            {
+                // Özel mod (index=4)
+                _cmbRetentionTemplate.SelectedIndex = 4;
+            }
             _cmbRetention.SelectedIndex = (int)(_plan.Retention?.Type ?? RetentionPolicyType.KeepLastN);
             _nudKeepLastN.Value = _plan.Retention?.KeepLastN ?? 30;
             _nudDeleteDays.Value = _plan.Retention?.DeleteOlderThanDays ?? 90;
@@ -207,9 +227,26 @@ namespace KoruMsSqlYedek.Win.Forms
             {
                 _plan.Compression.ArchivePassword = PasswordProtector.Protect(_txtArchivePassword.Text);
             }
-            _plan.Retention.Type = (RetentionPolicyType)_cmbRetention.SelectedIndex;
-            _plan.Retention.KeepLastN = (int)_nudKeepLastN.Value;
-            _plan.Retention.DeleteOlderThanDays = (int)_nudDeleteDays.Value;
+
+            // Retention: şablon mu yoksa özel mi?
+            int templateIdx = _cmbRetentionTemplate.SelectedIndex;
+            if (templateIdx >= 0 && templateIdx < 4)
+            {
+                // Hazır şablon seçili — RetentionScheme oluştur
+                var templateType = (RetentionTemplateType)(templateIdx + 1); // Minimal=1..GFS=4
+                _plan.RetentionScheme = RetentionTemplates.FromType(templateType);
+                // Fallback Retention'ı da güncelle (eski servis/test uyumluluğu)
+                _plan.Retention.Type = RetentionPolicyType.KeepLastN;
+                _plan.Retention.KeepLastN = _plan.RetentionScheme.SqlFull.KeepLastN;
+            }
+            else
+            {
+                // Özel mod — eski tek-policy davranışı
+                _plan.RetentionScheme = null;
+                _plan.Retention.Type = (RetentionPolicyType)_cmbRetention.SelectedIndex;
+                _plan.Retention.KeepLastN = (int)_nudKeepLastN.Value;
+                _plan.Retention.DeleteOlderThanDays = (int)_nudDeleteDays.Value;
+            }
 
             // Plan şifresi
             if (!_chkProtectPlan.Checked)

@@ -96,6 +96,45 @@ namespace KoruMsSqlYedek.Core.Models
     }
 
     /// <summary>
+    /// Yedek dosyası tipi — retention şemasında hangi politikanın uygulanacağını belirler.
+    /// </summary>
+    public enum BackupFileType
+    {
+        /// <summary>SQL Server tam yedek (.bak + .7z çifti).</summary>
+        SqlFull = 0,
+
+        /// <summary>SQL Server fark yedek (.bak + .7z çifti).</summary>
+        SqlDifferential = 1,
+
+        /// <summary>SQL Server log/artırımlı yedek (.bak + .7z çifti).</summary>
+        SqlLog = 2,
+
+        /// <summary>Dosya/klasör yedekleme arşivi (Files_*.7z).</summary>
+        FileBackup = 3
+    }
+
+    /// <summary>
+    /// Hazır retention şablon türleri.
+    /// </summary>
+    public enum RetentionTemplateType
+    {
+        /// <summary>Kullanıcı tanımlı özel politika.</summary>
+        Custom = 0,
+
+        /// <summary>Az yer: Full×3, Diff×7, Log×14, Files×5.</summary>
+        Minimal = 1,
+
+        /// <summary>Dengeli: Full×7, Diff×14, Log×30, Files×14.</summary>
+        Standard = 2,
+
+        /// <summary>Kapsamlı: Full×14, Diff×30, Log×90, Files×30.</summary>
+        Extended = 3,
+
+        /// <summary>Grandfather-Father-Son rotasyonu — tüm tipler için.</summary>
+        GFS = 4
+    }
+
+    /// <summary>
     /// Yedekleme raporu gönderim sıklığı.
     /// </summary>
     public enum ReportFrequency

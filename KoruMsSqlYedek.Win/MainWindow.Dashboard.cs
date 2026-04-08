@@ -18,6 +18,10 @@ namespace KoruMsSqlYedek.Win
         /// </summary>
         private void SetupDashboardOlv()
         {
+            // OwnerDraw — OLV kendi GDI+ renderer'ıyla hücre metnini kolon
+            // sınırlarına clip eder; native ListView modunda metin taşması olabiliyor.
+            _olvLastBackups.OwnerDraw = true;
+
             // Tarih kolonu — AspectToStringConverter ile biçimli metin
             _olvColDate.AspectToStringConverter = obj =>
                 obj is DateTime dt ? dt.ToString("yyyy-MM-dd HH:mm") : "—";
@@ -101,9 +105,9 @@ namespace KoruMsSqlYedek.Win
             _olvLastBackups.HeaderFormatStyle.SetForeColor(Theme.ModernTheme.GridHeaderText);
             _olvLastBackups.HeaderFormatStyle.SetFont(Theme.ModernTheme.FontCaptionBold);
 
-            _olvLastBackups.SelectedBackColor = Color.FromArgb(60, Theme.ModernTheme.AccentPrimary);
+            _olvLastBackups.SelectedBackColor = Theme.ModernTheme.GridSelectionBack;
             _olvLastBackups.SelectedForeColor = Theme.ModernTheme.TextPrimary;
-            _olvLastBackups.UnfocusedSelectedBackColor = Color.FromArgb(40, Theme.ModernTheme.AccentPrimary);
+            _olvLastBackups.UnfocusedSelectedBackColor = Theme.ModernTheme.GridSelectionBackUnfocused;
             _olvLastBackups.UnfocusedSelectedForeColor = Theme.ModernTheme.TextPrimary;
 
             _olvLastBackups.UseExplorerTheme = false;

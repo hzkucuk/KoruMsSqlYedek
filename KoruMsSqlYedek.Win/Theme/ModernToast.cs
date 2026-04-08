@@ -1,7 +1,9 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using Serilog;
 
 namespace KoruMsSqlYedek.Win.Theme
 {
@@ -13,8 +15,7 @@ namespace KoruMsSqlYedek.Win.Theme
     {
         private readonly Timer _fadeTimer;
         private readonly Timer _closeTimer;
-        private float _opacity = 0f;
-        private bool _fadingIn = true;
+        private float _opacity = 1f;
         private readonly string _message;
         private readonly string _title;
         private readonly ToastType _toastType;
@@ -33,23 +34,27 @@ namespace KoruMsSqlYedek.Win.Theme
             TopMost = true;
             StartPosition = FormStartPosition.Manual;
             Size = new Size(ToastWidth, ToastHeight);
-            BackColor = Color.Magenta;
-            TransparencyKey = Color.Magenta;
-            Opacity = 0;
+            BackColor = ModernTheme.SurfaceColor;
 
             SetStyle(
                 ControlStyles.AllPaintingInWmPaint |
                 ControlStyles.UserPaint |
-                ControlStyles.DoubleBuffer,
+                ControlStyles.OptimizedDoubleBuffer,
                 true);
 
+            // Rounded corners via Region — TransparencyKey+Opacity combo,
+            // tray-only (ownerless) modda layered window render sorununa neden oluyordu.
+            using var regionPath = ModernTheme.CreateRoundedRectanglePath(
+                new Rectangle(0, 0, ToastWidth, ToastHeight), Radius);
+            Region = new Region(regionPath);
+
             // Pozisyon — sağ alt köşe
-            var workingArea = Screen.PrimaryScreen.WorkingArea;
+            var workingArea = (Screen.PrimaryScreen ?? Screen.AllScreens[0]).WorkingArea;
             Location = new Point(
                 workingArea.Right - ToastWidth - 16,
                 workingArea.Bottom - ToastHeight - 16);
 
-            // Fade-in timer
+            // Fade-out timer (kapanırken opacity azaltma)
             _fadeTimer = new Timer { Interval = 16 };
             _fadeTimer.Tick += OnFadeTick;
 
@@ -58,39 +63,35 @@ namespace KoruMsSqlYedek.Win.Theme
             _closeTimer.Tick += (s, e) =>
             {
                 _closeTimer.Stop();
-                _fadingIn = false;
                 _fadeTimer.Start();
             };
         }
 
-        protected override void OnShown(EventArgs e)
+        /// <summary>Tray-only modda (owner form yok) form aktivasyonu engeller — toast focus çalmasın.</summary>
+        protected override bool ShowWithoutActivation => true;
+
+        protected override CreateParams CreateParams
         {
-            base.OnShown(e);
-            _fadeTimer.Start();
+            get
+            {
+                const int WS_EX_TOPMOST    = 0x00000008;
+                const int WS_EX_TOOLWINDOW  = 0x00000080;
+                const int WS_EX_NOACTIVATE  = 0x08000000;
+
+                var cp = base.CreateParams;
+                cp.ExStyle |= WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE;
+                return cp;
+            }
         }
 
-        private void OnFadeTick(object sender, EventArgs e)
+        private void OnFadeTick(object? sender, EventArgs e)
         {
-            if (_fadingIn)
+            _opacity -= 0.06f;
+            if (_opacity <= 0f)
             {
-                _opacity += 0.08f;
-                if (_opacity >= 1.0f)
-                {
-                    _opacity = 1.0f;
-                    _fadeTimer.Stop();
-                    _closeTimer.Start();
-                }
-            }
-            else
-            {
-                _opacity -= 0.06f;
-                if (_opacity <= 0f)
-                {
-                    _opacity = 0f;
-                    _fadeTimer.Stop();
-                    Close();
-                    return;
-                }
+                _fadeTimer.Stop();
+                Close();
+                return;
             }
 
             Opacity = _opacity;
@@ -107,15 +108,7 @@ namespace KoruMsSqlYedek.Win.Theme
             string iconSymbol;
             GetTypeVisuals(out accentColor, out iconSymbol);
 
-            // Gölge
-            var shadowRect = new Rectangle(2, 2, rect.Width, rect.Height);
-            using (var shadowPath = ModernTheme.CreateRoundedRectanglePath(shadowRect, Radius))
-            using (var shadowBrush = new SolidBrush(Color.FromArgb(40, 0, 0, 0)))
-            {
-                g.FillPath(shadowBrush, shadowPath);
-            }
-
-            // Ana arkaplan
+            // Ana arkaplan (Region zaten formu yuvarlak klipliyor)
             using (var bgPath = ModernTheme.CreateRoundedRectanglePath(rect, Radius))
             {
                 using (var bgBrush = new SolidBrush(ModernTheme.SurfaceColor))
@@ -162,7 +155,7 @@ namespace KoruMsSqlYedek.Win.Theme
         protected override void OnClick(EventArgs e)
         {
             base.OnClick(e);
-            _fadingIn = false;
+            _closeTimer.Stop();
             _fadeTimer.Start();
         }
 
@@ -208,6 +201,10 @@ namespace KoruMsSqlYedek.Win.Theme
         {
             var toast = new ModernToast(title, message, type, durationMs);
             toast.Show();
+            toast._closeTimer.Start();
+
+            Log.Debug("ModernToast gösterildi: Bounds={Bounds}, Visible={Visible}, Handle={Handle}",
+                toast.Bounds, toast.Visible, toast.IsHandleCreated);
         }
 
         /// <summary>Başarı bildirimi.</summary>

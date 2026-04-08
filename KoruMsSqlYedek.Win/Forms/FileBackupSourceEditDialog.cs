@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +26,7 @@ namespace KoruMsSqlYedek.Win.Forms
         public FileBackupSourceEditDialog() : this(null) { }
 
         /// <summary>Mevcut kaynağı düzenleme. null ise yeni kaynak.</summary>
-        public FileBackupSourceEditDialog(FileBackupSource existing)
+        public FileBackupSourceEditDialog(FileBackupSource? existing)
         {
             InitializeComponent();
             ApplyIcons();

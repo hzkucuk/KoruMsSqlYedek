@@ -95,7 +95,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Error(ex, "Servis başlatılamadı.");
-                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
+                Theme.ModernToast.Error(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message));
             }
         }
 
@@ -116,7 +116,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Error(ex, "Servis durdurulamadı.");
-                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
+                Theme.ModernToast.Error(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message));
             }
         }
 
@@ -130,7 +130,7 @@ namespace KoruMsSqlYedek.Win
                 // Servisin tamamen durmasını bekle
                 await Task.Delay(2000);
                 await RunScCommandAsync("start");
-                ShowBalloonTip(Res.Get("AppName"), Res.Get("Tray_ServiceRestarted"), ToolTipIcon.Info, 2500);
+                Theme.ModernToast.Success(Res.Get("AppName"), Res.Get("Tray_ServiceRestarted"));
                 Log.Information("Servis kullanıcı tarafından yeniden başlatıldı.");
             }
             catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
@@ -140,7 +140,7 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Error(ex, "Servis yeniden başlatılamadı.");
-                ShowBalloonTip(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message), ToolTipIcon.Error, 5000);
+                Theme.ModernToast.Error(Res.Get("AppName"), Res.Format("Tray_ServiceActionError", ex.Message));
             }
         }
 

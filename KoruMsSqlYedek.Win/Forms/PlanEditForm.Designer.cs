@@ -123,6 +123,9 @@
             _nudKeepLastN = new Theme.ModernNumericUpDown();
             _lblDeleteDays = new System.Windows.Forms.Label();
             _nudDeleteDays = new Theme.ModernNumericUpDown();
+            _lblRetentionTemplate = new System.Windows.Forms.Label();
+            _cmbRetentionTemplate = new System.Windows.Forms.ComboBox();
+            _lblRetentionTemplateInfo = new System.Windows.Forms.Label();
             _chkProtectPlan = new System.Windows.Forms.CheckBox();
             _txtPlanPassword = new System.Windows.Forms.TextBox();
             _txtRecoveryPassword = new System.Windows.Forms.TextBox();
@@ -529,6 +532,23 @@
             step4.Controls.Add(_lblStep4RetHeader);
             y += 32;
 
+            ConfigLabel(_lblRetentionTemplate, "Saklama \u015eablonu:", lx, y, step4);
+            _cmbRetentionTemplate.Location = new System.Drawing.Point(tx, y);
+            _cmbRetentionTemplate.Size = new System.Drawing.Size(tw, 23);
+            _cmbRetentionTemplate.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            _cmbRetentionTemplate.SelectedIndexChanged += OnRetentionTemplateChanged;
+            _toolTip.SetToolTip(_cmbRetentionTemplate, "Haz\u0131r \u015fablon se\u00e7in veya \u00d6zel se\u00e7erek elle belirleyin.");
+            step4.Controls.Add(_cmbRetentionTemplate);
+            y += 34;
+
+            _lblRetentionTemplateInfo.Location = new System.Drawing.Point(tx, y);
+            _lblRetentionTemplateInfo.Size = new System.Drawing.Size(tw, 36);
+            _lblRetentionTemplateInfo.AutoSize = false;
+            _lblRetentionTemplateInfo.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Italic);
+            _lblRetentionTemplateInfo.ForeColor = Theme.ModernTheme.TextSecondary;
+            step4.Controls.Add(_lblRetentionTemplateInfo);
+            y += 46;
+
             ConfigLabel(_lblRetention, "Temizlik Kural\u0131:", lx, y, step4);
             _cmbRetention.Location = new System.Drawing.Point(tx, y);
             _cmbRetention.Size = new System.Drawing.Size(tw, 23);
@@ -910,6 +930,9 @@
         private System.Windows.Forms.Label _lblArchivePassword;
         private System.Windows.Forms.TextBox _txtArchivePassword;
         private System.Windows.Forms.Label _lblStep4RetHeader;
+        private System.Windows.Forms.Label _lblRetentionTemplate;
+        private System.Windows.Forms.ComboBox _cmbRetentionTemplate;
+        private System.Windows.Forms.Label _lblRetentionTemplateInfo;
         private System.Windows.Forms.Label _lblRetention;
         private System.Windows.Forms.ComboBox _cmbRetention;
         private System.Windows.Forms.Label _lblKeepLastN;

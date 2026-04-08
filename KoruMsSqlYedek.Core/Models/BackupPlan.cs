@@ -50,8 +50,19 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("compression")]
         public CompressionConfig Compression { get; set; } = new CompressionConfig();
 
+        /// <summary>
+        /// Geriye uyumluluk için korunmuş tekil retention politikası.
+        /// RetentionScheme tanımlıysa bu alan yalnızca fallback olarak kullanılır.
+        /// </summary>
         [JsonProperty("retention")]
         public RetentionPolicy Retention { get; set; } = new RetentionPolicy();
+
+        /// <summary>
+        /// Dosya tipine göre ayrı retention politikaları (per-type şema).
+        /// Null ise Retention alanı tüm tipler için kullanılır (eski davranış).
+        /// </summary>
+        [JsonProperty("retentionScheme", NullValueHandling = NullValueHandling.Ignore)]
+        public RetentionScheme RetentionScheme { get; set; }
 
         /// <summary>
         /// Yerel yedek dosyalarının saklanacağı dizin.
@@ -119,5 +130,25 @@ namespace KoruMsSqlYedek.Core.Models
         /// <summary>Kurtarma şifresi tanımlı mı?</summary>
         [JsonIgnore]
         public bool HasRecoveryPassword => !string.IsNullOrEmpty(RecoveryPasswordHash);
+
+        /// <summary>
+        /// Belirtilen dosya tipine uygulanacak etkin retention politikasını döndürür.
+        /// RetentionScheme tanımlıysa per-type politika kullanılır;
+        /// aksi takdirde eski Retention alanı fallback olarak döner.
+        /// </summary>
+        public RetentionPolicy GetEffectiveRetention(BackupFileType fileType)
+        {
+            if (RetentionScheme == null)
+                return Retention;
+
+            return fileType switch
+            {
+                BackupFileType.SqlFull => RetentionScheme.SqlFull ?? Retention,
+                BackupFileType.SqlDifferential => RetentionScheme.SqlDifferential ?? Retention,
+                BackupFileType.SqlLog => RetentionScheme.SqlLog ?? Retention,
+                BackupFileType.FileBackup => RetentionScheme.FileBackup ?? Retention,
+                _ => Retention
+            };
+        }
     }
 }
