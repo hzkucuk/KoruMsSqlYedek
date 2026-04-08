@@ -1,4 +1,9 @@
-﻿## [0.99.11] - 2026-04-09 — Tüm Bildirimler ModernToast
+﻿## [0.99.12] - 2026-04-09 — OLV Seçili Satır Metin Hayaleti Düzeltmesi
+
+### Düzeltme
+- **ObjectListView seçili satırda metin çakışması (ghost-text)** — `SelectedBackColor` yarı-saydam (alpha=60) renk kullanıyordu; OwnerDraw modunda GDI+ eski metni tam kapatamıyordu. `GridSelectionBack` ve `GridSelectionBackUnfocused` opak renkler ModernTheme’a eklendi (Dark: `27,66,58` / `28,54,51`, Light: `218,242,232` / `230,245,238`). Seçim artık temiz render ediliyor.
+
+## [0.99.11] - 2026-04-09 — Tüm Bildirimler ModernToast
 
 ### İyileştirme
 - **Tüm ShowBalloonTip çağrıları ModernToast’a dönüştürüldü** — Servis bağlantı/kopma, yedekleme başlatma/tamamlanma/hata/iptal, güncelleme kontrolü, indirme, servis başlat/durdur/yeniden başlat ve hata bildirimleri dahil tüm 14 `ShowBalloonTip` çağrısı modern `ModernToast` bileşenine taşındı. Uygulama genelinde tutarlı, şık ve dark-mode uyumlu bildirim deneyimi sağlandı.
