@@ -29,7 +29,8 @@ namespace KoruMsSqlYedek.Win
         /// Bulut yükleme progress ve sıkıştırma progress satırlarını kapsar.
         /// </summary>
         private static bool IsProgressLine(string text)
-            => text.Contains(CloudUploadLineMarker) || text.Contains(CompressProgressMarker);
+            => (text.Contains(CloudUploadLineMarker) && text.Contains("Yükleniyor"))
+            || text.Contains(CompressProgressMarker);
 
         /// <summary>
         /// Plan'a ait log buffer'ına satır ekler ve seçili plan ise UI'yı günceller.

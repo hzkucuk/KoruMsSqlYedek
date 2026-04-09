@@ -243,7 +243,7 @@ namespace KoruMsSqlYedek.Win
                 RequestNextFireTimesAsync();
             }
 
-            bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress
+            bool isProgress = (e.ActivityType == BackupActivityType.CloudUploadProgress && e.ProgressPercent < 100)
                 || (e.ActivityType == BackupActivityType.StepChanged
                     && !string.IsNullOrEmpty(e.Message)
                     && e.Message.Contains("ıkıştırılıyor"));
@@ -350,16 +350,24 @@ namespace KoruMsSqlYedek.Win
 
         private string BuildCloudUploadLogLine(BackupActivityEventArgs e)
         {
-            string filePrefix = !string.IsNullOrEmpty(e.CloudFileName)
-                ? $"Bulut yükleme: ({e.CloudFileName}) "
-                : "Bulut yükleme: ";
+            // Dosya adı: CloudFileName → CloudFileIndex/Total fallback → boş
+            string filePrefix;
+            if (!string.IsNullOrEmpty(e.CloudFileName))
+                filePrefix = $"Bulut yükleme: ({e.CloudFileName}) ";
+            else if (e.CloudFileTotal > 1)
+                filePrefix = $"Bulut yükleme: ({e.CloudFileIndex}/{e.CloudFileTotal}) ";
+            else
+                filePrefix = "Bulut yükleme: ";
 
             if (e.ProgressPercent >= 100)
             {
+                string speedPart = e.SpeedBytesPerSecond > 0
+                    ? $" | Hız: {FormatFileSize(e.SpeedBytesPerSecond)}/s"
+                    : "";
                 if (e.BytesTotal > 0)
-                    return $"{filePrefix}Tamamlandı: %100 | Gönderilen: {FormatFileSize(e.BytesTotal)}";
+                    return $"{filePrefix}Tamamlandı ✓ | Gönderilen: {FormatFileSize(e.BytesTotal)}{speedPart}";
 
-                return $"{filePrefix}Tamamlandı: %100";
+                return $"{filePrefix}Tamamlandı ✓{speedPart}";
             }
 
             if (e.BytesTotal > 0)
@@ -369,7 +377,7 @@ namespace KoruMsSqlYedek.Win
                     ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
                     : "";
                 string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
-                return $"{filePrefix}Yükleniyor: %{e.ProgressPercent} | Gönderilen: {FormatFileSize(e.BytesSent)}/{FormatFileSize(e.BytesTotal)} | Kalan: {FormatFileSize(bytesRemaining)} | Hız: {FormatFileSize(e.SpeedBytesPerSecond)}/s{etaPart}";
+                return $"{filePrefix}Yükleniyor: %{e.ProgressPercent} | Gönderilen: {FormatFileSize(e.BytesSent)}/{FormatFileSize(e.BytesTotal)} | Hız: {FormatFileSize(e.SpeedBytesPerSecond)}/s{etaPart}";
             }
             return $"{filePrefix}Yükleniyor: %{e.ProgressPercent}";
         }

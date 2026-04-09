@@ -1,4 +1,13 @@
-﻿## [0.99.30] - 2025-07-16 — Bulut Yükleme Hız Optimizasyonu
+﻿## [0.99.31] - 2025-07-16 — Bulut Yükleme Log Format Düzeltmesi
+
+### Düzeltme
+- **%100 tamamlanma satırı artık kalıcı** — Bulut yükleme %100’e ulaştığında ilerleme satırı artık sonraki event’ler tarafından üzerine yazılmıyor. “Tamamlandı ✓” satırı log’da kalıcı olarak korunuyor.
+- **%100’de hız bilgisi gösteriliyor** — Tamamlanma satırında ortalama yükleme hızı eklendi: `Tamamlandı ✓ | Gönderilen: 17,1 MB | Hız: 30 KB/s`.
+- **CloudFileName fallback** — Dosya adı boş geldiğinde `CloudFileIndex/CloudFileTotal` ile gösterim sağlanıyor.
+- **IsProgressLine sadece Yükleniyor satırlarını eşleştiriyor** — “Tamamlandı” satırları artık ilerleme satırı olarak algılanmıyor, üzerine yazılmıyor.
+- **İlerleme formatından “Kalan” alanı kaldırıldı** — Satır uzunluğu kısaltıldı, “Süre” tahmini zaten kalan süreyi gösteriyor.
+
+## [0.99.30] - 2025-07-16 — Bulut Yükleme Hız Optimizasyonu
 
 ### Performans
 - **Google Drive FileStream optimizasyonu** — Upload stream'i artık 1 MB buffer, `FileOptions.Asynchronous` (gerçek overlapped I/O) ve `FileOptions.SequentialScan` (OS prefetch) ile açılıyor. Varsayılan 4 KB buffer + senkron I/O wrapper'ı ortadan kaldırıldı.
