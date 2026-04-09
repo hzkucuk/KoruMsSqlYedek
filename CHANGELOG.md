@@ -1,4 +1,43 @@
-﻿## [0.99.27] - 2025-07-15 — Dark Tema Checkbox Görünürlük İyileştirmesi
+﻿## [0.99.32] - 2025-07-17 — Bulut Yükleme Log Format Boşluk Düzeltmesi
+
+### Düzeltme
+- **Çift boşluk düzeltildi** — `BuildCloudUploadLogLine` içindeki `"Bulut yükleme başladı:  ("` çift boşluk tek boşluğa düzeltildi.
+- **Toplu yükleme özet formatı** — `"başarılı  Gönderilen"` çift boşluk `"başarılı | Gönderilen"` pipe ayracıyla değiştirildi.
+
+## [0.99.31] - 2025-07-16 — Bulut Yükleme Log Format Düzeltmesi
+
+### Düzeltme
+- **%100 tamamlanma satırı artık kalıcı** — Bulut yükleme %100’e ulaştığında ilerleme satırı artık sonraki event’ler tarafından üzerine yazılmıyor. “Tamamlandı ✓” satırı log’da kalıcı olarak korunuyor.
+- **%100’de hız bilgisi gösteriliyor** — Tamamlanma satırında ortalama yükleme hızı eklendi: `Tamamlandı ✓ | Gönderilen: 17,1 MB | Hız: 30 KB/s`.
+- **CloudFileName fallback** — Dosya adı boş geldiğinde `CloudFileIndex/CloudFileTotal` ile gösterim sağlanıyor.
+- **IsProgressLine sadece Yükleniyor satırlarını eşleştiriyor** — “Tamamlandı” satırları artık ilerleme satırı olarak algılanmıyor, üzerine yazılmıyor.
+- **İlerleme formatından “Kalan” alanı kaldırıldı** — Satır uzunluğu kısaltıldı, “Süre” tahmini zaten kalan süreyi gösteriyor.
+
+## [0.99.30] - 2025-07-16 — Bulut Yükleme Hız Optimizasyonu
+
+### Performans
+- **Google Drive FileStream optimizasyonu** — Upload stream'i artık 1 MB buffer, `FileOptions.Asynchronous` (gerçek overlapped I/O) ve `FileOptions.SequentialScan` (OS prefetch) ile açılıyor. Varsayılan 4 KB buffer + senkron I/O wrapper'ı ortadan kaldırıldı.
+- **SFTP buffer boyutu 32 KB → 256 KB** — `SftpClient.BufferSize` ve manuel resume buffer 8x artırıldı. Her yazma isteğindeki SSH round-trip overhead azaltıldı, throughput önemli ölçüde iyileştirildi.
+- **SFTP FileStream optimizasyonu** — Upload için açılan dosya stream'i artık 1 MB buffer ve `SequentialScan` ile açılıyor.
+- **İlerleme eventi throttle** — Hem tek dosya hem toplu yükleme yollarında zaman tabanlı throttle (250ms minimum aralık) eklendi. Saniyede 12+ yerine maks 4 event, UI thread yükü azaltıldı.
+
+## [0.99.29] - 2025-07-16 — Bulut Yükleme Log Format Yenileme
+
+### İyileştirme
+- **İlerleme satırlarında dosya adı birleştirildi** — Ayrı "Bulut yükleme başladı" ve "İlerleme" satırları yerine tek satırda birleşik format: `Bulut yükleme: (dosya_adi) Yükleniyor: %... | Gönderilen: ... | Hız: ...`. Her dosya için ilerleme yerinde güncelleniyor.
+- **Dosya başına tamamlanma satırı kaldırıldı** — Her dosya/hedef için ayrı "Bulut X: Başarılı" satırları yerine hedef bazlı tek özet: `Bulut hzkgoogle Görevi: Başarılı`.
+- **Toplu tamamlanma satırına toplam boyut eklendi** — `Toplu bulut yükleme tamamlandı: 3 dosya — 3/3 başarılı  Gönderilen: 17,1 MB`.
+- **Yedekleme tamamlanma satırında doğruluk bilgisi** — Bulut hedefi olan planlar için: `[Plan] Yedekleme tamamlandı. ✓ Doğruluk kontrolü tamamlandı.`.
+- **E-posta log formatı senkronize edildi** — `FormatActivityLogLine` da aynı sadeleştirilmiş formata güncellendi.
+
+## [0.99.28] - 2025-07-16 — Bulut Yükleme Dosya Adı & Bütünlük Doğrulaması
+
+### İyileştirme
+- **Bulut yükleme ilerleme satırlarında dosya adı gösteriliyor** — Tek dosya yükleme yolunda (`UploadToAllAsync`) tüm olaylara `CloudFileName`, `CloudFileIndex`, `CloudFileTotal` eklendi. Artık UI ilerleme satırları hangi dosyanın yüklendiğini gösteriyor.
+- **Serilog log'larında sağlayıcı bazlı bütünlük doğrulaması** — Bulut yükleme sonrası her sağlayıcı için ayrı satırda dosya adı, sağlayıcı, doğrulama durumu (Doğrulandı ✓ / Boyut uyuşmazlığı ⚠ / Başarısız), yerel ve uzak dosya boyutu raporlanıyor.
+- **Bulut yükleme tamamlanma satırında sağlık kontrolü** — UI'de yükleme tamamlandığında dosya adı, boyut ve bütünlük doğrulama sonucu görüntüleniyor.
+
+## [0.99.27] - 2025-07-15 — Dark Tema Checkbox Görünürlük İyileştirmesi
 
 ### Düzeltme
 - **TreeView checkbox'ları dark temada artık görünür** — `CheckBoxes = false` + özel `StateImageList` yaklaşımına geçildi. Visual Styles aktifken native checkbox ikonlarının tema çizicisi tarafından geçersiz kılınması sorunu çözüldü. GDI+ ile tema renklerine uygun özel checkbox ikonları: Unchecked (gri kenarlık), Checked (yeşil dolgu + beyaz tik), Indeterminate (amber kenarlık + iç kare). Tüm `node.Checked` kullanımları `StateImageIndex` tabanlı sisteme dönüştürüldü. Artık P/Invoke gerekmeden tam özelleştirilebilir checkbox desteği.

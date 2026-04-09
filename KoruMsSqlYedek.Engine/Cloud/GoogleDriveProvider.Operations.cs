@@ -200,7 +200,10 @@ namespace KoruMsSqlYedek.Engine.Cloud
             long fileSize = new FileInfo(localFilePath).Length;
             const string mimeType = "application/octet-stream";
 
-            using (var stream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var stream = new FileStream(
+                localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                bufferSize: 1_048_576,
+                FileOptions.Asynchronous | FileOptions.SequentialScan))
             {
                 var uploadRequest = driveService.Files.Create(fileMetadata, stream, mimeType);
                 uploadRequest.ChunkSize = ChunkSize;

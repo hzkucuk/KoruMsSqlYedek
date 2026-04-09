@@ -17,11 +17,20 @@ namespace KoruMsSqlYedek.Win
     /// </summary>
     public partial class MainWindow
     {
-        // İlerleme satırı tespiti için önek sabiti
-        private const string ProgressLineMarker = "Yükleniyor";
+        // İlerleme satırı tespiti için önek sabitleri
+            private const string CloudUploadLineMarker = "Bulut yükleme başladı:";
+            private const string CompressProgressMarker = "\u0131k\u0131\u015ft\u0131r\u0131l\u0131yor";
 
         // Per-plan log buffer (planId → satır listesi + renk)
         private readonly Dictionary<string, List<(string Text, Color Color)>> _planLogs = new Dictionary<string, List<(string Text, Color Color)>>();
+
+        /// <summary>
+        /// Metnin ilerleme satırı olup olmadığını kontrol eder.
+        /// Bulut yükleme progress ve sıkıştırma progress satırlarını kapsar.
+        /// </summary>
+        private static bool IsProgressLine(string text)
+            => (text.Contains(CloudUploadLineMarker) && text.Contains("Yükleniyor"))
+            || text.Contains(CompressProgressMarker);
 
         /// <summary>
         /// Plan'a ait log buffer'ına satır ekler ve seçili plan ise UI'yı günceller.
@@ -49,7 +58,7 @@ namespace KoruMsSqlYedek.Win
                     _planLogs[effectivePlanId] = new List<(string, Color)>();
 
                 var logList = _planLogs[effectivePlanId];
-                if (isProgressLine && logList.Count > 0 && logList[logList.Count - 1].Text.Contains(ProgressLineMarker))
+                if (isProgressLine && logList.Count > 0 && IsProgressLine(logList[logList.Count - 1].Text))
                     logList[logList.Count - 1] = (formatted, color);
                 else
                     logList.Add((formatted, color));
@@ -100,7 +109,7 @@ namespace KoruMsSqlYedek.Win
 
             string lastLine = _txtBackupLog.Lines[lastLineIdx];
 
-            if (lastLine.Contains(ProgressLineMarker))
+            if (IsProgressLine(lastLine))
             {
                 int charIdx = _txtBackupLog.GetFirstCharIndexFromLine(lastLineIdx);
                 _txtBackupLog.Select(charIdx, _txtBackupLog.TextLength - charIdx);

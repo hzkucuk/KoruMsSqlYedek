@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core;
@@ -12,6 +13,9 @@ namespace KoruMsSqlYedek.Win
     {
         /// <summary>Completed sonrası %100'ü 3 saniye gösterip sıfırlayan timer.</summary>
         private System.Windows.Forms.Timer _progressResetTimer;
+
+        /// <summary>Plan başına son raporlanan bulut dosya indeksi (dosya değişiminde satır dondurulur).</summary>
+        private readonly Dictionary<string, int> _lastCloudFileIdx = new();
 
         private void OnBackupActivityChanged(object sender, BackupActivityEventArgs e)
         {
@@ -175,6 +179,7 @@ namespace KoruMsSqlYedek.Win
                     {
                         _runningPlanIds.Remove(e.PlanId);
                         _planProgressTracker.Remove(e.PlanId);
+                        _lastCloudFileIdx.Remove(e.PlanId);
                     }
 
                     if (e.ActivityType == BackupActivityType.Completed && e.IsSuccess)
@@ -243,7 +248,32 @@ namespace KoruMsSqlYedek.Win
                 RequestNextFireTimesAsync();
             }
 
-            bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress;
+            bool isProgress;
+            if (e.ActivityType == BackupActivityType.CloudUploadProgress)
+            {
+                // Per-file tracking: dosya değiştiğinde önceki satır dondurulur, yeni satır eklenir
+                string upPlanId = !string.IsNullOrEmpty(e.PlanId) ? e.PlanId : _viewingPlanId;
+                int lastIdx = _lastCloudFileIdx.GetValueOrDefault(upPlanId, -1);
+                if (e.CloudFileIndex != lastIdx)
+                {
+                    _lastCloudFileIdx[upPlanId] = e.CloudFileIndex;
+                    isProgress = false; // Yeni dosya — önceki satır dondurul, yeni satır eklenir
+                }
+                else
+                {
+                    isProgress = true; // Aynı dosya — mevcut satırı güncelle
+                }
+            }
+            else if (e.ActivityType == BackupActivityType.StepChanged
+                && !string.IsNullOrEmpty(e.Message)
+                && e.Message.Contains("ıkıştırılıyor"))
+            {
+                isProgress = true;
+            }
+            else
+            {
+                isProgress = false;
+            }
             Color logColor = GetLogColor(e.ActivityType);
 
             if (e.ActivityType == BackupActivityType.Completed && !e.IsSuccess && !string.IsNullOrEmpty(e.Message))
@@ -312,15 +342,13 @@ namespace KoruMsSqlYedek.Win
                 => !string.IsNullOrEmpty(e.Message) ? e.Message : string.Format("Adım: {0}", e.StepName),
 
             BackupActivityType.CloudUploadStarted
-                => string.Format("Bulut yükleme başladı: {0}", e.CloudTargetName),
+                => "",
 
             BackupActivityType.CloudUploadProgress
                 => BuildCloudUploadLogLine(e),
 
             BackupActivityType.CloudUploadCompleted
-                => e.IsSuccess
-                    ? string.Format("Bulut {0}: Başarılı ✓", e.CloudTargetName)
-                    : string.Format("Bulut {0}: Başarısız ✕ — {1}", e.CloudTargetName, e.Message ?? "Bilinmeyen hata"),
+                => "",
 
             BackupActivityType.CloudUploadAbandoned
                 => e.AbandonedFiles is { Count: > 0 }
@@ -328,9 +356,13 @@ namespace KoruMsSqlYedek.Win
                     : string.Format("⚠ Bulut yükleme terk edildi: {0}", e.Message ?? "Maksimum deneme aşıldı"),
 
             BackupActivityType.Completed
-                => e.IsSuccess || string.IsNullOrEmpty(e.Message)
-                    ? string.Format("[{0}] Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId)
-                    : string.Format("[{0}] Yedekleme tamamlandı (bulut yükleme başarısız). ⚠", e.PlanName ?? e.PlanId),
+                => e.IsSuccess
+                    ? (string.IsNullOrEmpty(e.Message)
+                        ? string.Format("[{0}] Görevi için Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId)
+                        : string.Format("[{0}] Görevi için Yedekleme tamamlandı. ✓ {1}.", e.PlanName ?? e.PlanId, e.Message))
+                    : (string.IsNullOrEmpty(e.Message)
+                        ? string.Format("[{0}] Görevi için Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId)
+                        : string.Format("[{0}] Görevi için Yedekleme tamamlandı ({1}). ⚠", e.PlanName ?? e.PlanId, e.Message)),
 
             BackupActivityType.Failed
                 => string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message),
@@ -345,11 +377,18 @@ namespace KoruMsSqlYedek.Win
 
         private string BuildCloudUploadLogLine(BackupActivityEventArgs e)
         {
-            if (e.ProgressPercent >= 100) return string.Empty;
+            // %100'de satır gösterme — dosya satırı son progress değerinde donmuş kalır
+            if (e.ProgressPercent >= 100)
+                return "";
 
-            string fileInfo = !string.IsNullOrEmpty(e.CloudFileName) && e.CloudFileTotal > 1
-                ? $" [{e.CloudFileIndex}/{e.CloudFileTotal}] {e.CloudFileName}"
-                : "";
+            // Dosya adı prefix: "Bulut yükleme başladı: (dosyaAdı) "
+            string filePrefix;
+            if (!string.IsNullOrEmpty(e.CloudFileName))
+                filePrefix = $"Bulut yükleme başladı: ({e.CloudFileName}) ";
+            else if (e.CloudFileTotal > 1)
+                filePrefix = $"Bulut yükleme başladı: ({e.CloudFileIndex}/{e.CloudFileTotal}) ";
+            else
+                filePrefix = "Bulut yükleme başladı: ";
 
             if (e.BytesTotal > 0)
             {
@@ -358,16 +397,9 @@ namespace KoruMsSqlYedek.Win
                     ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
                     : "";
                 string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
-                return string.Format("Yükleniyor{0}: %{1} | Gönderilen: {2}/{3} | Kalan: {4} | Hız: {5}/s{6}",
-                    fileInfo,
-                    e.ProgressPercent,
-                    FormatFileSize(e.BytesSent),
-                    FormatFileSize(e.BytesTotal),
-                    FormatFileSize(bytesRemaining),
-                    FormatFileSize(e.SpeedBytesPerSecond),
-                    etaPart);
+                return $"{filePrefix}Yükleniyor: %{e.ProgressPercent} | Gönderilen: {FormatFileSize(e.BytesSent)}/{FormatFileSize(e.BytesTotal)} | Kalan: {FormatFileSize(bytesRemaining)} | Hız: {FormatFileSize(e.SpeedBytesPerSecond)}/s{etaPart}";
             }
-            return string.Format("Yükleniyor{0}: %{1}", fileInfo, e.ProgressPercent);
+            return $"{filePrefix}Yükleniyor: %{e.ProgressPercent}";
         }
 
         private static Color GetLogColor(BackupActivityType activityType) => activityType switch

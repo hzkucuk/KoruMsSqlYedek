@@ -21,6 +21,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 {
                     client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(TimeoutConstants.SftpConnectTimeoutSeconds);
                     client.OperationTimeout = TimeSpan.FromSeconds(TimeoutConstants.SftpOperationTimeoutSeconds);
+                    client.BufferSize = 256 * 1024; // 256 KB — varsayılan 32 KB çok küçük, throughput'u kısıtlıyor
                     client.Connect();
 
                     Log.Debug("SFTP bağlantısı kuruldu: {Host}:{Port}", config.Host, config.Port ?? 22);
@@ -49,7 +50,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
                             remoteOffset, localFileSize, remotePath);
                     }
 
-                    using (var fileStream = new FileStream(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var fileStream = new FileStream(
+                        localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                        bufferSize: 1_048_576, FileOptions.SequentialScan))
                     {
                         if (remoteOffset > 0)
                         {
@@ -59,7 +62,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                             using (var sftp = client.Open(remotePath, FileMode.Open, FileAccess.ReadWrite))
                             {
                                 sftp.Seek(remoteOffset, SeekOrigin.Begin);
-                                byte[] buffer = new byte[32 * 1024];
+                                byte[] buffer = new byte[256 * 1024]; // 256 KB — 32 KB çok küçüktü
                                 int read;
                                 long uploaded = remoteOffset;
 

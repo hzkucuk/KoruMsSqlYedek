@@ -214,9 +214,16 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             int successCount = fileResults.Count(r => r.IsSuccess);
                             if (successCount == 0) allOk = false;
 
-                            Log.Information(
-                                "Bulut yükleme: {FileName} — {Success}/{Total} başarılı",
-                                pending.RemoteName, successCount, fileResults.Count);
+                            long localSize = GetFileSize(pending.FilePath);
+                            foreach (var r in fileResults)
+                            {
+                                string verify = r.IsSuccess && r.RemoteFileSizeBytes > 0 && localSize > 0
+                                    ? (r.RemoteFileSizeBytes == localSize ? "Doğrulandı ✓" : "Boyut uyuşmazlığı ⚠")
+                                    : r.IsSuccess ? "Boyut bilgisi alınamadı" : "Başarısız";
+                                Log.Information(
+                                    "Bulut yükleme: {FileName} → {Provider} — {Verify} (yerel={LocalSize}, uzak={RemoteSize})",
+                                    pending.RemoteName, r.DisplayName, verify, Fmt(localSize), Fmt(r.RemoteFileSizeBytes));
+                            }
                         }
                         batchIdx++;
                     }
@@ -231,13 +238,46 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         int fSuccess = allFileCloudResults.Count(r => r.IsSuccess);
                         if (fSuccess == 0) allOk = false;
 
-                        Log.Information(
-                            "Bulut yükleme: {FileName} — {Success}/{Total} başarılı",
-                            Path.GetFileName(fileArchivePath), fSuccess, allFileCloudResults.Count);
+                        long fLocalSize = GetFileSize(fileArchivePath);
+                        foreach (var r in allFileCloudResults)
+                        {
+                            string verify = r.IsSuccess && r.RemoteFileSizeBytes > 0 && fLocalSize > 0
+                                ? (r.RemoteFileSizeBytes == fLocalSize ? "Doğrulandı ✓" : "Boyut uyuşmazlığı ⚠")
+                                : r.IsSuccess ? "Boyut bilgisi alınamadı" : "Başarısız";
+                            Log.Information(
+                                "Bulut yükleme: {FileName} → {Provider} — {Verify} (yerel={LocalSize}, uzak={RemoteSize})",
+                                Path.GetFileName(fileArchivePath), r.DisplayName, verify, Fmt(fLocalSize), Fmt(r.RemoteFileSizeBytes));
+                        }
                     }
                 }
 
                 // History artık ana executor'da kaydediliyor (UploadAllPendingAsync sonrası)
+
+                // Per-target summary (hedef bazlı özet satırı)
+                var enabledTargets = plan.CloudTargets.Where(t => t.IsEnabled).ToList();
+                for (int tIdx = 0; tIdx < enabledTargets.Count; tIdx++)
+                {
+                    int tSuccess = 0;
+                    int tTotal = 0;
+                    foreach (var fileResult in batchResults)
+                    {
+                        if (tIdx < fileResult.Count)
+                        {
+                            tTotal++;
+                            if (fileResult[tIdx].IsSuccess) tSuccess++;
+                        }
+                    }
+
+                    string status = tSuccess == tTotal ? "Başarılı" : $"{tSuccess}/{tTotal} başarılı";
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "Bulut Yükleme",
+                        Message = $"Bulut {enabledTargets[tIdx].DisplayName} Görevi: {status}"
+                    });
+                }
 
                 int totalSuccess = batchResults.Sum(r => r.Count(x => x.IsSuccess));
                 int totalTargets = batchResults.Sum(r => r.Count);
@@ -248,7 +288,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     PlanName = plan.PlanName,
                     ActivityType = BackupActivityType.StepChanged,
                     StepName = "Bulut Yükleme",
-                    Message = $"Toplu bulut yükleme tamamlandı: {batchFiles.Count} dosya — {totalSuccess}/{totalTargets} başarılı"
+                    Message = $"Toplu bulut yükleme tamamlandı: {batchFiles.Count} dosya — {totalSuccess}/{totalTargets} başarılı | Gönderilen: {Fmt(totalSize)}"
                 });
 
                 return (allOk, allFileCloudResults);
@@ -273,19 +313,21 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             BackupActivityType.StepChanged
                 => !string.IsNullOrEmpty(e.Message) ? e.Message : $"Adım: {e.StepName}",
             BackupActivityType.CloudUploadStarted
-                => $"Bulut yükleme başladı: {e.CloudTargetName}",
+                => null,
             BackupActivityType.CloudUploadCompleted
-                => e.IsSuccess
-                    ? $"Bulut {e.CloudTargetName}: Başarılı ✓"
-                    : $"Bulut {e.CloudTargetName}: Başarısız ✕ — {e.Message ?? "Bilinmeyen hata"}",
+                => null,
             BackupActivityType.CloudUploadAbandoned
                 => e.AbandonedFiles is { Count: > 0 }
                     ? $"⚠ Bulut yükleme terk edildi ({e.AbandonedFiles.Count} dosya)"
                     : $"⚠ Bulut yükleme terk edildi: {e.Message ?? "Maksimum deneme aşıldı"}",
             BackupActivityType.Completed
-                => e.IsSuccess || string.IsNullOrEmpty(e.Message)
-                    ? $"[{e.PlanName}] Yedekleme tamamlandı. ✓"
-                    : $"[{e.PlanName}] Yedekleme tamamlandı (bulut yükleme başarısız). ⚠",
+                => e.IsSuccess
+                    ? (string.IsNullOrEmpty(e.Message)
+                        ? $"[{e.PlanName}] Görevi için Yedekleme tamamlandı. ✓"
+                        : $"[{e.PlanName}] Görevi için Yedekleme tamamlandı. ✓ {e.Message}.")
+                    : (string.IsNullOrEmpty(e.Message)
+                        ? $"[{e.PlanName}] Görevi için Yedekleme tamamlandı. ✓"
+                        : $"[{e.PlanName}] Görevi için Yedekleme tamamlandı ({e.Message}). ⚠"),
             BackupActivityType.Failed
                 => $"[{e.PlanName}] Yedekleme başarısız: {e.Message}",
             BackupActivityType.Cancelled
