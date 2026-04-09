@@ -1,4 +1,11 @@
-﻿## [0.99.32] - 2025-07-17 — Bulut Yükleme Log Format Boşluk Düzeltmesi
+﻿## [0.99.33] - 2025-07-17 — Pipe Protokolü Bulut Dosya Bilgisi Düzeltmesi
+
+### Düzeltme
+- **PipeProtocol’a eksik bulut upload alanları eklendi** — `BackupActivityMessage` sınıfına `CloudFileName`, `CloudFileIndex`, `CloudFileTotal` ve diğer eksik alanlar (`RemoteFileSizeBytes`, `LocalFileSizeBytes`, `IsIntegrityVerified`, `HasFileBackup`, `HasCloudTargets`, `AbandonedFiles`) eklendi. `FromArgs()` ve `ToArgs()` mapping’leri güncellendi.
+- **Service modunda dosya adı görünürlüğü** — Toplu bulut yükleme sırasında her dosya için ayrı ilerleme satırı oluşuruyor ve dosya adı parantez içinde gösteriliyor.
+- **Per-file progress tracking** — `CloudFileIndex` artık pipe üzerinden doğru iletildiği için `_lastCloudFileIdx` takibi çalışıyor, her dosya için ayrı satır görünüyor.
+
+## [0.99.32] - 2025-07-17 — Bulut Yükleme Log Format Boşluk Düzeltmesi
 
 ### Düzeltme
 - **Çift boşluk düzeltildi** — `BuildCloudUploadLogLine` içindeki `"Bulut yükleme başladı:  ("` çift boşluk tek boşluğa düzeltildi.
