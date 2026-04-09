@@ -1,4 +1,12 @@
-﻿## [0.99.24] - 2025-07-14 — Runtime Kurulum Hatası Düzeltme
+﻿## [0.99.25] - 2025-07-15 — Büyük Dosya Yedekleme Performans İyileştirmesi
+
+### İyileştirme
+- **Buffer boyutları 80 KB'den 1 MB'ye yükseltildi** — Tüm dosya kopyalama operasyonlarında (FileBackupService, LocalNetworkProvider, SqlBackupService VSS) buffer boyutu artırılarak büyük dosya (4-10 GB) transferlerinde throughput önemli ölçüde iyileştirildi.
+- **Google Drive ChunkSize 1 MB'den 10 MB'ye yükseltildi** — Büyük dosya yüklemelerinde chunk sayısı azaltılarak toplam yükleme süresi düşürüldü.
+- **Sıkıştırma ilerleme raporlama eklendi** — SQL ve Dosya pipeline'larında 7-Zip sıkıştırma sırasında yüzde bazlı ilerleme bildirimi (BackupActivityHub üzerinden UI'ye anlık geri bildirim).
+- **Büyük dosya kopyalama ilerleme raporlama eklendi** — `FileBackupService.TryCopyDirectAsync` metoduna buffered copy ile ilerleme callback'i eklendi; büyük dosya kopyalarında kullanıcıya anlık yüzde bildirimi sağlanıyor.
+
+## [0.99.24] - 2025-07-14 — Runtime Kurulum Hatası Düzeltme
 
 ### Düzeltme
 - **Installer .NET Runtime kurulum hatası giderildi (hata kodu: 2)** — `PrepareToInstall` fonksiyonu Inno Setup'ın `[Files]` çıkarımından önce çalıştığı için runtime exe `{tmp}` klasöründe bulunamıyordu. `dontcopy` flag'i ve `ExtractTemporaryFile()` kullanılarak dosya manuel olarak çıkarılıyor artık.

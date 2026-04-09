@@ -115,7 +115,24 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         : null;
                     CompressionLevel level = plan.Compression?.Level ?? CompressionLevel.Normal;
 
-                    await sevenZip.CompressDirectoryAsync(filesDir, archivePath, password, level, null, ct);
+                    // Sıkıştırma ilerleme raporlama — büyük dosya arşivlerinde UI geri bildirimi
+                    int lastCompressPct = -1;
+                    var compressProgress = new Progress<int>(pct =>
+                    {
+                        if (pct <= lastCompressPct) return;
+                        lastCompressPct = pct;
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            ActivityType = BackupActivityType.StepChanged,
+                            StepName = "Dosya Sıkıştırma",
+                            ProgressPercent = pct,
+                            Message = $"Dosya arşivi sıkıştırılıyor — %{pct}"
+                        });
+                    });
+
+                    await sevenZip.CompressDirectoryAsync(filesDir, archivePath, password, level, compressProgress, ct);
                     Log.Information("Dosya yedek arşivi oluşturuldu: {ArchivePath}", archivePath);
 
                     // Ara dosya takibi: .7z

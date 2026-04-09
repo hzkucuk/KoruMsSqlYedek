@@ -165,8 +165,27 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             ? PasswordProtector.Unprotect(plan.Compression.ArchivePassword)
                             : null;
 
+                        // Sıkıştırma ilerleme raporlama — büyük dosyalarda (4-10 GB) UI'ın takılmış
+                        // görünmemesi için BackupActivityHub üzerinden yüzde bilgisi yayınlanır
+                        int lastCompressPct = -1;
+                        var compressProgress = new Progress<int>(pct =>
+                        {
+                            if (pct <= lastCompressPct) return;
+                            lastCompressPct = pct;
+                            BackupActivityHub.Raise(new BackupActivityEventArgs
+                            {
+                                PlanId = plan.PlanId,
+                                PlanName = plan.PlanName,
+                                DatabaseName = dbName,
+                                ActivityType = BackupActivityType.StepChanged,
+                                StepName = "Sıkıştırma",
+                                ProgressPercent = pct,
+                                Message = $"Sıkıştırılıyor: {dbName} — %{pct}"
+                            });
+                        });
+
                         result.CompressedSizeBytes = await CompressionService.CompressAsync(
-                            result.BackupFilePath, archivePath, password, null, ct);
+                            result.BackupFilePath, archivePath, password, compressProgress, ct);
                         result.CompressedFilePath = archivePath;
 
                         // Ara dosya takibi: .7z

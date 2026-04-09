@@ -363,7 +363,7 @@ namespace KoruMsSqlYedek.Engine.Backup
         private static async Task CopyFileToStagingAsync(
             string sourcePath, string destPath, CancellationToken ct)
         {
-            const int bufferSize = 81920; // 80 KB
+            const int bufferSize = 1_048_576; // 1 MB — büyük MDF/LDF dosyaları için
             using var src = new FileStream(
                 sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize, useAsync: true);
             using var dst = new FileStream(

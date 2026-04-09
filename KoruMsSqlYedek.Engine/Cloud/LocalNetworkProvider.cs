@@ -17,8 +17,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
         private static readonly ILogger Log = Serilog.Log.ForContext<LocalNetworkProvider>();
         private readonly CloudProviderType _type;
 
-        /// <summary>Buffered kopyalama için tampon boyutu (80 KB).</summary>
-        private const int BufferSize = 81920;
+        /// <summary>Buffered kopyalama için tampon boyutu (1 MB — büyük dosyalarda I/O verimliliği).</summary>
+        private const int BufferSize = 1_048_576;
 
         public LocalNetworkProvider(CloudProviderType type)
         {
