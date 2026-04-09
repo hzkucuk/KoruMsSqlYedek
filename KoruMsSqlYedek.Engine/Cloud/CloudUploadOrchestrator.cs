@@ -139,11 +139,18 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                 var uploadStartTime = DateTime.UtcNow;
                 int lastReportedPct = -1;
+                long lastReportedTick = 0L;
                 var hubProgress = new Progress<int>(pct =>
                 {
                     // Progress<T> callback'leri ThreadPool'a post edilir —
                     // sıra garantisi yoktur. Geriye giden yüzde değerlerini atla.
                     if (pct <= lastReportedPct) return;
+
+                    // Zaman tabanlı throttle: 250ms'den sık event fırlatma (UI yükünü azalt).
+                    // %100 her zaman geçer — son ilerleme kaçırılmasın.
+                    long now = Environment.TickCount64;
+                    if (pct < 100 && (now - lastReportedTick) < 250) return;
+                    lastReportedTick = now;
                     lastReportedPct = pct;
 
                     long bytesSent = stateRecord.FileSizeBytes > 0
@@ -346,6 +353,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     }
 
                     int lastReportedPct = -1;
+                    long lastReportedTick = 0L;
                     long capturedCompletedBytes = completedBytes;
                     int capturedFileIdx = fileIdx;
                     int capturedTargetCompleted = targetCompleted;
@@ -353,6 +361,11 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     var hubProgress = new Progress<int>(pct =>
                     {
                         if (pct <= lastReportedPct) return;
+
+                        // Zaman tabanlı throttle: 250ms'den sık event fırlatma.
+                        long now = Environment.TickCount64;
+                        if (pct < 100 && (now - lastReportedTick) < 250) return;
+                        lastReportedTick = now;
                         lastReportedPct = pct;
 
                         // Hedef bazlı dosya ilerlemesi: (targetCompleted * 100 + pct) / targetTotal
