@@ -11,15 +11,16 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.22"
+  #define MyAppVersion "0.99.23"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
 #define MyAppExeName "KoruMsSqlYedek.Win.exe"
 #define MyServiceExeName "KoruMsSqlYedek.Service.exe"
 #define MyServiceName "KoruMsSqlYedekService"
+#define DotNetRuntimeInstaller "windowsdesktop-runtime-10.0.5-win-x64.exe"
 
-; Publish klasörleri — Build-Release.ps1 tarafından /D parametresiyle geçilir.
+; Publish klasörleri
 ; Manuel derleme için: ISCC.exe KoruMsSqlYedek.iss /DWinPublishDir=...absolute... /DServicePublishDir=...absolute...
 #ifndef WinPublishDir
   #define WinPublishDir "..\..\publish\Win"
@@ -72,8 +73,14 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-turkish.DotNetRequired=Bu uygulama .NET 10 Desktop Runtime gerektirir. Lütfen önce yükleyin.
-english.DotNetRequired=This application requires .NET 10 Desktop Runtime. Please install it first.
+turkish.DotNetRequired=Bu uygulama .NET 10 Desktop Runtime gerektirir. Şimdi otomatik kurulacak...
+english.DotNetRequired=This application requires .NET 10 Desktop Runtime. It will be installed automatically...
+turkish.DotNetInstalling=.NET 10 Desktop Runtime kuruluyor, lütfen bekleyin...
+english.DotNetInstalling=Installing .NET 10 Desktop Runtime, please wait...
+turkish.DotNetFailed=.NET 10 Desktop Runtime kurulumu başarısız oldu (hata kodu: %1). Lütfen manuel olarak yükleyin: https://dotnet.microsoft.com/download/dotnet/10.0
+english.DotNetFailed=.NET 10 Desktop Runtime installation failed (error code: %1). Please install manually: https://dotnet.microsoft.com/download/dotnet/10.0
+turkish.DotNetSuccess=.NET 10 Desktop Runtime başarıyla kuruldu.
+english.DotNetSuccess=.NET 10 Desktop Runtime installed successfully.
 turkish.ServiceInstall=Windows Service kuruluyor...
 english.ServiceInstall=Installing Windows Service...
 turkish.ServiceStart=Windows Service başlatılıyor...
@@ -107,6 +114,9 @@ Source: "{#ServicePublishDir}\*"; DestDir: "{app}\Service"; Components: service;
 ; --- Helper Scriptler ---
 Source: "install-service.cmd"; DestDir: "{app}\Service"; Components: service; Flags: ignoreversion
 Source: "uninstall-service.cmd"; DestDir: "{app}\Service"; Components: service; Flags: ignoreversion
+
+; --- .NET Desktop Runtime Redistributable ---
+Source: "redist\{#DotNetRuntimeInstaller}"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall nocompression
 
 ; --- Kurulum Bilgi Dosyaları ---
 Source: "license.txt"; DestDir: "{app}"; Flags: ignoreversion
@@ -157,6 +167,9 @@ Filename: "sc.exe"; Parameters: "delete {#MyServiceName}"; RunOnceId: "Uninstall
 Type: filesandordirs; Name: "{app}\Service\logs"
 
 [Code]
+var
+  DotNetNeeded: Boolean;
+
 // .NET 10 Desktop Runtime kurulu mu kontrol et
 // Konum: C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\10.*
 function IsDotNet10DesktopInstalled(): Boolean;
@@ -180,15 +193,52 @@ end;
 function InitializeSetup(): Boolean;
 begin
   Result := True;
+  DotNetNeeded := not IsDotNet10DesktopInstalled();
+end;
 
-  // .NET 10 Desktop Runtime kontrolü
-  if not IsDotNet10DesktopInstalled() then
+// Dosyalar kopyalandıktan sonra, asıl kurulum öncesi .NET Runtime kur
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  RuntimePath: String;
+  ResultCode: Integer;
+begin
+  Result := '';
+  NeedsRestart := False;
+
+  if DotNetNeeded then
   begin
-    MsgBox(ExpandConstant('{cm:DotNetRequired}') + #13#10#13#10 +
-           'İndir / Download: https://dotnet.microsoft.com/download/dotnet/10.0',
-           mbError, MB_OK);
-    Result := False;
-    Exit;
+    RuntimePath := ExpandConstant('{tmp}\{#DotNetRuntimeInstaller}');
+    // Kullanıcıya bilgi ver
+    WizardForm.StatusLabel.Caption := ExpandConstant('{cm:DotNetInstalling}');
+    WizardForm.StatusLabel.Update;
+
+    // Sessiz kurulum: /install /quiet /norestart
+    if not Exec(RuntimePath, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    begin
+      Result := ExpandConstant('{cm:DotNetFailed}');
+      StringChange(Result, '%1', IntToStr(ResultCode));
+      Exit;
+    end;
+
+    // Başarı kontrolleri:
+    // 0 = başarılı kurulum
+    // 1641 = kurulum başarılı, yeniden başlatma başlatıldı
+    // 3010 = kurulum başarılı, yeniden başlatma gerekli
+    if (ResultCode <> 0) and (ResultCode <> 1641) and (ResultCode <> 3010) then
+    begin
+      Result := ExpandConstant('{cm:DotNetFailed}');
+      StringChange(Result, '%1', IntToStr(ResultCode));
+      Exit;
+    end;
+
+    if (ResultCode = 1641) or (ResultCode = 3010) then
+      NeedsRestart := True;
+
+    // Kurulum sonrası doğrulama
+    if IsDotNet10DesktopInstalled() then
+      Log('.NET 10 Desktop Runtime başarıyla kuruldu.')
+    else if not NeedsRestart then
+      Log('.NET 10 Desktop Runtime kurulumu tamamlandı ancak doğrulanamadı (restart gerekebilir).');
   end;
 end;
 
