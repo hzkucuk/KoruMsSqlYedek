@@ -1,4 +1,13 @@
-﻿## [0.99.28] - 2025-07-16 — Bulut Yükleme Dosya Adı & Bütünlük Doğrulaması
+﻿## [0.99.29] - 2025-07-16 — Bulut Yükleme Log Format Yenileme
+
+### İyileştirme
+- **İlerleme satırlarında dosya adı birleştirildi** — Ayrı "Bulut yükleme başladı" ve "İlerleme" satırları yerine tek satırda birleşik format: `Bulut yükleme: (dosya_adi) Yükleniyor: %... | Gönderilen: ... | Hız: ...`. Her dosya için ilerleme yerinde güncelleniyor.
+- **Dosya başına tamamlanma satırı kaldırıldı** — Her dosya/hedef için ayrı "Bulut X: Başarılı" satırları yerine hedef bazlı tek özet: `Bulut hzkgoogle Görevi: Başarılı`.
+- **Toplu tamamlanma satırına toplam boyut eklendi** — `Toplu bulut yükleme tamamlandı: 3 dosya — 3/3 başarılı  Gönderilen: 17,1 MB`.
+- **Yedekleme tamamlanma satırında doğruluk bilgisi** — Bulut hedefi olan planlar için: `[Plan] Yedekleme tamamlandı. ✓ Doğruluk kontrolü tamamlandı.`.
+- **E-posta log formatı senkronize edildi** — `FormatActivityLogLine` da aynı sadeleştirilmiş formata güncellendi.
+
+## [0.99.28] - 2025-07-16 — Bulut Yükleme Dosya Adı & Bütünlük Doğrulaması
 
 ### İyileştirme
 - **Bulut yükleme ilerleme satırlarında dosya adı gösteriliyor** — Tek dosya yükleme yolunda (`UploadToAllAsync`) tüm olaylara `CloudFileName`, `CloudFileIndex`, `CloudFileTotal` eklendi. Artık UI ilerleme satırları hangi dosyanın yüklendiğini gösteriyor.

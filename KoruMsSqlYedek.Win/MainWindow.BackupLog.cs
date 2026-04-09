@@ -18,19 +18,18 @@ namespace KoruMsSqlYedek.Win
     public partial class MainWindow
     {
         // İlerleme satırı tespiti için önek sabitleri
-            private const string UploadProgressMarker = "Yükleniyor";
+            private const string CloudUploadLineMarker = "Bulut yükleme:";
             private const string CompressProgressMarker = "\u0131k\u0131\u015ft\u0131r\u0131l\u0131yor";
-            private const string UploadCompletedMarker = "Yükleme tamamlandı";
 
         // Per-plan log buffer (planId → satır listesi + renk)
         private readonly Dictionary<string, List<(string Text, Color Color)>> _planLogs = new Dictionary<string, List<(string Text, Color Color)>>();
 
         /// <summary>
         /// Metnin ilerleme satırı olup olmadığını kontrol eder.
-        /// Upload progress, sıkıştırma progress ve upload tamamlandı satırlarını kapsar.
+        /// Bulut yükleme progress ve sıkıştırma progress satırlarını kapsar.
         /// </summary>
         private static bool IsProgressLine(string text)
-            => text.Contains(UploadProgressMarker) || text.Contains(CompressProgressMarker) || text.Contains(UploadCompletedMarker);
+            => text.Contains(CloudUploadLineMarker) || text.Contains(CompressProgressMarker);
 
         /// <summary>
         /// Plan'a ait log buffer'ına satır ekler ve seçili plan ise UI'yı günceller.
