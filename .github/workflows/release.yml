@@ -70,6 +70,20 @@ jobs:
       shell: pwsh
       run: New-Item -ItemType Directory -Force -Path releases | Out-Null
 
+    # ── .NET Desktop Runtime İndir (installer'a gömülecek) ────────
+    - name: Download .NET Desktop Runtime
+      shell: pwsh
+      run: |
+        $redistDir = "Deployment\InnoSetup\redist"
+        New-Item -ItemType Directory -Force -Path $redistDir | Out-Null
+        $runtimeUrl = "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.5/windowsdesktop-runtime-10.0.5-win-x64.exe"
+        $runtimeFile = "$redistDir\windowsdesktop-runtime-10.0.5-win-x64.exe"
+        Write-Host "Downloading .NET 10 Desktop Runtime..."
+        Invoke-WebRequest -Uri $runtimeUrl -OutFile $runtimeFile -UseBasicParsing
+        if (!(Test-Path $runtimeFile)) { throw "Runtime download failed!" }
+        $size = [math]::Round((Get-Item $runtimeFile).Length / 1MB, 1)
+        Write-Host "Downloaded: $runtimeFile ($size MB)"
+
     # ── Inno Setup ────────────────────────────────────────────────
     # NOT: windows-latest runner'ında Inno Setup 6 pre-installed gelir.
     # choco install GEREKSİZ ve runner'daki kurulumla ÇAKİŞİYOR — kaldırıldı.
@@ -125,7 +139,7 @@ jobs:
 
           ### Gereksinimler
           - Windows 10/11 (x64)
-          - [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+          - .NET 10 Desktop Runtime (installer'a dahildir, eksikse otomatik kurulur)
 
           > Güncelleme yapıyorsanız mevcut ayarlarınız korunur.
         draft: false
