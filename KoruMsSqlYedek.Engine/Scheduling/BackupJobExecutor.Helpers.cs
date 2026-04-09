@@ -288,7 +288,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     PlanName = plan.PlanName,
                     ActivityType = BackupActivityType.StepChanged,
                     StepName = "Bulut Yükleme",
-                    Message = $"Toplu bulut yükleme tamamlandı: {batchFiles.Count} dosya — {totalSuccess}/{totalTargets} başarılı  Gönderilen: {Fmt(totalSize)}"
+                    Message = $"Toplu bulut yükleme tamamlandı: {batchFiles.Count} dosya — {totalSuccess}/{totalTargets} başarılı | Gönderilen: {Fmt(totalSize)}"
                 });
 
                 return (allOk, allFileCloudResults);
@@ -323,11 +323,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             BackupActivityType.Completed
                 => e.IsSuccess
                     ? (string.IsNullOrEmpty(e.Message)
-                        ? $"[{e.PlanName}] Yedekleme tamamlandı. ✓"
-                        : $"[{e.PlanName}] Yedekleme tamamlandı. ✓ {e.Message}.")
+                        ? $"[{e.PlanName}] Görevi için Yedekleme tamamlandı. ✓"
+                        : $"[{e.PlanName}] Görevi için Yedekleme tamamlandı. ✓ {e.Message}.")
                     : (string.IsNullOrEmpty(e.Message)
-                        ? $"[{e.PlanName}] Yedekleme tamamlandı. ✓"
-                        : $"[{e.PlanName}] Yedekleme tamamlandı ({e.Message}). ⚠"),
+                        ? $"[{e.PlanName}] Görevi için Yedekleme tamamlandı. ✓"
+                        : $"[{e.PlanName}] Görevi için Yedekleme tamamlandı ({e.Message}). ⚠"),
             BackupActivityType.Failed
                 => $"[{e.PlanName}] Yedekleme başarısız: {e.Message}",
             BackupActivityType.Cancelled

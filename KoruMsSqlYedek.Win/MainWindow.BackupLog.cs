@@ -18,7 +18,7 @@ namespace KoruMsSqlYedek.Win
     public partial class MainWindow
     {
         // İlerleme satırı tespiti için önek sabitleri
-            private const string CloudUploadLineMarker = "Bulut yükleme:";
+            private const string CloudUploadLineMarker = "Bulut yükleme başladı:";
             private const string CompressProgressMarker = "\u0131k\u0131\u015ft\u0131r\u0131l\u0131yor";
 
         // Per-plan log buffer (planId → satır listesi + renk)

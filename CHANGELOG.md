@@ -1,4 +1,10 @@
-﻿## [0.99.31] - 2025-07-16 — Bulut Yükleme Log Format Düzeltmesi
+﻿## [0.99.32] - 2025-07-17 — Bulut Yükleme Log Format Boşluk Düzeltmesi
+
+### Düzeltme
+- **Çift boşluk düzeltildi** — `BuildCloudUploadLogLine` içindeki `"Bulut yükleme başladı:  ("` çift boşluk tek boşluğa düzeltildi.
+- **Toplu yükleme özet formatı** — `"başarılı  Gönderilen"` çift boşluk `"başarılı | Gönderilen"` pipe ayracıyla değiştirildi.
+
+## [0.99.31] - 2025-07-16 — Bulut Yükleme Log Format Düzeltmesi
 
 ### Düzeltme
 - **%100 tamamlanma satırı artık kalıcı** — Bulut yükleme %100’e ulaştığında ilerleme satırı artık sonraki event’ler tarafından üzerine yazılmıyor. “Tamamlandı ✓” satırı log’da kalıcı olarak korunuyor.

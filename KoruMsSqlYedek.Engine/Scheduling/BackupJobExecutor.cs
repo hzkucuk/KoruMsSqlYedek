@@ -172,7 +172,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                 IsSuccess = fileOverallSuccess,
                                 Message = !fileOverallSuccess
                                     ? (anyFileSourceFailed ? "Dosya yedekleme başarısız" : "Bulut yükleme başarısız")
-                                    : (hasCloudTargets ? "Doğruluk kontrolü tamamlandı" : null)
+                                    : (hasCloudTargets ? "Bulut ve yerel Doğruluk Kontrolleri tamamlandı" : null)
                             });
                             return;
                         }
@@ -236,7 +236,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             IsSuccess = overallSuccess,
                             Message = !overallSuccess
                                 ? (anySqlFailed ? "SQL yedekleme başarısız" : "Bulut yükleme başarısız")
-                                : (hasCloudTargets ? "Doğruluk kontrolü tamamlandı" : null)
+                                : (hasCloudTargets ? "Bulut ve yerel Doğruluk Kontrolleri tamamlandı" : null)
                         });
 
                         }
