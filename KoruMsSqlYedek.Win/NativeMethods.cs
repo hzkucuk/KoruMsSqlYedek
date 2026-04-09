@@ -56,9 +56,20 @@ namespace KoruMsSqlYedek.Win
         internal const uint TV_FIRST = 0x1100;
         internal const uint TVM_SETITEM = TV_FIRST + 63;           // TVM_SETITEMW
         internal const uint TVM_SETEXTENDEDSTYLE = TV_FIRST + 44;
+        internal const uint TVM_GETIMAGELIST = TV_FIRST + 8;
         internal const uint TVS_EX_PARTIALCHECKBOXES = 0x0080;
+        internal const int TVSIL_STATE = 2;
         internal const int TVIF_STATE = 0x0008;
         internal const int TVIS_STATEIMAGEMASK = 0xF000;
+
+        /// <summary>Image list'teki ikonu değiştirir.</summary>
+        [DllImport("comctl32.dll")]
+        internal static extern int ImageList_ReplaceIcon(IntPtr himl, int i, IntPtr hicon);
+
+        /// <summary>Image list'teki ikon boyutunu döndürür.</summary>
+        [DllImport("comctl32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool ImageList_GetIconSize(IntPtr himl, out int cx, out int cy);
 
         /// <summary>
         /// TreeView öğe durumu yapısı (TVITEMW).

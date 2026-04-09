@@ -97,8 +97,8 @@ namespace KoruMsSqlYedek.Win.Theme
         }
 
         /// <summary>
-        /// Windows TreeView'da TVS_EX_PARTIALCHECKBOXES stilini etkinleştirir.
-        /// Bu, state image list'e indeterminate (mixed) checkbox görselini ekler.
+        /// Windows TreeView'da TVS_EX_PARTIALCHECKBOXES stilini etkinleştirir
+        /// ve native checkbox ikonlarını tema renklerine uygun özel ikonlarla değiştirir.
         /// </summary>
         private void EnablePartialCheckboxes()
         {
@@ -109,6 +109,96 @@ namespace KoruMsSqlYedek.Win.Theme
                 NativeMethods.TVM_SETEXTENDEDSTYLE,
                 (IntPtr)NativeMethods.TVS_EX_PARTIALCHECKBOXES,
                 (IntPtr)NativeMethods.TVS_EX_PARTIALCHECKBOXES);
+
+            ReplaceCheckboxImages();
+        }
+
+        /// <summary>
+        /// Native state image list'teki checkbox ikonlarını tema renklerine uygun
+        /// GDI+ ile çizilmiş ikonlarla değiştirir. Dark temada görünürlüğü artırır.
+        /// </summary>
+        private void ReplaceCheckboxImages()
+        {
+            IntPtr hStateList = NativeMethods.SendMessage(
+                _tree.Handle,
+                NativeMethods.TVM_GETIMAGELIST,
+                (IntPtr)NativeMethods.TVSIL_STATE,
+                IntPtr.Zero);
+
+            if (hStateList == IntPtr.Zero) return;
+
+            if (!NativeMethods.ImageList_GetIconSize(hStateList, out int cx, out int cy))
+                return;
+
+            ReplaceStateIcon(hStateList, 1, RenderCheckbox(cx, cy, CheckboxVisual.Unchecked));
+            ReplaceStateIcon(hStateList, 2, RenderCheckbox(cx, cy, CheckboxVisual.Checked));
+            ReplaceStateIcon(hStateList, 3, RenderCheckbox(cx, cy, CheckboxVisual.Indeterminate));
+        }
+
+        private static void ReplaceStateIcon(IntPtr hImageList, int index, Bitmap bmp)
+        {
+            IntPtr hIcon = bmp.GetHicon();
+            try
+            {
+                NativeMethods.ImageList_ReplaceIcon(hImageList, index, hIcon);
+            }
+            finally
+            {
+                NativeMethods.DestroyIcon(hIcon);
+                bmp.Dispose();
+            }
+        }
+
+        private enum CheckboxVisual { Unchecked, Checked, Indeterminate }
+
+        private static Bitmap RenderCheckbox(int width, int height, CheckboxVisual state)
+        {
+            Bitmap bmp = new(width, height);
+            bmp.SetResolution(96, 96);
+
+            using Graphics g = Graphics.FromImage(bmp);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.Clear(Color.Transparent);
+
+            int boxSize = Math.Min(width, height) - 3;
+            int x = (width - boxSize) / 2;
+            int y = (height - boxSize) / 2;
+            Rectangle boxRect = new(x, y, boxSize - 1, boxSize - 1);
+
+            switch (state)
+            {
+                case CheckboxVisual.Unchecked:
+                    using (Pen borderPen = new(ModernTheme.TextSecondary, 1.5f))
+                        g.DrawRectangle(borderPen, boxRect);
+                    break;
+
+                case CheckboxVisual.Checked:
+                    using (SolidBrush fill = new(ModernTheme.AccentPrimary))
+                        g.FillRectangle(fill, boxRect);
+                    using (Pen checkPen = new(Color.White, 1.6f))
+                    {
+                        checkPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                        checkPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                        g.DrawLines(checkPen,
+                        [
+                            new PointF(x + boxSize * 0.22f, y + boxSize * 0.52f),
+                            new PointF(x + boxSize * 0.42f, y + boxSize * 0.72f),
+                            new PointF(x + boxSize * 0.78f, y + boxSize * 0.28f)
+                        ]);
+                    }
+                    break;
+
+                case CheckboxVisual.Indeterminate:
+                    using (Pen borderPen = new(ModernTheme.StatusWarning, 1.5f))
+                        g.DrawRectangle(borderPen, boxRect);
+                    int pad = boxSize / 4;
+                    Rectangle inner = new(x + pad, y + pad, boxSize - 2 * pad - 1, boxSize - 2 * pad - 1);
+                    using (SolidBrush fill = new(ModernTheme.StatusWarning))
+                        g.FillRectangle(fill, inner);
+                    break;
+            }
+
+            return bmp;
         }
 
         /// <summary>
