@@ -38,12 +38,6 @@ namespace KoruMsSqlYedek.Win
         internal static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
         /// <summary>
-        /// TreeView öğe durumunu değiştirmek için TVITEM yapısı ile mesaj gönderir.
-        /// </summary>
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        internal static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, ref TVITEM lParam);
-
-        /// <summary>
         /// Uygulama tanımlı pencere mesajı kaydeder.
         /// </summary>
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -51,44 +45,6 @@ namespace KoruMsSqlYedek.Win
 
         internal const int SW_RESTORE = 9;
         internal const int HWND_BROADCAST = 0xFFFF;
-
-        // ── TreeView Constants ──
-        internal const uint TV_FIRST = 0x1100;
-        internal const uint TVM_SETITEM = TV_FIRST + 63;           // TVM_SETITEMW
-        internal const uint TVM_SETEXTENDEDSTYLE = TV_FIRST + 44;
-        internal const uint TVM_GETIMAGELIST = TV_FIRST + 8;
-        internal const uint TVS_EX_PARTIALCHECKBOXES = 0x0080;
-        internal const int TVSIL_STATE = 2;
-        internal const int TVIF_STATE = 0x0008;
-        internal const int TVIS_STATEIMAGEMASK = 0xF000;
-
-        /// <summary>Image list'teki ikonu değiştirir.</summary>
-        [DllImport("comctl32.dll")]
-        internal static extern int ImageList_ReplaceIcon(IntPtr himl, int i, IntPtr hicon);
-
-        /// <summary>Image list'teki ikon boyutunu döndürür.</summary>
-        [DllImport("comctl32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool ImageList_GetIconSize(IntPtr himl, out int cx, out int cy);
-
-        /// <summary>
-        /// TreeView öğe durumu yapısı (TVITEMW).
-        /// Checkbox state image ayarlamak için kullanılır.
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        internal struct TVITEM
-        {
-            public int mask;
-            public IntPtr hItem;
-            public int state;
-            public int stateMask;
-            public IntPtr pszText;
-            public int cchTextMax;
-            public int iImage;
-            public int iSelectedImage;
-            public int cChildren;
-            public IntPtr lParam;
-        }
 
         /// <summary>
         /// Kontrol temasını değiştirir — "DarkMode_Explorer" ile dark scrollbar sağlanır.

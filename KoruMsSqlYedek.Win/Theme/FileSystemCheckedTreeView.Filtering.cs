@@ -139,7 +139,7 @@ namespace KoruMsSqlYedek.Win.Theme
             {
                 if (node.Name == DummyNodeKey) continue;
 
-                if (node.Checked)
+                if (IsNodeChecked(node))
                 {
                     // Eğer tüm çocuklar da checked ise sadece bu klasörü ekle
                     bool allChildrenChecked = AllChildrenChecked(node);
@@ -168,7 +168,7 @@ namespace KoruMsSqlYedek.Win.Theme
             foreach (TreeNode child in node.Nodes)
             {
                 if (child.Name == DummyNodeKey) continue;
-                if (!child.Checked) return false;
+                if (!IsNodeChecked(child)) return false;
                 if (!AllChildrenChecked(child)) return false;
             }
             return true;
@@ -179,7 +179,7 @@ namespace KoruMsSqlYedek.Win.Theme
             foreach (TreeNode child in node.Nodes)
             {
                 if (child.Name == DummyNodeKey) continue;
-                if (child.Checked) return true;
+                if (IsNodeCheckedOrMixed(child)) return true;
                 if (HasAnyCheckedChild(child)) return true;
             }
             return false;
@@ -190,7 +190,7 @@ namespace KoruMsSqlYedek.Win.Theme
             foreach (TreeNode node in nodes)
             {
                 _mixedNodes.Remove(node);
-                node.Checked = false;
+                node.StateImageIndex = StateUnchecked;
                 if (node.Nodes.Count > 0)
                     UncheckAll(node.Nodes);
             }
@@ -201,7 +201,7 @@ namespace KoruMsSqlYedek.Win.Theme
             foreach (TreeNode node in nodes)
             {
                 if (node.Name == DummyNodeKey) continue;
-                if (node.Checked && !_mixedNodes.Contains(node))
+                if (IsNodeChecked(node) && !_mixedNodes.Contains(node))
                 {
                     string path = node.Tag as string;
                     if (!string.IsNullOrEmpty(path))

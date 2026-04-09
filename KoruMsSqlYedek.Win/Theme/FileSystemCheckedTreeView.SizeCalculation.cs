@@ -191,7 +191,7 @@ namespace KoruMsSqlYedek.Win.Theme
             {
                 if (node.Name == DummyNodeKey) continue;
 
-                if (node.Checked)
+                if (IsNodeChecked(node))
                 {
                     string path = node.Tag as string;
                     if (string.IsNullOrEmpty(path)) continue;
