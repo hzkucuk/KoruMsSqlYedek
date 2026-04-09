@@ -72,6 +72,25 @@ namespace KoruMsSqlYedek.Core.Events
         public bool ToastEnabled { get; set; } = true;
 
         /// <summary>
+        /// Upload sonrası uzak dosya boyutu (byte). Sağlık kontrolü için.
+        /// CloudUploadCompleted olaylarında doldurulur.
+        /// </summary>
+        public long RemoteFileSizeBytes { get; set; }
+
+        /// <summary>
+        /// Yerel dosya boyutu (byte). Sağlık kontrolü karşılaştırması için.
+        /// CloudUploadCompleted olaylarında doldurulur.
+        /// </summary>
+        public long LocalFileSizeBytes { get; set; }
+
+        /// <summary>
+        /// Dosya bütünlüğü doğrulaması yapılıp başarılı oldu mu.
+        /// true: boyut eşleşmesi doğrulandı, false: doğrulanamadı veya eşleşmiyor.
+        /// CloudUploadCompleted olaylarında doldurulur.
+        /// </summary>
+        public bool? IsIntegrityVerified { get; set; }
+
+        /// <summary>
         /// Maks deneme aşılarak terk edilen dosya bilgileri.
         /// CloudUploadAbandoned olaylarında doldurulur.
         /// </summary>

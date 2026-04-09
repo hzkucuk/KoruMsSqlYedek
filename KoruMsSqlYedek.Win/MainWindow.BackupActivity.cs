@@ -243,7 +243,10 @@ namespace KoruMsSqlYedek.Win
                 RequestNextFireTimesAsync();
             }
 
-            bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress;
+            bool isProgress = e.ActivityType == BackupActivityType.CloudUploadProgress
+                || (e.ActivityType == BackupActivityType.StepChanged
+                    && !string.IsNullOrEmpty(e.Message)
+                    && e.Message.Contains("ıkıştırılıyor"));
             Color logColor = GetLogColor(e.ActivityType);
 
             if (e.ActivityType == BackupActivityType.Completed && !e.IsSuccess && !string.IsNullOrEmpty(e.Message))
@@ -318,9 +321,7 @@ namespace KoruMsSqlYedek.Win
                 => BuildCloudUploadLogLine(e),
 
             BackupActivityType.CloudUploadCompleted
-                => e.IsSuccess
-                    ? string.Format("Bulut {0}: Başarılı ✓", e.CloudTargetName)
-                    : string.Format("Bulut {0}: Başarısız ✕ — {1}", e.CloudTargetName, e.Message ?? "Bilinmeyen hata"),
+                => BuildCloudUploadCompletedLine(e),
 
             BackupActivityType.CloudUploadAbandoned
                 => e.AbandonedFiles is { Count: > 0 }
@@ -345,11 +346,19 @@ namespace KoruMsSqlYedek.Win
 
         private string BuildCloudUploadLogLine(BackupActivityEventArgs e)
         {
-            if (e.ProgressPercent >= 100) return string.Empty;
-
-            string fileInfo = !string.IsNullOrEmpty(e.CloudFileName) && e.CloudFileTotal > 1
-                ? $" [{e.CloudFileIndex}/{e.CloudFileTotal}] {e.CloudFileName}"
+            string fileInfo = !string.IsNullOrEmpty(e.CloudFileName)
+                ? $" [{e.CloudFileIndex}/{Math.Max(e.CloudFileTotal, 1)}] {e.CloudFileName}"
                 : "";
+
+            if (e.ProgressPercent >= 100)
+            {
+                // %100 tamamlandı mesajı — dosya adı dahil
+                if (e.BytesTotal > 0)
+                    return string.Format("Yükleme tamamlandı{0}: %100 | Gönderilen: {1}",
+                        fileInfo, FormatFileSize(e.BytesTotal));
+
+                return string.Format("Yükleme tamamlandı{0}: %100", fileInfo);
+            }
 
             if (e.BytesTotal > 0)
             {
@@ -368,6 +377,31 @@ namespace KoruMsSqlYedek.Win
                     etaPart);
             }
             return string.Format("Yükleniyor{0}: %{1}", fileInfo, e.ProgressPercent);
+        }
+
+        private string BuildCloudUploadCompletedLine(BackupActivityEventArgs e)
+        {
+            string fileName = !string.IsNullOrEmpty(e.CloudFileName)
+                ? $" | {e.CloudFileName}"
+                : "";
+
+            if (!e.IsSuccess)
+                return string.Format("Bulut {0}: Başarısız ✕{1} — {2}", e.CloudTargetName, fileName, e.Message ?? "Bilinmeyen hata");
+
+            // Boyut bilgisi
+            string sizeInfo = e.LocalFileSizeBytes > 0
+                ? $" [{FormatFileSize(e.LocalFileSizeBytes)}]"
+                : "";
+
+            // Sağlık kontrolü sonucu
+            string healthCheck = e.IsIntegrityVerified switch
+            {
+                true  => " — Doğrulandı ✓",
+                false => " — Boyut uyuşmazlığı ⚠",
+                null  => ""
+            };
+
+            return string.Format("Bulut {0}: Başarılı{1}{2}{3}", e.CloudTargetName, fileName, sizeInfo, healthCheck);
         }
 
         private static Color GetLogColor(BackupActivityType activityType) => activityType switch

@@ -1,4 +1,11 @@
-﻿## [0.99.27] - 2025-07-15 — Dark Tema Checkbox Görünürlük İyileştirmesi
+﻿## [0.99.28] - 2025-07-16 — Bulut Yükleme Dosya Adı & Bütünlük Doğrulaması
+
+### İyileştirme
+- **Bulut yükleme ilerleme satırlarında dosya adı gösteriliyor** — Tek dosya yükleme yolunda (`UploadToAllAsync`) tüm olaylara `CloudFileName`, `CloudFileIndex`, `CloudFileTotal` eklendi. Artık UI ilerleme satırları hangi dosyanın yüklendiğini gösteriyor.
+- **Serilog log'larında sağlayıcı bazlı bütünlük doğrulaması** — Bulut yükleme sonrası her sağlayıcı için ayrı satırda dosya adı, sağlayıcı, doğrulama durumu (Doğrulandı ✓ / Boyut uyuşmazlığı ⚠ / Başarısız), yerel ve uzak dosya boyutu raporlanıyor.
+- **Bulut yükleme tamamlanma satırında sağlık kontrolü** — UI'de yükleme tamamlandığında dosya adı, boyut ve bütünlük doğrulama sonucu görüntüleniyor.
+
+## [0.99.27] - 2025-07-15 — Dark Tema Checkbox Görünürlük İyileştirmesi
 
 ### Düzeltme
 - **TreeView checkbox'ları dark temada artık görünür** — `CheckBoxes = false` + özel `StateImageList` yaklaşımına geçildi. Visual Styles aktifken native checkbox ikonlarının tema çizicisi tarafından geçersiz kılınması sorunu çözüldü. GDI+ ile tema renklerine uygun özel checkbox ikonları: Unchecked (gri kenarlık), Checked (yeşil dolgu + beyaz tik), Indeterminate (amber kenarlık + iç kare). Tüm `node.Checked` kullanımları `StateImageIndex` tabanlı sisteme dönüştürüldü. Artık P/Invoke gerekmeden tam özelleştirilebilir checkbox desteği.

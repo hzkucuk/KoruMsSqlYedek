@@ -71,6 +71,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                 result.IsSuccess = true;
                 result.RemoteFilePath = destPath;
+                result.RemoteFileSizeBytes = new FileInfo(destPath).Length;
                 result.UploadedAt = DateTime.UtcNow;
 
                 Log.Information("Yerel kopyalama başarılı: {Source} → {Dest} ({Size:N0} bytes)",

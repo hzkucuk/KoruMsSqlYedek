@@ -130,6 +130,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     PlanName = planName,
                     ActivityType = BackupActivityType.CloudUploadStarted,
                     CloudTargetName = effectiveTarget.DisplayName,
+                    CloudFileName = remoteFileName,
+                    CloudFileIndex = 1,
+                    CloudFileTotal = 1,
                     CloudTargetIndex = completed + 1,
                     CloudTargetTotal = enabledTargets.Count
                 });
@@ -157,6 +160,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         PlanName = planName,
                         ActivityType = BackupActivityType.CloudUploadProgress,
                         CloudTargetName = effectiveTarget.DisplayName,
+                        CloudFileName = remoteFileName,
+                        CloudFileIndex = 1,
+                        CloudFileTotal = 1,
                         CloudTargetIndex = completed + 1,
                         CloudTargetTotal = enabledTargets.Count,
                         ProgressPercent = pct,
@@ -171,7 +177,38 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     localFilePath, remoteFileName, effectiveTarget, hubProgress, cancellationToken, stateRecord);
                 results.Add(result);
 
+                // Upload tamamlandıktan sonra %100 ilerleme eventi fırlat
+                if (result.IsSuccess)
+                {
+                    double elapsedSec = (DateTime.UtcNow - uploadStartTime).TotalSeconds;
+                    long speedBps = elapsedSec > 0.5 && stateRecord.FileSizeBytes > 0
+                        ? (long)(stateRecord.FileSizeBytes / elapsedSec)
+                        : 0L;
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = planId,
+                        PlanName = planName,
+                        ActivityType = BackupActivityType.CloudUploadProgress,
+                        CloudTargetName = effectiveTarget.DisplayName,
+                        CloudFileName = remoteFileName,
+                        CloudFileIndex = 1,
+                        CloudFileTotal = 1,
+                        CloudTargetIndex = completed + 1,
+                        CloudTargetTotal = enabledTargets.Count,
+                        ProgressPercent = 100,
+                        BytesSent = stateRecord.FileSizeBytes,
+                        BytesTotal = stateRecord.FileSizeBytes,
+                        SpeedBytesPerSecond = speedBps
+                    });
+                }
+
                 completed++;
+
+                // Bütünlük doğrulama bilgisini hesapla
+                bool? integrityVerified = null;
+                if (result.IsSuccess && result.RemoteFileSizeBytes > 0 && stateRecord.FileSizeBytes > 0)
+                    integrityVerified = result.RemoteFileSizeBytes == stateRecord.FileSizeBytes;
 
                 BackupActivityHub.Raise(new BackupActivityEventArgs
                 {
@@ -179,10 +216,16 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     PlanName = planName,
                     ActivityType = BackupActivityType.CloudUploadCompleted,
                     CloudTargetName = effectiveTarget.DisplayName,
+                    CloudFileName = remoteFileName,
+                    CloudFileIndex = completed,
+                    CloudFileTotal = 1,
                     CloudTargetIndex = completed,
                     CloudTargetTotal = enabledTargets.Count,
                     IsSuccess = result.IsSuccess,
-                    Message = result.IsSuccess ? null : result.ErrorMessage
+                    Message = result.IsSuccess ? null : result.ErrorMessage,
+                    RemoteFileSizeBytes = result.RemoteFileSizeBytes,
+                    LocalFileSizeBytes = stateRecord.FileSizeBytes,
+                    IsIntegrityVerified = integrityVerified
                 });
 
                 Log.Debug("Upload ilerleme: {Completed}/{Total} hedef tamamlandı — {Target}",
@@ -398,7 +441,12 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         CloudTargetIndex = targetCompleted,
                         CloudTargetTotal = enabledTargets.Count,
                         IsSuccess = result.IsSuccess,
-                        Message = result.IsSuccess ? null : result.ErrorMessage
+                        Message = result.IsSuccess ? null : result.ErrorMessage,
+                        RemoteFileSizeBytes = result.RemoteFileSizeBytes,
+                        LocalFileSizeBytes = currentFileSize,
+                        IsIntegrityVerified = result.IsSuccess && result.RemoteFileSizeBytes > 0 && currentFileSize > 0
+                            ? result.RemoteFileSizeBytes == currentFileSize
+                            : null
                     });
                 }
 

@@ -214,9 +214,16 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             int successCount = fileResults.Count(r => r.IsSuccess);
                             if (successCount == 0) allOk = false;
 
-                            Log.Information(
-                                "Bulut yükleme: {FileName} — {Success}/{Total} başarılı",
-                                pending.RemoteName, successCount, fileResults.Count);
+                            long localSize = GetFileSize(pending.FilePath);
+                            foreach (var r in fileResults)
+                            {
+                                string verify = r.IsSuccess && r.RemoteFileSizeBytes > 0 && localSize > 0
+                                    ? (r.RemoteFileSizeBytes == localSize ? "Doğrulandı ✓" : "Boyut uyuşmazlığı ⚠")
+                                    : r.IsSuccess ? "Boyut bilgisi alınamadı" : "Başarısız";
+                                Log.Information(
+                                    "Bulut yükleme: {FileName} → {Provider} — {Verify} (yerel={LocalSize}, uzak={RemoteSize})",
+                                    pending.RemoteName, r.DisplayName, verify, Fmt(localSize), Fmt(r.RemoteFileSizeBytes));
+                            }
                         }
                         batchIdx++;
                     }
@@ -231,9 +238,16 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         int fSuccess = allFileCloudResults.Count(r => r.IsSuccess);
                         if (fSuccess == 0) allOk = false;
 
-                        Log.Information(
-                            "Bulut yükleme: {FileName} — {Success}/{Total} başarılı",
-                            Path.GetFileName(fileArchivePath), fSuccess, allFileCloudResults.Count);
+                        long fLocalSize = GetFileSize(fileArchivePath);
+                        foreach (var r in allFileCloudResults)
+                        {
+                            string verify = r.IsSuccess && r.RemoteFileSizeBytes > 0 && fLocalSize > 0
+                                ? (r.RemoteFileSizeBytes == fLocalSize ? "Doğrulandı ✓" : "Boyut uyuşmazlığı ⚠")
+                                : r.IsSuccess ? "Boyut bilgisi alınamadı" : "Başarısız";
+                            Log.Information(
+                                "Bulut yükleme: {FileName} → {Provider} — {Verify} (yerel={LocalSize}, uzak={RemoteSize})",
+                                Path.GetFileName(fileArchivePath), r.DisplayName, verify, Fmt(fLocalSize), Fmt(r.RemoteFileSizeBytes));
+                        }
                     }
                 }
 
