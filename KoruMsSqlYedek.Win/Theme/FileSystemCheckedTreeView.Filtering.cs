@@ -185,22 +185,23 @@ namespace KoruMsSqlYedek.Win.Theme
             return false;
         }
 
-        private static void UncheckAll(TreeNodeCollection nodes)
+        private void UncheckAll(TreeNodeCollection nodes)
         {
             foreach (TreeNode node in nodes)
             {
+                _mixedNodes.Remove(node);
                 node.Checked = false;
                 if (node.Nodes.Count > 0)
                     UncheckAll(node.Nodes);
             }
         }
 
-        private static void CountChecked(TreeNodeCollection nodes, ref int folders, ref int files)
+        private void CountChecked(TreeNodeCollection nodes, ref int folders, ref int files)
         {
             foreach (TreeNode node in nodes)
             {
                 if (node.Name == DummyNodeKey) continue;
-                if (node.Checked)
+                if (node.Checked && !_mixedNodes.Contains(node))
                 {
                     string path = node.Tag as string;
                     if (!string.IsNullOrEmpty(path))

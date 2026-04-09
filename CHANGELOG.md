@@ -1,4 +1,12 @@
-﻿## [0.99.25] - 2025-07-15 — Büyük Dosya Yedekleme Performans İyileştirmesi
+﻿## [0.99.26] - 2025-07-15 — Yükleme Log Tek Satır & TreeView Tri-State Checkbox
+
+### Düzeltme
+- **Bulut yükleme ilerleme log'ları tek satırda güncelleniyor** — `ProgressLineMarker` sabitindeki fazladan boşluk kaldırıldı; artık tek dosya yüklemelerinde ilerleme satırı alt alta eklenmek yerine yerinde güncelleniyor.
+
+### İyileştirme
+- **Dosya yedekleme dialog'unda üst klasörler indeterminate checkbox gösteriyor** — Alt klasör seçildiğinde root'a kadar tüm üst klasörler artık Windows native mixed/indeterminate checkbox (kare dolgulu) ile gösteriliyor. `TVS_EX_PARTIALCHECKBOXES` + P/Invoke ile tri-state propagation eklendi. Mixed checkbox tıklandığında standart UX: tümünü seç.
+
+## [0.99.25] - 2025-07-15 — Büyük Dosya Yedekleme Performans İyileştirmesi
 
 ### İyileştirme
 - **Buffer boyutları 80 KB'den 1 MB'ye yükseltildi** — Tüm dosya kopyalama operasyonlarında (FileBackupService, LocalNetworkProvider, SqlBackupService VSS) buffer boyutu artırılarak büyük dosya (4-10 GB) transferlerinde throughput önemli ölçüde iyileştirildi.
