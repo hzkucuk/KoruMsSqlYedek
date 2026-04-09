@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.23"
+  #define MyAppVersion "0.99.24"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -116,7 +116,8 @@ Source: "install-service.cmd"; DestDir: "{app}\Service"; Components: service; Fl
 Source: "uninstall-service.cmd"; DestDir: "{app}\Service"; Components: service; Flags: ignoreversion
 
 ; --- .NET Desktop Runtime Redistributable ---
-Source: "redist\{#DotNetRuntimeInstaller}"; DestDir: "{tmp}"; Flags: ignoreversion deleteafterinstall nocompression
+; dontcopy: PrepareToInstall içinde ExtractTemporaryFile ile çıkarılır (PrepareToInstall, [Files] çıkarımından ÖNCE çalışır)
+Source: "redist\{#DotNetRuntimeInstaller}"; Flags: dontcopy nocompression
 
 ; --- Kurulum Bilgi Dosyaları ---
 Source: "license.txt"; DestDir: "{app}"; Flags: ignoreversion
@@ -207,6 +208,9 @@ begin
 
   if DotNetNeeded then
   begin
+    // Önce runtime dosyasını {tmp} klasörüne çıkar
+    // (PrepareToInstall, [Files] çıkarımından ÖNCE çalışır; dontcopy dosyalar manuel çıkarılmalı)
+    ExtractTemporaryFile('{#DotNetRuntimeInstaller}');
     RuntimePath := ExpandConstant('{tmp}\{#DotNetRuntimeInstaller}');
     // Kullanıcıya bilgi ver
     WizardForm.StatusLabel.Caption := ExpandConstant('{cm:DotNetInstalling}');

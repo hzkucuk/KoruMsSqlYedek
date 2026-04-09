@@ -1,4 +1,9 @@
-﻿## [0.99.23] - 2025-07-14 — .NET Runtime Otomatik Kurulum
+﻿## [0.99.24] - 2025-07-14 — Runtime Kurulum Hatası Düzeltme
+
+### Düzeltme
+- **Installer .NET Runtime kurulum hatası giderildi (hata kodu: 2)** — `PrepareToInstall` fonksiyonu Inno Setup'ın `[Files]` çıkarımından önce çalıştığı için runtime exe `{tmp}` klasöründe bulunamıyordu. `dontcopy` flag'i ve `ExtractTemporaryFile()` kullanılarak dosya manuel olarak çıkarılıyor artık.
+
+## [0.99.23] - 2025-07-14 — .NET Runtime Otomatik Kurulum
 
 ### Yeni Özellik
 - **Installer'a .NET 10 Desktop Runtime gömüldü** — Hedef bilgisayarda .NET 10 Desktop Runtime eksikse, artık kurulum engellenmiyor; installer pakete dahil edilen runtime'ı (`windowsdesktop-runtime-10.0.5-win-x64.exe`, ~57 MB) otomatik olarak sessiz modda (`/install /quiet /norestart`) kuruyor. Başarı kodları (0, 1641, 3010) yönetiliyor; yeniden başlatma gerektiğinde kullanıcı bilgilendiriliyor. Hata durumunda kullanıcıya anlamlı hata mesajı ve manuel indirme linki gösteriliyor.
