@@ -32,6 +32,7 @@ namespace KoruMsSqlYedek.Win.Theme
         // ── Controls ──
         private readonly TreeView _tree;
         private readonly ImageList _imageList;
+        private readonly ImageList _stateImageList;
 
         // ── State ──
         private bool _suppressCheckEvent;
@@ -57,19 +58,27 @@ namespace KoruMsSqlYedek.Win.Theme
         /// <summary>Boyut hesaplaması tamamlandığında tetiklenir. Gerçek ve tahmini 7z boyutunu taşır.</summary>
         internal event EventHandler<SizeCalculationResult> SizeCalculated;
 
+        // ── StateImageList checkbox indices ──
+        private const int StateNone = 0;
+        private const int StateUnchecked = 1;
+        private const int StateChecked = 2;
+        private const int StateIndeterminate = 3;
+
         internal FileSystemCheckedTreeView()
         {
             _imageList = CreateImageList();
+            _stateImageList = CreateCheckboxImageList();
 
             _tree = new TreeView
             {
                 Dock = DockStyle.Fill,
-                CheckBoxes = true,
+                CheckBoxes = false,
                 HideSelection = false,
                 ShowLines = true,
                 ShowPlusMinus = true,
                 ShowRootLines = true,
                 ImageList = _imageList,
+                StateImageList = _stateImageList,
                 Font = ModernTheme.FontBody,
                 BackColor = ModernTheme.SurfaceColor,
                 ForeColor = ModernTheme.TextPrimary,
@@ -80,7 +89,7 @@ namespace KoruMsSqlYedek.Win.Theme
             };
 
             _tree.BeforeExpand += OnBeforeExpand;
-            _tree.AfterCheck += OnAfterCheck;
+            _tree.NodeMouseClick += OnNodeMouseClick;
             _tree.AfterExpand += OnAfterExpand;
 
             Controls.Add(_tree);
@@ -91,47 +100,100 @@ namespace KoruMsSqlYedek.Win.Theme
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            EnablePartialCheckboxes();
             if (_tree.Nodes.Count == 0)
                 LoadDrives();
         }
 
         /// <summary>
-        /// Windows TreeView'da TVS_EX_PARTIALCHECKBOXES stilini etkinleştirir.
-        /// Bu, state image list'e indeterminate (mixed) checkbox görselini ekler.
+        /// Tema renklerine uygun özel checkbox ikonları oluşturur.
+        /// CheckBoxes=false ile kullanılır — Visual Styles override olmaz.
+        /// Index 0: boş (yer tutucu), 1: unchecked, 2: checked, 3: indeterminate.
         /// </summary>
-        private void EnablePartialCheckboxes()
+        private static ImageList CreateCheckboxImageList()
         {
-            if (!_tree.IsHandleCreated) return;
-
-            NativeMethods.SendMessage(
-                _tree.Handle,
-                NativeMethods.TVM_SETEXTENDEDSTYLE,
-                (IntPtr)NativeMethods.TVS_EX_PARTIALCHECKBOXES,
-                (IntPtr)NativeMethods.TVS_EX_PARTIALCHECKBOXES);
-        }
-
-        /// <summary>
-        /// Node'un checkbox görselini native indeterminate (mixed) durumuna ayarlar.
-        /// State image index 3 = indeterminate checkbox (kare dolgulu).
-        /// </summary>
-        private void SetNodeMixedCheckState(TreeNode node)
-        {
-            if (!_tree.IsHandleCreated) return;
-
-            NativeMethods.TVITEM tvItem = new()
+            const int size = 16;
+            ImageList list = new()
             {
-                mask = NativeMethods.TVIF_STATE,
-                hItem = node.Handle,
-                stateMask = NativeMethods.TVIS_STATEIMAGEMASK,
-                state = 3 << 12
+                ColorDepth = ColorDepth.Depth32Bit,
+                ImageSize = new Size(size, size)
             };
 
-            NativeMethods.SendMessage(_tree.Handle, NativeMethods.TVM_SETITEM, IntPtr.Zero, ref tvItem);
+            // 0: Boş — dummy node'lar için (checkbox gösterilmez)
+            list.Images.Add(new Bitmap(size, size));
+
+            // 1: Unchecked
+            list.Images.Add(RenderCheckboxBitmap(size, CheckboxState.Unchecked));
+
+            // 2: Checked
+            list.Images.Add(RenderCheckboxBitmap(size, CheckboxState.Checked));
+
+            // 3: Indeterminate
+            list.Images.Add(RenderCheckboxBitmap(size, CheckboxState.Indeterminate));
+
+            return list;
         }
+
+        private enum CheckboxState { Unchecked, Checked, Indeterminate }
+
+        private static Bitmap RenderCheckboxBitmap(int size, CheckboxState state)
+        {
+            Bitmap bmp = new(size, size);
+            bmp.SetResolution(96, 96);
+
+            using Graphics g = Graphics.FromImage(bmp);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.Clear(Color.Transparent);
+
+            int boxSize = size - 3;
+            int x = (size - boxSize) / 2;
+            int y = (size - boxSize) / 2;
+            Rectangle boxRect = new(x, y, boxSize - 1, boxSize - 1);
+
+            switch (state)
+            {
+                case CheckboxState.Unchecked:
+                    using (Pen borderPen = new(ModernTheme.TextSecondary, 1.5f))
+                        g.DrawRectangle(borderPen, boxRect);
+                    break;
+
+                case CheckboxState.Checked:
+                    using (SolidBrush fill = new(ModernTheme.AccentPrimary))
+                        g.FillRectangle(fill, boxRect);
+                    using (Pen checkPen = new(Color.White, 1.6f))
+                    {
+                        checkPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                        checkPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                        g.DrawLines(checkPen,
+                        [
+                            new PointF(x + boxSize * 0.22f, y + boxSize * 0.52f),
+                            new PointF(x + boxSize * 0.42f, y + boxSize * 0.72f),
+                            new PointF(x + boxSize * 0.78f, y + boxSize * 0.28f)
+                        ]);
+                    }
+                    break;
+
+                case CheckboxState.Indeterminate:
+                    using (Pen borderPen = new(ModernTheme.StatusWarning, 1.5f))
+                        g.DrawRectangle(borderPen, boxRect);
+                    int pad = boxSize / 4;
+                    Rectangle inner = new(x + pad, y + pad, boxSize - 2 * pad - 1, boxSize - 2 * pad - 1);
+                    using (SolidBrush fill = new(ModernTheme.StatusWarning))
+                        g.FillRectangle(fill, inner);
+                    break;
+            }
+
+            return bmp;
+        }
+
+        /// <summary>Node'un checked durumda olup olmadığını döndürür (StateImageIndex == 2).</summary>
+        private static bool IsNodeChecked(TreeNode node) => node.StateImageIndex == StateChecked;
 
         /// <summary>Node'un indeterminate (mixed) durumda olup olmadığını döndürür.</summary>
         internal bool IsNodeMixed(TreeNode node) => _mixedNodes.Contains(node);
+
+        /// <summary>Node'un checked veya indeterminate durumda olup olmadığını döndürür.</summary>
+        private static bool IsNodeCheckedOrMixed(TreeNode node)
+            => node.StateImageIndex == StateChecked || node.StateImageIndex == StateIndeterminate;
 
         // ═══════════════ PUBLIC API ═══════════════
 
@@ -177,7 +239,7 @@ namespace KoruMsSqlYedek.Win.Theme
                     TreeNode node = NavigateToPath(path);
                     if (node is not null)
                     {
-                        node.Checked = true;
+                        node.StateImageIndex = StateChecked;
                         PropagateCheckDown(node, true);
                         UpdateParentCheckState(node);
                     }
@@ -355,6 +417,7 @@ namespace KoruMsSqlYedek.Win.Theme
                 _sizeCts?.Cancel();
                 _sizeCts?.Dispose();
                 _imageList?.Dispose();
+                _stateImageList?.Dispose();
                 _mixedNodes.Clear();
             }
             base.Dispose(disposing);

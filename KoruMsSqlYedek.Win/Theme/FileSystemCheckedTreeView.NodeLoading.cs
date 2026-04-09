@@ -26,7 +26,8 @@ namespace KoruMsSqlYedek.Win.Theme
                     {
                         Tag = drive.RootDirectory.FullName,
                         ImageIndex = IconDrive,
-                        SelectedImageIndex = IconDrive
+                        SelectedImageIndex = IconDrive,
+                        StateImageIndex = StateUnchecked
                     };
                     driveNode.Nodes.Add(DummyNodeKey, "");
                     _tree.Nodes.Add(driveNode);
@@ -58,7 +59,8 @@ namespace KoruMsSqlYedek.Win.Theme
                     {
                         Tag = subDir.FullName,
                         ImageIndex = IconFolderClosed,
-                        SelectedImageIndex = IconFolderClosed
+                        SelectedImageIndex = IconFolderClosed,
+                        StateImageIndex = StateUnchecked
                     };
 
                     // Alt klasör veya dosya varsa dummy ekle
@@ -89,7 +91,8 @@ namespace KoruMsSqlYedek.Win.Theme
                     {
                         Tag = file.FullName,
                         ImageIndex = excluded ? IconFileExcluded : IconFile,
-                        SelectedImageIndex = excluded ? IconFileExcluded : IconFile
+                        SelectedImageIndex = excluded ? IconFileExcluded : IconFile,
+                        StateImageIndex = StateUnchecked
                     };
 
                     ApplyFilterVisualToNode(fileNode);
@@ -100,10 +103,10 @@ namespace KoruMsSqlYedek.Win.Theme
             catch (IOException) { }
 
             // Ebeveynin check state'ini çocuklara propagate et
-            if (parentNode.Checked)
+            if (IsNodeCheckedOrMixed(parentNode))
             {
                 _suppressCheckEvent = true;
-                PropagateCheckDown(parentNode, true);
+                PropagateCheckDown(parentNode, parentNode.StateImageIndex == StateChecked);
                 _suppressCheckEvent = false;
             }
         }
@@ -138,24 +141,35 @@ namespace KoruMsSqlYedek.Win.Theme
             }
         }
 
-        private void OnAfterCheck(object sender, TreeViewEventArgs e)
+        private void OnNodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
+            // Sadece state image (checkbox) alanına tıklanmışsa toggle yap
+            TreeViewHitTestInfo hit = _tree.HitTest(e.Location);
+            if (hit.Location != TreeViewHitTestLocations.StateImage) return;
+            if (e.Node.Name == DummyNodeKey) return;
             if (_suppressCheckEvent) return;
-            if (e.Action == TreeViewAction.Unknown) return;
 
             _suppressCheckEvent = true;
             try
             {
-                // Mixed node tıklandığında: standard UX → tümünü seç (checked yap)
-                if (_mixedNodes.Remove(e.Node) && !e.Node.Checked)
+                TreeNode node = e.Node;
+                bool willCheck;
+
+                if (_mixedNodes.Remove(node))
                 {
-                    e.Node.Checked = true;
+                    // Indeterminate → checked (standard UX: tümünü seç)
+                    willCheck = true;
+                }
+                else
+                {
+                    // Toggle: checked ↔ unchecked
+                    willCheck = node.StateImageIndex != StateChecked;
                 }
 
-                // Alt düğümlere propagate
-                PropagateCheckDown(e.Node, e.Node.Checked);
-                // Üst düğümleri güncelle
-                UpdateParentCheckState(e.Node);
+                node.StateImageIndex = willCheck ? StateChecked : StateUnchecked;
+
+                PropagateCheckDown(node, willCheck);
+                UpdateParentCheckState(node);
             }
             finally
             {
@@ -174,7 +188,7 @@ namespace KoruMsSqlYedek.Win.Theme
             {
                 if (child.Name == DummyNodeKey) continue;
                 _mixedNodes.Remove(child);
-                child.Checked = isChecked;
+                child.StateImageIndex = isChecked ? StateChecked : StateUnchecked;
                 PropagateCheckDown(child, isChecked);
             }
         }
@@ -183,7 +197,7 @@ namespace KoruMsSqlYedek.Win.Theme
         /// Üst node'ların check durumunu çocuklara göre günceller.
         /// Tüm çocuklar checked → parent checked,
         /// Hiçbiri checked değil → parent unchecked,
-        /// Karma durum → parent indeterminate (native mixed checkbox).
+        /// Karma durum → parent indeterminate.
         /// </summary>
         private void UpdateParentCheckState(TreeNode node)
         {
@@ -197,13 +211,13 @@ namespace KoruMsSqlYedek.Win.Theme
             {
                 if (sibling.Name == DummyNodeKey) continue;
 
-                // Mixed node: Checked=true ama tam seçili değil
                 if (_mixedNodes.Contains(sibling))
                 {
+                    // Mixed node: ne tam seçili ne tam boş
                     allFullyChecked = false;
                     noneChecked = false;
                 }
-                else if (sibling.Checked)
+                else if (IsNodeChecked(sibling))
                 {
                     noneChecked = false;
                 }
@@ -217,19 +231,19 @@ namespace KoruMsSqlYedek.Win.Theme
             {
                 // Tüm çocuklar tam seçili → parent checked
                 _mixedNodes.Remove(parent);
-                parent.Checked = true;
+                parent.StateImageIndex = StateChecked;
             }
             else if (noneChecked)
             {
                 // Hiçbir çocuk seçili değil → parent unchecked
                 _mixedNodes.Remove(parent);
-                parent.Checked = false;
+                parent.StateImageIndex = StateUnchecked;
             }
             else
             {
                 // Karma durum → parent indeterminate
                 _mixedNodes.Add(parent);
-                SetNodeMixedCheckState(parent);
+                parent.StateImageIndex = StateIndeterminate;
             }
 
             UpdateParentCheckState(parent);

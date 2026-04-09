@@ -1,4 +1,9 @@
-﻿## [0.99.26] - 2025-07-15 — Yükleme Log Tek Satır & TreeView Tri-State Checkbox
+﻿## [0.99.27] - 2025-07-15 — Dark Tema Checkbox Görünürlük İyileştirmesi
+
+### Düzeltme
+- **TreeView checkbox'ları dark temada artık görünür** — `CheckBoxes = false` + özel `StateImageList` yaklaşımına geçildi. Visual Styles aktifken native checkbox ikonlarının tema çizicisi tarafından geçersiz kılınması sorunu çözüldü. GDI+ ile tema renklerine uygun özel checkbox ikonları: Unchecked (gri kenarlık), Checked (yeşil dolgu + beyaz tik), Indeterminate (amber kenarlık + iç kare). Tüm `node.Checked` kullanımları `StateImageIndex` tabanlı sisteme dönüştürüldü. Artık P/Invoke gerekmeden tam özelleştirilebilir checkbox desteği.
+
+## [0.99.26] - 2025-07-15 — Yükleme Log Tek Satır & TreeView Tri-State Checkbox
 
 ### Düzeltme
 - **Bulut yükleme ilerleme log'ları tek satırda güncelleniyor** — `ProgressLineMarker` sabitindeki fazladan boşluk kaldırıldı; artık tek dosya yüklemelerinde ilerleme satırı alt alta eklenmek yerine yerinde güncelleniyor.
