@@ -371,3 +371,6 @@ FodyWeavers.xsd
 # Build/Publish output
 publish/
 releases/
+
+# Bundled redistributables (e.g., .NET Desktop Runtime installer ~60MB)
+Deployment/InnoSetup/redist/

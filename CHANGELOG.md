@@ -1,4 +1,9 @@
-﻿## [0.99.22] - 2025-07-14 — Tray İkon Animasyonu Yenileme
+﻿## [0.99.23] - 2025-07-14 — .NET Runtime Otomatik Kurulum
+
+### Yeni Özellik
+- **Installer'a .NET 10 Desktop Runtime gömüldü** — Hedef bilgisayarda .NET 10 Desktop Runtime eksikse, artık kurulum engellenmiyor; installer pakete dahil edilen runtime'ı (`windowsdesktop-runtime-10.0.5-win-x64.exe`, ~57 MB) otomatik olarak sessiz modda (`/install /quiet /norestart`) kuruyor. Başarı kodları (0, 1641, 3010) yönetiliyor; yeniden başlatma gerektiğinde kullanıcı bilgilendiriliyor. Hata durumunda kullanıcıya anlamlı hata mesajı ve manuel indirme linki gösteriliyor.
+
+## [0.99.22] - 2025-07-14 — Tray İkon Animasyonu Yenileme
 
 ### İyileştirme
 - **Yedekleme tray animasyonu yeniden tasarlandı** — Harici GIF dosyaları yerine tam boyut kalkan üzerinde dramatik GDI+ animasyonlar: sin-dalga nefes efekti (koyu zümrüt ↔ parlak lime renk geçişi), kalkan yüzeyinde dönen ışık taraması (`ColorBlend` highlight bandı), nabız atan dış glow aura. Tamamlanma animasyonunda parlak flaş + genişleyen başarı halkası + K→✓→K geçişi.
