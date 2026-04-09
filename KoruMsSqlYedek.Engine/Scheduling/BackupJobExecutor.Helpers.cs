@@ -268,7 +268,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         }
                     }
 
-                    string status = tSuccess == tTotal ? "Başarılı" : $"{tSuccess}/{tTotal} başarılı";
+                    string status = tSuccess == tTotal ? "%100 başarıyla gönderildi" : $"{tSuccess}/{tTotal} başarılı";
                     BackupActivityHub.Raise(new BackupActivityEventArgs
                     {
                         PlanId = plan.PlanId,

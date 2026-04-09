@@ -1,4 +1,9 @@
-﻿## [0.99.33] - 2025-07-17 — Pipe Protokolü Bulut Dosya Bilgisi Düzeltmesi
+﻿## [0.99.34] - 2025-07-17 — Bulut Hedef Özet Mesajı İyileştirmesi
+
+### İyileştirme
+- **Per-target başarı mesajı güncellendi** — `"Bulut X Görevi: Başarılı"` → `"Bulut X Görevi: %100 başarıyla gönderildi"`. Kısmi başarıda eski format korunuyor.
+
+## [0.99.33] - 2025-07-17 — Pipe Protokolü Bulut Dosya Bilgisi Düzeltmesi
 
 ### Düzeltme
 - **PipeProtocol’a eksik bulut upload alanları eklendi** — `BackupActivityMessage` sınıfına `CloudFileName`, `CloudFileIndex`, `CloudFileTotal` ve diğer eksik alanlar (`RemoteFileSizeBytes`, `LocalFileSizeBytes`, `IsIntegrityVerified`, `HasFileBackup`, `HasCloudTargets`, `AbandonedFiles`) eklendi. `FromArgs()` ve `ToArgs()` mapping’leri güncellendi.
