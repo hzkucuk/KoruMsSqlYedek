@@ -18,7 +18,7 @@ namespace KoruMsSqlYedek.Win
     public partial class MainWindow
     {
         // İlerleme satırı tespiti için önek sabiti
-        private const string ProgressLineMarker = "Yükleniyor ";
+        private const string ProgressLineMarker = "Yükleniyor";
 
         // Per-plan log buffer (planId → satır listesi + renk)
         private readonly Dictionary<string, List<(string Text, Color Color)>> _planLogs = new Dictionary<string, List<(string Text, Color Color)>>();

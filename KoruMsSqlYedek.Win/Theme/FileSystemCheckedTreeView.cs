@@ -38,6 +38,9 @@ namespace KoruMsSqlYedek.Win.Theme
         private List<string> _includePatterns = new();
         private List<string> _excludePatterns = new();
 
+        /// <summary>Tri-state: indeterminate (kısmi seçim) durumundaki node'ları izler.</summary>
+        private readonly HashSet<TreeNode> _mixedNodes = new();
+
         // ── Size Cache ──
         /// <summary>Dosya boyutu önbelleği: path → byte cinsinden boyut. LoadChildren sırasında doldurulur.</summary>
         private readonly ConcurrentDictionary<string, long> _fileSizeCache = new(StringComparer.OrdinalIgnoreCase);
@@ -88,9 +91,47 @@ namespace KoruMsSqlYedek.Win.Theme
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
+            EnablePartialCheckboxes();
             if (_tree.Nodes.Count == 0)
                 LoadDrives();
         }
+
+        /// <summary>
+        /// Windows TreeView'da TVS_EX_PARTIALCHECKBOXES stilini etkinleştirir.
+        /// Bu, state image list'e indeterminate (mixed) checkbox görselini ekler.
+        /// </summary>
+        private void EnablePartialCheckboxes()
+        {
+            if (!_tree.IsHandleCreated) return;
+
+            NativeMethods.SendMessage(
+                _tree.Handle,
+                NativeMethods.TVM_SETEXTENDEDSTYLE,
+                (IntPtr)NativeMethods.TVS_EX_PARTIALCHECKBOXES,
+                (IntPtr)NativeMethods.TVS_EX_PARTIALCHECKBOXES);
+        }
+
+        /// <summary>
+        /// Node'un checkbox görselini native indeterminate (mixed) durumuna ayarlar.
+        /// State image index 3 = indeterminate checkbox (kare dolgulu).
+        /// </summary>
+        private void SetNodeMixedCheckState(TreeNode node)
+        {
+            if (!_tree.IsHandleCreated) return;
+
+            NativeMethods.TVITEM tvItem = new()
+            {
+                mask = NativeMethods.TVIF_STATE,
+                hItem = node.Handle,
+                stateMask = NativeMethods.TVIS_STATEIMAGEMASK,
+                state = 3 << 12
+            };
+
+            NativeMethods.SendMessage(_tree.Handle, NativeMethods.TVM_SETITEM, IntPtr.Zero, ref tvItem);
+        }
+
+        /// <summary>Node'un indeterminate (mixed) durumda olup olmadığını döndürür.</summary>
+        internal bool IsNodeMixed(TreeNode node) => _mixedNodes.Contains(node);
 
         // ═══════════════ PUBLIC API ═══════════════
 
@@ -314,6 +355,7 @@ namespace KoruMsSqlYedek.Win.Theme
                 _sizeCts?.Cancel();
                 _sizeCts?.Dispose();
                 _imageList?.Dispose();
+                _mixedNodes.Clear();
             }
             base.Dispose(disposing);
         }

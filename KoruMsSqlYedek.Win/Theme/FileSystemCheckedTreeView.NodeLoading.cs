@@ -146,6 +146,12 @@ namespace KoruMsSqlYedek.Win.Theme
             _suppressCheckEvent = true;
             try
             {
+                // Mixed node tıklandığında: standard UX → tümünü seç (checked yap)
+                if (_mixedNodes.Remove(e.Node) && !e.Node.Checked)
+                {
+                    e.Node.Checked = true;
+                }
+
                 // Alt düğümlere propagate
                 PropagateCheckDown(e.Node, e.Node.Checked);
                 // Üst düğümleri güncelle
@@ -167,33 +173,65 @@ namespace KoruMsSqlYedek.Win.Theme
             foreach (TreeNode child in node.Nodes)
             {
                 if (child.Name == DummyNodeKey) continue;
+                _mixedNodes.Remove(child);
                 child.Checked = isChecked;
                 PropagateCheckDown(child, isChecked);
             }
         }
 
-        private static void UpdateParentCheckState(TreeNode node)
+        /// <summary>
+        /// Üst node'ların check durumunu çocuklara göre günceller.
+        /// Tüm çocuklar checked → parent checked,
+        /// Hiçbiri checked değil → parent unchecked,
+        /// Karma durum → parent indeterminate (native mixed checkbox).
+        /// </summary>
+        private void UpdateParentCheckState(TreeNode node)
         {
             TreeNode parent = node.Parent;
             if (parent is null) return;
 
-            bool allChecked = true;
+            bool allFullyChecked = true;
             bool noneChecked = true;
 
             foreach (TreeNode sibling in parent.Nodes)
             {
                 if (sibling.Name == DummyNodeKey) continue;
-                if (sibling.Checked)
+
+                // Mixed node: Checked=true ama tam seçili değil
+                if (_mixedNodes.Contains(sibling))
+                {
+                    allFullyChecked = false;
                     noneChecked = false;
+                }
+                else if (sibling.Checked)
+                {
+                    noneChecked = false;
+                }
                 else
-                    allChecked = false;
+                {
+                    allFullyChecked = false;
+                }
             }
 
-            // WinForms TreeView doesn't natively support indeterminate,
-            // but we can set the parent to checked if all children are checked
-            parent.Checked = allChecked && !noneChecked;
+            if (allFullyChecked && !noneChecked)
+            {
+                // Tüm çocuklar tam seçili → parent checked
+                _mixedNodes.Remove(parent);
+                parent.Checked = true;
+            }
+            else if (noneChecked)
+            {
+                // Hiçbir çocuk seçili değil → parent unchecked
+                _mixedNodes.Remove(parent);
+                parent.Checked = false;
+            }
+            else
+            {
+                // Karma durum → parent indeterminate
+                _mixedNodes.Add(parent);
+                SetNodeMixedCheckState(parent);
+            }
 
-            // Recurse up
             UpdateParentCheckState(parent);
         }
     }

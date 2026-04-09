@@ -24,8 +24,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>
         /// Resumable upload chunk boyutu (256 KB'ın katları — Google API gerekliliği).
+        /// Büyük dosyalar (4-10 GB) için 10 MB chunk = HTTP istek sayısını ~10x azaltır.
         /// </summary>
-        private const int ChunkSize = 256 * 1024 * 4; // 1 MB
+        private const int ChunkSize = 256 * 1024 * 40; // 10 MB
 
         public GoogleDriveProvider(CloudProviderType type)
         {
