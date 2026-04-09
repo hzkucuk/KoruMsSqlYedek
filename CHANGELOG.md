@@ -1,4 +1,9 @@
-﻿## [0.99.34] - 2025-07-17 — Bulut Hedef Özet Mesajı İyileştirmesi
+﻿## [0.99.35] - 2025-07-17 — Yüklü Uygulamalar Simge Düzeltmesi
+
+### Düzeltme
+- **Windows "Yüklü Uygulamalar" simgesi** — InnoSetup script'ine `UninstallDisplayIcon` eklendi. Program artık Windows listesinde kendi simgesiyle görünüyor.
+
+## [0.99.34] - 2025-07-17 — Bulut Hedef Özet Mesajı İyileştirmesi
 
 ### İyileştirme
 - **Per-target başarı mesajı güncellendi** — `"Bulut X Görevi: Başarılı"` → `"Bulut X Görevi: %100 başarıyla gönderildi"`. Kısmi başarıda eski format korunuyor.

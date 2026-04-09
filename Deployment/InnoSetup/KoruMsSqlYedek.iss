@@ -57,6 +57,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 ; UI
 WizardStyle=modern
 SetupIconFile=KoruMsSqlYedek.ico
+UninstallDisplayIcon={app}\{#MyAppExeName}
 ; Güncelleme sırasında mevcut verileri koru
 UsePreviousAppDir=yes
 ; Versiyon bilgisi
