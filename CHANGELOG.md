@@ -1,4 +1,22 @@
-﻿## [0.99.42] - 2025-07-19 — Sihirbaz Adım Etiketleri & CronBuilder Layout Düzeltmesi
+﻿## [0.99.43] - 2025-07-19 — Kalan Hardcoded Türkçe Stringlerin Lokalizasyonu & Resx Temizliği
+
+### Düzeltme
+- **WizardNavigation**: "Yükleniyor..." ve "İleri" buton metinleri `Res.Get()` ile lokalize edildi
+- **Retention Şablon Açıklamaları**: 5 hardcoded Türkçe retention template bilgisi lokalize edildi
+- **SmtpProfileEditDialog**: Başlıklar, uyarılar, test sonuçları ve buton metinleri (~10 string) lokalize edildi
+- **CloudTargetEditDialog**: ApplyIcons'daki gereksiz Türkçe metin `Res.Get()` ile değiştirildi
+- **FileBackupSourceEditDialog**: Durum etiketleri ve ApplyIcons buton metinleri lokalize edildi
+- **GoogleOAuthSettingsDialog**: Özel kimlik/varsayılan durum etiketleri lokalize edildi
+- **Resx duplicate temizliği**: 5 duplicate wizard step key her iki resx dosyasından kaldırıldı
+- **Eksik TR anahtarları**: 10 Restore_* anahtarı TR resx dosyasına eklendi
+
+### Etkilenen Dosyalar
+- `PlanEditForm.WizardNavigation.cs`, `PlanEditForm.Visibility.cs`
+- `SmtpProfileEditDialog.cs`, `CloudTargetEditDialog.cs`
+- `FileBackupSourceEditDialog.cs`, `GoogleOAuthSettingsDialog.cs`
+- `Resources.resx`, `Resources.tr-TR.resx` — ~25 yeni anahtar, 10 duplicate kaldırıldı, 10 eksik TR eklendi
+
+## [0.99.42] - 2025-07-19 — Sihirbaz Adım Etiketleri & CronBuilder Layout Düzeltmesi
 
 ### Düzeltme
 - **Sihirbaz adım etiketleri Türkçe kalıyordu** — "Bağlantı", "Kaynaklar", "Zamanlama" vb. → `Res.Get()` ile lokalize edildi

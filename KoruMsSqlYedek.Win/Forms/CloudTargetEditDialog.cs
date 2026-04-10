@@ -67,11 +67,11 @@ namespace KoruMsSqlYedek.Win.Forms
         private void ApplyIcons()
         {
             _btnSave.Image = LoadIcon("Save_16x16.png");
-            _btnSave.Text = "Kaydet";
+            _btnSave.Text = Res.Get("CloudTarget_Save");
             _btnSave.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
 
             _btnCancel.Image = LoadIcon("Cancel_16x16.png");
-            _btnCancel.Text = "Iptal";
+            _btnCancel.Text = Res.Get("CloudTarget_Cancel");
             _btnCancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
 
             _btnBrowseLocal.Image = LoadIcon("Open_16x16.png");

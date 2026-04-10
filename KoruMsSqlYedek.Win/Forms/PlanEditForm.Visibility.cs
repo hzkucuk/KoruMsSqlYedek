@@ -69,7 +69,65 @@ namespace KoruMsSqlYedek.Win.Forms
             bool hasChain = idx >= 1;
             _lblAutoPromote.Enabled = hasChain;
             _nudAutoPromote.Enabled = hasChain;
+
+            RelayoutStep3();
         }
+
+        /// <summary>Recalculates vertical positions for all Step 3 controls based on visibility and dynamic panel heights.</summary>
+        private void RelayoutStep3()
+        {
+            var step3 = _stepPanels[2];
+            step3.SuspendLayout();
+
+            int lx = 0, tx = 150;
+            int y = 5;
+
+            // Header
+            _lblStep3Header.Location = new System.Drawing.Point(lx, y);
+            y += 30;
+
+            // Strategy combo
+            _lblStrategy.Location = new System.Drawing.Point(lx, y + 3);
+            _cmbStrategy.Location = new System.Drawing.Point(tx, y);
+            y += 34;
+
+            // Full Backup CronBuilderPanel (always visible)
+            _lblFullCron.Location = new System.Drawing.Point(lx, y + 3);
+            _cronFull.Location = new System.Drawing.Point(tx, y);
+            y += _cronFull.Height + 4;
+
+            // Differential CronBuilderPanel
+            if (_cronDiff.Visible)
+            {
+                _lblDiffCron.Location = new System.Drawing.Point(lx, y + 3);
+                _cronDiff.Location = new System.Drawing.Point(tx, y);
+                y += _cronDiff.Height + 4;
+            }
+
+            // Incremental CronBuilderPanel
+            if (_cronIncr.Visible)
+            {
+                _lblIncrCron.Location = new System.Drawing.Point(lx, y + 3);
+                _cronIncr.Location = new System.Drawing.Point(tx, y);
+                y += _cronIncr.Height + 6;
+            }
+
+            // Auto Full Backup Threshold
+            _lblAutoPromote.Location = new System.Drawing.Point(lx, y + 3);
+            _nudAutoPromote.Location = new System.Drawing.Point(tx, y);
+            y += 30;
+
+            // Verify checkbox
+            _chkVerify.Location = new System.Drawing.Point(lx, y);
+            y += 32;
+
+            // File schedule separator (hidden)
+            _lblStep3FileSep.Location = new System.Drawing.Point(lx, y);
+
+            step3.ResumeLayout(true);
+        }
+
+        private void OnCronPanelHeightChanged(object? sender, EventArgs e) => RelayoutStep3();
 
         private void UpdateRetentionFieldsVisibility()
         {
@@ -93,11 +151,11 @@ namespace KoruMsSqlYedek.Win.Forms
             int idx = _cmbRetentionTemplate.SelectedIndex;
             _lblRetentionTemplateInfo.Text = idx switch
             {
-                0 => "SQL Full: en son 3 • Diff: 7 • Log: 14 • Dosya arşivi: 5 yedek",
-                1 => "SQL Full: en son 7 • Diff: 14 • Log: 30 • Dosya arşivi: 14 yedek",
-                2 => "SQL Full: en son 14 • Diff: 30 • Log: 90 • Dosya arşivi: 30 yedek",
-                3 => "GFS — Günlük 7 / Haftalık 4 / Aylık 12 / Yıllık 2 (Full için)",
-                _ => "Temizlik kuralını ve saklanacak yedek sayısını elle belirleyin."
+                0 => Res.Get("PlanEdit_RetTplMinimal"),
+                1 => Res.Get("PlanEdit_RetTplStandard"),
+                2 => Res.Get("PlanEdit_RetTplExtended"),
+                3 => Res.Get("PlanEdit_RetTplGFS"),
+                _ => Res.Get("PlanEdit_RetTplCustom")
             };
             UpdateRetentionFieldsVisibility();
         }

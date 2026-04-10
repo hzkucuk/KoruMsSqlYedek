@@ -172,7 +172,7 @@ namespace KoruMsSqlYedek.Win.Forms
             try
             {
                 _btnNext.Enabled = false;
-                _btnNext.Text = "Y\u00fckleniyor...";
+                _btnNext.Text = Res.Get("PlanEdit_Loading");
 
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(connInfo.ConnectionTimeoutSeconds)))
                 {
@@ -196,7 +196,7 @@ namespace KoruMsSqlYedek.Win.Forms
             finally
             {
                 _btnNext.Enabled = true;
-                _btnNext.Text = "\u0130leri";
+                _btnNext.Text = Res.Get("PlanEdit_Next");
             }
         }
 

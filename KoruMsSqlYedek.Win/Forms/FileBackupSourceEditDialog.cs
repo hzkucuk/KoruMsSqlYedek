@@ -75,11 +75,11 @@ namespace KoruMsSqlYedek.Win.Forms
         private void ApplyIcons()
         {
             _btnSave.Image = LoadIcon("Save_16x16.png");
-            _btnSave.Text = "Kaydet";
+            _btnSave.Text = Res.Get("FileSource_Save");
             _btnSave.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnCancel.Image = LoadIcon("Cancel_16x16.png");
-            _btnCancel.Text = "Iptal";
+            _btnCancel.Text = Res.Get("FileSource_Cancel");
             _btnCancel.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnNavigate.Image = LoadIcon("Open_16x16.png");
@@ -273,7 +273,7 @@ namespace KoruMsSqlYedek.Win.Forms
             (int folders, int files) = _treeView.GetCheckedCounts();
             if (folders == 0 && files == 0)
             {
-                _lblStatus.Text = "Yedeklenecek öğeleri seçmek için klasörlere göz atın ve onay kutularını işaretleyin";
+                _lblStatus.Text = Res.Get("FileSource_StatusHint");
                 _lblStatus.ForeColor = Theme.ModernTheme.TextSecondary;
             }
             else
@@ -284,9 +284,9 @@ namespace KoruMsSqlYedek.Win.Forms
                 else if (totalBytes >= 0)
                     sizeText = $" — {FormatFileSize(totalBytes)}";
                 else
-                    sizeText = " — hesaplanıyor...";
+                    sizeText = " — " + Res.Get("FileSource_Calculating");
 
-                _lblStatus.Text = $"✅ {folders} klasör, {files} dosya seçili{sizeText}";
+                _lblStatus.Text = Res.Format("FileSource_StatusSelected", folders, files, sizeText);
                 _lblStatus.ForeColor = Theme.ModernTheme.AccentPrimary;
             }
         }

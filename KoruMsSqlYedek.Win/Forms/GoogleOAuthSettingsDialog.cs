@@ -63,13 +63,13 @@ namespace KoruMsSqlYedek.Win.Forms
                     _txtClientSecret.Text = "";
                 }
 
-                _lblStatus.Text = "\u2714 \u00d6zel kimlik bilgileri tan\u0131ml\u0131";
+                _lblStatus.Text = Helpers.Res.Get("GoogleOAuth_StatusCustom");
                 _lblStatus.ForeColor = ModernTheme.AccentPrimary;
                 _btnRemove.Visible = true;
             }
             else
             {
-                _lblStatus.Text = "\u2139 G\u00f6m\u00fcl\u00fc varsay\u0131lan de\u011ferler kullan\u0131l\u0131yor";
+                _lblStatus.Text = Helpers.Res.Get("GoogleOAuth_StatusDefault");
                 _lblStatus.ForeColor = ModernTheme.TextSecondary;
                 _btnRemove.Visible = false;
             }

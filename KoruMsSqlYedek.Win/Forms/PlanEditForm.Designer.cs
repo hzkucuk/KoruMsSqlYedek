@@ -431,24 +431,27 @@
 
             ConfigLabel(_lblFullCron, "Tam Yedek Görevi:", lx, y, step3);
             _cronFull.Location = new System.Drawing.Point(tx, y);
-            _cronFull.Size = new System.Drawing.Size(tw, 80);
+            _cronFull.Size = new System.Drawing.Size(tw, 50);
+            _cronFull.HeightChanged += OnCronPanelHeightChanged;
             _toolTip.SetToolTip(_cronFull, "Tam yedeğin çalışacağı zamanı belirleyin.\nTüm veritabanı verisini içerir — geri yüklemede tek başına yeterli.\nÖneri: Haftada 1 (örn. Pazar gece 02:00)");
             step3.Controls.Add(_cronFull);
-            y += 84;
+            y += 54;
 
             ConfigLabel(_lblDiffCron, "Fark Yedek Görevi:", lx, y, step3);
             _cronDiff.Location = new System.Drawing.Point(tx, y);
-            _cronDiff.Size = new System.Drawing.Size(tw, 80);
+            _cronDiff.Size = new System.Drawing.Size(tw, 50);
+            _cronDiff.HeightChanged += OnCronPanelHeightChanged;
             _toolTip.SetToolTip(_cronDiff, "Son tam yedekten bu yana değişen verileri yedekler.\nGeri yüklemede: Tam + son Fark yedek gerekir.\nÖneri: Günde 1 (örn. her gece 02:00)");
             step3.Controls.Add(_cronDiff);
-            y += 84;
+            y += 54;
 
             ConfigLabel(_lblIncrCron, "Artırımlı Görevi:", lx, y, step3);
             _cronIncr.Location = new System.Drawing.Point(tx, y);
-            _cronIncr.Size = new System.Drawing.Size(tw, 80);
+            _cronIncr.Size = new System.Drawing.Size(tw, 50);
+            _cronIncr.HeightChanged += OnCronPanelHeightChanged;
             _toolTip.SetToolTip(_cronIncr, "Son yedekten (tam veya artırımlı) bu yana\ndeğişen verileri yedekler. En küçük boyut.\nGeri yüklemede: Tam + Fark + tüm Artırımlı zincir gerekir.\nÖneri: Saatte 1 (örn. mesai saatleri 09-18)");
             step3.Controls.Add(_cronIncr);
-            y += 86;
+            y += 56;
 
             ConfigLabel(_lblAutoPromote, "Oto. Tam Yedek Eşiği:", lx, y, step3);
             _nudAutoPromote.Location = new System.Drawing.Point(tx, y);
@@ -817,8 +820,8 @@
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             BackColor = Theme.ModernTheme.BackgroundColor;
-            ClientSize = new System.Drawing.Size(760, 740);
-            MinimumSize = new System.Drawing.Size(780, 700);
+            ClientSize = new System.Drawing.Size(760, 640);
+            MinimumSize = new System.Drawing.Size(780, 580);
             Controls.Add(_pnlContent);
             Controls.Add(_pnlStepIndicator);
             Controls.Add(_pnlNavigation);

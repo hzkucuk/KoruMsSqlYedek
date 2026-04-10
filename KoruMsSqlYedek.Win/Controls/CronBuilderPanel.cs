@@ -29,6 +29,9 @@ namespace KoruMsSqlYedek.Win.Controls
         private Label _lblHour;
         private Label _lblMinute;
 
+        /// <summary>Raised when the panel height changes due to visibility toggle (e.g., Daily→Weekly).</summary>
+        public event EventHandler? HeightChanged;
+
         private static string[] GetDayNames() => [
             Res.Get("Cron_DayMon"), Res.Get("Cron_DayTue"), Res.Get("Cron_DayWed"),
             Res.Get("Cron_DayThu"), Res.Get("Cron_DayFri"), Res.Get("Cron_DaySat"),
@@ -187,7 +190,8 @@ namespace KoruMsSqlYedek.Win.Controls
         private void UpdateVisibility()
         {
             int idx = _cmbFrequency.SelectedIndex;
-            _pnlDaysOfWeek.Visible = idx == 1;
+            bool showDays = idx == 1;
+            _pnlDaysOfWeek.Visible = showDays;
             _nudDayOfMonth.Visible = idx == 2;
             _lblDayOfMonth.Visible = idx == 2;
 
@@ -197,6 +201,22 @@ namespace KoruMsSqlYedek.Win.Controls
             _nudMinute.Visible = !isCustom;
             _lblHour.Visible = !isCustom;
             _lblMinute.Visible = !isCustom;
+
+            AdjustHeight(showDays);
+        }
+
+        private void AdjustHeight(bool showDaysRow)
+        {
+            int previewY = showDaysRow ? 56 : 28;
+            _lblPreview.Top = previewY;
+            _lblCronRaw.Top = previewY;
+
+            int newH = showDaysRow ? 80 : 50;
+            if (Height != newH)
+            {
+                Height = newH;
+                HeightChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         private void OnValueChanged(object sender, EventArgs e)
@@ -209,7 +229,7 @@ namespace KoruMsSqlYedek.Win.Controls
         {
             SuspendLayout();
 
-            Height = 80;
+            Height = 50;
             Dock = DockStyle.None;
             BackColor = Color.Transparent;
 
