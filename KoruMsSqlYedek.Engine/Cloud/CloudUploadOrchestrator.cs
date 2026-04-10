@@ -494,7 +494,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 OAuthTokenJson = src.OAuthTokenJson,
                 LocalOrUncPath = src.LocalOrUncPath,
                 BandwidthLimitMbps = src.BandwidthLimitMbps,
-                PermanentDeleteFromTrash = src.PermanentDeleteFromTrash,
+                TrashRetentionDays = src.TrashRetentionDays,
                 FtpsSkipCertificateValidation = src.FtpsSkipCertificateValidation,
                 SftpHostFingerprint = src.SftpHostFingerprint
             };

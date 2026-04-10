@@ -157,7 +157,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
             // Ortak
             _nudBandwidth.Value = _target.BandwidthLimitMbps ?? 0;
-            _chkPermanentDelete.Checked = _target.PermanentDeleteFromTrash;
+            _nudTrashRetention.Value = _target.TrashRetentionDays;
 
             // OAuth durum
             bool hasToken = !string.IsNullOrEmpty(_target.OAuthTokenJson);
@@ -182,7 +182,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _target.IsEnabled = _chkEnabled.Checked;
             _target.RemoteFolderPath = _txtRemotePath.Text.Trim();
             _target.BandwidthLimitMbps = (int)_nudBandwidth.Value == 0 ? (int?)null : (int)_nudBandwidth.Value;
-            _target.PermanentDeleteFromTrash = _chkPermanentDelete.Checked;
+            _target.TrashRetentionDays = (int)_nudTrashRetention.Value;
 
             var providerType = _target.Type;
 
@@ -342,7 +342,9 @@ namespace KoruMsSqlYedek.Win.Forms
             // Ortak: RemotePath (FTP + OAuth), Trash (OAuth), Bandwidth (hepsi)
             _lblRemotePath.Visible = isFtp || isOAuth;
             _txtRemotePath.Visible = isFtp || isOAuth;
-            _chkPermanentDelete.Visible = isOAuth;
+            _lblTrashRetention.Visible = isOAuth;
+            _nudTrashRetention.Visible = isOAuth;
+            _lblTrashRetentionHint.Visible = isOAuth;
 
             // Port varsayılan değeri
             if (isFtp && (!_isNew || _nudPort.Value == 0))

@@ -47,7 +47,9 @@
             _txtRemotePath = new System.Windows.Forms.TextBox();
             _lblBandwidth = new System.Windows.Forms.Label();
             _nudBandwidth = new KoruMsSqlYedek.Win.Theme.ModernNumericUpDown();
-            _chkPermanentDelete = new System.Windows.Forms.CheckBox();
+            _lblTrashRetention = new System.Windows.Forms.Label();
+            _nudTrashRetention = new KoruMsSqlYedek.Win.Theme.ModernNumericUpDown();
+            _lblTrashRetentionHint = new System.Windows.Forms.Label();
             _btnSave = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _btnCancel = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _grpFtp.SuspendLayout();
@@ -351,16 +353,35 @@
             _nudBandwidth.Size = new System.Drawing.Size(80, 27);
             _nudBandwidth.TabIndex = 11;
             // 
-            // _chkPermanentDelete
+            // _lblTrashRetention
             // 
-            _chkPermanentDelete.AutoSize = true;
-            _chkPermanentDelete.Checked = true;
-            _chkPermanentDelete.CheckState = System.Windows.Forms.CheckState.Checked;
-            _chkPermanentDelete.Location = new System.Drawing.Point(145, 374);
-            _chkPermanentDelete.Name = "_chkPermanentDelete";
-            _chkPermanentDelete.Size = new System.Drawing.Size(294, 21);
-            _chkPermanentDelete.TabIndex = 12;
-            _chkPermanentDelete.Text = "Silinen dosyaları çöp kutusundan kalıcı temizle";
+            _lblTrashRetention.AutoSize = true;
+            _lblTrashRetention.Location = new System.Drawing.Point(15, 377);
+            _lblTrashRetention.Name = "_lblTrashRetention";
+            _lblTrashRetention.Size = new System.Drawing.Size(125, 17);
+            _lblTrashRetention.TabIndex = 12;
+            _lblTrashRetention.Text = "\u00C7\u00F6p Saklama (G\u00FCn):";
+            // 
+            // _nudTrashRetention
+            // 
+            _nudTrashRetention.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
+            _nudTrashRetention.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _nudTrashRetention.Location = new System.Drawing.Point(145, 374);
+            _nudTrashRetention.Maximum = new decimal(new int[] { 365, 0, 0, 0 });
+            _nudTrashRetention.MinimumSize = new System.Drawing.Size(60, 27);
+            _nudTrashRetention.Name = "_nudTrashRetention";
+            _nudTrashRetention.Size = new System.Drawing.Size(80, 27);
+            _nudTrashRetention.TabIndex = 13;
+            // 
+            // _lblTrashRetentionHint
+            // 
+            _lblTrashRetentionHint.AutoSize = true;
+            _lblTrashRetentionHint.ForeColor = System.Drawing.Color.FromArgb(160, 160, 160);
+            _lblTrashRetentionHint.Location = new System.Drawing.Point(230, 377);
+            _lblTrashRetentionHint.Name = "_lblTrashRetentionHint";
+            _lblTrashRetentionHint.Size = new System.Drawing.Size(100, 17);
+            _lblTrashRetentionHint.TabIndex = 14;
+            _lblTrashRetentionHint.Text = "(0 = hemen sil)";
             // 
             // _btnSave
             // 
@@ -372,7 +393,7 @@
             _btnSave.Location = new System.Drawing.Point(235, 419);
             _btnSave.Name = "_btnSave";
             _btnSave.Size = new System.Drawing.Size(100, 39);
-            _btnSave.TabIndex = 13;
+            _btnSave.TabIndex = 15;
             _btnSave.Text = "💾 Kaydet";
             _btnSave.Click += OnSaveClick;
             // 
@@ -386,7 +407,7 @@
             _btnCancel.Location = new System.Drawing.Point(345, 419);
             _btnCancel.Name = "_btnCancel";
             _btnCancel.Size = new System.Drawing.Size(90, 39);
-            _btnCancel.TabIndex = 14;
+            _btnCancel.TabIndex = 16;
             _btnCancel.Text = "İptal";
             _btnCancel.Click += OnCancelClick;
             // 
@@ -407,7 +428,9 @@
             Controls.Add(_txtRemotePath);
             Controls.Add(_lblBandwidth);
             Controls.Add(_nudBandwidth);
-            Controls.Add(_chkPermanentDelete);
+            Controls.Add(_lblTrashRetention);
+            Controls.Add(_nudTrashRetention);
+            Controls.Add(_lblTrashRetentionHint);
             Controls.Add(_btnSave);
             Controls.Add(_btnCancel);
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -466,7 +489,9 @@
         private System.Windows.Forms.TextBox _txtRemotePath;
         private System.Windows.Forms.Label _lblBandwidth;
         private Theme.ModernNumericUpDown _nudBandwidth;
-        private System.Windows.Forms.CheckBox _chkPermanentDelete;
+        private System.Windows.Forms.Label _lblTrashRetention;
+        private Theme.ModernNumericUpDown _nudTrashRetention;
+        private System.Windows.Forms.Label _lblTrashRetentionHint;
 
         // Butonlar
         private Theme.ModernButton _btnSave;
