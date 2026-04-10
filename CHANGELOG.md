@@ -1,4 +1,18 @@
-﻿## [0.99.44] - 2025-07-19 — MainWindow Başlangıçta Lokalizasyon Çağrısı Eksikliği Düzeltmesi
+﻿## [0.99.45] - 2025-07-19 — Form Layout Düzeltmeleri & Resx Temizliği
+
+### Düzeltme
+- **CloudTargetEditDialog**: Form genişliği 450→520px, tüm input kontrolleri sağa kaydırıldı (EN/TR etiketlerin taşmasını önlemek için)
+- **SmtpProfileEditDialog**: TLP ilk sütun genişliği 130→150px (TR "Gönderici E-posta:" etiketi sığması için)
+- **FileBackupSourceEditDialog**: Pattern textbox'ları X=115→135 (EN "Include/Exclude Patterns:" etiketleri için)
+- **Resx temizliği**: 5 boş partial-class .resx dosyası silindi (MSB3577 duplicate resource hatası)
+
+### Etkilenen Dosyalar
+- `CloudTargetEditDialog.Designer.cs` — 22 koordinat değişikliği
+- `SmtpProfileEditDialog.Designer.cs` — TLP sütun genişliği
+- `FileBackupSourceEditDialog.Designer.cs` — Textbox pozisyonları
+- Silinen: `PlanEditForm.CloudAndFileSources.resx`, `PlanEditForm.PlanBinding.resx`, `PlanEditForm.Visibility.resx`, `PlanEditForm.WizardNavigation.resx`, `MainWindow.Plans.resx`
+
+## [0.99.44] - 2025-07-19 — MainWindow Başlangıçta Lokalizasyon Çağrısı Eksikliği Düzeltmesi
 
 ### Düzeltme
 - **MainWindow constructor**: `ApplyLocalization()` çağrısı eklendi — uygulama ilk açıldığında sekmeler, grid sütun başlıkları, ayarlar etiketi ve alt sekmeler artık doğru dilde gösteriliyor

@@ -49,7 +49,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _tlpMain.Dock = System.Windows.Forms.DockStyle.Fill;
             _tlpMain.Padding = new System.Windows.Forms.Padding(16, 12, 16, 8);
             _tlpMain.ColumnCount = 2;
-            _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 130F));
+            _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 150F));
             _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             _tlpMain.RowCount = 10;
             _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
