@@ -28,6 +28,7 @@ namespace KoruMsSqlYedek.Win.Forms
         public SmtpProfileEditDialog(SmtpProfile existing)
         {
             InitializeComponent();
+            ApplyLocalization();
 
             if (existing != null)
             {
@@ -39,6 +40,33 @@ namespace KoruMsSqlYedek.Win.Forms
                 _profile = new SmtpProfile();
                 Text = "Yeni SMTP Profili";
             }
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblDisplayName.Text = Helpers.Res.Get("Smtp_DisplayName");
+            _lblHost.Text = Helpers.Res.Get("Smtp_Host");
+            _chkUseSsl.Text = Helpers.Res.Get("Smtp_UseSsl");
+            _lblUsername.Text = Helpers.Res.Get("Smtp_Username");
+            _lblPassword.Text = Helpers.Res.Get("Smtp_Password");
+            _lblSenderEmail.Text = Helpers.Res.Get("Smtp_SenderEmail");
+            _lblSenderName.Text = Helpers.Res.Get("Smtp_SenderName");
+            _lblRecipients.Text = Helpers.Res.Get("Smtp_Recipients");
+            _btnCancel.Text = Helpers.Res.Get("Smtp_Cancel");
+            _btnSave.Text = Helpers.Res.Get("Smtp_Save");
+            _btnTest.Text = Helpers.Res.Get("Smtp_Test");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_txtDisplayName, Helpers.Res.Get("Tip_Smtp_DisplayName"));
+            _toolTip.SetToolTip(_txtHost, Helpers.Res.Get("Tip_Smtp_Host"));
+            _toolTip.SetToolTip(_nudPort, Helpers.Res.Get("Tip_Smtp_Port"));
+            _toolTip.SetToolTip(_chkUseSsl, Helpers.Res.Get("Tip_Smtp_UseSsl"));
+            _toolTip.SetToolTip(_txtUsername, Helpers.Res.Get("Tip_Smtp_Username"));
+            _toolTip.SetToolTip(_txtPassword, Helpers.Res.Get("Tip_Smtp_Password"));
+            _toolTip.SetToolTip(_txtSenderEmail, Helpers.Res.Get("Tip_Smtp_SenderEmail"));
+            _toolTip.SetToolTip(_txtSenderName, Helpers.Res.Get("Tip_Smtp_SenderName"));
+            _toolTip.SetToolTip(_txtRecipients, Helpers.Res.Get("Tip_Smtp_Recipients"));
+            _toolTip.SetToolTip(_btnTest, Helpers.Res.Get("Tip_Smtp_Test"));
         }
 
         protected override void OnLoad(EventArgs e)

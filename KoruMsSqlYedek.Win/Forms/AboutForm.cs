@@ -22,10 +22,21 @@ namespace KoruMsSqlYedek.Win.Forms
         internal AboutForm()
         {
             InitializeComponent();
+            ApplyLocalization();
             SetVersionInfo();
             SetRuntimeInfo();
             SetOpenSourceCredits();
             _pnlLogo.Paint += OnLogoPanelPaint;
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblDescription.Text = Helpers.Res.Get("About_Description");
+            _lblCopyright.Text = Helpers.Res.Get("About_Copyright");
+            _lblDeveloper.Text = Helpers.Res.Get("About_Developer");
+            _lblCreditsTitle.Text = Helpers.Res.Get("About_CreditsTitle");
+            _btnClose.Text = Helpers.Res.Get("About_Close");
+            Text = Helpers.Res.Get("About_Title");
         }
 
         /// <summary>Assembly versiyonunu label'a yazar.</summary>

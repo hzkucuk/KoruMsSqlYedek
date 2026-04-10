@@ -26,7 +26,26 @@ namespace KoruMsSqlYedek.Win.Forms
             _settingsManager = settingsManager;
 
             InitializeComponent();
+            ApplyLocalization();
             LoadCurrentValues();
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblTitle.Text = Helpers.Res.Get("GoogleOAuth_Title");
+            _lblInfo.Text = Helpers.Res.Get("GoogleOAuth_Info");
+            _lblClientId.Text = Helpers.Res.Get("GoogleOAuth_ClientId");
+            _lblClientSecret.Text = Helpers.Res.Get("GoogleOAuth_ClientSecret");
+            _btnSave.Text = Helpers.Res.Get("GoogleOAuth_Save");
+            _btnCancel.Text = Helpers.Res.Get("GoogleOAuth_Cancel");
+            _btnRemove.Text = Helpers.Res.Get("GoogleOAuth_Remove");
+            Text = Helpers.Res.Get("GoogleOAuth_Title");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_txtClientId, Helpers.Res.Get("Tip_GoogleOAuth_ClientId"));
+            _toolTip.SetToolTip(_txtClientSecret, Helpers.Res.Get("Tip_GoogleOAuth_ClientSecret"));
+            _toolTip.SetToolTip(_btnSave, Helpers.Res.Get("Tip_GoogleOAuth_Save"));
+            _toolTip.SetToolTip(_btnRemove, Helpers.Res.Get("Tip_GoogleOAuth_Remove"));
         }
 
         private void LoadCurrentValues()

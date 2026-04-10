@@ -2,6 +2,12 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.40 — Tam Lokalizasyon & Zengin Tooltip Desteği
+- Tüm formlar ve kontroller runtime dil değişikliğine tam uyumlu (EN/TR)
+- ~80 zengin tooltip anahtarı: açıklamalar, örnekler ve kullanıcı yönlendirmeleri
+- MainWindow, PlanEditForm, CloudTargetEditDialog, SmtpProfileEditDialog, RestoreDialog, PasswordDialog, PasswordSetupDialog, FileBackupSourceEditDialog, GoogleOAuthSettingsDialog, AboutForm
+- ToolStripButton/Label tooltip API uyumu düzeltildi
+
 ### v0.99.38 — Bulut Çöp Kutusu Zamana Dayalı Saklama
 - `TrashRetentionDays` (0-365 gün) ile çöp kutusunda saklama süresi belirleme
 - 0 = hemen kalıcı sil, >0 = çöp kutusunda N gün tut sonra temizle

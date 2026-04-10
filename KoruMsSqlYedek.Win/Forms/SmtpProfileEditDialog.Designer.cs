@@ -14,6 +14,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            _toolTip = new System.Windows.Forms.ToolTip(components);
 
             _tlpMain = new System.Windows.Forms.TableLayoutPanel();
             _lblDisplayName = new System.Windows.Forms.Label();
@@ -231,5 +232,6 @@ namespace KoruMsSqlYedek.Win.Forms
         private Theme.ModernButton _btnTest;
         private Theme.ModernButton _btnSave;
         private Theme.ModernButton _btnCancel;
+        private System.Windows.Forms.ToolTip _toolTip;
     }
 }

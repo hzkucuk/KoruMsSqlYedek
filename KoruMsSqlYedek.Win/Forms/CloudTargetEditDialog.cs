@@ -48,6 +48,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
             InitializeComponent();
             ApplyIcons();
+            ApplyLocalization();
 
             if (existing != null)
             {
@@ -81,6 +82,45 @@ namespace KoruMsSqlYedek.Win.Forms
 
             _btnOAuthSettings.Image = LoadIcon("Properties_16x16.png");
             _btnOAuthSettings.Text = "";
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblDisplayName.Text = Res.Get("CloudTarget_DisplayName");
+            _lblProviderType.Text = Res.Get("CloudTarget_ProviderType");
+            _chkEnabled.Text = Res.Get("CloudTarget_Enabled");
+            _grpFtp.Text = Res.Get("CloudTarget_FtpGroup");
+            _lblHost.Text = Res.Get("CloudTarget_Host");
+            _lblPort.Text = Res.Get("CloudTarget_Port");
+            _lblUsername.Text = Res.Get("CloudTarget_Username");
+            _lblPassword.Text = Res.Get("CloudTarget_Password");
+            _grpOAuth.Text = Res.Get("CloudTarget_OAuthGroup");
+            _btnGoogleAuth.Text = Res.Get("CloudTarget_GoogleAuth");
+            _lblAuthStatus.Text = Res.Get("CloudTarget_AuthStatus");
+            _grpLocal.Text = Res.Get("CloudTarget_LocalGroup");
+            _lblLocalOrUncPath.Text = Res.Get("CloudTarget_PathLabel");
+            _lblUncUser.Text = Res.Get("CloudTarget_UncUser");
+            _lblUncPassword.Text = Res.Get("CloudTarget_UncPassword");
+            _lblRemotePath.Text = Res.Get("CloudTarget_RemotePath");
+            _lblBandwidth.Text = Res.Get("CloudTarget_Bandwidth");
+            _lblTrashRetention.Text = Res.Get("CloudTarget_TrashRetention");
+            _lblTrashRetentionHint.Text = Res.Get("CloudTarget_TrashHint");
+            _btnSave.Text = Res.Get("CloudTarget_Save");
+            _btnCancel.Text = Res.Get("CloudTarget_Cancel");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTipRemotePath.SetToolTip(_txtDisplayName, Res.Get("Tip_Cloud_DisplayName"));
+            _toolTipRemotePath.SetToolTip(_cmbProviderType, Res.Get("Tip_Cloud_ProviderType"));
+            _toolTipRemotePath.SetToolTip(_chkEnabled, Res.Get("Tip_Cloud_Enabled"));
+            _toolTipRemotePath.SetToolTip(_txtHost, Res.Get("Tip_Cloud_Host"));
+            _toolTipRemotePath.SetToolTip(_nudPort, Res.Get("Tip_Cloud_Port"));
+            _toolTipRemotePath.SetToolTip(_txtUsername, Res.Get("Tip_Cloud_Username"));
+            _toolTipRemotePath.SetToolTip(_txtPassword, Res.Get("Tip_Cloud_Password"));
+            _toolTipRemotePath.SetToolTip(_btnGoogleAuth, Res.Get("Tip_Cloud_GoogleAuth"));
+            _toolTipRemotePath.SetToolTip(_btnOAuthSettings, Res.Get("Tip_Cloud_OAuthSettings"));
+            _toolTipRemotePath.SetToolTip(_txtRemotePath, Res.Get("Tip_Cloud_RemotePath"));
+            _toolTipRemotePath.SetToolTip(_nudBandwidth, Res.Get("Tip_Cloud_Bandwidth"));
+            _toolTipRemotePath.SetToolTip(_nudTrashRetention, Res.Get("Tip_Cloud_TrashRetention"));
         }
 
         private static System.Drawing.Image? LoadIcon(string name)

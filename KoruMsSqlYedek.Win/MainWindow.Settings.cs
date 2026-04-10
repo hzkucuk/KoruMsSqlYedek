@@ -310,12 +310,16 @@ namespace KoruMsSqlYedek.Win
             _lblActivePlansCaption.Text = Res.Get("Dashboard_ActivePlansCaption");
             _lblGridTitle.Text = Res.Get("Dashboard_LastBackupsGroup");
 
-            // Plans
+            // Plans — toolbar
             _tsbNew.Text = Res.Get("PlanList_BtnNew");
             _tsbEdit.Text = Res.Get("PlanList_BtnEdit");
             _tsbDelete.Text = Res.Get("PlanList_BtnDelete");
             _tsbExport.Text = Res.Get("PlanList_BtnExport");
             _tsbImport.Text = Res.Get("PlanList_BtnImport");
+            _tsbRefreshPlans.Text = Res.Get("PlanList_BtnRefresh");
+            _tslSearchLabel.Text = Res.Get("PlanList_SearchLabel");
+
+            // Plans — grid columns
             _colEnabled.HeaderText = Res.Get("PlanList_ColEnabled");
             _colPlanName.HeaderText = Res.Get("PlanList_ColPlanName");
             _colStrategy.HeaderText = Res.Get("PlanList_ColStrategy");
@@ -324,10 +328,60 @@ namespace KoruMsSqlYedek.Win
             _colCloudTargets.HeaderText = Res.Get("PlanList_ColCloud");
             _colCreatedAt.HeaderText = Res.Get("PlanList_ColCreatedAt");
             _colStatus.HeaderText = Res.Get("PlanList_ColStatus");
+            _colProgress.HeaderText = Res.Get("PlanList_ColProgress");
+            _colNextRun.HeaderText = Res.Get("PlanList_ColNextRun");
             _tslPlanCount.Text = Res.Format("PlanList_TotalFormat", 0);
 
-            // Settings — theme items
+            // Plans — context menu
+            _ctxBackupNow.Text = Res.Get("PlanList_CtxBackupNow");
+            _ctxStopBackup.Text = Res.Get("PlanList_CtxStopBackup");
+            _ctxEditPlan.Text = Res.Get("PlanList_CtxEdit");
+            _ctxDeletePlan.Text = Res.Get("PlanList_CtxDelete");
+            _ctxExportPlan.Text = Res.Get("PlanList_CtxExport");
+            _ctxViewPlanLogs.Text = Res.Get("PlanList_CtxViewLogs");
+            _ctxRestore.Text = Res.Get("PlanList_CtxRestore");
+
+            // Backup panel
+            _lblBackupType.Text = Res.Get("Backup_Type");
+            _lblBackupStatus.Text = Res.Get("Backup_StatusReady");
+            _btnCancelBackup.Text = Res.Get("Backup_Cancel");
+            _btnStart.Text = Res.Get("Backup_Start");
+            int prevBackupIdx = _cmbBackupType.SelectedIndex;
+            _cmbBackupType.Items.Clear();
+            _cmbBackupType.Items.Add(Res.Get("Backup_TypeFull"));
+            _cmbBackupType.Items.Add(Res.Get("Backup_TypeDiff"));
+            _cmbBackupType.Items.Add(Res.Get("Backup_TypeIncr"));
+            if (prevBackupIdx >= 0 && prevBackupIdx < _cmbBackupType.Items.Count)
+                _cmbBackupType.SelectedIndex = prevBackupIdx;
+
+            // Log viewer
+            _lblLogFile.Text = Res.Get("LogViewer_LblFile");
+            _lblLevel.Text = Res.Get("LogViewer_LblLevel");
+            _chkAutoTail.Text = Res.Get("LogViewer_ChkAutoTail");
+            _lblLogSearch.Text = Res.Get("LogViewer_LblSearch");
+            _lblLogPlan.Text = Res.Get("LogViewer_LblPlan");
+            _btnClearLogFilter.Text = Res.Get("LogViewer_BtnClear");
+            _btnLogRefresh.Text = Res.Get("LogViewer_BtnRefresh");
+            _btnLogExport.Text = Res.Get("LogViewer_BtnExport");
+            _colTimestamp.HeaderText = Res.Get("LogViewer_ColTime");
+            _colLevel.HeaderText = Res.Get("LogViewer_ColLevel");
+            _colMessage.HeaderText = Res.Get("LogViewer_ColMessage");
+
+            // Settings — General tab
+            _tabGeneral.Text = Res.Get("Settings_TabGeneral");
+            _lblLanguage.Text = Res.Get("Settings_Language");
+            _chkStartWithWindows.Text = Res.Get("Settings_StartWithWindows");
+            _chkMinimizeToTray.Text = Res.Get("Settings_MinimizeToTray");
+            _lblDefaultBackupPath.Text = Res.Get("Settings_DefaultBackupPath");
+            _lblLogRetention.Text = Res.Get("Settings_LogRetention");
+            _lblLogRetentionSuffix.Text = Res.Get("Settings_RetentionSuffix");
+            _lblHistoryRetention.Text = Res.Get("Settings_HistoryRetention");
+            _lblHistoryRetentionSuffix.Text = Res.Get("Settings_RetentionSuffix");
             _lblTheme.Text = Res.Get("Settings_Theme");
+            _lblLogColorScheme.Text = Res.Get("Settings_LogColorScheme");
+            _lblLogColorScheme.Text = Res.Get("Settings_LogConsoleTheme");
+
+            // Settings — theme items
             int prevThemeIdx = _cmbTheme.SelectedIndex;
             _cmbTheme.Items.Clear();
             _cmbTheme.Items.Add(Res.Get("Theme_Dark"));
@@ -335,11 +389,85 @@ namespace KoruMsSqlYedek.Win
             if (prevThemeIdx >= 0 && prevThemeIdx < _cmbTheme.Items.Count)
                 _cmbTheme.SelectedIndex = prevThemeIdx;
 
-            // Settings — log color scheme
-            _lblLogColorScheme.Text = Res.Get("Settings_LogColorScheme");
+            // Settings — SMTP tab
+            _tabSmtp.Text = Res.Get("Settings_SmtpTab");
+            _lblSmtpProfilesTitle.Text = Res.Get("Settings_SmtpTitle");
+            _btnSmtpAdd.Text = Res.Get("Settings_SmtpAdd");
+            _btnSmtpEdit.Text = Res.Get("Settings_SmtpEdit");
+            _btnSmtpDelete.Text = Res.Get("Settings_SmtpDelete");
+            _btnSmtpTest.Text = Res.Get("Settings_SmtpTest");
+
+            // Settings — Security tab
+            _tabSecurity.Text = Res.Get("Settings_SecurityTab");
+            _lblSecurityTitle.Text = Res.Get("Settings_SecurityTitle");
+            _btnPasswordSetup.Text = Res.Get("Settings_PasswordSetup");
+            _lblSecurityInfo.Text = Res.Get("Settings_SecurityInfo");
+
+            // Settings — buttons
+            _btnCancelSettings.Text = Res.Get("Settings_Cancel");
+            _btnSaveSettings.Text = Res.Get("Settings_Save");
 
             // Status bar
             _tslStatus.Text = Res.Get("Dashboard_Ready");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+
+            // Dashboard
+            _toolTip.SetToolTip(_lblStatusValue, Res.Get("Tip_Dashboard_Status"));
+            _toolTip.SetToolTip(_lblStatusCaption, Res.Get("Tip_Dashboard_Status"));
+            _toolTip.SetToolTip(_lblNextBackupCaption, Res.Get("Tip_Dashboard_NextBackup"));
+            _toolTip.SetToolTip(_lblActivePlansCaption, Res.Get("Tip_Dashboard_ActivePlans"));
+            _toolTip.SetToolTip(_lblGridTitle, Res.Get("Tip_Dashboard_LastBackups"));
+
+            // Plans — toolbar (ToolStripItems use .ToolTipText)
+            _tsbNew.ToolTipText = Res.Get("Tip_Plans_New");
+            _tsbEdit.ToolTipText = Res.Get("Tip_Plans_Edit");
+            _tsbDelete.ToolTipText = Res.Get("Tip_Plans_Delete");
+            _tsbExport.ToolTipText = Res.Get("Tip_Plans_Export");
+            _tsbImport.ToolTipText = Res.Get("Tip_Plans_Import");
+            _tsbRefreshPlans.ToolTipText = Res.Get("Tip_Plans_Refresh");
+            _tstSearch.ToolTipText = Res.Get("Tip_Plans_Search");
+
+            // Plans — context menu (ToolTipText)
+            _ctxBackupNow.ToolTipText = Res.Get("Tip_Plans_BackupNow");
+            _ctxStopBackup.ToolTipText = Res.Get("Tip_Plans_StopBackup");
+
+            // Backup panel
+            _toolTip.SetToolTip(_cmbBackupType, Res.Get("Tip_Backup_Type"));
+            _toolTip.SetToolTip(_btnStart, Res.Get("Tip_Backup_Start"));
+            _toolTip.SetToolTip(_btnCancelBackup, Res.Get("Tip_Backup_Cancel"));
+
+            // Log viewer
+            _toolTip.SetToolTip(_cmbLogFile, Res.Get("Tip_Log_FileSelect"));
+            _toolTip.SetToolTip(_cmbLevel, Res.Get("Tip_Log_Level"));
+            _toolTip.SetToolTip(_chkAutoTail, Res.Get("Tip_Log_AutoTail"));
+            _toolTip.SetToolTip(_txtLogSearch, Res.Get("Tip_Log_Search"));
+            _toolTip.SetToolTip(_cmbLogPlan, Res.Get("Tip_Log_PlanFilter"));
+            _toolTip.SetToolTip(_btnClearLogFilter, Res.Get("Tip_Log_Clear"));
+            _toolTip.SetToolTip(_btnLogRefresh, Res.Get("Tip_Log_Refresh"));
+            _toolTip.SetToolTip(_btnLogExport, Res.Get("Tip_Log_Export"));
+
+            // Settings — General
+            _toolTip.SetToolTip(_cmbLanguage, Res.Get("Tip_Settings_Language"));
+            _toolTip.SetToolTip(_chkStartWithWindows, Res.Get("Tip_Settings_StartWithWindows"));
+            _toolTip.SetToolTip(_chkMinimizeToTray, Res.Get("Tip_Settings_MinimizeToTray"));
+            _toolTip.SetToolTip(_txtDefaultBackupPath, Res.Get("Tip_Settings_DefaultBackupPath"));
+            _toolTip.SetToolTip(_nudLogRetention, Res.Get("Tip_Settings_LogRetention"));
+            _toolTip.SetToolTip(_nudHistoryRetention, Res.Get("Tip_Settings_HistoryRetention"));
+            _toolTip.SetToolTip(_cmbTheme, Res.Get("Tip_Settings_Theme"));
+            _toolTip.SetToolTip(_cmbLogColorScheme, Res.Get("Tip_Settings_LogColorScheme"));
+            _toolTip.SetToolTip(_btnSaveSettings, Res.Get("Tip_Settings_Save"));
+            _toolTip.SetToolTip(_btnCancelSettings, Res.Get("Tip_Settings_Cancel"));
+
+            // Settings — SMTP
+            _toolTip.SetToolTip(_btnSmtpAdd, Res.Get("Tip_Settings_SmtpAdd"));
+            _toolTip.SetToolTip(_btnSmtpEdit, Res.Get("Tip_Settings_SmtpEdit"));
+            _toolTip.SetToolTip(_btnSmtpDelete, Res.Get("Tip_Settings_SmtpDelete"));
+            _toolTip.SetToolTip(_btnSmtpTest, Res.Get("Tip_Settings_SmtpTest"));
+
+            // Settings — Security
+            _toolTip.SetToolTip(_btnPasswordSetup, Res.Get("Tip_Settings_PasswordSetup"));
+            _toolTip.SetToolTip(_lblSecurityInfo, Res.Get("Tip_Settings_SecurityInfo"));
         }
 
         #endregion

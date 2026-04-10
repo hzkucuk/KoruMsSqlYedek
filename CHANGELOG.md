@@ -1,4 +1,29 @@
-﻿## [0.99.39] - 2025-07-17 — Oto. Tam Yedek Eşiği Strateji Bağımlı Devre Dışı
+﻿## [0.99.40] - 2025-07-18 — Tam Lokalizasyon & Zengin Tooltip Desteği
+
+### Yeni Özellik
+- **Tüm form ve kontrollere tam lokalizasyon** — Dil değiştirildiğinde tüm kontroller (başlıklar, butonlar, etiketler, menüler, bağlam menüleri, kolon başlıkları) İngilizce/Türkçe olarak güncelleniyor
+- **Zengin bilgilendirici tooltip'ler** — Tüm formlardaki tüm etkileşimli kontrollere açıklamalı ve örnekli tooltip eklendi (EN/TR ~80 anahtar)
+  - MainWindow: Dashboard, Planlar, Yedekleme, Log Görüntüleyici, Ayarlar (~55 tooltip)
+  - PlanEditForm: SQL, dosya yedekleme, zamanlama, bulut, e-posta, şifre (~30+ tooltip)
+  - CloudTargetEditDialog: Sağlayıcı, klasör, retention (~12 tooltip)
+  - SmtpProfileEditDialog: Sunucu, port, SSL, kimlik (~10 tooltip)
+  - RestoreDialog: Veritabanı, dosya, yol (~6 tooltip)
+  - PasswordDialog / PasswordSetupDialog: Şifre, güvenlik sorusu (~11 tooltip)
+  - FileBackupSourceEditDialog: Kaynak, filtre, alt klasör (~8 tooltip)
+  - GoogleOAuthSettingsDialog: Client ID/Secret, JSON (~4 tooltip)
+
+### Düzeltme
+- **ToolStripButton/Label tooltip API uyumsuzluğu** — `ToolStripButton` için `.ToolTipText` property, normal kontroller için `ToolTip.SetToolTip()` kullanılacak şekilde düzeltildi
+- **Yanlış kontrol isimleri** — `_txtPlanSearch` → `_tstSearch`, `_cmbLogLevel` → `_cmbLevel` düzeltildi
+
+### Etkilenen Dosyalar
+- `Resources.resx`, `Resources.tr-TR.resx` — ~80 yeni tooltip anahtarı
+- `MainWindow.Settings.cs` — Tooltip wiring düzeltmesi
+- `MainWindow.Designer.cs` — `_toolTip` bileşeni eklendi
+- `PlanEditForm.cs` — Tam lokalizasyon + tooltip
+- `CloudTargetEditDialog.cs`, `SmtpProfileEditDialog.cs/.Designer.cs`, `RestoreDialog.cs/.Designer.cs`, `PasswordDialog.cs/.Designer.cs`, `PasswordSetupDialog.cs/.Designer.cs`, `FileBackupSourceEditDialog.cs`, `GoogleOAuthSettingsDialog.cs/.Designer.cs`, `AboutForm.cs`
+
+## [0.99.39] - 2025-07-17 — Oto. Tam Yedek Eşiği Strateji Bağımlı Devre Dışı
 
 ### Düzeltme
 - **"Oto. Tam Yedek Eşiği" tam yedekte devre dışı** — Yedekleme stratejisi "Yalnızca Tam Yedek" seçildiğinde eşik kontrolü ve etiketi artık `Enabled = false` oluyor. Fark/Artırımlı strateji seçildiğinde tekrar aktif.

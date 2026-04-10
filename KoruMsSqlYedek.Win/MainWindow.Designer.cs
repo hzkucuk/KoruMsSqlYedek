@@ -16,6 +16,7 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            _toolTip = new System.Windows.Forms.ToolTip(components);
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
@@ -1979,5 +1980,6 @@
         private System.Windows.Forms.FlowLayoutPanel _flpSettingsButtons;
         private Theme.ModernButton _btnSaveSettings;
         private Theme.ModernButton _btnCancelSettings;
+        private System.Windows.Forms.ToolTip _toolTip;
     }
 }

@@ -30,6 +30,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             InitializeComponent();
             ApplyIcons();
+            ApplyLocalization();
             WireEvents();
 
             if (existing != null)
@@ -42,6 +43,33 @@ namespace KoruMsSqlYedek.Win.Forms
                 _source = new FileBackupSource();
                 Text = Res.Get("FileSource_TitleNew");
             }
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblSourceName.Text = Res.Get("FileSource_SourceName");
+            _btnNavigate.Text = Res.Get("FileSource_Navigate");
+            _lblStatus.Text = Res.Get("FileSource_StatusHint");
+            _grpPatterns.Text = Res.Get("FileSource_PatternsGroup");
+            _lblInclude.Text = Res.Get("FileSource_Include");
+            _lblExclude.Text = Res.Get("FileSource_Exclude");
+            _lblHint.Text = Res.Get("FileSource_Hint");
+            _grpOptions.Text = Res.Get("FileSource_OptionsGroup");
+            _chkRecursive.Text = Res.Get("FileSource_Recursive");
+            _chkUseVss.Text = Res.Get("FileSource_UseVss");
+            _chkEnabled.Text = Res.Get("FileSource_Enabled");
+            _btnSave.Text = Res.Get("FileSource_Save");
+            _btnCancel.Text = Res.Get("FileSource_Cancel");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_txtSourceName, Res.Get("Tip_FileSource_SourceName"));
+            _toolTip.SetToolTip(_treeView, Res.Get("Tip_FileSource_TreeView"));
+            _toolTip.SetToolTip(_txtIncludePatterns, Res.Get("Tip_FileSource_Include"));
+            _toolTip.SetToolTip(_txtExcludePatterns, Res.Get("Tip_FileSource_Exclude"));
+            _toolTip.SetToolTip(_chkRecursive, Res.Get("Tip_FileSource_Recursive"));
+            _toolTip.SetToolTip(_chkUseVss, Res.Get("Tip_FileSource_UseVss"));
+            _toolTip.SetToolTip(_chkEnabled, Res.Get("Tip_FileSource_Enabled"));
+            _toolTip.SetToolTip(_btnNavigate, Res.Get("Tip_FileSource_Navigate"));
         }
 
         private void ApplyIcons()
