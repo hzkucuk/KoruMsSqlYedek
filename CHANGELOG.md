@@ -1,4 +1,20 @@
-﻿## [0.99.47] - 2025-07-19 — PlanEditForm Designer Uyumluluğu
+﻿## [0.99.48] - 2025-07-19 — PlanEditForm Designer Uyumluluğu (Düzeltme)
+
+### Düzeltme
+- **PlanEditForm**: VS Forms Designer’da form açılamama sorunu düzeltildi (3 kök neden)
+  - `PlanEditForm.resx` eklendi (Designer zorunlu dosya)
+  - Parametresiz constructor eklendi (Designer formı instantiate edebilsin)
+  - `InitializeComponent` içindeki 25 `Theme.ModernTheme.*` referansı literal `Color.FromArgb()` değerleriyle değiştirildi
+  - Runtime tema renkleri `ApplyThemeColors()` metoduyla uygulanıyor
+- **Resx temizliği**: 8 çakışan partial-class .resx dosyası silindi (MSB3577)
+  - 4 PlanEditForm partial resx + 4 MainWindow partial resx
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — 25 Theme.* referansı literal değerlerle değiştirildi
+- `PlanEditForm.cs` — Parametresiz constructor + `ApplyThemeColors()` eklendi
+- `PlanEditForm.resx` — Yeni oluşturuldu
+
+## [0.99.47] - 2025-07-19 — PlanEditForm Designer Uyumluluğu
 
 ### İyileştirme
 - **PlanEditForm.Designer.cs**: VS Forms Designer ile düzenlenebilir hale getirildi

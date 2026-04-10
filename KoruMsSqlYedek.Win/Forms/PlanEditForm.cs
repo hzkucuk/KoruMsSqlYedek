@@ -52,6 +52,13 @@ namespace KoruMsSqlYedek.Win.Forms
         private Label[] _stepDots = null!;
         private System.Collections.Generic.List<int> _activeSteps = null!;
 
+        /// <summary>Designer-only. Do not use at runtime.</summary>
+        public PlanEditForm()
+        {
+            InitializeComponent();
+            BuildRuntimeArrays();
+        }
+
         /// <summary>Yeni plan oluşturma.</summary>
         public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, IAppSettingsManager settingsManager)
             : this(planManager, sqlBackupService, settingsManager, null) { }
@@ -68,6 +75,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
             InitializeComponent();
             BuildRuntimeArrays();
+            ApplyThemeColors();
             ApplyIcons();
             ApplyLocalization();
             _planManager = planManager;
@@ -98,6 +106,42 @@ namespace KoruMsSqlYedek.Win.Forms
             _stepDots = [_lblStepNum1, _lblStepNum2, _lblStepNum3, _lblStepNum4, _lblStepNum5, _lblStepNum6];
             _stepLabels = [_lblStepTitle1, _lblStepTitle2, _lblStepTitle3, _lblStepTitle4, _lblStepTitle5, _lblStepTitle6];
             _activeSteps = new System.Collections.Generic.List<int> { 0, 1, 2, 3, 4, 5 };
+        }
+
+        /// <summary>
+        /// Applies runtime theme colors to controls whose colors were set to literals
+        /// in InitializeComponent for Designer compatibility.
+        /// </summary>
+        private void ApplyThemeColors()
+        {
+            // Wizard infrastructure
+            _pnlStepIndicator.BackColor = Theme.ModernTheme.SurfaceColor;
+            _pnlNavigation.BackColor = Theme.ModernTheme.SurfaceColor;
+
+            // Step indicator titles
+            foreach (var lbl in new[] { _lblStepTitle1, _lblStepTitle2, _lblStepTitle3,
+                                        _lblStepTitle4, _lblStepTitle5, _lblStepTitle6 })
+            {
+                lbl.ForeColor = Theme.ModernTheme.TextSecondary;
+            }
+
+            // Section headers — AccentPrimary
+            foreach (var lbl in new System.Windows.Forms.Label[] {
+                _lblStep1Header, _lblStep1SqlHeader,
+                _lblStep2Header, _lblStep2FileHeader,
+                _lblStep3Header, _lblStep3FileSchedHeader,
+                _lblStep4Header, _lblStep4RetHeader,
+                _lblStep5Header,
+                _lblStep6Header, _lblStep6ReportHeader })
+            {
+                lbl.ForeColor = Theme.ModernTheme.AccentPrimary;
+            }
+
+            // Hint / secondary labels
+            _lblStep2Hint.ForeColor = Theme.ModernTheme.TextSecondary;
+            _lblStep5Hint.ForeColor = Theme.ModernTheme.TextSecondary;
+            _lblRetentionTemplateInfo.ForeColor = Theme.ModernTheme.TextSecondary;
+            _chkProtectPlan.ForeColor = Theme.ModernTheme.TextPrimary;
         }
 
         private void ApplyIcons()
