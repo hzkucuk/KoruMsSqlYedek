@@ -30,8 +30,8 @@ namespace KoruMsSqlYedek.Win
                     var schedule = CronDisplayHelper.ToReadableText(plan.Strategy?.FullSchedule);
                     var cloudCount = plan.CloudTargets?.Count(t => t.IsEnabled) ?? 0;
                     string storageLabel = cloudCount > 0
-                        ? $"\u2601 Bulut ({cloudCount})"
-                        : "\U0001f4be Yerel";
+                        ? Res.Format("PlanList_StorageCloud", cloudCount)
+                        : Res.Get("PlanList_StorageLocal");
 
                     string statusText = Res.Get("PlanStatus_Ready");
                     Color statusColor = Theme.ModernTheme.TextSecondary;
@@ -190,7 +190,7 @@ namespace KoruMsSqlYedek.Win
             }
 
             _tslPlanCount.Text = search.Length > 0
-                ? $"{sorted.Count} / {_allPlanRows.Count} görev"
+                ? Res.Format("PlanList_FilteredTaskFormat", sorted.Count, _allPlanRows.Count)
                 : Res.Format("PlanList_TotalFormat", _allPlanRows.Count);
 
             UpdateBackupButtonStates();

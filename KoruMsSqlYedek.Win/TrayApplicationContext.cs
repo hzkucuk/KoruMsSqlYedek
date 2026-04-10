@@ -179,7 +179,7 @@ namespace KoruMsSqlYedek.Win
             menu.Items.Add(new ToolStripSeparator());
             _tsmCheckUpdate = new ToolStripMenuItem(Res.Get("Update_MenuCheckForUpdates"), null, OnCheckUpdateClick);
             menu.Items.Add(_tsmCheckUpdate);
-            var tsmAbout = new ToolStripMenuItem("Hakkında", null, OnAboutClick);
+            var tsmAbout = new ToolStripMenuItem(Res.Get("Tray_MenuAbout"), null, OnAboutClick);
             menu.Items.Add(tsmAbout);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(tsmExit);

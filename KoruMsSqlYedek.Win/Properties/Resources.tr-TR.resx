@@ -993,4 +993,99 @@ Yedekleme sırasında "dosya kullanımda" hatası alıyorsanız etkinleştirin.<
   <data name="Tip_FileSource_Enabled" xml:space="preserve"><value>Bu dosya yedekleme kaynağını etkinleştirin veya devre dışı bırakın.
 Devre dışı kaynaklar yedekleme sırasında atlanır.</value></data>
 
+  <!-- Butonlar (MainWindow ApplyIcons) -->
+  <data name="Btn_StartBackup" xml:space="preserve"><value>Yedeklemeyi Başlat</value></data>
+  <data name="Btn_Cancel" xml:space="preserve"><value>İptal Et</value></data>
+  <data name="Btn_ClearFilter" xml:space="preserve"><value>Temizle</value></data>
+  <data name="Btn_Refresh" xml:space="preserve"><value>Yenile</value></data>
+  <data name="Btn_Export" xml:space="preserve"><value>Dışa Aktar</value></data>
+  <data name="Btn_SmtpTest" xml:space="preserve"><value>Test E-postası Gönder</value></data>
+  <data name="Btn_Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="Btn_CancelSettings" xml:space="preserve"><value>İptal</value></data>
+
+  <!-- Araç çubuğu (MainWindow ApplyToolStripIcons) -->
+  <data name="Tsb_NewPlan" xml:space="preserve"><value>Yeni Görev</value></data>
+  <data name="Tsb_Edit" xml:space="preserve"><value>Düzenle</value></data>
+  <data name="Tsb_Delete" xml:space="preserve"><value>Sil</value></data>
+  <data name="Tsb_Export" xml:space="preserve"><value>Dışa Aktar</value></data>
+  <data name="Tsb_Import" xml:space="preserve"><value>İçe Aktar</value></data>
+  <data name="Tsb_Refresh" xml:space="preserve"><value>Yenile</value></data>
+  <data name="Tsl_Search" xml:space="preserve"><value>Ara:</value></data>
+
+  <!-- SMTP Grid sütunları -->
+  <data name="SmtpGrid_ColName" xml:space="preserve"><value>Profil Adı</value></data>
+  <data name="SmtpGrid_ColHost" xml:space="preserve"><value>Sunucu</value></data>
+  <data name="SmtpGrid_ColUser" xml:space="preserve"><value>Kullanıcı</value></data>
+  <data name="SmtpGrid_ColRecipients" xml:space="preserve"><value>Alıcılar</value></data>
+
+  <!-- Yedekleme Etkinliği -->
+  <data name="Activity_BackupStarted" xml:space="preserve"><value>[{0}] Yedekleme başladı.</value></data>
+  <data name="Activity_DbProcessing" xml:space="preserve"><value>{0} ({1}/{2}) işleniyor.</value></data>
+  <data name="Activity_Step" xml:space="preserve"><value>Adım: {0}</value></data>
+  <data name="Activity_CloudAbandoned" xml:space="preserve"><value>⚠ Bulut yükleme terk edildi ({0} dosya): {1}</value></data>
+  <data name="Activity_CloudAbandonedMsg" xml:space="preserve"><value>⚠ Bulut yükleme terk edildi: {0}</value></data>
+  <data name="Activity_MaxRetryExceeded" xml:space="preserve"><value>Maksimum deneme aşıldı</value></data>
+  <data name="Activity_BackupCompleted" xml:space="preserve"><value>[{0}] Yedekleme tamamlandı. ✓</value></data>
+  <data name="Activity_BackupCompletedMsg" xml:space="preserve"><value>[{0}] Yedekleme tamamlandı. ✓ {1}.</value></data>
+  <data name="Activity_BackupCompletedWarn" xml:space="preserve"><value>[{0}] Yedekleme tamamlandı ({1}). ⚠</value></data>
+  <data name="Activity_BackupFailed" xml:space="preserve"><value>[{0}] Yedekleme başarısız: {1}</value></data>
+  <data name="Activity_BackupCancelled" xml:space="preserve"><value>[{0}] Yedekleme iptal edildi.</value></data>
+
+  <!-- Bulut Yükleme -->
+  <data name="Cloud_UploadPrefix" xml:space="preserve"><value>Bulut yükleme başladı:</value></data>
+  <data name="Cloud_Uploading" xml:space="preserve"><value>Yükleniyor:</value></data>
+  <data name="Cloud_Sent" xml:space="preserve"><value>Gönderilen:</value></data>
+  <data name="Cloud_Remaining" xml:space="preserve"><value>Kalan:</value></data>
+  <data name="Cloud_Speed" xml:space="preserve"><value>Hız:</value></data>
+  <data name="Cloud_ETA" xml:space="preserve"><value>Süre:</value></data>
+
+  <!-- Yedekleme Çalıştırma -->
+  <data name="Backup_TasksRunning" xml:space="preserve"><value>{0} görev çalışıyor</value></data>
+
+  <!-- Planlar -->
+  <data name="PlanList_StorageCloud" xml:space="preserve"><value>☁ Bulut ({0})</value></data>
+  <data name="PlanList_StorageLocal" xml:space="preserve"><value>💾 Yerel</value></data>
+  <data name="PlanList_FilteredTaskFormat" xml:space="preserve"><value>{0} / {1} görev</value></data>
+
+  <!-- Zaman kısaltmaları -->
+  <data name="Time_Seconds" xml:space="preserve"><value>sn</value></data>
+  <data name="Time_Minutes" xml:space="preserve"><value>dk</value></data>
+  <data name="Time_Hours" xml:space="preserve"><value>sa</value></data>
+
+  <!-- Sistem tepsisi -->
+  <data name="Tray_MenuAbout" xml:space="preserve"><value>Hakkında</value></data>
+  <data name="Tray_ServiceStatusFormat" xml:space="preserve"><value>Servis: {0}</value></data>
+
+  <!-- PlanEdit Saklama / Rapor -->
+  <data name="PlanEdit_RetTplMinimal" xml:space="preserve"><value>Minimal  (Full×3, Diff×7, Log×14, Dosya×5)</value></data>
+  <data name="PlanEdit_RetTplStandard" xml:space="preserve"><value>Standart  (Full×7, Diff×14, Log×30, Dosya×14)  ★</value></data>
+  <data name="PlanEdit_RetTplExtended" xml:space="preserve"><value>Genişletilmiş  (Full×14, Diff×30, Log×90, Dosya×30)</value></data>
+  <data name="PlanEdit_RetTplGFS" xml:space="preserve"><value>GFS  (Grandfather-Father-Son rotasyonu)</value></data>
+  <data name="PlanEdit_RetTplCustom" xml:space="preserve"><value>Özel  (elle ayarla)</value></data>
+  <data name="PlanEdit_ReportDaily" xml:space="preserve"><value>Günlük</value></data>
+  <data name="PlanEdit_ReportWeekly" xml:space="preserve"><value>Haftalık</value></data>
+  <data name="PlanEdit_ReportMonthly" xml:space="preserve"><value>Aylık</value></data>
+
+  <!-- CronBuilder -->
+  <data name="Cron_DayMon" xml:space="preserve"><value>Pzt</value></data>
+  <data name="Cron_DayTue" xml:space="preserve"><value>Sal</value></data>
+  <data name="Cron_DayWed" xml:space="preserve"><value>Çar</value></data>
+  <data name="Cron_DayThu" xml:space="preserve"><value>Per</value></data>
+  <data name="Cron_DayFri" xml:space="preserve"><value>Cum</value></data>
+  <data name="Cron_DaySat" xml:space="preserve"><value>Cmt</value></data>
+  <data name="Cron_DaySun" xml:space="preserve"><value>Paz</value></data>
+  <data name="Cron_LblFrequency" xml:space="preserve"><value>Sıklık:</value></data>
+  <data name="Cron_FreqDaily" xml:space="preserve"><value>Günlük</value></data>
+  <data name="Cron_FreqWeekly" xml:space="preserve"><value>Haftalık</value></data>
+  <data name="Cron_FreqMonthly" xml:space="preserve"><value>Aylık</value></data>
+  <data name="Cron_FreqCustom" xml:space="preserve"><value>Özel (Cron)</value></data>
+  <data name="Cron_LblHour" xml:space="preserve"><value>Saat:</value></data>
+  <data name="Cron_LblDay" xml:space="preserve"><value>Gün:</value></data>
+  <data name="Cron_CustomExpr" xml:space="preserve"><value>Özel cron ifadesi</value></data>
+  <data name="Cron_EveryDayAt" xml:space="preserve"><value>Her gün saat {0}</value></data>
+  <data name="Cron_WeeklyAt" xml:space="preserve"><value>{0} saat {1}</value></data>
+  <data name="Cron_MonthlyAt" xml:space="preserve"><value>Her ayın {0}. günü saat {1}</value></data>
+  <data name="Cron_Every" xml:space="preserve"><value>Her </value></data>
+  <data name="Cron_DefaultDay" xml:space="preserve"><value>Her Pzt</value></data>
+
 </root>

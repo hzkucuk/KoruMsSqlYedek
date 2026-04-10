@@ -1003,4 +1003,99 @@ Enable this if you see "file in use" errors during backup.</value></data>
   <data name="Tip_FileSource_Enabled" xml:space="preserve"><value>Enable or disable this file backup source.
 Disabled sources are skipped during backup execution.</value></data>
 
+  <!-- Buttons (MainWindow ApplyIcons) -->
+  <data name="Btn_StartBackup" xml:space="preserve"><value>Start Backup</value></data>
+  <data name="Btn_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Btn_ClearFilter" xml:space="preserve"><value>Clear</value></data>
+  <data name="Btn_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Btn_Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Btn_SmtpTest" xml:space="preserve"><value>Send Test Email</value></data>
+  <data name="Btn_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Btn_CancelSettings" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- Toolbar (MainWindow ApplyToolStripIcons) -->
+  <data name="Tsb_NewPlan" xml:space="preserve"><value>New Task</value></data>
+  <data name="Tsb_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Tsb_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Tsb_Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Tsb_Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Tsb_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Tsl_Search" xml:space="preserve"><value>Search:</value></data>
+
+  <!-- SMTP Grid columns -->
+  <data name="SmtpGrid_ColName" xml:space="preserve"><value>Profile Name</value></data>
+  <data name="SmtpGrid_ColHost" xml:space="preserve"><value>Server</value></data>
+  <data name="SmtpGrid_ColUser" xml:space="preserve"><value>Username</value></data>
+  <data name="SmtpGrid_ColRecipients" xml:space="preserve"><value>Recipients</value></data>
+
+  <!-- Backup Activity -->
+  <data name="Activity_BackupStarted" xml:space="preserve"><value>[{0}] Backup started.</value></data>
+  <data name="Activity_DbProcessing" xml:space="preserve"><value>{0} ({1}/{2}) processing.</value></data>
+  <data name="Activity_Step" xml:space="preserve"><value>Step: {0}</value></data>
+  <data name="Activity_CloudAbandoned" xml:space="preserve"><value>⚠ Cloud upload abandoned ({0} files): {1}</value></data>
+  <data name="Activity_CloudAbandonedMsg" xml:space="preserve"><value>⚠ Cloud upload abandoned: {0}</value></data>
+  <data name="Activity_MaxRetryExceeded" xml:space="preserve"><value>Max retry exceeded</value></data>
+  <data name="Activity_BackupCompleted" xml:space="preserve"><value>[{0}] Backup completed. ✓</value></data>
+  <data name="Activity_BackupCompletedMsg" xml:space="preserve"><value>[{0}] Backup completed. ✓ {1}.</value></data>
+  <data name="Activity_BackupCompletedWarn" xml:space="preserve"><value>[{0}] Backup completed ({1}). ⚠</value></data>
+  <data name="Activity_BackupFailed" xml:space="preserve"><value>[{0}] Backup failed: {1}</value></data>
+  <data name="Activity_BackupCancelled" xml:space="preserve"><value>[{0}] Backup cancelled.</value></data>
+
+  <!-- Cloud Upload -->
+  <data name="Cloud_UploadPrefix" xml:space="preserve"><value>Cloud upload started:</value></data>
+  <data name="Cloud_Uploading" xml:space="preserve"><value>Uploading:</value></data>
+  <data name="Cloud_Sent" xml:space="preserve"><value>Sent:</value></data>
+  <data name="Cloud_Remaining" xml:space="preserve"><value>Remaining:</value></data>
+  <data name="Cloud_Speed" xml:space="preserve"><value>Speed:</value></data>
+  <data name="Cloud_ETA" xml:space="preserve"><value>ETA:</value></data>
+
+  <!-- Backup Execution -->
+  <data name="Backup_TasksRunning" xml:space="preserve"><value>{0} tasks running</value></data>
+
+  <!-- Plans -->
+  <data name="PlanList_StorageCloud" xml:space="preserve"><value>☁ Cloud ({0})</value></data>
+  <data name="PlanList_StorageLocal" xml:space="preserve"><value>💾 Local</value></data>
+  <data name="PlanList_FilteredTaskFormat" xml:space="preserve"><value>{0} / {1} tasks</value></data>
+
+  <!-- Time abbreviations -->
+  <data name="Time_Seconds" xml:space="preserve"><value>sec</value></data>
+  <data name="Time_Minutes" xml:space="preserve"><value>min</value></data>
+  <data name="Time_Hours" xml:space="preserve"><value>hr</value></data>
+
+  <!-- Tray -->
+  <data name="Tray_MenuAbout" xml:space="preserve"><value>About</value></data>
+  <data name="Tray_ServiceStatusFormat" xml:space="preserve"><value>Service: {0}</value></data>
+
+  <!-- PlanEdit Retention / Report -->
+  <data name="PlanEdit_RetTplMinimal" xml:space="preserve"><value>Minimal  (Full×3, Diff×7, Log×14, Files×5)</value></data>
+  <data name="PlanEdit_RetTplStandard" xml:space="preserve"><value>Standard  (Full×7, Diff×14, Log×30, Files×14)  ★</value></data>
+  <data name="PlanEdit_RetTplExtended" xml:space="preserve"><value>Extended  (Full×14, Diff×30, Log×90, Files×30)</value></data>
+  <data name="PlanEdit_RetTplGFS" xml:space="preserve"><value>GFS  (Grandfather-Father-Son rotation)</value></data>
+  <data name="PlanEdit_RetTplCustom" xml:space="preserve"><value>Custom  (manual setup)</value></data>
+  <data name="PlanEdit_ReportDaily" xml:space="preserve"><value>Daily</value></data>
+  <data name="PlanEdit_ReportWeekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="PlanEdit_ReportMonthly" xml:space="preserve"><value>Monthly</value></data>
+
+  <!-- CronBuilder -->
+  <data name="Cron_DayMon" xml:space="preserve"><value>Mon</value></data>
+  <data name="Cron_DayTue" xml:space="preserve"><value>Tue</value></data>
+  <data name="Cron_DayWed" xml:space="preserve"><value>Wed</value></data>
+  <data name="Cron_DayThu" xml:space="preserve"><value>Thu</value></data>
+  <data name="Cron_DayFri" xml:space="preserve"><value>Fri</value></data>
+  <data name="Cron_DaySat" xml:space="preserve"><value>Sat</value></data>
+  <data name="Cron_DaySun" xml:space="preserve"><value>Sun</value></data>
+  <data name="Cron_LblFrequency" xml:space="preserve"><value>Frequency:</value></data>
+  <data name="Cron_FreqDaily" xml:space="preserve"><value>Daily</value></data>
+  <data name="Cron_FreqWeekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="Cron_FreqMonthly" xml:space="preserve"><value>Monthly</value></data>
+  <data name="Cron_FreqCustom" xml:space="preserve"><value>Custom (Cron)</value></data>
+  <data name="Cron_LblHour" xml:space="preserve"><value>Hour:</value></data>
+  <data name="Cron_LblDay" xml:space="preserve"><value>Day:</value></data>
+  <data name="Cron_CustomExpr" xml:space="preserve"><value>Custom cron expression</value></data>
+  <data name="Cron_EveryDayAt" xml:space="preserve"><value>Every day at {0}</value></data>
+  <data name="Cron_WeeklyAt" xml:space="preserve"><value>{0} at {1}</value></data>
+  <data name="Cron_MonthlyAt" xml:space="preserve"><value>Every month on day {0} at {1}</value></data>
+  <data name="Cron_Every" xml:space="preserve"><value>Every </value></data>
+  <data name="Cron_DefaultDay" xml:space="preserve"><value>Every Mon</value></data>
+
 </root>

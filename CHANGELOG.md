@@ -1,4 +1,28 @@
-﻿## [0.99.40] - 2025-07-18 — Tam Lokalizasyon & Zengin Tooltip Desteği
+﻿## [0.99.41] - 2025-07-19 — Tam Runtime Lokalizasyon Düzeltmesi
+
+### Düzeltme
+- **Dil değişikliğinde CultureInfo güncellenmeme hatası** — `OnSaveSettingsClick` artık `CurrentUICulture`, `CurrentCulture`, `DefaultThreadCurrentUICulture`, `DefaultThreadCurrentCulture` değerlerini güncelliyor ve `ApplyLocalization()` + `ApplyIcons()` + `LoadProfileList()` çağırıyor
+- **Hardcoded Türkçe metinlerin tamamı lokalize edildi** — 12 dosyada ~70 hardcoded Türkçe metin `Res.Get()`/`Res.Format()` ile değiştirildi:
+  - `MainWindow.cs` — ApplyIcons (8), ApplyToolStripIcons (7)
+  - `MainWindow.Settings.cs` — LoadProfileList sütun başlıkları (4)
+  - `MainWindow.BackupActivity.cs` — BuildActivityLogLine (9), BuildCloudUploadLogLine (6)
+  - `MainWindow.BackupLog.cs` — IsProgressLine bulut marker'ları
+  - `MainWindow.BackupExecution.cs` — Görev çalışma durumu
+  - `MainWindow.Plans.cs` — Depolama etiketleri, filtre sayacı
+  - `MainWindow.Dashboard.cs` — FormatEta zaman kısaltmaları
+  - `TrayApplicationContext.cs` — "Hakkında" menü öğesi
+  - `TrayApplicationContext.ServiceControl.cs` — Servis durumu
+  - `PlanEditForm.PlanBinding.cs` — Saklama şablonları (5), rapor sıklığı (3)
+  - `CronBuilderPanel.cs` — Gün adları, sıklık öğeleri, etiketler, önizleme metni
+- **67 yeni kaynak anahtarı** — `Resources.resx` (EN) ve `Resources.tr-TR.resx` (TR) dosyalarına eklendi
+
+### Etkilenen Dosyalar
+- `MainWindow.cs`, `MainWindow.Settings.cs`, `MainWindow.BackupActivity.cs`, `MainWindow.BackupLog.cs`, `MainWindow.BackupExecution.cs`, `MainWindow.Plans.cs`, `MainWindow.Dashboard.cs`
+- `TrayApplicationContext.cs`, `TrayApplicationContext.ServiceControl.cs`
+- `PlanEditForm.PlanBinding.cs`, `CronBuilderPanel.cs`
+- `Resources.resx`, `Resources.tr-TR.resx`
+
+## [0.99.40] - 2025-07-18 — Tam Lokalizasyon & Zengin Tooltip Desteği
 
 ### Yeni Özellik
 - **Tüm form ve kontrollere tam lokalizasyon** — Dil değiştirildiğinde tüm kontroller (başlıklar, butonlar, etiketler, menüler, bağlam menüleri, kolon başlıkları) İngilizce/Türkçe olarak güncelleniyor

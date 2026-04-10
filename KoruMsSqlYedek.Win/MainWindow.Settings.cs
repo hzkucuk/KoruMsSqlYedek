@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Threading;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Models;
@@ -106,6 +108,7 @@ namespace KoruMsSqlYedek.Win
 
             try
             {
+                string previousLang = _settings?.Language ?? "tr-TR";
                 var settings = ControlsToSettings();
                 _settingsManager.Save(settings);
                 Theme.ModernTheme.ApplyTheme(settings.Theme == "light"
@@ -114,6 +117,19 @@ namespace KoruMsSqlYedek.Win
                 // Log renk şemasını uygula
                 Theme.ModernTheme.ApplyLogColorScheme(settings.LogColorScheme);
                 _txtBackupLog.BackColor = Theme.ModernTheme.LogConsoleBg;
+
+                // Dil değişikliği varsa kültürü güncelle ve tüm UI'yı yeniden lokalize et
+                if (!string.Equals(previousLang, settings.Language, StringComparison.OrdinalIgnoreCase))
+                {
+                    var culture = new CultureInfo(settings.Language);
+                    Thread.CurrentThread.CurrentUICulture = culture;
+                    Thread.CurrentThread.CurrentCulture = culture;
+                    CultureInfo.DefaultThreadCurrentUICulture = culture;
+                    CultureInfo.DefaultThreadCurrentCulture = culture;
+                    ApplyLocalization();
+                    ApplyIcons();
+                    LoadProfileList(settings);
+                }
 
                 Log.Information("Ayarlar kaydedildi.");
                 Theme.ModernMessageBox.Show(Res.Get("Settings_SavedMessage"),
@@ -137,10 +153,10 @@ namespace KoruMsSqlYedek.Win
             _dgvSmtpProfiles.Rows.Clear();
             _dgvSmtpProfiles.Columns.Clear();
             _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colId", Visible = false });
-            _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", HeaderText = "Profil Adı", FillWeight = 25 });
-            _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colHost", HeaderText = "Sunucu", FillWeight = 30 });
-            _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colUser", HeaderText = "Kullanıcı", FillWeight = 25 });
-            _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colRecipients", HeaderText = "Alıcılar", FillWeight = 20 });
+            _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", HeaderText = Res.Get("SmtpGrid_ColName"), FillWeight = 25 });
+            _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colHost", HeaderText = Res.Get("SmtpGrid_ColHost"), FillWeight = 30 });
+            _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colUser", HeaderText = Res.Get("SmtpGrid_ColUser"), FillWeight = 25 });
+            _dgvSmtpProfiles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colRecipients", HeaderText = Res.Get("SmtpGrid_ColRecipients"), FillWeight = 20 });
 
             foreach (var p in s.SmtpProfiles)
             {

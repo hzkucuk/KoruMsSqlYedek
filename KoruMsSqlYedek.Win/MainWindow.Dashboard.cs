@@ -83,9 +83,9 @@ namespace KoruMsSqlYedek.Win
         {
             if (speedBytesPerSecond <= 0 || bytesRemaining <= 0) return string.Empty;
             var eta = TimeSpan.FromSeconds(bytesRemaining / (double)speedBytesPerSecond);
-            if (eta.TotalSeconds < 60) return $"{(int)eta.TotalSeconds} sn";
-            if (eta.TotalMinutes < 60) return $"{(int)eta.TotalMinutes} dk {eta.Seconds} sn";
-            return $"{(int)eta.TotalHours} sa {eta.Minutes} dk";
+            if (eta.TotalSeconds < 60) return $"{(int)eta.TotalSeconds} {Res.Get("Time_Seconds")}";
+            if (eta.TotalMinutes < 60) return $"{(int)eta.TotalMinutes} {Res.Get("Time_Minutes")} {eta.Seconds} {Res.Get("Time_Seconds")}";
+            return $"{(int)eta.TotalHours} {Res.Get("Time_Hours")} {eta.Minutes} {Res.Get("Time_Minutes")}";
         }
 
         internal static string FormatFileSize(long bytes)
