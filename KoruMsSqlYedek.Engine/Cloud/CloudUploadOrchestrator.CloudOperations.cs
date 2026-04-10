@@ -62,8 +62,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         /// <summary>
-        /// Çöp kutusu destekleyen tüm aktif bulut hedeflerinin çöp kutusunu boşaltır.
-        /// PermanentDeleteFromTrash=false olan hedefler için retention sonrası çağrılır.
+        /// Çöp kutusu destekleyen tüm aktif bulut hedeflerinin çöp kutusunu temizler.
+        /// TrashRetentionDays > 0 olan hedeflerde saklama süresi dolan dosyalar kalıcı silinir.
         /// </summary>
         public async Task<int> EmptyTrashForAllAsync(
             List<CloudTargetConfig> targets,
@@ -71,9 +71,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
         {
             int totalDeleted = 0;
 
-            // Sadece çöp kutusu kullanan hedefleri filtrele (PermanentDeleteFromTrash=false)
+            // Çöp kutusu kullanan hedefleri filtrele (TrashRetentionDays > 0)
             var trashTargets = targets
-                .Where(t => t.IsEnabled && !t.PermanentDeleteFromTrash)
+                .Where(t => t.IsEnabled && t.UsesTrash)
                 .ToList();
 
             if (trashTargets.Count == 0)

@@ -88,7 +88,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 using (var driveService = await GoogleDriveAuthHelper.CreateDriveServiceAsync(config, cancellationToken)
                     .ConfigureAwait(false))
                 {
-                    if (config.PermanentDeleteFromTrash)
+                    if (!config.UsesTrash)
                     {
                         // Kalıcı silme (çöp kutusuna göndermeden doğrudan sil)
                         await driveService.Files.Delete(remoteFileIdentifier)
@@ -98,12 +98,13 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     }
                     else
                     {
-                        // Çöp kutusuna gönder
+                        // Çöp kutusuna gönder (TrashRetentionDays gün sonra temizlenecek)
                         var updateRequest = driveService.Files.Update(
                             new GoogleFile { Trashed = true }, remoteFileIdentifier);
                         await updateRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-                        Log.Information("Google Drive dosyası çöp kutusuna taşındı: {FileId}", remoteFileIdentifier);
+                        Log.Information("Google Drive dosyası çöp kutusuna taşındı ({Days} gün saklama): {FileId}",
+                            config.TrashRetentionDays, remoteFileIdentifier);
                     }
 
                     return true;
@@ -273,7 +274,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
         }
 
         /// <summary>
-        /// Google Drive çöp kutusundaki YALNIZCA bizim klasörümüze ait dosyaları kalıcı olarak siler.
+        /// Google Drive çöp kutusundaki YALNIZCA bizim klasörümüze ait ve saklama süresi dolmuş dosyaları kalıcı olarak siler.
+        /// config.TrashRetentionDays kadar gün geçmiş dosyalar silinir; daha yeni olanlar korunur.
         /// Kullanıcının diğer çöp öğelerine dokunmaz.
         /// </summary>
         public async Task<int> EmptyTrashAsync(
@@ -283,6 +285,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
             try
             {
                 ValidateConfig(config);
+
+                int retentionDays = config.TrashRetentionDays;
+                DateTime cutoffUtc = DateTime.UtcNow.AddDays(-retentionDays);
 
                 using (var driveService = await GoogleDriveAuthHelper.CreateDriveServiceAsync(config, cancellationToken)
                     .ConfigureAwait(false))
@@ -307,14 +312,15 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         ? $"trashed = true and '{folderId}' in parents"
                         : "trashed = true";
 
-                    var allTrashedFiles = new System.Collections.Generic.List<string>();
+                    var expiredFileIds = new System.Collections.Generic.List<string>();
+                    int totalTrashed = 0;
                     string pageToken = null;
 
                     do
                     {
                         var listRequest = driveService.Files.List();
                         listRequest.Q = query;
-                        listRequest.Fields = "nextPageToken, files(id, name)";
+                        listRequest.Fields = "nextPageToken, files(id, name, trashedTime, modifiedTime)";
                         listRequest.PageSize = 100;
                         if (pageToken is not null)
                             listRequest.PageToken = pageToken;
@@ -324,27 +330,49 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         if (result.Files is not null)
                         {
                             foreach (var file in result.Files)
-                                allTrashedFiles.Add(file.Id);
+                            {
+                                totalTrashed++;
+
+                                // trashedTime yoksa modifiedTime'a düş (eski API uyumu)
+                                DateTime? trashedAt = file.TrashedTimeDateTimeOffset?.UtcDateTime
+                                    ?? file.ModifiedTimeDateTimeOffset?.UtcDateTime;
+
+                                if (trashedAt.HasValue && trashedAt.Value < cutoffUtc)
+                                {
+                                    expiredFileIds.Add(file.Id);
+                                }
+                            }
                         }
 
                         pageToken = result.NextPageToken;
                     }
                     while (pageToken is not null);
 
-                    if (allTrashedFiles.Count == 0)
+                    if (expiredFileIds.Count == 0)
                     {
-                        Log.Information("Google Drive çöp kutusunda bizim dosyamız yok.");
+                        if (totalTrashed > 0)
+                        {
+                            Log.Information(
+                                "Google Drive çöp kutusunda {Total} dosya var ancak hiçbiri {Days} günlük saklama süresini aşmadı.",
+                                totalTrashed, retentionDays);
+                        }
+                        else
+                        {
+                            Log.Information("Google Drive çöp kutusunda bizim dosyamız yok.");
+                        }
+
                         return 0;
                     }
 
                     Log.Information(
-                        "Google Drive çöp kutusundan {Count} dosya kalıcı siliniyor (klasör: {Folder})",
-                        allTrashedFiles.Count,
+                        "Google Drive çöp kutusundan {Expired}/{Total} dosya kalıcı siliniyor " +
+                        "(saklama: {Days} gün, klasör: {Folder})",
+                        expiredFileIds.Count, totalTrashed, retentionDays,
                         config.RemoteFolderPath ?? "root");
 
                     int deletedCount = 0;
 
-                    foreach (string fileId in allTrashedFiles)
+                    foreach (string fileId in expiredFileIds)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
@@ -367,7 +395,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                     Log.Information(
                         "Google Drive çöp kutusu temizlendi: {Deleted}/{Total} dosya silindi (klasör: {Folder})",
-                        deletedCount, allTrashedFiles.Count,
+                        deletedCount, expiredFileIds.Count,
                         config.RemoteFolderPath ?? "root");
 
                     return deletedCount;

@@ -240,7 +240,7 @@ namespace KoruMsSqlYedek.Tests
                 Password = PasswordProtector.Protect("ftpPw"),
                 RemoteFolderPath = "/sql-backups",
                 BandwidthLimitMbps = 10,
-                PermanentDeleteFromTrash = true
+                TrashRetentionDays = 0
             };
 
             var plan = CreatePlanWithSingleCloud(target);
@@ -254,7 +254,7 @@ namespace KoruMsSqlYedek.Tests
             PasswordProtector.Unprotect(ct.Password).Should().Be("ftpPw");
             ct.RemoteFolderPath.Should().Be("/sql-backups");
             ct.BandwidthLimitMbps.Should().Be(10);
-            ct.PermanentDeleteFromTrash.Should().BeTrue();
+            ct.TrashRetentionDays.Should().Be(0);
             ct.FtpsSkipCertificateValidation.Should().BeFalse();
             ct.SftpHostFingerprint.Should().BeNull();
         }
@@ -274,7 +274,7 @@ namespace KoruMsSqlYedek.Tests
                 RemoteFolderPath = "/backups",
                 FtpsSkipCertificateValidation = true,
                 BandwidthLimitMbps = 50,
-                PermanentDeleteFromTrash = false
+                TrashRetentionDays = 0
             };
 
             var plan = CreatePlanWithSingleCloud(target);
@@ -285,7 +285,7 @@ namespace KoruMsSqlYedek.Tests
             ct.FtpsSkipCertificateValidation.Should().BeTrue();
             ct.Port.Should().Be(990);
             ct.BandwidthLimitMbps.Should().Be(50);
-            ct.PermanentDeleteFromTrash.Should().BeFalse();
+            ct.TrashRetentionDays.Should().Be(0);
         }
 
         [TestMethod]
@@ -322,7 +322,7 @@ namespace KoruMsSqlYedek.Tests
                 RemoteFolderPath = "/backups/sql",
                 SftpHostFingerprint = "SHA256:abc123def456789",
                 BandwidthLimitMbps = 25,
-                PermanentDeleteFromTrash = true
+                TrashRetentionDays = 0
             };
 
             var plan = CreatePlanWithSingleCloud(target);
@@ -333,7 +333,7 @@ namespace KoruMsSqlYedek.Tests
             ct.SftpHostFingerprint.Should().Be("SHA256:abc123def456789");
             ct.Port.Should().Be(22);
             ct.BandwidthLimitMbps.Should().Be(25);
-            ct.PermanentDeleteFromTrash.Should().BeTrue();
+            ct.TrashRetentionDays.Should().Be(0);
             ct.FtpsSkipCertificateValidation.Should().BeFalse();
         }
 
@@ -349,7 +349,7 @@ namespace KoruMsSqlYedek.Tests
                 OAuthClientId = "123456-abcdef.apps.googleusercontent.com",
                 OAuthClientSecret = PasswordProtector.Protect("gdClientSecret"),
                 OAuthTokenJson = "{\"access_token\":\"ya29.test\",\"refresh_token\":\"1//test\"}",
-                PermanentDeleteFromTrash = false
+                TrashRetentionDays = 30
             };
 
             var plan = CreatePlanWithSingleCloud(target);
@@ -361,7 +361,7 @@ namespace KoruMsSqlYedek.Tests
             PasswordProtector.Unprotect(ct.OAuthClientSecret).Should().Be("gdClientSecret");
             ct.OAuthTokenJson.Should().Contain("access_token");
             ct.RemoteFolderPath.Should().Be("KoruBackups");
-            ct.PermanentDeleteFromTrash.Should().BeFalse();
+            ct.TrashRetentionDays.Should().Be(30);
         }
 
         [TestMethod]
@@ -375,7 +375,7 @@ namespace KoruMsSqlYedek.Tests
                 LocalOrUncPath = @"\\nas01\backups\sql",
                 Username = @"DOMAIN\backupuser",
                 Password = PasswordProtector.Protect("uncPw"),
-                PermanentDeleteFromTrash = false
+                TrashRetentionDays = 0
             };
 
             var plan = CreatePlanWithSingleCloud(target);
@@ -386,7 +386,7 @@ namespace KoruMsSqlYedek.Tests
             ct.LocalOrUncPath.Should().Be(@"\\nas01\backups\sql");
             ct.Username.Should().Be(@"DOMAIN\backupuser");
             PasswordProtector.Unprotect(ct.Password).Should().Be("uncPw");
-            ct.PermanentDeleteFromTrash.Should().BeFalse();
+            ct.TrashRetentionDays.Should().Be(0);
         }
 
         [TestMethod]
@@ -411,20 +411,21 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
-        [DataRow(true, DisplayName = "PermanentDelete_True")]
-        [DataRow(false, DisplayName = "PermanentDelete_False")]
-        public void CloudTarget_PermanentDeleteFromTrash_BothValues(bool permanentDelete)
+        [DataRow(0, DisplayName = "TrashRetention_0_ImmediateDelete")]
+        [DataRow(7, DisplayName = "TrashRetention_7_Days")]
+        [DataRow(30, DisplayName = "TrashRetention_30_Days")]
+        public void CloudTarget_TrashRetentionDays_JsonRoundTrip(int retentionDays)
         {
             var target = new CloudTargetConfig
             {
                 Type = CloudProviderType.GoogleDrivePersonal,
                 IsEnabled = true,
                 DisplayName = "Trash Test",
-                PermanentDeleteFromTrash = permanentDelete
+                TrashRetentionDays = retentionDays
             };
 
             var loaded = RoundTrip(CreatePlanWithSingleCloud(target));
-            loaded.CloudTargets.First().PermanentDeleteFromTrash.Should().Be(permanentDelete);
+            loaded.CloudTargets.First().TrashRetentionDays.Should().Be(retentionDays);
         }
 
         // ═══════════════════════════════════════════════════════════════

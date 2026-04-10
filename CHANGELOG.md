@@ -1,4 +1,19 @@
-﻿## [0.99.37] - 2025-07-17 — Dosya Filtre Kalıpları Boyut Hesaplama Düzeltmesi
+﻿## [0.99.39] - 2025-07-17 — Oto. Tam Yedek Eşiği Strateji Bağımlı Devre Dışı
+
+### Düzeltme
+- **"Oto. Tam Yedek Eşiği" tam yedekte devre dışı** — Yedekleme stratejisi "Yalnızca Tam Yedek" seçildiğinde eşik kontrolü ve etiketi artık `Enabled = false` oluyor. Fark/Artırımlı strateji seçildiğinde tekrar aktif.
+
+## [0.99.38] - 2025-07-17 — Bulut Çöp Kutusu Zamana Dayalı Saklama
+
+### Yeni Özellik
+- **Çöp kutusu saklama süresi (gün)** — Bulut hedeflerinde silinen dosyalar artık belirli gün sayısı boyunca çöp kutusunda tutulabiliyor. Eski ikili seçenek (hemen sil / hiç silme) yerine 0-365 gün aralığında saklama süresi ayarlanabiliyor.
+  - `TrashRetentionDays = 0`: Dosya kalıcı olarak hemen silinir (çöp kutusuna gönderilmez)
+  - `TrashRetentionDays > 0`: Dosya çöp kutusuna gönderilir, belirtilen gün sonra otomatik temizlenir
+- **Google Drive trashedTime filtresi** — `EmptyTrashAsync` artık `trashedTime` alanını kullanarak yalnızca süresi dolan dosyaları siliyor
+- **Geriye dönük uyumluluk** — Eski JSON yapılandırmaları otomatik migrate ediliyor (`permanentDeleteFromTrash: true` → 0 gün, `false` → 30 gün)
+- **UI güncellendi** — Bulut hedef düzenleme diyaloğunda checkbox yerine sayısal giriş alanı (0-365 gün) ve ipucu etiketi eklendi
+
+## [0.99.37] - 2025-07-17 — Dosya Filtre Kalıpları Boyut Hesaplama Düzeltmesi
 
 ### Düzeltme
 - **Filtre değişikliğinde boyut yeniden hesaplanıyor** — Dahil/Hariç kalıpları değiştirildiğinde dosya boyutu artık otomatik yeniden hesaplanıyor. Önceden filtre değişikliği boyut gösterimini güncellemiyordu.

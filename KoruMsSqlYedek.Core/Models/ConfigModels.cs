@@ -278,9 +278,40 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("bandwidthLimitMbps")]
         public int? BandwidthLimitMbps { get; set; }
 
-        /// <summary>Silinen dosyaların çöp kutusundan kalıcı temizlenmesi.</summary>
-        [JsonProperty("permanentDeleteFromTrash")]
-        public bool PermanentDeleteFromTrash { get; set; } = true;
+        /// <summary>
+        /// Çöp kutusu saklama süresi (gün).
+        /// 0 = çöp kutusuna göndermeden kalıcı sil (varsayılan).
+        /// >0 = silinen dosyaları çöp kutusunda N gün sakla, sonra kalıcı sil.
+        /// </summary>
+        [JsonProperty("trashRetentionDays")]
+        public int TrashRetentionDays { get; set; }
+
+        /// <summary>
+        /// [Geriye uyumluluk] Eski yapılandırmalardan okunur. Yeni kayıtlarda serileştirilmez.
+        /// </summary>
+        [JsonProperty("permanentDeleteFromTrash", NullValueHandling = NullValueHandling.Ignore)]
+        private bool? _legacyPermanentDelete;
+
+        [System.Runtime.Serialization.OnDeserialized]
+        private void OnDeserialized(System.Runtime.Serialization.StreamingContext context)
+        {
+            // Eski bool formatını yeni gün formatına dönüştür
+            if (_legacyPermanentDelete.HasValue && TrashRetentionDays == 0)
+            {
+                if (!_legacyPermanentDelete.Value)
+                {
+                    // Eski false (çöp kutusuna gönder + hemen temizle) → 30 gün saklama
+                    TrashRetentionDays = 30;
+                }
+                // Eski true (kalıcı sil) → 0 zaten varsayılan
+            }
+
+            _legacyPermanentDelete = null;
+        }
+
+        /// <summary>Çöp kutusu kullanılıp kullanılmayacağını belirler.</summary>
+        [JsonIgnore]
+        public bool UsesTrash => TrashRetentionDays > 0;
     }
 
     /// <summary>

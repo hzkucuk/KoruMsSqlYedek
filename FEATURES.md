@@ -2,6 +2,13 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.38 — Bulut Çöp Kutusu Zamana Dayalı Saklama
+- `TrashRetentionDays` (0-365 gün) ile çöp kutusunda saklama süresi belirleme
+- 0 = hemen kalıcı sil, >0 = çöp kutusunda N gün tut sonra temizle
+- Google Drive `trashedTime` filtresi ile zamana dayalı çöp temizleme
+- Eski `PermanentDeleteFromTrash` (bool) → `TrashRetentionDays` (int) otomatik migrasyon
+- CloudTargetEditDialog: NumericUpDown (0-365) + ipucu etiketi
+
 ### v0.99.37 — Dosya Filtre Kalıpları Boyut Hesaplama
 - Dahil/Hariç kalıp değişikliğinde dosya boyutu otomatik yeniden hesaplanıyor
 - Boyut hesaplaması include/exclude filtrelerini uygulayarak sadece geçen dosyaları sayıyor
