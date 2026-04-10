@@ -1,4 +1,15 @@
-﻿## [0.99.48] - 2025-07-19 — PlanEditForm Designer Uyumluluğu (Düzeltme)
+﻿## [0.99.49] - 2025-07-19 — PlanEditForm Designer: FQ Type Names + Name Properties
+
+### Düzeltme
+- **PlanEditForm.Designer.cs**: VS Forms Designer ile uyumluluk için 2 kritik düzeltme
+  - 22 custom kontrol `new` ifadesi tam nitelikli (fully qualified) yapıldı (örn: `new KoruMsSqlYedek.Win.Theme.ModernButton()`)
+  - 115 kontrole `.Name` özelliği eklendi (Designer alan eşleştirmesi için zorunlu)
+- Kök neden: Çalışan form (CloudTargetEditDialog) ile karşılaştırma yapılarak tespit edildi
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — 22 FQ type + 115 Name property eklendi
+
+## [0.99.48] - 2025-07-19 — PlanEditForm Designer Uyumluluğu (Düzeltme)
 
 ### Düzeltme
 - **PlanEditForm**: VS Forms Designer’da form açılamama sorunu düzeltildi (3 kök neden)
