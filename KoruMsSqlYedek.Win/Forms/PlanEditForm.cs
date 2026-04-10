@@ -46,6 +46,12 @@ namespace KoruMsSqlYedek.Win.Forms
         private int _currentStep;
         private bool _connectionTested;
 
+        // Runtime arrays — Designer uses named fields, runtime code uses arrays for loops
+        private Panel[] _stepPanels = null!;
+        private Label[] _stepLabels = null!;
+        private Label[] _stepDots = null!;
+        private System.Collections.Generic.List<int> _activeSteps = null!;
+
         /// <summary>Yeni plan oluşturma.</summary>
         public PlanEditForm(IPlanManager planManager, ISqlBackupService sqlBackupService, IAppSettingsManager settingsManager)
             : this(planManager, sqlBackupService, settingsManager, null) { }
@@ -61,6 +67,7 @@ namespace KoruMsSqlYedek.Win.Forms
             ArgumentNullException.ThrowIfNull(settingsManager);
 
             InitializeComponent();
+            BuildRuntimeArrays();
             ApplyIcons();
             ApplyLocalization();
             _planManager = planManager;
@@ -79,6 +86,18 @@ namespace KoruMsSqlYedek.Win.Forms
                 _isNew = true;
                 Text = Res.Get("PlanEdit_TitleNew");
             }
+        }
+
+        /// <summary>
+        /// Maps named Designer fields to runtime arrays used by wizard navigation.
+        /// Must be called after InitializeComponent().
+        /// </summary>
+        private void BuildRuntimeArrays()
+        {
+            _stepPanels = [_pnlStep1, _pnlStep2, _pnlStep3, _pnlStep4, _pnlStep5, _pnlStep6];
+            _stepDots = [_lblStepNum1, _lblStepNum2, _lblStepNum3, _lblStepNum4, _lblStepNum5, _lblStepNum6];
+            _stepLabels = [_lblStepTitle1, _lblStepTitle2, _lblStepTitle3, _lblStepTitle4, _lblStepTitle5, _lblStepTitle6];
+            _activeSteps = new System.Collections.Generic.List<int> { 0, 1, 2, 3, 4, 5 };
         }
 
         private void ApplyIcons()

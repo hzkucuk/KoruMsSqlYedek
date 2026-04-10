@@ -1,4 +1,18 @@
-﻿## [0.99.46] - 2025-07-19 — PlanEditForm Wizard Layout Düzeltmesi
+﻿## [0.99.47] - 2025-07-19 — PlanEditForm Designer Uyumluluğu
+
+### İyileştirme
+- **PlanEditForm.Designer.cs**: VS Forms Designer ile düzenlenebilir hale getirildi
+- Tüm `for` döngüleri, `ConfigLabel`/`ConfigTextBox` yardımcı metotları ve yerel değişkenler kaldırıldı
+- 6 step paneli adlandırılmış alanlara dönüştürüldü (`_pnlStep1`–`_pnlStep6`)
+- 12 step göstergesi etiketi adlandırıldı (`_lblStepNum1`–`_lblStepNum6`, `_lblStepTitle1`–`_lblStepTitle6`)
+- `SuspendLayout`/`ResumeLayout` kalıbı eklendi
+- Runtime dizileri (`_stepPanels`, `_stepLabels`, `_stepDots`) `PlanEditForm.cs` constructor'a taşındı
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — Tamamen yeniden yazıldı (~1100 satır)
+- `PlanEditForm.cs` — `BuildRuntimeArrays()` metodu ve dizi alanları eklendi
+
+## [0.99.46] - 2025-07-19 — PlanEditForm Wizard Layout Düzeltmesi
 
 ### Düzeltme
 - **PlanEditForm**: Wizard adımlarında etiket-kontrol çakışması düzeltildi (tx=150→180, tw=420→390)
