@@ -369,13 +369,13 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep1Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep1Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep1Header.AutoSize = true;
-            _lblStep1Header.Location = new System.Drawing.Point(0, 5);
+            _lblStep1Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep1.Controls.Add(_lblStep1Header);
 
             _lblPlanName.Text = "Plan Ad\u0131:";
             _lblPlanName.Name = "_lblPlanName";
             _lblPlanName.AutoSize = true;
-            _lblPlanName.Location = new System.Drawing.Point(0, 38);
+            _lblPlanName.Location = new System.Drawing.Point(24, 38);
             _pnlStep1.Controls.Add(_lblPlanName);
 
             _txtPlanName.Location = new System.Drawing.Point(180, 35);
@@ -395,7 +395,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblLocalPath.Text = "Yerel Yedek Klas\u00f6r\u00fc:";
             _lblLocalPath.Name = "_lblLocalPath";
             _lblLocalPath.AutoSize = true;
-            _lblLocalPath.Location = new System.Drawing.Point(0, 100);
+            _lblLocalPath.Location = new System.Drawing.Point(24, 100);
             _pnlStep1.Controls.Add(_lblLocalPath);
 
             _txtLocalPath.Location = new System.Drawing.Point(180, 97);
@@ -417,13 +417,13 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep1SqlHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep1SqlHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep1SqlHeader.AutoSize = true;
-            _lblStep1SqlHeader.Location = new System.Drawing.Point(0, 137);
+            _lblStep1SqlHeader.Location = new System.Drawing.Point(24, 137);
             _pnlStep1.Controls.Add(_lblStep1SqlHeader);
 
             _lblServer.Text = "Sunucu Ad\u0131 / IP:";
             _lblServer.Name = "_lblServer";
             _lblServer.AutoSize = true;
-            _lblServer.Location = new System.Drawing.Point(0, 170);
+            _lblServer.Location = new System.Drawing.Point(24, 170);
             _pnlStep1.Controls.Add(_lblServer);
 
             _txtServer.Location = new System.Drawing.Point(180, 167);
@@ -435,7 +435,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblAuthMode.Text = "Kimlik Do\u011frulama:";
             _lblAuthMode.Name = "_lblAuthMode";
             _lblAuthMode.AutoSize = true;
-            _lblAuthMode.Location = new System.Drawing.Point(0, 200);
+            _lblAuthMode.Location = new System.Drawing.Point(24, 200);
             _pnlStep1.Controls.Add(_lblAuthMode);
 
             _cmbAuthMode.Location = new System.Drawing.Point(180, 197);
@@ -449,7 +449,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblSqlUser.Text = "Kullan\u0131c\u0131 Ad\u0131:";
             _lblSqlUser.Name = "_lblSqlUser";
             _lblSqlUser.AutoSize = true;
-            _lblSqlUser.Location = new System.Drawing.Point(0, 230);
+            _lblSqlUser.Location = new System.Drawing.Point(24, 230);
             _pnlStep1.Controls.Add(_lblSqlUser);
 
             _txtSqlUser.Location = new System.Drawing.Point(180, 227);
@@ -461,7 +461,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblSqlPassword.Text = "\u015eifre:";
             _lblSqlPassword.Name = "_lblSqlPassword";
             _lblSqlPassword.AutoSize = true;
-            _lblSqlPassword.Location = new System.Drawing.Point(0, 260);
+            _lblSqlPassword.Location = new System.Drawing.Point(24, 260);
             _pnlStep1.Controls.Add(_lblSqlPassword);
 
             _txtSqlPassword.Location = new System.Drawing.Point(180, 257);
@@ -474,7 +474,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblTimeout.Text = "Zaman A\u015f\u0131m\u0131 (sn):";
             _lblTimeout.Name = "_lblTimeout";
             _lblTimeout.AutoSize = true;
-            _lblTimeout.Location = new System.Drawing.Point(0, 290);
+            _lblTimeout.Location = new System.Drawing.Point(24, 290);
             _pnlStep1.Controls.Add(_lblTimeout);
 
             _nudTimeout.Location = new System.Drawing.Point(180, 287);
@@ -511,20 +511,20 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep2Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep2Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep2Header.AutoSize = true;
-            _lblStep2Header.Location = new System.Drawing.Point(0, 5);
+            _lblStep2Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep2.Controls.Add(_lblStep2Header);
 
             _lblStep2Hint.Text = "SQL ba\u011flant\u0131s\u0131 ba\u015far\u0131l\u0131ysa veritabanlar\u0131 otomatik listelenir.";
             _lblStep2Hint.Name = "_lblStep2Hint";
             _lblStep2Hint.AutoSize = true;
             _lblStep2Hint.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
-            _lblStep2Hint.Location = new System.Drawing.Point(0, 31);
+            _lblStep2Hint.Location = new System.Drawing.Point(24, 31);
             _pnlStep2.Controls.Add(_lblStep2Hint);
 
             _chkSelectAll.Text = "T\u00fcm\u00fcn\u00fc Se\u00e7";
             _chkSelectAll.Name = "_chkSelectAll";
             _chkSelectAll.AutoSize = true;
-            _chkSelectAll.Location = new System.Drawing.Point(0, 53);
+            _chkSelectAll.Location = new System.Drawing.Point(24, 53);
             _chkSelectAll.CheckedChanged += OnSelectAllChanged;
             _toolTip.SetToolTip(_chkSelectAll, "Listedeki t\u00fcm veritabanlar\u0131n\u0131 se\u00e7er veya se\u00e7imi kald\u0131r\u0131r.");
             _pnlStep2.Controls.Add(_chkSelectAll);
@@ -538,9 +538,9 @@ namespace KoruMsSqlYedek.Win.Forms
             _toolTip.SetToolTip(_btnRefreshDatabases, "Sunucudaki veritabanlar\u0131n\u0131 yeniden sorgular.");
             _pnlStep2.Controls.Add(_btnRefreshDatabases);
 
-            _clbDatabases.Location = new System.Drawing.Point(0, 81);
+            _clbDatabases.Location = new System.Drawing.Point(24, 81);
             _clbDatabases.Name = "_clbDatabases";
-            _clbDatabases.Size = new System.Drawing.Size(580, 200);
+            _clbDatabases.Size = new System.Drawing.Size(556, 200);
             _clbDatabases.CheckOnClick = true;
             _toolTip.SetToolTip(_clbDatabases, "Yedeklemek istedi\u011finiz veritabanlar\u0131n\u0131 i\u015faretleyin.\nSistem veritabanlar\u0131 (master, model, msdb, tempdb) listelenmez.");
             _pnlStep2.Controls.Add(_clbDatabases);
@@ -551,20 +551,20 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep2FileHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep2FileHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep2FileHeader.AutoSize = true;
-            _lblStep2FileHeader.Location = new System.Drawing.Point(0, 289);
+            _lblStep2FileHeader.Location = new System.Drawing.Point(24, 289);
             _pnlStep2.Controls.Add(_lblStep2FileHeader);
 
             _chkFileBackupEnabled.Text = "Dosya Yedeklemeyi Etkinle\u015ftir";
             _chkFileBackupEnabled.Name = "_chkFileBackupEnabled";
-            _chkFileBackupEnabled.Location = new System.Drawing.Point(0, 315);
+            _chkFileBackupEnabled.Location = new System.Drawing.Point(24, 315);
             _chkFileBackupEnabled.AutoSize = true;
             _chkFileBackupEnabled.CheckedChanged += OnFileBackupEnabledChanged;
             _toolTip.SetToolTip(_chkFileBackupEnabled, "A\u00e7\u0131k/kilitli dosyalar\u0131 (Outlook PST/OST,\nExcel, SQL MDF) VSS ile yedekler.\nSQL yedeklemeden ba\u011f\u0131ms\u0131z \u00e7al\u0131\u015f\u0131r.");
             _pnlStep2.Controls.Add(_chkFileBackupEnabled);
 
-            _pnlFileBackup.Location = new System.Drawing.Point(0, 341);
+            _pnlFileBackup.Location = new System.Drawing.Point(24, 341);
             _pnlFileBackup.Name = "_pnlFileBackup";
-            _pnlFileBackup.Size = new System.Drawing.Size(580, 140);
+            _pnlFileBackup.Size = new System.Drawing.Size(556, 140);
 
             _lvFileSources.Location = new System.Drawing.Point(0, 0);
             _lvFileSources.Name = "_lvFileSources";
@@ -617,13 +617,13 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep3Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep3Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep3Header.AutoSize = true;
-            _lblStep3Header.Location = new System.Drawing.Point(0, 5);
+            _lblStep3Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep3.Controls.Add(_lblStep3Header);
 
             _lblStrategy.Text = "Yedekleme Stratejisi:";
             _lblStrategy.Name = "_lblStrategy";
             _lblStrategy.AutoSize = true;
-            _lblStrategy.Location = new System.Drawing.Point(0, 38);
+            _lblStrategy.Location = new System.Drawing.Point(24, 38);
             _pnlStep3.Controls.Add(_lblStrategy);
 
             _cmbStrategy.Location = new System.Drawing.Point(180, 35);
@@ -637,7 +637,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblFullCron.Text = "Tam Yedek G\u00f6revi:";
             _lblFullCron.Name = "_lblFullCron";
             _lblFullCron.AutoSize = true;
-            _lblFullCron.Location = new System.Drawing.Point(0, 72);
+            _lblFullCron.Location = new System.Drawing.Point(24, 72);
             _pnlStep3.Controls.Add(_lblFullCron);
 
             _cronFull.Location = new System.Drawing.Point(180, 69);
@@ -650,7 +650,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblDiffCron.Text = "Fark Yedek G\u00f6revi:";
             _lblDiffCron.Name = "_lblDiffCron";
             _lblDiffCron.AutoSize = true;
-            _lblDiffCron.Location = new System.Drawing.Point(0, 126);
+            _lblDiffCron.Location = new System.Drawing.Point(24, 126);
             _pnlStep3.Controls.Add(_lblDiffCron);
 
             _cronDiff.Location = new System.Drawing.Point(180, 123);
@@ -663,7 +663,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblIncrCron.Text = "Art\u0131r\u0131ml\u0131 G\u00f6revi:";
             _lblIncrCron.Name = "_lblIncrCron";
             _lblIncrCron.AutoSize = true;
-            _lblIncrCron.Location = new System.Drawing.Point(0, 180);
+            _lblIncrCron.Location = new System.Drawing.Point(24, 180);
             _pnlStep3.Controls.Add(_lblIncrCron);
 
             _cronIncr.Location = new System.Drawing.Point(180, 177);
@@ -676,7 +676,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblAutoPromote.Text = "Oto. Tam Yedek E\u015fi\u011fi:";
             _lblAutoPromote.Name = "_lblAutoPromote";
             _lblAutoPromote.AutoSize = true;
-            _lblAutoPromote.Location = new System.Drawing.Point(0, 236);
+            _lblAutoPromote.Location = new System.Drawing.Point(24, 236);
             _pnlStep3.Controls.Add(_lblAutoPromote);
 
             _nudAutoPromote.Location = new System.Drawing.Point(180, 233);
@@ -690,7 +690,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
             _chkVerify.Text = "Yedek sonras\u0131 b\u00fct\u00fcnl\u00fck do\u011frulamas\u0131 yap (RESTORE VERIFYONLY)";
             _chkVerify.Name = "_chkVerify";
-            _chkVerify.Location = new System.Drawing.Point(0, 265);
+            _chkVerify.Location = new System.Drawing.Point(24, 265);
             _chkVerify.AutoSize = true;
             _chkVerify.Checked = true;
             _toolTip.SetToolTip(_chkVerify, "Her yedek g\u00f6revinden sonra SQL Server\u2019\u0131n RESTORE VERIFYONLY\nkomutuyla dosya b\u00fct\u00fcnl\u00fc\u011f\u00fc do\u011frulan\u0131r.\nBozuk yedek tespit edilirse hemen bildirim g\u00f6nderilir.\n\u00d6neri: Her zaman a\u00e7\u0131k tutun.");
@@ -699,8 +699,8 @@ namespace KoruMsSqlYedek.Win.Forms
             // --- Dosya Yedekleme Zamanlaması (gizli) ---
             _lblStep3FileSep.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             _lblStep3FileSep.Name = "_lblStep3FileSep";
-            _lblStep3FileSep.Location = new System.Drawing.Point(0, 301);
-            _lblStep3FileSep.Size = new System.Drawing.Size(570, 2);
+            _lblStep3FileSep.Location = new System.Drawing.Point(24, 301);
+            _lblStep3FileSep.Size = new System.Drawing.Size(546, 2);
             _lblStep3FileSep.Visible = false;
             _pnlStep3.Controls.Add(_lblStep3FileSep);
 
@@ -709,14 +709,14 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep3FileSchedHeader.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             _lblStep3FileSchedHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep3FileSchedHeader.AutoSize = true;
-            _lblStep3FileSchedHeader.Location = new System.Drawing.Point(0, 301);
+            _lblStep3FileSchedHeader.Location = new System.Drawing.Point(24, 301);
             _lblStep3FileSchedHeader.Visible = false;
             _pnlStep3.Controls.Add(_lblStep3FileSchedHeader);
 
             _lblFileSchedule.Text = "Dosya G\u00f6revi:";
             _lblFileSchedule.Name = "_lblFileSchedule";
             _lblFileSchedule.AutoSize = true;
-            _lblFileSchedule.Location = new System.Drawing.Point(0, 304);
+            _lblFileSchedule.Location = new System.Drawing.Point(24, 304);
             _lblFileSchedule.Visible = false;
             _pnlStep3.Controls.Add(_lblFileSchedule);
 
@@ -734,13 +734,13 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep4Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep4Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep4Header.AutoSize = true;
-            _lblStep4Header.Location = new System.Drawing.Point(0, 5);
+            _lblStep4Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep4.Controls.Add(_lblStep4Header);
 
             _lblAlgorithm.Text = "S\u0131k\u0131\u015ft\u0131rma Algoritmas\u0131:";
             _lblAlgorithm.Name = "_lblAlgorithm";
             _lblAlgorithm.AutoSize = true;
-            _lblAlgorithm.Location = new System.Drawing.Point(0, 40);
+            _lblAlgorithm.Location = new System.Drawing.Point(24, 40);
             _pnlStep4.Controls.Add(_lblAlgorithm);
 
             _cmbAlgorithm.Location = new System.Drawing.Point(180, 37);
@@ -753,7 +753,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblLevel.Text = "S\u0131k\u0131\u015ft\u0131rma D\u00fczeyi:";
             _lblLevel.Name = "_lblLevel";
             _lblLevel.AutoSize = true;
-            _lblLevel.Location = new System.Drawing.Point(0, 74);
+            _lblLevel.Location = new System.Drawing.Point(24, 74);
             _pnlStep4.Controls.Add(_lblLevel);
 
             _cmbLevel.Location = new System.Drawing.Point(180, 71);
@@ -766,7 +766,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblArchivePassword.Text = "Ar\u015fiv \u015eifresi:";
             _lblArchivePassword.Name = "_lblArchivePassword";
             _lblArchivePassword.AutoSize = true;
-            _lblArchivePassword.Location = new System.Drawing.Point(0, 108);
+            _lblArchivePassword.Location = new System.Drawing.Point(24, 108);
             _pnlStep4.Controls.Add(_lblArchivePassword);
 
             _txtArchivePassword.Location = new System.Drawing.Point(180, 105);
@@ -781,13 +781,13 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep4RetHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep4RetHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep4RetHeader.AutoSize = true;
-            _lblStep4RetHeader.Location = new System.Drawing.Point(0, 153);
+            _lblStep4RetHeader.Location = new System.Drawing.Point(24, 153);
             _pnlStep4.Controls.Add(_lblStep4RetHeader);
 
             _lblRetentionTemplate.Text = "Saklama \u015eablonu:";
             _lblRetentionTemplate.Name = "_lblRetentionTemplate";
             _lblRetentionTemplate.AutoSize = true;
-            _lblRetentionTemplate.Location = new System.Drawing.Point(0, 188);
+            _lblRetentionTemplate.Location = new System.Drawing.Point(24, 188);
             _pnlStep4.Controls.Add(_lblRetentionTemplate);
 
             _cmbRetentionTemplate.Location = new System.Drawing.Point(180, 185);
@@ -809,7 +809,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblRetention.Text = "Temizlik Kural\u0131:";
             _lblRetention.Name = "_lblRetention";
             _lblRetention.AutoSize = true;
-            _lblRetention.Location = new System.Drawing.Point(0, 268);
+            _lblRetention.Location = new System.Drawing.Point(24, 268);
             _pnlStep4.Controls.Add(_lblRetention);
 
             _cmbRetention.Location = new System.Drawing.Point(180, 265);
@@ -823,7 +823,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblKeepLastN.Text = "Saklanacak Yedek Say\u0131s\u0131:";
             _lblKeepLastN.Name = "_lblKeepLastN";
             _lblKeepLastN.AutoSize = true;
-            _lblKeepLastN.Location = new System.Drawing.Point(0, 302);
+            _lblKeepLastN.Location = new System.Drawing.Point(24, 302);
             _pnlStep4.Controls.Add(_lblKeepLastN);
 
             _nudKeepLastN.Location = new System.Drawing.Point(180, 299);
@@ -838,7 +838,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblDeleteDays.Text = "Silme S\u00fcresi (g\u00fcn):";
             _lblDeleteDays.Name = "_lblDeleteDays";
             _lblDeleteDays.AutoSize = true;
-            _lblDeleteDays.Location = new System.Drawing.Point(0, 336);
+            _lblDeleteDays.Location = new System.Drawing.Point(24, 336);
             _pnlStep4.Controls.Add(_lblDeleteDays);
 
             _nudDeleteDays.Location = new System.Drawing.Point(180, 333);
@@ -852,7 +852,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
             _chkProtectPlan.AutoSize = true;
             _chkProtectPlan.Name = "_chkProtectPlan";
-            _chkProtectPlan.Location = new System.Drawing.Point(0, 381);
+            _chkProtectPlan.Location = new System.Drawing.Point(24, 381);
             _chkProtectPlan.Text = "\U0001f512 Bu g\u00f6revi \u015fifre ile koru";
             _chkProtectPlan.Font = new System.Drawing.Font("Segoe UI", 10F);
             _chkProtectPlan.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
@@ -886,20 +886,20 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep5Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep5Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep5Header.AutoSize = true;
-            _lblStep5Header.Location = new System.Drawing.Point(0, 5);
+            _lblStep5Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep5.Controls.Add(_lblStep5Header);
 
             _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri y\u00f6netin.\nGoogle Drive, FTP/SFTP ve UNC a\u011f payla\u015f\u0131m\u0131 desteklenir.";
             _lblStep5Hint.Name = "_lblStep5Hint";
             _lblStep5Hint.AutoSize = true;
             _lblStep5Hint.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
-            _lblStep5Hint.Location = new System.Drawing.Point(0, 31);
+            _lblStep5Hint.Location = new System.Drawing.Point(24, 31);
             _lblStep5Hint.MaximumSize = new System.Drawing.Size(580, 0);
             _pnlStep5.Controls.Add(_lblStep5Hint);
 
-            _lvCloudTargets.Location = new System.Drawing.Point(0, 71);
+            _lvCloudTargets.Location = new System.Drawing.Point(24, 71);
             _lvCloudTargets.Name = "_lvCloudTargets";
-            _lvCloudTargets.Size = new System.Drawing.Size(478, 380);
+            _lvCloudTargets.Size = new System.Drawing.Size(556, 380);
             _lvCloudTargets.View = System.Windows.Forms.View.Details;
             _lvCloudTargets.FullRowSelect = true;
             _lvCloudTargets.GridLines = true;
@@ -945,12 +945,12 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep6Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep6Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep6Header.AutoSize = true;
-            _lblStep6Header.Location = new System.Drawing.Point(0, 5);
+            _lblStep6Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep6.Controls.Add(_lblStep6Header);
 
             _chkEmailEnabled.Text = "E-posta Bildirimi G\u00f6nder";
             _chkEmailEnabled.Name = "_chkEmailEnabled";
-            _chkEmailEnabled.Location = new System.Drawing.Point(0, 33);
+            _chkEmailEnabled.Location = new System.Drawing.Point(24, 33);
             _chkEmailEnabled.AutoSize = true;
             _chkEmailEnabled.CheckedChanged += OnEmailEnabledChanged;
             _toolTip.SetToolTip(_chkEmailEnabled, "Yedekleme sonu\u00e7lar\u0131 e-posta ile bildirilir.\nSMTP ayarlar\u0131n\u0131n do\u011fru girilmesi gerekir.");
@@ -967,7 +967,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblSmtpProfile.Text = "SMTP Profili:";
             _lblSmtpProfile.Name = "_lblSmtpProfile";
             _lblSmtpProfile.AutoSize = true;
-            _lblSmtpProfile.Location = new System.Drawing.Point(0, 61);
+            _lblSmtpProfile.Location = new System.Drawing.Point(24, 61);
             _pnlStep6.Controls.Add(_lblSmtpProfile);
 
             _cmbSmtpProfile.Location = new System.Drawing.Point(130, 59);
@@ -1005,12 +1005,12 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep6ReportHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
             _lblStep6ReportHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _lblStep6ReportHeader.AutoSize = true;
-            _lblStep6ReportHeader.Location = new System.Drawing.Point(0, 123);
+            _lblStep6ReportHeader.Location = new System.Drawing.Point(24, 123);
             _pnlStep6.Controls.Add(_lblStep6ReportHeader);
 
             _chkReportEnabled.Text = "D\u00fczenli Yedek Raporu G\u00f6nder";
             _chkReportEnabled.Name = "_chkReportEnabled";
-            _chkReportEnabled.Location = new System.Drawing.Point(0, 151);
+            _chkReportEnabled.Location = new System.Drawing.Point(24, 151);
             _chkReportEnabled.AutoSize = true;
             _chkReportEnabled.CheckedChanged += OnReportEnabledChanged;
             _toolTip.SetToolTip(_chkReportEnabled, "Etkinle\u015ftirirseniz belirtilen s\u0131kl\u0131kta\nyedekleme \u00f6zet raporu e-posta ile g\u00f6nderilir.\n\u0130\u00e7erik: Ba\u015far\u0131l\u0131/ba\u015far\u0131s\u0131z say\u0131s\u0131, boyut, s\u00fcre.");
@@ -1019,7 +1019,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblReportFreq.Text = "Rapor S\u0131kl\u0131\u011f\u0131:";
             _lblReportFreq.Name = "_lblReportFreq";
             _lblReportFreq.AutoSize = true;
-            _lblReportFreq.Location = new System.Drawing.Point(0, 182);
+            _lblReportFreq.Location = new System.Drawing.Point(24, 182);
             _pnlStep6.Controls.Add(_lblReportFreq);
 
             _cmbReportFreq.Location = new System.Drawing.Point(130, 179);
@@ -1047,7 +1047,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblReportEmail.Text = "Rapor Al\u0131c\u0131s\u0131:";
             _lblReportEmail.Name = "_lblReportEmail";
             _lblReportEmail.AutoSize = true;
-            _lblReportEmail.Location = new System.Drawing.Point(0, 212);
+            _lblReportEmail.Location = new System.Drawing.Point(24, 212);
             _pnlStep6.Controls.Add(_lblReportEmail);
 
             _txtReportEmail.Location = new System.Drawing.Point(130, 209);

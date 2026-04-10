@@ -1,4 +1,15 @@
-﻿## [0.99.49] - 2025-07-19 — PlanEditForm Designer: FQ Type Names + Name Properties
+﻿## [0.99.50] - 2025-07-19 — PlanEditForm Layout: Sol Kenar Boşluğu Düzeltmesi
+
+### Düzeltme
+- **Tüm step panellerinde** (Step 1-6) label ve kontrollerin X=0 pozisyonu X=24'e kaydırıldı (sol kenar boşluğu eklendi)
+- 46 kontrol pozisyonu düzeltildi, geniş kontrollerin genişlikleri 24px azaltıldı
+- **CronBuilderPanel**: Cron ifadesi etiketi (X=250→X=170) özetleme metnine yaklaştırıldı
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — 46 kontrol X pozisyonu + 4 genişlik düzeltmesi
+- `CronBuilderPanel.cs` — _lblCronRaw X=250→170
+
+## [0.99.49] - 2025-07-19 — PlanEditForm Designer: FQ Type Names + Name Properties
 
 ### Düzeltme
 - **PlanEditForm.Designer.cs**: VS Forms Designer ile uyumluluk için 2 kritik düzeltme

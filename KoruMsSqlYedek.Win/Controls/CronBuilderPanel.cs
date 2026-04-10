@@ -343,7 +343,7 @@ namespace KoruMsSqlYedek.Win.Controls
             _lblCronRaw = new Label
             {
                 AutoSize = true,
-                Location = new Point(250, y),
+                Location = new Point(170, y),
                 ForeColor = Theme.ModernTheme.TextSecondary,
                 Font = new Font("Segoe UI", 8F)
             };
