@@ -197,18 +197,24 @@ namespace KoruMsSqlYedek.Win.Theme
 
         // ═══════════════ PUBLIC API ═══════════════
 
-        /// <summary>Dahil kalıplarını ayarlar ve ağacı günceller.</summary>
+        /// <summary>Dahil kalıplarını ayarlar, ağacı günceller ve boyutu yeniden hesaplar.</summary>
         internal void SetIncludePatterns(List<string> patterns)
         {
             _includePatterns = patterns ?? new List<string>();
             ApplyFilterVisualsToAllNodes();
+            InvalidateFilteredFolderCache();
+            RequestSizeCalculationAsync();
+            CheckStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        /// <summary>Hariç kalıplarını ayarlar ve ağacı günceller.</summary>
+        /// <summary>Hariç kalıplarını ayarlar, ağacı günceller ve boyutu yeniden hesaplar.</summary>
         internal void SetExcludePatterns(List<string> patterns)
         {
             _excludePatterns = patterns ?? new List<string>();
             ApplyFilterVisualsToAllNodes();
+            InvalidateFilteredFolderCache();
+            RequestSizeCalculationAsync();
+            CheckStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -249,6 +255,10 @@ namespace KoruMsSqlYedek.Win.Theme
             {
                 _suppressCheckEvent = false;
             }
+
+            // Yüklenen seçimler için boyut hesaplamasını tetikle
+            CheckStateChanged?.Invoke(this, EventArgs.Empty);
+            RequestSizeCalculationAsync();
         }
 
         /// <summary>

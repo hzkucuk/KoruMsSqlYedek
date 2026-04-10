@@ -2,6 +2,11 @@
 
 Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar halinde listeler.
 
+### v0.99.37 — Dosya Filtre Kalıpları Boyut Hesaplama
+- Dahil/Hariç kalıp değişikliğinde dosya boyutu otomatik yeniden hesaplanıyor
+- Boyut hesaplaması include/exclude filtrelerini uygulayarak sadece geçen dosyaları sayıyor
+- Dosya kaynağı düzenleme formunda ilk açılışta mevcut seçimler için boyut hesaplama
+
 ### v0.99.5 — Per-Type Retention Şablonları
 - `RetentionScheme`: SQL Full / Diff / Log ve Files arşivi için bağımsız retention politikaları
 - Hazır şablonlar: Minimal, Standard (★ öneri), Extended, GFS — `RetentionTemplates.FromType()` factory
