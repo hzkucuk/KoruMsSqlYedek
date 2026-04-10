@@ -26,7 +26,26 @@ namespace KoruMsSqlYedek.Win.Forms
             _settingsManager = settingsManager;
 
             InitializeComponent();
+            ApplyLocalization();
             LoadCurrentValues();
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblTitle.Text = Helpers.Res.Get("GoogleOAuth_Title");
+            _lblInfo.Text = Helpers.Res.Get("GoogleOAuth_Info");
+            _lblClientId.Text = Helpers.Res.Get("GoogleOAuth_ClientId");
+            _lblClientSecret.Text = Helpers.Res.Get("GoogleOAuth_ClientSecret");
+            _btnSave.Text = Helpers.Res.Get("GoogleOAuth_Save");
+            _btnCancel.Text = Helpers.Res.Get("GoogleOAuth_Cancel");
+            _btnRemove.Text = Helpers.Res.Get("GoogleOAuth_Remove");
+            Text = Helpers.Res.Get("GoogleOAuth_Title");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_txtClientId, Helpers.Res.Get("Tip_GoogleOAuth_ClientId"));
+            _toolTip.SetToolTip(_txtClientSecret, Helpers.Res.Get("Tip_GoogleOAuth_ClientSecret"));
+            _toolTip.SetToolTip(_btnSave, Helpers.Res.Get("Tip_GoogleOAuth_Save"));
+            _toolTip.SetToolTip(_btnRemove, Helpers.Res.Get("Tip_GoogleOAuth_Remove"));
         }
 
         private void LoadCurrentValues()
@@ -44,13 +63,13 @@ namespace KoruMsSqlYedek.Win.Forms
                     _txtClientSecret.Text = "";
                 }
 
-                _lblStatus.Text = "\u2714 \u00d6zel kimlik bilgileri tan\u0131ml\u0131";
+                _lblStatus.Text = Helpers.Res.Get("GoogleOAuth_StatusCustom");
                 _lblStatus.ForeColor = ModernTheme.AccentPrimary;
                 _btnRemove.Visible = true;
             }
             else
             {
-                _lblStatus.Text = "\u2139 G\u00f6m\u00fcl\u00fc varsay\u0131lan de\u011ferler kullan\u0131l\u0131yor";
+                _lblStatus.Text = Helpers.Res.Get("GoogleOAuth_StatusDefault");
                 _lblStatus.ForeColor = ModernTheme.TextSecondary;
                 _btnRemove.Visible = false;
             }

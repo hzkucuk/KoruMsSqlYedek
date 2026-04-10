@@ -68,9 +68,9 @@
             // 
             // _txtDisplayName
             // 
-            _txtDisplayName.Location = new System.Drawing.Point(145, 17);
+            _txtDisplayName.Location = new System.Drawing.Point(180, 17);
             _txtDisplayName.Name = "_txtDisplayName";
-            _txtDisplayName.Size = new System.Drawing.Size(280, 24);
+            _txtDisplayName.Size = new System.Drawing.Size(315, 24);
             _txtDisplayName.TabIndex = 1;
             // 
             // _lblProviderType
@@ -85,9 +85,9 @@
             // _cmbProviderType
             // 
             _cmbProviderType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            _cmbProviderType.Location = new System.Drawing.Point(145, 57);
+            _cmbProviderType.Location = new System.Drawing.Point(180, 57);
             _cmbProviderType.Name = "_cmbProviderType";
-            _cmbProviderType.Size = new System.Drawing.Size(280, 25);
+            _cmbProviderType.Size = new System.Drawing.Size(315, 25);
             _cmbProviderType.TabIndex = 3;
             _cmbProviderType.SelectedIndexChanged += OnProviderTypeChanged;
             // 
@@ -96,7 +96,7 @@
             _chkEnabled.AutoSize = true;
             _chkEnabled.Checked = true;
             _chkEnabled.CheckState = System.Windows.Forms.CheckState.Checked;
-            _chkEnabled.Location = new System.Drawing.Point(145, 91);
+            _chkEnabled.Location = new System.Drawing.Point(180, 91);
             _chkEnabled.Name = "_chkEnabled";
             _chkEnabled.Size = new System.Drawing.Size(52, 21);
             _chkEnabled.TabIndex = 4;
@@ -114,7 +114,7 @@
             _grpFtp.Controls.Add(_txtPassword);
             _grpFtp.Location = new System.Drawing.Point(15, 125);
             _grpFtp.Name = "_grpFtp";
-            _grpFtp.Size = new System.Drawing.Size(420, 164);
+            _grpFtp.Size = new System.Drawing.Size(490, 164);
             _grpFtp.TabIndex = 5;
             _grpFtp.TabStop = false;
             _grpFtp.Text = "FTP / SFTP Ayarları";
@@ -130,9 +130,9 @@
             // 
             // _txtHost
             // 
-            _txtHost.Location = new System.Drawing.Point(130, 25);
+            _txtHost.Location = new System.Drawing.Point(140, 25);
             _txtHost.Name = "_txtHost";
-            _txtHost.Size = new System.Drawing.Size(200, 24);
+            _txtHost.Size = new System.Drawing.Size(260, 24);
             _txtHost.TabIndex = 1;
             // 
             // _lblPort
@@ -148,7 +148,7 @@
             // 
             _nudPort.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _nudPort.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _nudPort.Location = new System.Drawing.Point(130, 59);
+            _nudPort.Location = new System.Drawing.Point(140, 59);
             _nudPort.Maximum = new decimal(new int[] { 65535, 0, 0, 0 });
             _nudPort.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             _nudPort.MinimumSize = new System.Drawing.Size(60, 27);
@@ -168,9 +168,9 @@
             // 
             // _txtUsername
             // 
-            _txtUsername.Location = new System.Drawing.Point(130, 93);
+            _txtUsername.Location = new System.Drawing.Point(140, 93);
             _txtUsername.Name = "_txtUsername";
-            _txtUsername.Size = new System.Drawing.Size(200, 24);
+            _txtUsername.Size = new System.Drawing.Size(260, 24);
             _txtUsername.TabIndex = 5;
             // 
             // _lblPassword
@@ -184,9 +184,9 @@
             // 
             // _txtPassword
             // 
-            _txtPassword.Location = new System.Drawing.Point(130, 127);
+            _txtPassword.Location = new System.Drawing.Point(140, 127);
             _txtPassword.Name = "_txtPassword";
-            _txtPassword.Size = new System.Drawing.Size(200, 24);
+            _txtPassword.Size = new System.Drawing.Size(260, 24);
             _txtPassword.TabIndex = 7;
             _txtPassword.UseSystemPasswordChar = true;
             // 
@@ -197,7 +197,7 @@
             _grpOAuth.Controls.Add(_btnOAuthSettings);
             _grpOAuth.Location = new System.Drawing.Point(15, 125);
             _grpOAuth.Name = "_grpOAuth";
-            _grpOAuth.Size = new System.Drawing.Size(280, 68);
+            _grpOAuth.Size = new System.Drawing.Size(490, 68);
             _grpOAuth.TabIndex = 6;
             _grpOAuth.TabStop = false;
             _grpOAuth.Text = "Hesap Bağlama";
@@ -232,7 +232,7 @@
             _btnOAuthSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             _btnOAuthSettings.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _btnOAuthSettings.IconSymbol = "";
-            _btnOAuthSettings.Location = new System.Drawing.Point(380, 27);
+            _btnOAuthSettings.Location = new System.Drawing.Point(450, 27);
             _btnOAuthSettings.Name = "_btnOAuthSettings";
             _btnOAuthSettings.Size = new System.Drawing.Size(30, 32);
             _btnOAuthSettings.TabIndex = 2;
@@ -249,7 +249,7 @@
             _grpLocal.Controls.Add(_txtUncPassword);
             _grpLocal.Location = new System.Drawing.Point(15, 125);
             _grpLocal.Name = "_grpLocal";
-            _grpLocal.Size = new System.Drawing.Size(280, 164);
+            _grpLocal.Size = new System.Drawing.Size(490, 164);
             _grpLocal.TabIndex = 7;
             _grpLocal.TabStop = false;
             _grpLocal.Text = "Yerel / Ağ Yolu";
@@ -265,9 +265,9 @@
             // 
             // _txtLocalOrUncPath
             // 
-            _txtLocalOrUncPath.Location = new System.Drawing.Point(130, 25);
+            _txtLocalOrUncPath.Location = new System.Drawing.Point(140, 25);
             _txtLocalOrUncPath.Name = "_txtLocalOrUncPath";
-            _txtLocalOrUncPath.Size = new System.Drawing.Size(235, 24);
+            _txtLocalOrUncPath.Size = new System.Drawing.Size(260, 24);
             _txtLocalOrUncPath.TabIndex = 1;
             // 
             // _btnBrowseLocal
@@ -277,7 +277,7 @@
             _btnBrowseLocal.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             _btnBrowseLocal.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _btnBrowseLocal.IconSymbol = "";
-            _btnBrowseLocal.Location = new System.Drawing.Point(370, 25);
+            _btnBrowseLocal.Location = new System.Drawing.Point(410, 25);
             _btnBrowseLocal.Name = "_btnBrowseLocal";
             _btnBrowseLocal.Size = new System.Drawing.Size(30, 32);
             _btnBrowseLocal.TabIndex = 2;
@@ -295,9 +295,9 @@
             // 
             // _txtUncUser
             // 
-            _txtUncUser.Location = new System.Drawing.Point(130, 59);
+            _txtUncUser.Location = new System.Drawing.Point(140, 59);
             _txtUncUser.Name = "_txtUncUser";
-            _txtUncUser.Size = new System.Drawing.Size(200, 24);
+            _txtUncUser.Size = new System.Drawing.Size(260, 24);
             _txtUncUser.TabIndex = 4;
             // 
             // _lblUncPassword
@@ -311,9 +311,9 @@
             // 
             // _txtUncPassword
             // 
-            _txtUncPassword.Location = new System.Drawing.Point(130, 93);
+            _txtUncPassword.Location = new System.Drawing.Point(140, 93);
             _txtUncPassword.Name = "_txtUncPassword";
-            _txtUncPassword.Size = new System.Drawing.Size(200, 24);
+            _txtUncPassword.Size = new System.Drawing.Size(260, 24);
             _txtUncPassword.TabIndex = 6;
             _txtUncPassword.UseSystemPasswordChar = true;
             // 
@@ -328,9 +328,9 @@
             // 
             // _txtRemotePath
             // 
-            _txtRemotePath.Location = new System.Drawing.Point(145, 303);
+            _txtRemotePath.Location = new System.Drawing.Point(180, 303);
             _txtRemotePath.Name = "_txtRemotePath";
-            _txtRemotePath.Size = new System.Drawing.Size(280, 24);
+            _txtRemotePath.Size = new System.Drawing.Size(315, 24);
             _txtRemotePath.TabIndex = 9;
             // 
             // _lblBandwidth
@@ -346,7 +346,7 @@
             // 
             _nudBandwidth.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _nudBandwidth.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _nudBandwidth.Location = new System.Drawing.Point(145, 340);
+            _nudBandwidth.Location = new System.Drawing.Point(180, 340);
             _nudBandwidth.Maximum = new decimal(new int[] { 10000, 0, 0, 0 });
             _nudBandwidth.MinimumSize = new System.Drawing.Size(60, 27);
             _nudBandwidth.Name = "_nudBandwidth";
@@ -366,7 +366,7 @@
             // 
             _nudTrashRetention.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _nudTrashRetention.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _nudTrashRetention.Location = new System.Drawing.Point(145, 374);
+            _nudTrashRetention.Location = new System.Drawing.Point(180, 374);
             _nudTrashRetention.Maximum = new decimal(new int[] { 365, 0, 0, 0 });
             _nudTrashRetention.MinimumSize = new System.Drawing.Size(60, 27);
             _nudTrashRetention.Name = "_nudTrashRetention";
@@ -377,7 +377,7 @@
             // 
             _lblTrashRetentionHint.AutoSize = true;
             _lblTrashRetentionHint.ForeColor = System.Drawing.Color.FromArgb(160, 160, 160);
-            _lblTrashRetentionHint.Location = new System.Drawing.Point(230, 377);
+            _lblTrashRetentionHint.Location = new System.Drawing.Point(265, 377);
             _lblTrashRetentionHint.Name = "_lblTrashRetentionHint";
             _lblTrashRetentionHint.Size = new System.Drawing.Size(100, 17);
             _lblTrashRetentionHint.TabIndex = 14;
@@ -390,7 +390,7 @@
             _btnSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             _btnSave.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _btnSave.IconSymbol = "";
-            _btnSave.Location = new System.Drawing.Point(235, 419);
+            _btnSave.Location = new System.Drawing.Point(305, 419);
             _btnSave.Name = "_btnSave";
             _btnSave.Size = new System.Drawing.Size(100, 39);
             _btnSave.TabIndex = 15;
@@ -404,7 +404,7 @@
             _btnCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             _btnCancel.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _btnCancel.IconSymbol = "";
-            _btnCancel.Location = new System.Drawing.Point(345, 419);
+            _btnCancel.Location = new System.Drawing.Point(415, 419);
             _btnCancel.Name = "_btnCancel";
             _btnCancel.Size = new System.Drawing.Size(90, 39);
             _btnCancel.TabIndex = 16;
@@ -415,7 +415,7 @@
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(450, 470);
+            ClientSize = new System.Drawing.Size(520, 470);
             Controls.Add(_lblDisplayName);
             Controls.Add(_txtDisplayName);
             Controls.Add(_lblProviderType);

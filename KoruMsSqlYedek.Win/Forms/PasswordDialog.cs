@@ -41,6 +41,26 @@ namespace KoruMsSqlYedek.Win.Forms
             _planRecoveryHash = planRecoveryHash;
 
             InitializeComponent();
+            ApplyLocalization();
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblTitle.Text = Helpers.Res.Get("Pw_Title");
+            _lblPrompt.Text = Helpers.Res.Get("Pw_Prompt");
+            _btnOk.Text = Helpers.Res.Get("Pw_Ok");
+            _btnCancel.Text = Helpers.Res.Get("Pw_Cancel");
+            _lnkForgot.Text = Helpers.Res.Get("Pw_Forgot");
+            _lblSecurityQuestion.Text = Helpers.Res.Get("Pw_SecurityQuestion");
+            _btnVerifyAnswer.Text = Helpers.Res.Get("Pw_VerifyAnswer");
+            Text = Helpers.Res.Get("Pw_Title");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_txtPassword, Helpers.Res.Get("Tip_Pw_Password"));
+            _toolTip.SetToolTip(_lnkForgot, Helpers.Res.Get("Tip_Pw_Forgot"));
+            _toolTip.SetToolTip(_txtSecurityAnswer, Helpers.Res.Get("Tip_Pw_SecurityAnswer"));
+            _toolTip.SetToolTip(_btnVerifyAnswer, Helpers.Res.Get("Tip_Pw_VerifyAnswer"));
+            _toolTip.SetToolTip(_btnOk, Helpers.Res.Get("Tip_Pw_Ok"));
         }
 
         private void OnOkClick(object sender, EventArgs e)

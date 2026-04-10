@@ -392,19 +392,747 @@ Language change requires application restart.</value></data>
   <data name="Tray_ServiceDebugMode" xml:space="preserve"><value>Service: Connected (Debug) ✓</value></data>
   <data name="Settings_LogColorScheme" xml:space="preserve"><value>Log Color Scheme:</value></data>
 
-  <!-- ── Güncelleme (O7) ───────────────────────────────────────── -->
-  <data name="Update_MenuCheckForUpdates" xml:space="preserve"><value>Güncelleme Kontrol Et</value></data>
-  <data name="Update_Checking" xml:space="preserve"><value>Güncelleme kontrol ediliyor...</value></data>
-  <data name="Update_Available" xml:space="preserve"><value>Yeni Sürüm Mevcut</value></data>
-  <data name="Update_AvailableMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} yayınlandı. Güncellemek ister misiniz?</value></data>
-  <data name="Update_NoUpdate" xml:space="preserve"><value>Güncelleme Yok</value></data>
-  <data name="Update_NoUpdateMessage" xml:space="preserve"><value>En güncel sürümü kullanıyorsunuz (v{0}).</value></data>
-  <data name="Update_Downloading" xml:space="preserve"><value>Güncelleme indiriliyor... %{0}</value></data>
-  <data name="Update_DownloadComplete" xml:space="preserve"><value>İndirme tamamlandı. Installer başlatılıyor...</value></data>
-  <data name="Update_DownloadFailed" xml:space="preserve"><value>Güncelleme indirilemedi: {0}</value></data>
-  <data name="Update_CheckFailed" xml:space="preserve"><value>Güncelleme kontrolü başarısız. İnternet bağlantınızı kontrol edin.</value></data>
-  <data name="Update_BalloonTitle" xml:space="preserve"><value>Güncelleme Mevcut</value></data>
-  <data name="Update_BalloonMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} yayınlandı. Tıklayarak güncelleyin.</value></data>
-  <data name="Update_ReleaseNotes" xml:space="preserve"><value>Değişiklikler:</value></data>
+  <!-- ── Update (O7) ───────────────────────────────────────── -->
+  <data name="Update_MenuCheckForUpdates" xml:space="preserve"><value>Check for Updates</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Checking for updates...</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>New Version Available</value></data>
+  <data name="Update_AvailableMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} has been released. Would you like to update?</value></data>
+  <data name="Update_NoUpdate" xml:space="preserve"><value>No Update</value></data>
+  <data name="Update_NoUpdateMessage" xml:space="preserve"><value>You are using the latest version (v{0}).</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Downloading update... %{0}</value></data>
+  <data name="Update_DownloadComplete" xml:space="preserve"><value>Download complete. Starting installer...</value></data>
+  <data name="Update_DownloadFailed" xml:space="preserve"><value>Update download failed: {0}</value></data>
+  <data name="Update_CheckFailed" xml:space="preserve"><value>Update check failed. Please check your internet connection.</value></data>
+  <data name="Update_BalloonTitle" xml:space="preserve"><value>Update Available</value></data>
+  <data name="Update_BalloonMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} has been released. Click to update.</value></data>
+  <data name="Update_ReleaseNotes" xml:space="preserve"><value>Changes:</value></data>
+
+  <!-- ===== MainWindow — Log Viewer Controls ===== -->
+  <data name="LogViewer_LblFile" xml:space="preserve"><value>File:</value></data>
+  <data name="LogViewer_LblLevel" xml:space="preserve"><value>Level:</value></data>
+  <data name="LogViewer_ChkAutoTail" xml:space="preserve"><value>Auto Tail</value></data>
+  <data name="LogViewer_LblSearch" xml:space="preserve"><value>Search:</value></data>
+  <data name="LogViewer_LblPlan" xml:space="preserve"><value>Plan:</value></data>
+  <data name="LogViewer_BtnClear" xml:space="preserve"><value>Clear</value></data>
+  <data name="LogViewer_BtnRefresh" xml:space="preserve"><value>↻ Refresh</value></data>
+  <data name="LogViewer_BtnExport" xml:space="preserve"><value>💾 Export</value></data>
+
+  <!-- ===== MainWindow — Settings General ===== -->
+  <data name="Settings_Language" xml:space="preserve"><value>Language:</value></data>
+  <data name="Settings_StartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="Settings_MinimizeToTray" xml:space="preserve"><value>Hide in system tray when minimized</value></data>
+  <data name="Settings_DefaultBackupPath" xml:space="preserve"><value>Default backup path:</value></data>
+  <data name="Settings_LogRetention" xml:space="preserve"><value>Log retention:</value></data>
+  <data name="Settings_HistoryRetention" xml:space="preserve"><value>History retention:</value></data>
+  <data name="Settings_RetentionSuffix" xml:space="preserve"><value>days</value></data>
+  <data name="Settings_LogConsoleTheme" xml:space="preserve"><value>Log Console Theme:</value></data>
+  <data name="Settings_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Settings_Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- ===== MainWindow — Settings SMTP ===== -->
+  <data name="Settings_SmtpTab" xml:space="preserve"><value>E-mail (SMTP)</value></data>
+  <data name="Settings_SmtpTitle" xml:space="preserve"><value>Saved SMTP Profiles — you can add multiple profiles and use them in plans:</value></data>
+  <data name="Settings_SmtpAdd" xml:space="preserve"><value>➕ Add</value></data>
+  <data name="Settings_SmtpEdit" xml:space="preserve"><value>✏ Edit</value></data>
+  <data name="Settings_SmtpDelete" xml:space="preserve"><value>🗑 Delete</value></data>
+  <data name="Settings_SmtpTest" xml:space="preserve"><value>✉ Test</value></data>
+
+  <!-- ===== MainWindow — Settings Security ===== -->
+  <data name="Settings_SecurityTab" xml:space="preserve"><value>Security</value></data>
+  <data name="Settings_SecurityTitle" xml:space="preserve"><value>Password Protection</value></data>
+  <data name="Settings_PasswordSetup" xml:space="preserve"><value>Set / Change Password</value></data>
+  <data name="Settings_SecurityInfo" xml:space="preserve"><value>Prompts password on app launch and critical operations (deleting plans etc.).
+If you forget your password, you can reset it using the security question.</value></data>
+
+  <!-- ===== MainWindow — Plans Grid Extra Columns ===== -->
+  <data name="PlanList_ColProgress" xml:space="preserve"><value>Progress</value></data>
+  <data name="PlanList_ColNextRun" xml:space="preserve"><value>Next Run</value></data>
+
+  <!-- ===== MainWindow — Plans Context Menu ===== -->
+  <data name="PlanList_CtxBackupNow" xml:space="preserve"><value>Backup Now</value></data>
+  <data name="PlanList_CtxStopBackup" xml:space="preserve"><value>Stop Backup</value></data>
+  <data name="PlanList_CtxEdit" xml:space="preserve"><value>Edit</value></data>
+  <data name="PlanList_CtxDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="PlanList_CtxExport" xml:space="preserve"><value>Export</value></data>
+  <data name="PlanList_CtxViewLogs" xml:space="preserve"><value>Plan Logs</value></data>
+  <data name="PlanList_CtxRestore" xml:space="preserve"><value>Restore...</value></data>
+
+  <!-- ===== MainWindow — Plans Toolbar ===== -->
+  <data name="PlanList_BtnRefresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="PlanList_SearchLabel" xml:space="preserve"><value>Search:</value></data>
+
+  <!-- ===== MainWindow — Backup Panel ===== -->
+  <data name="Backup_Type" xml:space="preserve"><value>Backup Type:</value></data>
+  <data name="Backup_TypeFull" xml:space="preserve"><value>Full</value></data>
+  <data name="Backup_TypeDiff" xml:space="preserve"><value>Differential</value></data>
+  <data name="Backup_TypeIncr" xml:space="preserve"><value>Incremental</value></data>
+  <data name="Backup_StatusReady" xml:space="preserve"><value>Ready — select a plan from the list.</value></data>
+  <data name="Backup_Cancel" xml:space="preserve"><value>■ Cancel</value></data>
+  <data name="Backup_Start" xml:space="preserve"><value>▶ Start Backup</value></data>
+
+  <!-- ===== PlanEdit — UI Controls ===== -->
+  <data name="PlanEdit_StepConnection" xml:space="preserve"><value>Connection</value></data>
+  <data name="PlanEdit_StepSources" xml:space="preserve"><value>Sources</value></data>
+  <data name="PlanEdit_StepSchedule" xml:space="preserve"><value>Schedule</value></data>
+  <data name="PlanEdit_StepScheduling" xml:space="preserve"><value>Scheduling</value></data>
+  <data name="PlanEdit_StepCompression" xml:space="preserve"><value>Compression</value></data>
+  <data name="PlanEdit_StepTargets" xml:space="preserve"><value>Targets</value></data>
+  <data name="PlanEdit_StepNotification" xml:space="preserve"><value>Notification</value></data>
+  <data name="PlanEdit_Title" xml:space="preserve"><value>Backup Plan Wizard</value></data>
+  <data name="PlanEdit_Step1Header" xml:space="preserve"><value>① Plan Info</value></data>
+  <data name="PlanEdit_PlanName" xml:space="preserve"><value>Plan Name:</value></data>
+  <data name="PlanEdit_PlanActive" xml:space="preserve"><value>Plan Active</value></data>
+  <data name="PlanEdit_LocalPath" xml:space="preserve"><value>Local Backup Folder:</value></data>
+  <data name="PlanEdit_Step1SqlHeader" xml:space="preserve"><value>② SQL Server Connection</value></data>
+  <data name="PlanEdit_Server" xml:space="preserve"><value>Server Name / IP:</value></data>
+  <data name="PlanEdit_AuthMode" xml:space="preserve"><value>Authentication:</value></data>
+  <data name="PlanEdit_SqlUser" xml:space="preserve"><value>Username:</value></data>
+  <data name="PlanEdit_SqlPassword" xml:space="preserve"><value>Password:</value></data>
+  <data name="PlanEdit_Timeout" xml:space="preserve"><value>Timeout (sec):</value></data>
+  <data name="PlanEdit_TrustCert" xml:space="preserve"><value>Trust Certificate</value></data>
+  <data name="PlanEdit_TestSql" xml:space="preserve"><value>Test Connection</value></data>
+  <data name="PlanEdit_Step2Header" xml:space="preserve"><value>③ Databases to Backup</value></data>
+  <data name="PlanEdit_Step2Hint" xml:space="preserve"><value>Databases are listed automatically when SQL connection is successful.</value></data>
+  <data name="PlanEdit_SelectAll" xml:space="preserve"><value>Select All</value></data>
+  <data name="PlanEdit_RefreshDatabases" xml:space="preserve"><value>Refresh</value></data>
+  <data name="PlanEdit_Step2FileHeader" xml:space="preserve"><value>④ File / Folder Sources (VSS)</value></data>
+  <data name="PlanEdit_FileBackupEnabled" xml:space="preserve"><value>Enable File Backup</value></data>
+  <data name="PlanEdit_ColFsName" xml:space="preserve"><value>Source Name</value></data>
+  <data name="PlanEdit_ColFsPath" xml:space="preserve"><value>File Path</value></data>
+  <data name="PlanEdit_ColFsVss" xml:space="preserve"><value>VSS</value></data>
+  <data name="PlanEdit_ColFsStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="PlanEdit_FileAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="PlanEdit_FileEdit" xml:space="preserve"><value>Edit</value></data>
+  <data name="PlanEdit_FileRemove" xml:space="preserve"><value>Remove</value></data>
+  <data name="PlanEdit_Step3Header" xml:space="preserve"><value>⑤ Task Scheduling</value></data>
+  <data name="PlanEdit_Strategy" xml:space="preserve"><value>Backup Strategy:</value></data>
+  <data name="PlanEdit_FullCron" xml:space="preserve"><value>Full Backup Task:</value></data>
+  <data name="PlanEdit_DiffCron" xml:space="preserve"><value>Differential Task:</value></data>
+  <data name="PlanEdit_IncrCron" xml:space="preserve"><value>Incremental Task:</value></data>
+  <data name="PlanEdit_AutoPromote" xml:space="preserve"><value>Auto Full Backup Threshold:</value></data>
+  <data name="PlanEdit_Verify" xml:space="preserve"><value>Run integrity verification after backup (RESTORE VERIFYONLY)</value></data>
+  <data name="PlanEdit_FileSchedHeader" xml:space="preserve"><value>📁 File Backup Task</value></data>
+  <data name="PlanEdit_FileSchedule" xml:space="preserve"><value>File Task:</value></data>
+  <data name="PlanEdit_Step4Header" xml:space="preserve"><value>⑥ Archive Compression Settings</value></data>
+  <data name="PlanEdit_Algorithm" xml:space="preserve"><value>Compression Algorithm:</value></data>
+  <data name="PlanEdit_Level" xml:space="preserve"><value>Compression Level:</value></data>
+  <data name="PlanEdit_ArchivePassword" xml:space="preserve"><value>Archive Password:</value></data>
+  <data name="PlanEdit_Step4RetHeader" xml:space="preserve"><value>Retention Policy</value></data>
+  <data name="PlanEdit_RetentionTemplate" xml:space="preserve"><value>Retention Template:</value></data>
+  <data name="PlanEdit_Retention" xml:space="preserve"><value>Cleanup Rule:</value></data>
+  <data name="PlanEdit_KeepLastN" xml:space="preserve"><value>Backups to Keep:</value></data>
+  <data name="PlanEdit_DeleteDays" xml:space="preserve"><value>Delete After (days):</value></data>
+  <data name="PlanEdit_ProtectPlan" xml:space="preserve"><value>🔒 Protect this plan with password</value></data>
+  <data name="PlanEdit_PlanPasswordPlaceholder" xml:space="preserve"><value>Enter password...</value></data>
+  <data name="PlanEdit_RecoveryPasswordPlaceholder" xml:space="preserve"><value>Recovery password (optional)...</value></data>
+  <data name="PlanEdit_Step5Header" xml:space="preserve"><value>⑦ Backup Delivery Targets</value></data>
+  <data name="PlanEdit_Step5Hint" xml:space="preserve"><value>Manage cloud or remote targets where backup files will be copied.
+Google Drive, FTP/SFTP and UNC network shares are supported.</value></data>
+  <data name="PlanEdit_ColCtName" xml:space="preserve"><value>Target Name</value></data>
+  <data name="PlanEdit_ColCtType" xml:space="preserve"><value>Type</value></data>
+  <data name="PlanEdit_ColCtStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="PlanEdit_CloudAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="PlanEdit_CloudEdit" xml:space="preserve"><value>Edit</value></data>
+  <data name="PlanEdit_CloudRemove" xml:space="preserve"><value>Remove</value></data>
+  <data name="PlanEdit_Step6Header" xml:space="preserve"><value>⑧ E-mail Notifications</value></data>
+  <data name="PlanEdit_EmailEnabled" xml:space="preserve"><value>Send E-mail Notification</value></data>
+  <data name="PlanEdit_Toast" xml:space="preserve"><value>Windows Notification Balloon</value></data>
+  <data name="PlanEdit_SmtpProfile" xml:space="preserve"><value>SMTP Profile:</value></data>
+  <data name="PlanEdit_SmtpLink" xml:space="preserve"><value>Add / edit profile</value></data>
+  <data name="PlanEdit_NotifySuccess" xml:space="preserve"><value>Notify on successful backup</value></data>
+  <data name="PlanEdit_NotifyFailure" xml:space="preserve"><value>Notify on failed backup</value></data>
+  <data name="PlanEdit_Step6ReportHeader" xml:space="preserve"><value>⑨ Periodic Backup Report</value></data>
+  <data name="PlanEdit_ReportEnabled" xml:space="preserve"><value>Send Regular Backup Report</value></data>
+  <data name="PlanEdit_ReportFreq" xml:space="preserve"><value>Report Frequency:</value></data>
+  <data name="PlanEdit_ReportHour" xml:space="preserve"><value>Send Time:</value></data>
+  <data name="PlanEdit_ReportEmail" xml:space="preserve"><value>Report Recipient:</value></data>
+  <data name="PlanEdit_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="PlanEdit_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="PlanEdit_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="PlanEdit_Back" xml:space="preserve"><value>Back</value></data>
+
+  <!-- ===== PlanEdit — Tooltips ===== -->
+  <data name="PlanEdit_Tip_PlanName" xml:space="preserve"><value>Unique name for this backup plan.
+Example: "Micro Data Night Backup", "Weekly Archive"</value></data>
+  <data name="PlanEdit_Tip_Enabled" xml:space="preserve"><value>If disabled, the plan will not be run by the scheduler.
+You can still take manual backups.</value></data>
+  <data name="PlanEdit_Tip_LocalPath" xml:space="preserve"><value>Local directory where backup files will be saved.
+Example: D:\Backups\KoruMsSqlYedek
+If you add cloud targets, files are saved here first, then uploaded.
+Note: Make sure there is enough disk space.</value></data>
+  <data name="PlanEdit_Tip_Server" xml:space="preserve"><value>SQL Server address.
+Examples:
+  • localhost
+  • 192.168.1.100
+  • SERVER\SQLEXPRESS
+  • server.domain.local,1433</value></data>
+  <data name="PlanEdit_Tip_AuthMode" xml:space="preserve"><value>Windows: Connects using current session credentials.
+SQL Server: Requires username and password.</value></data>
+  <data name="PlanEdit_Tip_SqlUser" xml:space="preserve"><value>Username for SQL Server authentication.
+Example: sa, backupuser</value></data>
+  <data name="PlanEdit_Tip_SqlPassword" xml:space="preserve"><value>SQL Server password. Stored encrypted with DPAPI,
+not saved as plain text.</value></data>
+  <data name="PlanEdit_Tip_Timeout" xml:space="preserve"><value>Connection timeout (seconds).
+Default: 30 sec. Increase if network is slow.</value></data>
+  <data name="PlanEdit_Tip_TrustCert" xml:space="preserve"><value>Check this for local or test servers
+using self-signed SSL certificates.
+If unchecked, a valid CA certificate is required.</value></data>
+  <data name="PlanEdit_Tip_TestSql" xml:space="preserve"><value>Tests SQL Server connection with entered credentials.
+If successful, databases are listed automatically.</value></data>
+  <data name="PlanEdit_Tip_SelectAll" xml:space="preserve"><value>Selects or deselects all databases in the list.</value></data>
+  <data name="PlanEdit_Tip_RefreshDatabases" xml:space="preserve"><value>Requeries databases on the server.</value></data>
+  <data name="PlanEdit_Tip_Databases" xml:space="preserve"><value>Check the databases you want to back up.
+System databases (master, model, msdb, tempdb) are not listed.</value></data>
+  <data name="PlanEdit_Tip_FileBackupEnabled" xml:space="preserve"><value>Backs up open/locked files (Outlook PST/OST,
+Excel, SQL MDF) using VSS.
+Works independently from SQL backup.</value></data>
+  <data name="PlanEdit_Tip_FileSources" xml:space="preserve"><value>File/folder sources to back up.
+You can define separate include/exclude patterns for each source.</value></data>
+  <data name="PlanEdit_Tip_Strategy" xml:space="preserve"><value>Full Only: Backs up all data every time. Simple but large.
+Full + Diff: Regular full + changes. Balanced solution.
+Full + Diff + Incremental: Least space, fastest — enterprise recommendation.</value></data>
+  <data name="PlanEdit_Tip_FullCron" xml:space="preserve"><value>Set the schedule for full backup.
+Contains all database data — sufficient alone for restore.
+Recommendation: Once a week (e.g. Sunday night 02:00)</value></data>
+  <data name="PlanEdit_Tip_DiffCron" xml:space="preserve"><value>Backs up data changed since last full backup.
+For restore: Full + last Diff backup needed.
+Recommendation: Once a day (e.g. every night 02:00)</value></data>
+  <data name="PlanEdit_Tip_IncrCron" xml:space="preserve"><value>Backs up data changed since last backup
+(full or incremental). Smallest size.
+For restore: Full + Diff + all Incremental chain needed.
+Recommendation: Every hour (e.g. business hours 09-18)</value></data>
+  <data name="PlanEdit_Tip_AutoPromote" xml:space="preserve"><value>After this many diff/incremental backups,
+a full backup is automatically triggered.
+Prevents chain breaks, improves restore reliability.
+Default: 7 (automatic full backup weekly)</value></data>
+  <data name="PlanEdit_Tip_Verify" xml:space="preserve"><value>After each backup, file integrity is verified
+with SQL Server's RESTORE VERIFYONLY command.
+If a corrupt backup is detected, notification is sent immediately.
+Recommendation: Always keep enabled.</value></data>
+  <data name="PlanEdit_Tip_Algorithm" xml:space="preserve"><value>LZMA2: Best compression ratio (recommended).
+LZMA: For legacy compatibility.
+BZip2: Medium level.
+Deflate: Fastest, largest file.</value></data>
+  <data name="PlanEdit_Tip_Level" xml:space="preserve"><value>None: No compression.
+Fast: Low compression, fast processing.
+Normal: Balanced.
+Maximum: High compression.
+Ultra: Highest compression, slowest.</value></data>
+  <data name="PlanEdit_Tip_ArchivePassword" xml:space="preserve"><value>AES-256 encryption for 7z archive.
+Leave empty for unencrypted archive.
+Password is stored protected with DPAPI.</value></data>
+  <data name="PlanEdit_Tip_RetentionTemplate" xml:space="preserve"><value>Select a preset template or choose Custom to set manually.</value></data>
+  <data name="PlanEdit_Tip_Retention" xml:space="preserve"><value>Keep Last N: Keep the last N backups, delete older ones.
+Day Limit: Delete backups older than specified days.
+Both: Both rules apply together.</value></data>
+  <data name="PlanEdit_Tip_KeepLastN" xml:space="preserve"><value>Number of backup files to keep.
+Default: 30</value></data>
+  <data name="PlanEdit_Tip_DeleteDays" xml:space="preserve"><value>Backups older than this many days will be deleted.
+Default: 90 days (3 months)</value></data>
+  <data name="PlanEdit_Tip_ProtectPlan" xml:space="preserve"><value>If checked, password will be required for plan editing and deletion.</value></data>
+  <data name="PlanEdit_Tip_PlanPassword" xml:space="preserve"><value>Password that will be asked for plan editing and deletion.</value></data>
+  <data name="PlanEdit_Tip_RecoveryPassword" xml:space="preserve"><value>If you forget the plan password, you can use this to access it.</value></data>
+  <data name="PlanEdit_Tip_CloudTargets" xml:space="preserve"><value>Targets where backup files will be sent.
+You can define multiple targets.</value></data>
+  <data name="PlanEdit_Tip_EmailEnabled" xml:space="preserve"><value>Backup results will be notified via email.
+SMTP settings must be configured correctly.</value></data>
+  <data name="PlanEdit_Tip_Toast" xml:space="preserve"><value>Shows backup status via taskbar
+notification balloon.</value></data>
+  <data name="PlanEdit_Tip_ReportEnabled" xml:space="preserve"><value>If enabled, backup summary report will be
+sent via email at specified frequency.
+Content: Success/failure count, size, duration.</value></data>
+  <data name="PlanEdit_Tip_ReportFreq" xml:space="preserve"><value>Daily: Previous day's summary every day.
+Weekly: Last week's summary every Monday.
+Monthly: Last month's summary on the 1st.</value></data>
+  <data name="PlanEdit_Tip_ReportHour" xml:space="preserve"><value>Hour when report will be sent (0-23).
+Default: 08:00</value></data>
+  <data name="PlanEdit_Tip_ReportEmail" xml:space="preserve"><value>Email address where report will be sent.
+If left empty, notification email is used.</value></data>
+
+  <!-- ===== CloudTarget — UI Controls ===== -->
+  <data name="CloudTarget_DisplayName" xml:space="preserve"><value>Display Name:</value></data>
+  <data name="CloudTarget_ProviderType" xml:space="preserve"><value>Provider Type:</value></data>
+  <data name="CloudTarget_Enabled" xml:space="preserve"><value>Active</value></data>
+  <data name="CloudTarget_FtpGroup" xml:space="preserve"><value>FTP / SFTP Settings</value></data>
+  <data name="CloudTarget_Host" xml:space="preserve"><value>Server:</value></data>
+  <data name="CloudTarget_Port" xml:space="preserve"><value>Port:</value></data>
+  <data name="CloudTarget_Username" xml:space="preserve"><value>Username:</value></data>
+  <data name="CloudTarget_Password" xml:space="preserve"><value>Password:</value></data>
+  <data name="CloudTarget_OAuthGroup" xml:space="preserve"><value>Account Linking</value></data>
+  <data name="CloudTarget_GoogleAuth" xml:space="preserve"><value>Link Account</value></data>
+  <data name="CloudTarget_AuthStatus" xml:space="preserve"><value>Not verified yet</value></data>
+  <data name="CloudTarget_LocalGroup" xml:space="preserve"><value>Local / Network Path</value></data>
+  <data name="CloudTarget_PathLabel" xml:space="preserve"><value>Path:</value></data>
+  <data name="CloudTarget_UncUser" xml:space="preserve"><value>Username:</value></data>
+  <data name="CloudTarget_UncPassword" xml:space="preserve"><value>Password:</value></data>
+  <data name="CloudTarget_RemotePath" xml:space="preserve"><value>Remote Folder Path:</value></data>
+  <data name="CloudTarget_Bandwidth" xml:space="preserve"><value>Speed Limit (MB/s):</value></data>
+  <data name="CloudTarget_TrashRetention" xml:space="preserve"><value>Trash Retention (Days):</value></data>
+  <data name="CloudTarget_TrashHint" xml:space="preserve"><value>(0 = delete immediately)</value></data>
+  <data name="CloudTarget_Save" xml:space="preserve"><value>💾 Save</value></data>
+  <data name="CloudTarget_Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- ===== SmtpProfile — UI Controls ===== -->
+  <data name="Smtp_DisplayName" xml:space="preserve"><value>Profile Name:</value></data>
+  <data name="Smtp_Host" xml:space="preserve"><value>SMTP Server:</value></data>
+  <data name="Smtp_Port" xml:space="preserve"><value>Port:</value></data>
+  <data name="Smtp_UseSsl" xml:space="preserve"><value>Use SSL/TLS</value></data>
+  <data name="Smtp_Username" xml:space="preserve"><value>Username:</value></data>
+  <data name="Smtp_Password" xml:space="preserve"><value>Password:</value></data>
+  <data name="Smtp_SenderEmail" xml:space="preserve"><value>Sender Email:</value></data>
+  <data name="Smtp_SenderName" xml:space="preserve"><value>Sender Name:</value></data>
+  <data name="Smtp_Recipients" xml:space="preserve"><value>Recipients:</value></data>
+  <data name="Smtp_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Smtp_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Smtp_Test" xml:space="preserve"><value>✉ Send Test Email</value></data>
+
+  <!-- ===== PasswordSetup — UI Controls ===== -->
+  <data name="PwSetup_Title" xml:space="preserve"><value>🔑 Password Protection Settings</value></data>
+  <data name="PwSetup_NewPassword" xml:space="preserve"><value>New Password:</value></data>
+  <data name="PwSetup_ConfirmPassword" xml:space="preserve"><value>Confirm Password:</value></data>
+  <data name="PwSetup_SecurityTitle" xml:space="preserve"><value>Security Question (Password Recovery)</value></data>
+  <data name="PwSetup_Question" xml:space="preserve"><value>Question:</value></data>
+  <data name="PwSetup_Answer" xml:space="preserve"><value>Answer:</value></data>
+  <data name="PwSetup_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="PwSetup_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="PwSetup_RemovePassword" xml:space="preserve"><value>Remove Password</value></data>
+
+  <!-- ===== Password Dialog — UI Controls ===== -->
+  <data name="Pw_Title" xml:space="preserve"><value>🔒 Password Required</value></data>
+  <data name="Pw_Prompt" xml:space="preserve"><value>Enter your password to edit the plan:</value></data>
+  <data name="Pw_Ok" xml:space="preserve"><value>Login</value></data>
+  <data name="Pw_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Pw_Forgot" xml:space="preserve"><value>Forgot Password</value></data>
+  <data name="Pw_SecurityQuestion" xml:space="preserve"><value>(security question)</value></data>
+  <data name="Pw_VerifyAnswer" xml:space="preserve"><value>Verify</value></data>
+
+  <!-- ===== FileBackupSource — UI Controls ===== -->
+  <data name="FileSource_SourceName" xml:space="preserve"><value>Source Name:</value></data>
+  <data name="FileSource_Navigate" xml:space="preserve"><value>📁 Go to Location...</value></data>
+  <data name="FileSource_StatusHint" xml:space="preserve"><value>Browse folders and check items to select files</value></data>
+  <data name="FileSource_PatternsGroup" xml:space="preserve"><value>File Filter Patterns</value></data>
+  <data name="FileSource_Include" xml:space="preserve"><value>Include Patterns:</value></data>
+  <data name="FileSource_Exclude" xml:space="preserve"><value>Exclude Patterns:</value></data>
+  <data name="FileSource_Hint" xml:space="preserve"><value>Separate patterns with semicolon (;) — Example: *.pst; *.docx</value></data>
+  <data name="FileSource_OptionsGroup" xml:space="preserve"><value>Options</value></data>
+  <data name="FileSource_Recursive" xml:space="preserve"><value>Include subdirectories</value></data>
+  <data name="FileSource_UseVss" xml:space="preserve"><value>Use VSS (open/locked files)</value></data>
+  <data name="FileSource_Enabled" xml:space="preserve"><value>This source is active</value></data>
+  <data name="FileSource_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="FileSource_Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- ===== GoogleOAuth — UI Controls ===== -->
+  <data name="GoogleOAuth_Title" xml:space="preserve"><value>☁ Google API Credentials</value></data>
+  <data name="GoogleOAuth_Info" xml:space="preserve"><value>Enter the OAuth 2.0 Desktop Client credentials from Google Cloud Console.</value></data>
+  <data name="GoogleOAuth_ClientId" xml:space="preserve"><value>Client ID:</value></data>
+  <data name="GoogleOAuth_ClientSecret" xml:space="preserve"><value>Client Secret:</value></data>
+  <data name="GoogleOAuth_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="GoogleOAuth_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="GoogleOAuth_Remove" xml:space="preserve"><value>Clear</value></data>
+
+  <!-- ===== About — UI Controls ===== -->
+  <data name="About_Description" xml:space="preserve"><value>SQL Server Backup &amp; Cloud Sync System</value></data>
+  <data name="About_Copyright" xml:space="preserve"><value>© 2026 Zafer Bilgisayar</value></data>
+  <data name="About_Developer" xml:space="preserve"><value>Developer: Hüzeyin Küçük</value></data>
+  <data name="About_CreditsTitle" xml:space="preserve"><value>Open Source Libraries</value></data>
+  <data name="About_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="About_Title" xml:space="preserve"><value>About — Koru MsSql Yedek</value></data>
+
+  <!-- ===== Common — Error ===== -->
+  <data name="Error_Unknown" xml:space="preserve"><value>An unknown error occurred.</value></data>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       RICH TOOLTIPS — Informative, user-friendly tips with examples
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!-- ── MainWindow — Dashboard ── -->
+  <data name="Tip_Dashboard_Status" xml:space="preserve"><value>Shows the current application status.
+• Ready: No operation in progress.
+• Running: A backup or restore is active.</value></data>
+  <data name="Tip_Dashboard_NextBackup" xml:space="preserve"><value>Displays the time of the next scheduled backup.
+If no plans are active, it shows "—".</value></data>
+  <data name="Tip_Dashboard_ActivePlans" xml:space="preserve"><value>Number of backup plans currently enabled.
+Only enabled plans are counted and scheduled.</value></data>
+  <data name="Tip_Dashboard_LastBackups" xml:space="preserve"><value>Lists the most recent backup results.
+Shows date, plan name, type, and status for quick overview.</value></data>
+
+  <!-- ── MainWindow — Plans Tab ── -->
+  <data name="Tip_Plans_New" xml:space="preserve"><value>Create a new backup plan.
+The wizard guides you through: SQL connection, databases,
+schedule, cloud targets, and notification settings.</value></data>
+  <data name="Tip_Plans_Edit" xml:space="preserve"><value>Edit the selected backup plan.
+Double-click a plan row to open it directly.</value></data>
+  <data name="Tip_Plans_Delete" xml:space="preserve"><value>Delete the selected backup plan.
+This does NOT delete existing backup files — only the plan configuration.</value></data>
+  <data name="Tip_Plans_Export" xml:space="preserve"><value>Export the selected plan as a JSON file.
+Useful for backup or transferring plans between machines.</value></data>
+  <data name="Tip_Plans_Import" xml:space="preserve"><value>Import a plan from a JSON file.
+Restores a previously exported backup plan configuration.</value></data>
+  <data name="Tip_Plans_Refresh" xml:space="preserve"><value>Refresh the plan list.
+Reloads plan status and schedule information from configuration.</value></data>
+  <data name="Tip_Plans_Search" xml:space="preserve"><value>Filter plans by name.
+Type part of a plan name to quickly find it.
+Example: "daily" to find "DailyFullBackup".</value></data>
+  <data name="Tip_Plans_BackupNow" xml:space="preserve"><value>Start an immediate backup for the selected plan.
+Runs independently of the schedule.</value></data>
+  <data name="Tip_Plans_StopBackup" xml:space="preserve"><value>Stop the currently running backup for this plan.
+The backup will be cancelled safely.</value></data>
+
+  <!-- ── MainWindow — Backup Panel ── -->
+  <data name="Tip_Backup_Type" xml:space="preserve"><value>Select the backup type:
+• Full: Complete database backup (recommended for first run).
+• Differential: Only changes since last full backup (faster, smaller).
+• Incremental (Log): Transaction log backup (minimal size).</value></data>
+  <data name="Tip_Backup_Start" xml:space="preserve"><value>Start a manual backup for the selected plan.
+Select a plan from the grid and choose the backup type first.</value></data>
+  <data name="Tip_Backup_Cancel" xml:space="preserve"><value>Cancel the running backup operation.
+Any partially created files will be cleaned up.</value></data>
+
+  <!-- ── MainWindow — Log Viewer ── -->
+  <data name="Tip_Log_FileSelect" xml:space="preserve"><value>Select a log file to view.
+Log files are rotated daily and stored in the Logs folder.
+Example: log-20260101.txt</value></data>
+  <data name="Tip_Log_Level" xml:space="preserve"><value>Filter log entries by severity:
+• Verbose/Debug: Detailed diagnostic info.
+• Information: Normal operations.
+• Warning: Potential issues.
+• Error/Fatal: Failures that need attention.</value></data>
+  <data name="Tip_Log_AutoTail" xml:space="preserve"><value>Automatically scroll to the latest log entries.
+New log lines will appear at the bottom in real time.</value></data>
+  <data name="Tip_Log_Search" xml:space="preserve"><value>Search within log entries.
+Type keywords to filter — e.g., "error", "timeout", a database name.</value></data>
+  <data name="Tip_Log_PlanFilter" xml:space="preserve"><value>Filter logs by a specific backup plan.
+Shows only log entries related to the selected plan.</value></data>
+  <data name="Tip_Log_Clear" xml:space="preserve"><value>Clear all filters and show all log entries.</value></data>
+  <data name="Tip_Log_Refresh" xml:space="preserve"><value>Reload the log file from disk.
+Use this to see the latest entries if auto-tail is off.</value></data>
+  <data name="Tip_Log_Export" xml:space="preserve"><value>Export the currently filtered log entries to a file.
+Useful for sharing logs with support or archiving.</value></data>
+
+  <!-- ── MainWindow — Settings General ── -->
+  <data name="Tip_Settings_Language" xml:space="preserve"><value>Change the application language.
+Currently supported: Turkish (Türkçe) and English.
+Requires application restart to take full effect.</value></data>
+  <data name="Tip_Settings_StartWithWindows" xml:space="preserve"><value>Launch the application automatically when Windows starts.
+The app starts minimized to the system tray.
+Recommended for continuous backup scheduling.</value></data>
+  <data name="Tip_Settings_MinimizeToTray" xml:space="preserve"><value>Minimize to system tray instead of taskbar.
+The app continues running in the background.
+Double-click the tray icon to restore.</value></data>
+  <data name="Tip_Settings_DefaultBackupPath" xml:space="preserve"><value>Default folder for storing backup files.
+Each plan can override this with its own path.
+Example: D:\Backups\SQL</value></data>
+  <data name="Tip_Settings_LogRetention" xml:space="preserve"><value>How many days to keep log files.
+Older log files are automatically deleted.
+Default: 30 days. Set 0 for unlimited.</value></data>
+  <data name="Tip_Settings_HistoryRetention" xml:space="preserve"><value>How many days to keep backup history records.
+Older records are removed from the history database.
+Default: 90 days. Set 0 for unlimited.</value></data>
+  <data name="Tip_Settings_Theme" xml:space="preserve"><value>Switch between Dark and Light theme.
+Changes take effect immediately.</value></data>
+  <data name="Tip_Settings_LogColorScheme" xml:space="preserve"><value>Color scheme for the log viewer console.
+Choose a theme that's comfortable for reading logs.</value></data>
+  <data name="Tip_Settings_Save" xml:space="preserve"><value>Save all settings and apply changes.
+Some settings (like language) require a restart.</value></data>
+  <data name="Tip_Settings_Cancel" xml:space="preserve"><value>Discard unsaved changes and revert to previous settings.</value></data>
+
+  <!-- ── MainWindow — Settings SMTP ── -->
+  <data name="Tip_Settings_SmtpAdd" xml:space="preserve"><value>Add a new SMTP email profile.
+Used for sending backup success/failure notifications.
+Example: office365, gmail, custom SMTP server.</value></data>
+  <data name="Tip_Settings_SmtpEdit" xml:space="preserve"><value>Edit the selected SMTP profile settings.</value></data>
+  <data name="Tip_Settings_SmtpDelete" xml:space="preserve"><value>Delete the selected SMTP profile.
+Plans using this profile will lose notification capability.</value></data>
+  <data name="Tip_Settings_SmtpTest" xml:space="preserve"><value>Send a test email using the selected SMTP profile.
+Verifies that the email configuration works correctly.</value></data>
+
+  <!-- ── MainWindow — Settings Security ── -->
+  <data name="Tip_Settings_PasswordSetup" xml:space="preserve"><value>Set or change the master password.
+When enabled, editing or deleting plans requires password entry.
+A security question is also configured for password recovery.</value></data>
+  <data name="Tip_Settings_SecurityInfo" xml:space="preserve"><value>Password protection prevents unauthorized changes to backup plans.
+The password is stored as a secure hash — it cannot be recovered,
+but can be reset via the security question.</value></data>
+
+  <!-- ── CloudTargetEditDialog — Tooltips ── -->
+  <data name="Tip_Cloud_DisplayName" xml:space="preserve"><value>A friendly name for this cloud target.
+Shown in the plan wizard when selecting targets.
+Example: "Google Drive - Production", "FTP Archive"</value></data>
+  <data name="Tip_Cloud_ProviderType" xml:space="preserve"><value>Select the storage provider type:
+• Google Drive: Cloud storage via OAuth 2.0 authentication.
+• FTP/FTPS/SFTP: Remote server file transfer.
+• UNC Path: Windows network share (\\server\share).</value></data>
+  <data name="Tip_Cloud_Enabled" xml:space="preserve"><value>Enable or disable this cloud target.
+Disabled targets are skipped during backup uploads.</value></data>
+  <data name="Tip_Cloud_Host" xml:space="preserve"><value>FTP/SFTP server hostname or IP address.
+Example: ftp.example.com or 192.168.1.100</value></data>
+  <data name="Tip_Cloud_Port" xml:space="preserve"><value>Server port number.
+Defaults: FTP=21, FTPS=990, SFTP=22.
+Change only if your server uses a non-standard port.</value></data>
+  <data name="Tip_Cloud_Username" xml:space="preserve"><value>Username for FTP/SFTP or UNC authentication.
+For UNC: DOMAIN\username format.
+Example: backup_user</value></data>
+  <data name="Tip_Cloud_Password" xml:space="preserve"><value>Password for FTP/SFTP or UNC authentication.
+Stored encrypted with Windows DPAPI (machine-bound).</value></data>
+  <data name="Tip_Cloud_GoogleAuth" xml:space="preserve"><value>Authenticate with Google Drive via OAuth 2.0.
+Opens a browser window for Google account authorization.
+Authorization is one-time; the token is stored locally.</value></data>
+  <data name="Tip_Cloud_LocalPath" xml:space="preserve"><value>Local folder path or UNC network share path.
+Example: D:\BackupArchive or \\server\backups$
+For UNC paths, provide credentials below if needed.</value></data>
+  <data name="Tip_Cloud_RemotePath" xml:space="preserve"><value>Remote folder path on the target server.
+Created automatically if it doesn't exist.
+Example: /Koru MsSql Yedek or Koru MsSql Yedek</value></data>
+  <data name="Tip_Cloud_Bandwidth" xml:space="preserve"><value>Maximum upload speed in MB/s.
+Set 0 for unlimited bandwidth.
+Useful to avoid saturating the network during business hours.</value></data>
+  <data name="Tip_Cloud_TrashRetention" xml:space="preserve"><value>Days to keep deleted files in trash/archive.
+When backup retention deletes old files from cloud,
+they stay in trash for this many days before permanent deletion.
+Set 0 to delete immediately.</value></data>
+
+  <!-- ── SmtpProfileEditDialog — Tooltips ── -->
+  <data name="Tip_Smtp_DisplayName" xml:space="preserve"><value>A friendly name for this SMTP profile.
+Example: "Office 365", "Gmail Notifications"</value></data>
+  <data name="Tip_Smtp_Host" xml:space="preserve"><value>SMTP server address.
+Examples:
+  smtp.office365.com (Office 365)
+  smtp.gmail.com (Gmail)
+  smtp.example.com (Custom)</value></data>
+  <data name="Tip_Smtp_Port" xml:space="preserve"><value>SMTP server port.
+Common ports: 587 (STARTTLS), 465 (SSL), 25 (unencrypted).
+Recommended: 587 with SSL enabled.</value></data>
+  <data name="Tip_Smtp_UseSsl" xml:space="preserve"><value>Use SSL/TLS encryption for the SMTP connection.
+Highly recommended for security.
+Required by most modern email providers.</value></data>
+  <data name="Tip_Smtp_Username" xml:space="preserve"><value>Email account username for SMTP authentication.
+Usually your full email address.
+Example: backup@example.com</value></data>
+  <data name="Tip_Smtp_Password" xml:space="preserve"><value>Email account password or app-specific password.
+For Gmail: Generate an "App Password" in Google Account settings.
+For Office 365: Use account password or app password.</value></data>
+  <data name="Tip_Smtp_SenderEmail" xml:space="preserve"><value>The "From" email address shown in notifications.
+Usually the same as the username.
+Example: backup@example.com</value></data>
+  <data name="Tip_Smtp_SenderName" xml:space="preserve"><value>Display name shown in the "From" field.
+Example: "Koru MsSql Yedek" or "Backup System"</value></data>
+  <data name="Tip_Smtp_Recipients" xml:space="preserve"><value>Email addresses that receive backup notifications.
+Separate multiple addresses with semicolon (;).
+Example: admin@example.com; dba@example.com</value></data>
+  <data name="Tip_Smtp_Test" xml:space="preserve"><value>Send a test email to verify the SMTP configuration.
+A test message will be sent to the recipient addresses.</value></data>
+
+  <!-- ── RestoreDialog — Tooltips ── -->
+  <data name="Tip_Restore_Grid" xml:space="preserve"><value>List of successful backups available for restore.
+Select a row to enable verify and restore actions.
+Shows date, database name, type, file path, and size.</value></data>
+  <data name="Tip_Restore_TargetDb" xml:space="preserve"><value>Database name to restore into.
+Defaults to the original database name.
+You can change it to restore to a different database.
+Warning: Existing database will be overwritten!</value></data>
+  <data name="Tip_Restore_PreBackup" xml:space="preserve"><value>Take a safety backup of the target database before restoring.
+Strongly recommended to prevent data loss.
+The safety backup is saved in the default backup path.</value></data>
+  <data name="Tip_Restore_Verify" xml:space="preserve"><value>Verify the backup file integrity without restoring.
+Runs SQL Server's RESTORE VERIFYONLY command.
+Checks that the backup is readable and not corrupt.</value></data>
+  <data name="Tip_Restore_Restore" xml:space="preserve"><value>Start the database restore operation.
+This will OVERWRITE the target database!
+A confirmation dialog will appear before proceeding.</value></data>
+  <data name="Tip_Restore_Close" xml:space="preserve"><value>Close the restore dialog.
+If an operation is in progress, you'll be asked to cancel it first.</value></data>
+
+  <!-- ── PasswordDialog — Tooltips ── -->
+  <data name="Tip_Pw_Password" xml:space="preserve"><value>Enter the master password or plan-specific password.
+This is required for editing or deleting backup plans.</value></data>
+  <data name="Tip_Pw_Ok" xml:space="preserve"><value>Submit the password for verification.</value></data>
+  <data name="Tip_Pw_Forgot" xml:space="preserve"><value>Forgot your password? Click to answer the security question.
+If the answer is correct, the password protection will be removed.</value></data>
+  <data name="Tip_Pw_SecurityAnswer" xml:space="preserve"><value>Enter the answer to your security question.
+The answer is case-insensitive.</value></data>
+  <data name="Tip_Pw_VerifyAnswer" xml:space="preserve"><value>Verify your security answer.
+If correct, password protection will be removed.</value></data>
+
+  <!-- ── PasswordSetupDialog — Tooltips ── -->
+  <data name="Tip_PwSetup_NewPassword" xml:space="preserve"><value>Create a new master password (minimum 4 characters).
+This password will be required for plan editing/deletion.</value></data>
+  <data name="Tip_PwSetup_ConfirmPassword" xml:space="preserve"><value>Re-enter the password to confirm.
+Must match the password entered above.</value></data>
+  <data name="Tip_PwSetup_SecurityQuestion" xml:space="preserve"><value>Set a security question for password recovery.
+Example: "What is your pet's name?"
+Choose something only you would know.</value></data>
+  <data name="Tip_PwSetup_SecurityAnswer" xml:space="preserve"><value>Answer to the security question (case-insensitive).
+This answer will be used to reset the password if forgotten.</value></data>
+  <data name="Tip_PwSetup_Save" xml:space="preserve"><value>Save the password and security question.
+Password protection will be activated immediately.</value></data>
+  <data name="Tip_PwSetup_RemovePassword" xml:space="preserve"><value>Remove password protection entirely.
+Plans can be edited/deleted without a password.
+The security question will also be removed.</value></data>
+
+  <!-- ── GoogleOAuthSettingsDialog — Tooltips ── -->
+  <data name="Tip_GoogleOAuth_ClientId" xml:space="preserve"><value>OAuth 2.0 Client ID from Google Cloud Console.
+Format: xxxxxxxx.apps.googleusercontent.com
+Create at: console.cloud.google.com → APIs → Credentials</value></data>
+  <data name="Tip_GoogleOAuth_ClientSecret" xml:space="preserve"><value>OAuth 2.0 Client Secret from Google Cloud Console.
+Starts with "GOCSPX-..." for desktop applications.
+Stored encrypted with DPAPI on this machine.</value></data>
+  <data name="Tip_GoogleOAuth_Save" xml:space="preserve"><value>Save the custom Google OAuth credentials.
+Leave both fields empty to use built-in default credentials.</value></data>
+  <data name="Tip_GoogleOAuth_Remove" xml:space="preserve"><value>Remove custom credentials and revert to built-in defaults.
+Existing Google Drive connections will use the default credentials.</value></data>
+
+  <!-- ── FileBackupSourceEditDialog — Tooltips ── -->
+  <data name="Tip_FileSource_SourceName" xml:space="preserve"><value>A short name to identify this file backup source.
+Example: "Outlook PST", "Project Files", "Documents"</value></data>
+  <data name="Tip_FileSource_Navigate" xml:space="preserve"><value>Browse to a folder to quickly navigate the tree view.
+The selected folder will be expanded in the tree.</value></data>
+  <data name="Tip_FileSource_TreeView" xml:space="preserve"><value>Select files and folders to include in backup.
+Check the boxes next to items you want to back up.
+Parent folders automatically include all children.</value></data>
+  <data name="Tip_FileSource_IncludePatterns" xml:space="preserve"><value>Only files matching these patterns will be backed up.
+Leave empty to include ALL files.
+Separate patterns with semicolons (;).
+Example: *.pst; *.docx; *.xlsx</value></data>
+  <data name="Tip_FileSource_ExcludePatterns" xml:space="preserve"><value>Files matching these patterns will be EXCLUDED from backup.
+Overrides include patterns.
+Example: *.tmp; *.log; ~$*; Thumbs.db</value></data>
+  <data name="Tip_FileSource_Recursive" xml:space="preserve"><value>Include files in all subdirectories of selected folders.
+Uncheck to back up only files in the top-level folder.</value></data>
+  <data name="Tip_FileSource_UseVss" xml:space="preserve"><value>Use Volume Shadow Copy Service to back up locked files.
+Required for: Outlook PST/OST, databases, open documents.
+Enable this if you see "file in use" errors during backup.</value></data>
+  <data name="Tip_FileSource_Enabled" xml:space="preserve"><value>Enable or disable this file backup source.
+Disabled sources are skipped during backup execution.</value></data>
+
+  <!-- Buttons (MainWindow ApplyIcons) -->
+  <data name="Btn_StartBackup" xml:space="preserve"><value>Start Backup</value></data>
+  <data name="Btn_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Btn_ClearFilter" xml:space="preserve"><value>Clear</value></data>
+  <data name="Btn_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Btn_Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Btn_SmtpTest" xml:space="preserve"><value>Send Test Email</value></data>
+  <data name="Btn_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Btn_CancelSettings" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- Toolbar (MainWindow ApplyToolStripIcons) -->
+  <data name="Tsb_NewPlan" xml:space="preserve"><value>New Task</value></data>
+  <data name="Tsb_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Tsb_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Tsb_Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Tsb_Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Tsb_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Tsl_Search" xml:space="preserve"><value>Search:</value></data>
+
+  <!-- SMTP Grid columns -->
+  <data name="SmtpGrid_ColName" xml:space="preserve"><value>Profile Name</value></data>
+  <data name="SmtpGrid_ColHost" xml:space="preserve"><value>Server</value></data>
+  <data name="SmtpGrid_ColUser" xml:space="preserve"><value>Username</value></data>
+  <data name="SmtpGrid_ColRecipients" xml:space="preserve"><value>Recipients</value></data>
+
+  <!-- Backup Activity -->
+  <data name="Activity_BackupStarted" xml:space="preserve"><value>[{0}] Backup started.</value></data>
+  <data name="Activity_DbProcessing" xml:space="preserve"><value>{0} ({1}/{2}) processing.</value></data>
+  <data name="Activity_Step" xml:space="preserve"><value>Step: {0}</value></data>
+  <data name="Activity_CloudAbandoned" xml:space="preserve"><value>⚠ Cloud upload abandoned ({0} files): {1}</value></data>
+  <data name="Activity_CloudAbandonedMsg" xml:space="preserve"><value>⚠ Cloud upload abandoned: {0}</value></data>
+  <data name="Activity_MaxRetryExceeded" xml:space="preserve"><value>Max retry exceeded</value></data>
+  <data name="Activity_BackupCompleted" xml:space="preserve"><value>[{0}] Backup completed. ✓</value></data>
+  <data name="Activity_BackupCompletedMsg" xml:space="preserve"><value>[{0}] Backup completed. ✓ {1}.</value></data>
+  <data name="Activity_BackupCompletedWarn" xml:space="preserve"><value>[{0}] Backup completed ({1}). ⚠</value></data>
+  <data name="Activity_BackupFailed" xml:space="preserve"><value>[{0}] Backup failed: {1}</value></data>
+  <data name="Activity_BackupCancelled" xml:space="preserve"><value>[{0}] Backup cancelled.</value></data>
+
+  <!-- Cloud Upload -->
+  <data name="Cloud_UploadPrefix" xml:space="preserve"><value>Cloud upload started:</value></data>
+  <data name="Cloud_Uploading" xml:space="preserve"><value>Uploading:</value></data>
+  <data name="Cloud_Sent" xml:space="preserve"><value>Sent:</value></data>
+  <data name="Cloud_Remaining" xml:space="preserve"><value>Remaining:</value></data>
+  <data name="Cloud_Speed" xml:space="preserve"><value>Speed:</value></data>
+  <data name="Cloud_ETA" xml:space="preserve"><value>ETA:</value></data>
+
+  <!-- Backup Execution -->
+  <data name="Backup_TasksRunning" xml:space="preserve"><value>{0} tasks running</value></data>
+
+  <!-- Plans -->
+  <data name="PlanList_StorageCloud" xml:space="preserve"><value>☁ Cloud ({0})</value></data>
+  <data name="PlanList_StorageLocal" xml:space="preserve"><value>💾 Local</value></data>
+  <data name="PlanList_FilteredTaskFormat" xml:space="preserve"><value>{0} / {1} tasks</value></data>
+
+  <!-- Time abbreviations -->
+  <data name="Time_Seconds" xml:space="preserve"><value>sec</value></data>
+  <data name="Time_Minutes" xml:space="preserve"><value>min</value></data>
+  <data name="Time_Hours" xml:space="preserve"><value>hr</value></data>
+
+  <!-- Tray -->
+  <data name="Tray_MenuAbout" xml:space="preserve"><value>About</value></data>
+  <data name="Tray_ServiceStatusFormat" xml:space="preserve"><value>Service: {0}</value></data>
+
+  <!-- PlanEdit Retention / Report -->
+  <data name="PlanEdit_RetTplMinimal" xml:space="preserve"><value>Minimal  (Full×3, Diff×7, Log×14, Files×5)</value></data>
+  <data name="PlanEdit_RetTplStandard" xml:space="preserve"><value>Standard  (Full×7, Diff×14, Log×30, Files×14)  ★</value></data>
+  <data name="PlanEdit_RetTplExtended" xml:space="preserve"><value>Extended  (Full×14, Diff×30, Log×90, Files×30)</value></data>
+  <data name="PlanEdit_RetTplGFS" xml:space="preserve"><value>GFS  (Grandfather-Father-Son rotation)</value></data>
+  <data name="PlanEdit_RetTplCustom" xml:space="preserve"><value>Custom  (manual setup)</value></data>
+  <data name="PlanEdit_ReportDaily" xml:space="preserve"><value>Daily</value></data>
+  <data name="PlanEdit_ReportWeekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="PlanEdit_ReportMonthly" xml:space="preserve"><value>Monthly</value></data>
+
+  <!-- CronBuilder -->
+  <data name="Cron_DayMon" xml:space="preserve"><value>Mon</value></data>
+  <data name="Cron_DayTue" xml:space="preserve"><value>Tue</value></data>
+  <data name="Cron_DayWed" xml:space="preserve"><value>Wed</value></data>
+  <data name="Cron_DayThu" xml:space="preserve"><value>Thu</value></data>
+  <data name="Cron_DayFri" xml:space="preserve"><value>Fri</value></data>
+  <data name="Cron_DaySat" xml:space="preserve"><value>Sat</value></data>
+  <data name="Cron_DaySun" xml:space="preserve"><value>Sun</value></data>
+  <data name="Cron_LblFrequency" xml:space="preserve"><value>Frequency:</value></data>
+  <data name="Cron_FreqDaily" xml:space="preserve"><value>Daily</value></data>
+  <data name="Cron_FreqWeekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="Cron_FreqMonthly" xml:space="preserve"><value>Monthly</value></data>
+  <data name="Cron_FreqCustom" xml:space="preserve"><value>Custom (Cron)</value></data>
+  <data name="Cron_LblHour" xml:space="preserve"><value>Hour:</value></data>
+  <data name="Cron_LblDay" xml:space="preserve"><value>Day:</value></data>
+  <data name="Cron_CustomExpr" xml:space="preserve"><value>Custom cron expression</value></data>
+  <data name="Cron_EveryDayAt" xml:space="preserve"><value>Every day at {0}</value></data>
+  <data name="Cron_WeeklyAt" xml:space="preserve"><value>{0} at {1}</value></data>
+  <data name="Cron_MonthlyAt" xml:space="preserve"><value>Every month on day {0} at {1}</value></data>
+  <data name="Cron_Every" xml:space="preserve"><value>Every </value></data>
+  <data name="Cron_DefaultDay" xml:space="preserve"><value>Every Mon</value></data>
+
+  <!-- Wizard Buttons -->
+  <data name="PlanEdit_BtnSave" xml:space="preserve"><value>Save</value></data>
+  <data name="PlanEdit_BtnSaveExit" xml:space="preserve"><value>Save &amp; Exit</value></data>
+
+  <!-- PlanEdit: Loading / Navigation -->
+  <data name="PlanEdit_Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="PlanEdit_Next" xml:space="preserve"><value>Next</value></data>
+
+  <!-- PlanEdit: Retention Template Descriptions -->
+  <data name="PlanEdit_RetTplMinimal" xml:space="preserve"><value>SQL Full: last 3 • Diff: 7 • Log: 14 • File archive: 5 backups</value></data>
+  <data name="PlanEdit_RetTplStandard" xml:space="preserve"><value>SQL Full: last 7 • Diff: 14 • Log: 30 • File archive: 14 backups</value></data>
+  <data name="PlanEdit_RetTplExtended" xml:space="preserve"><value>SQL Full: last 14 • Diff: 30 • Log: 90 • File archive: 30 backups</value></data>
+  <data name="PlanEdit_RetTplGFS" xml:space="preserve"><value>GFS — Daily 7 / Weekly 4 / Monthly 12 / Yearly 2 (for Full)</value></data>
+  <data name="PlanEdit_RetTplCustom" xml:space="preserve"><value>Manually specify cleanup rule and number of backups to keep.</value></data>
+
+  <!-- SMTP Dialog -->
+  <data name="Smtp_TitleEdit" xml:space="preserve"><value>Edit SMTP Profile</value></data>
+  <data name="Smtp_TitleNew" xml:space="preserve"><value>New SMTP Profile</value></data>
+  <data name="Smtp_HostRequired" xml:space="preserve"><value>Please enter the SMTP server address.</value></data>
+  <data name="Smtp_RecipientRequired" xml:space="preserve"><value>Please enter at least one recipient address for the test email.</value></data>
+  <data name="Smtp_Sending" xml:space="preserve"><value>Sending...</value></data>
+  <data name="Smtp_TestBody" xml:space="preserve"><value>This is a test email.\nProfile: {0}\nTime: {1}</value></data>
+  <data name="Smtp_TestSuccess" xml:space="preserve"><value>Test email sent successfully.</value></data>
+  <data name="Smtp_TestErrorTitle" xml:space="preserve"><value>SMTP Test Error</value></data>
+  <data name="Smtp_TestFailed" xml:space="preserve"><value>SMTP connection failed:\n{0}</value></data>
+  <data name="Success" xml:space="preserve"><value>Success</value></data>
+
+  <!-- Google OAuth Status -->
+  <data name="GoogleOAuth_StatusCustom" xml:space="preserve"><value>✔ Custom credentials defined</value></data>
+  <data name="GoogleOAuth_StatusDefault" xml:space="preserve"><value>ℹ Using embedded default values</value></data>
+
+  <!-- File Source Status -->
+  <data name="FileSource_StatusHint" xml:space="preserve"><value>Browse folders and check items to select backup sources</value></data>
+  <data name="FileSource_Calculating" xml:space="preserve"><value>calculating...</value></data>
+  <data name="FileSource_StatusSelected" xml:space="preserve"><value>✅ {0} folder(s), {1} file(s) selected{2}</value></data>
 
 </root>

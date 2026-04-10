@@ -84,6 +84,14 @@ namespace KoruMsSqlYedek.Win.Forms
             _btnVerify.Text         = Res.Get("Restore_BtnVerify");
             _btnRestore.Text        = Res.Get("Restore_BtnRestore");
             _btnClose.Text          = Res.Get("Restore_BtnClose");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_dgvHistory, Res.Get("Tip_Restore_Grid"));
+            _toolTip.SetToolTip(_txtTargetDb, Res.Get("Tip_Restore_TargetDb"));
+            _toolTip.SetToolTip(_chkPreBackup, Res.Get("Tip_Restore_PreBackup"));
+            _toolTip.SetToolTip(_btnVerify, Res.Get("Tip_Restore_Verify"));
+            _toolTip.SetToolTip(_btnRestore, Res.Get("Tip_Restore_Start"));
+            _toolTip.SetToolTip(_btnClose, Res.Get("Tip_Restore_Close"));
         }
 
         // ── Tarihçe yükleme ──────────────────────────────────────────────────

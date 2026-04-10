@@ -22,7 +22,7 @@ namespace KoruMsSqlYedek.Win
                     ? Res.Get("Tray_ServiceStatusRunning")
                     : stopped
                         ? Res.Get("Tray_ServiceStatusStopped")
-                        : $"Servis: {state}";
+                        : Res.Format("Tray_ServiceStatusFormat", state);
 
                 _tsmServiceStart.Enabled   = stopped;
                 _tsmServiceStop.Enabled    = running;

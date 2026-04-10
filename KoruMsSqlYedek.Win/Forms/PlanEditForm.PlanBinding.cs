@@ -49,17 +49,17 @@ namespace KoruMsSqlYedek.Win.Forms
 
             // Retention şablonları
             _cmbRetentionTemplate.Items.Clear();
-            _cmbRetentionTemplate.Items.Add("Minimal  (Full×3, Diff×7, Log×14, Files×5)");
-            _cmbRetentionTemplate.Items.Add("Standard  (Full×7, Diff×14, Log×30, Files×14)  ★");
-            _cmbRetentionTemplate.Items.Add("Extended  (Full×14, Diff×30, Log×90, Files×30)");
-            _cmbRetentionTemplate.Items.Add("GFS  (Grandfather-Father-Son rotasyonu)");
-            _cmbRetentionTemplate.Items.Add("Özel  (elle ayarla)");
+            _cmbRetentionTemplate.Items.Add(Res.Get("PlanEdit_RetTplMinimal"));
+            _cmbRetentionTemplate.Items.Add(Res.Get("PlanEdit_RetTplStandard"));
+            _cmbRetentionTemplate.Items.Add(Res.Get("PlanEdit_RetTplExtended"));
+            _cmbRetentionTemplate.Items.Add(Res.Get("PlanEdit_RetTplGFS"));
+            _cmbRetentionTemplate.Items.Add(Res.Get("PlanEdit_RetTplCustom"));
 
             // Rapor sıklığı
             _cmbReportFreq.Items.Clear();
-            _cmbReportFreq.Items.Add("Günlük");
-            _cmbReportFreq.Items.Add("Haftalık");
-            _cmbReportFreq.Items.Add("Aylık");
+            _cmbReportFreq.Items.Add(Res.Get("PlanEdit_ReportDaily"));
+            _cmbReportFreq.Items.Add(Res.Get("PlanEdit_ReportWeekly"));
+            _cmbReportFreq.Items.Add(Res.Get("PlanEdit_ReportMonthly"));
 
             // SMTP Profilleri
             var settings = _settingsManager.Load();

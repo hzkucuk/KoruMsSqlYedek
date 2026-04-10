@@ -1,4 +1,168 @@
-﻿## [0.99.39] - 2025-07-17 — Oto. Tam Yedek Eşiği Strateji Bağımlı Devre Dışı
+﻿## [0.99.50] - 2025-07-19 — PlanEditForm Layout: Sol Kenar Boşluğu Düzeltmesi
+
+### Düzeltme
+- **Tüm step panellerinde** (Step 1-6) label ve kontrollerin X=0 pozisyonu X=24'e kaydırıldı (sol kenar boşluğu eklendi)
+- 46 kontrol pozisyonu düzeltildi, geniş kontrollerin genişlikleri 24px azaltıldı
+- **CronBuilderPanel**: Cron ifadesi etiketi (X=250→X=170) özetleme metnine yaklaştırıldı
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — 46 kontrol X pozisyonu + 4 genişlik düzeltmesi
+- `CronBuilderPanel.cs` — _lblCronRaw X=250→170
+
+## [0.99.49] - 2025-07-19 — PlanEditForm Designer: FQ Type Names + Name Properties
+
+### Düzeltme
+- **PlanEditForm.Designer.cs**: VS Forms Designer ile uyumluluk için 2 kritik düzeltme
+  - 22 custom kontrol `new` ifadesi tam nitelikli (fully qualified) yapıldı (örn: `new KoruMsSqlYedek.Win.Theme.ModernButton()`)
+  - 115 kontrole `.Name` özelliği eklendi (Designer alan eşleştirmesi için zorunlu)
+- Kök neden: Çalışan form (CloudTargetEditDialog) ile karşılaştırma yapılarak tespit edildi
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — 22 FQ type + 115 Name property eklendi
+
+## [0.99.48] - 2025-07-19 — PlanEditForm Designer Uyumluluğu (Düzeltme)
+
+### Düzeltme
+- **PlanEditForm**: VS Forms Designer’da form açılamama sorunu düzeltildi (3 kök neden)
+  - `PlanEditForm.resx` eklendi (Designer zorunlu dosya)
+  - Parametresiz constructor eklendi (Designer formı instantiate edebilsin)
+  - `InitializeComponent` içindeki 25 `Theme.ModernTheme.*` referansı literal `Color.FromArgb()` değerleriyle değiştirildi
+  - Runtime tema renkleri `ApplyThemeColors()` metoduyla uygulanıyor
+- **Resx temizliği**: 8 çakışan partial-class .resx dosyası silindi (MSB3577)
+  - 4 PlanEditForm partial resx + 4 MainWindow partial resx
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — 25 Theme.* referansı literal değerlerle değiştirildi
+- `PlanEditForm.cs` — Parametresiz constructor + `ApplyThemeColors()` eklendi
+- `PlanEditForm.resx` — Yeni oluşturuldu
+
+## [0.99.47] - 2025-07-19 — PlanEditForm Designer Uyumluluğu
+
+### İyileştirme
+- **PlanEditForm.Designer.cs**: VS Forms Designer ile düzenlenebilir hale getirildi
+- Tüm `for` döngüleri, `ConfigLabel`/`ConfigTextBox` yardımcı metotları ve yerel değişkenler kaldırıldı
+- 6 step paneli adlandırılmış alanlara dönüştürüldü (`_pnlStep1`–`_pnlStep6`)
+- 12 step göstergesi etiketi adlandırıldı (`_lblStepNum1`–`_lblStepNum6`, `_lblStepTitle1`–`_lblStepTitle6`)
+- `SuspendLayout`/`ResumeLayout` kalıbı eklendi
+- Runtime dizileri (`_stepPanels`, `_stepLabels`, `_stepDots`) `PlanEditForm.cs` constructor'a taşındı
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — Tamamen yeniden yazıldı (~1100 satır)
+- `PlanEditForm.cs` — `BuildRuntimeArrays()` metodu ve dizi alanları eklendi
+
+## [0.99.46] - 2025-07-19 — PlanEditForm Wizard Layout Düzeltmesi
+
+### Düzeltme
+- **PlanEditForm**: Wizard adımlarında etiket-kontrol çakışması düzeltildi (tx=150→180, tw=420→390)
+- İngilizce "Auto Full Backup Threshold:" etiketi NumericUpDown kontrolünün üstüne biniyordu
+- Tüm wizard adımlarında etiket-kontrol aralığı 30px artırıldı
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — Global tx/tw değerleri güncellendi
+- `PlanEditForm.Visibility.cs` — RelayoutStep3 tx değeri güncellendi
+
+## [0.99.45] - 2025-07-19 — Form Layout Düzeltmeleri & Resx Temizliği
+
+### Düzeltme
+- **CloudTargetEditDialog**: Form genişliği 450→520px, tüm input kontrolleri sağa kaydırıldı (EN/TR etiketlerin taşmasını önlemek için)
+- **SmtpProfileEditDialog**: TLP ilk sütun genişliği 130→150px (TR "Gönderici E-posta:" etiketi sığması için)
+- **FileBackupSourceEditDialog**: Pattern textbox'ları X=115→135 (EN "Include/Exclude Patterns:" etiketleri için)
+- **Resx temizliği**: 5 boş partial-class .resx dosyası silindi (MSB3577 duplicate resource hatası)
+
+### Etkilenen Dosyalar
+- `CloudTargetEditDialog.Designer.cs` — 22 koordinat değişikliği
+- `SmtpProfileEditDialog.Designer.cs` — TLP sütun genişliği
+- `FileBackupSourceEditDialog.Designer.cs` — Textbox pozisyonları
+- Silinen: `PlanEditForm.CloudAndFileSources.resx`, `PlanEditForm.PlanBinding.resx`, `PlanEditForm.Visibility.resx`, `PlanEditForm.WizardNavigation.resx`, `MainWindow.Plans.resx`
+
+## [0.99.44] - 2025-07-19 — MainWindow Başlangıçta Lokalizasyon Çağrısı Eksikliği Düzeltmesi
+
+### Düzeltme
+- **MainWindow constructor**: `ApplyLocalization()` çağrısı eklendi — uygulama ilk açıldığında sekmeler, grid sütun başlıkları, ayarlar etiketi ve alt sekmeler artık doğru dilde gösteriliyor
+- Daha önce `ApplyLocalization()` sadece dil değiştirilip kaydedildiğinde çağrılıyordu; ilk açılışta Designer.cs'deki Türkçe metinler kalıyordu
+
+### Etkilenen Dosyalar
+- `MainWindow.cs` — Constructor'a `ApplyLocalization()` çağrısı eklendi
+
+## [0.99.43] - 2025-07-19 — Kalan Hardcoded Türkçe Stringlerin Lokalizasyonu & Resx Temizliği
+
+### Düzeltme
+- **WizardNavigation**: "Yükleniyor..." ve "İleri" buton metinleri `Res.Get()` ile lokalize edildi
+- **Retention Şablon Açıklamaları**: 5 hardcoded Türkçe retention template bilgisi lokalize edildi
+- **SmtpProfileEditDialog**: Başlıklar, uyarılar, test sonuçları ve buton metinleri (~10 string) lokalize edildi
+- **CloudTargetEditDialog**: ApplyIcons'daki gereksiz Türkçe metin `Res.Get()` ile değiştirildi
+- **FileBackupSourceEditDialog**: Durum etiketleri ve ApplyIcons buton metinleri lokalize edildi
+- **GoogleOAuthSettingsDialog**: Özel kimlik/varsayılan durum etiketleri lokalize edildi
+- **Resx duplicate temizliği**: 5 duplicate wizard step key her iki resx dosyasından kaldırıldı
+- **Eksik TR anahtarları**: 10 Restore_* anahtarı TR resx dosyasına eklendi
+
+### Etkilenen Dosyalar
+- `PlanEditForm.WizardNavigation.cs`, `PlanEditForm.Visibility.cs`
+- `SmtpProfileEditDialog.cs`, `CloudTargetEditDialog.cs`
+- `FileBackupSourceEditDialog.cs`, `GoogleOAuthSettingsDialog.cs`
+- `Resources.resx`, `Resources.tr-TR.resx` — ~25 yeni anahtar, 10 duplicate kaldırıldı, 10 eksik TR eklendi
+
+## [0.99.42] - 2025-07-19 — Sihirbaz Adım Etiketleri & CronBuilder Layout Düzeltmesi
+
+### Düzeltme
+- **Sihirbaz adım etiketleri Türkçe kalıyordu** — "Bağlantı", "Kaynaklar", "Zamanlama" vb. → `Res.Get()` ile lokalize edildi
+- **"Kaydet & Çık" butonu Türkçe kalıyordu** — `Res.Get("PlanEdit_BtnSave/BtnSaveExit")` ile değiştirildi
+- **CronBuilderPanel kontrol kayması** — "Frequency:" etiketi "Sıklık:"dan geniş olduğu için combo kutusu kesişiyordu; `TextRenderer.MeasureText` ile dinamik pozisyonlama uygulandı
+
+### Etkilenen Dosyalar
+- `PlanEditForm.WizardNavigation.cs`, `CronBuilderPanel.cs`
+- `Resources.resx`, `Resources.tr-TR.resx` — 8 yeni anahtar
+
+## [0.99.41] - 2025-07-19 — Tam Runtime Lokalizasyon Düzeltmesi
+
+### Düzeltme
+- **Dil değişikliğinde CultureInfo güncellenmeme hatası** — `OnSaveSettingsClick` artık `CurrentUICulture`, `CurrentCulture`, `DefaultThreadCurrentUICulture`, `DefaultThreadCurrentCulture` değerlerini güncelliyor ve `ApplyLocalization()` + `ApplyIcons()` + `LoadProfileList()` çağırıyor
+- **Hardcoded Türkçe metinlerin tamamı lokalize edildi** — 12 dosyada ~70 hardcoded Türkçe metin `Res.Get()`/`Res.Format()` ile değiştirildi:
+  - `MainWindow.cs` — ApplyIcons (8), ApplyToolStripIcons (7)
+  - `MainWindow.Settings.cs` — LoadProfileList sütun başlıkları (4)
+  - `MainWindow.BackupActivity.cs` — BuildActivityLogLine (9), BuildCloudUploadLogLine (6)
+  - `MainWindow.BackupLog.cs` — IsProgressLine bulut marker'ları
+  - `MainWindow.BackupExecution.cs` — Görev çalışma durumu
+  - `MainWindow.Plans.cs` — Depolama etiketleri, filtre sayacı
+  - `MainWindow.Dashboard.cs` — FormatEta zaman kısaltmaları
+  - `TrayApplicationContext.cs` — "Hakkında" menü öğesi
+  - `TrayApplicationContext.ServiceControl.cs` — Servis durumu
+  - `PlanEditForm.PlanBinding.cs` — Saklama şablonları (5), rapor sıklığı (3)
+  - `CronBuilderPanel.cs` — Gün adları, sıklık öğeleri, etiketler, önizleme metni
+- **67 yeni kaynak anahtarı** — `Resources.resx` (EN) ve `Resources.tr-TR.resx` (TR) dosyalarına eklendi
+
+### Etkilenen Dosyalar
+- `MainWindow.cs`, `MainWindow.Settings.cs`, `MainWindow.BackupActivity.cs`, `MainWindow.BackupLog.cs`, `MainWindow.BackupExecution.cs`, `MainWindow.Plans.cs`, `MainWindow.Dashboard.cs`
+- `TrayApplicationContext.cs`, `TrayApplicationContext.ServiceControl.cs`
+- `PlanEditForm.PlanBinding.cs`, `CronBuilderPanel.cs`
+- `Resources.resx`, `Resources.tr-TR.resx`
+
+## [0.99.40] - 2025-07-18 — Tam Lokalizasyon & Zengin Tooltip Desteği
+
+### Yeni Özellik
+- **Tüm form ve kontrollere tam lokalizasyon** — Dil değiştirildiğinde tüm kontroller (başlıklar, butonlar, etiketler, menüler, bağlam menüleri, kolon başlıkları) İngilizce/Türkçe olarak güncelleniyor
+- **Zengin bilgilendirici tooltip'ler** — Tüm formlardaki tüm etkileşimli kontrollere açıklamalı ve örnekli tooltip eklendi (EN/TR ~80 anahtar)
+  - MainWindow: Dashboard, Planlar, Yedekleme, Log Görüntüleyici, Ayarlar (~55 tooltip)
+  - PlanEditForm: SQL, dosya yedekleme, zamanlama, bulut, e-posta, şifre (~30+ tooltip)
+  - CloudTargetEditDialog: Sağlayıcı, klasör, retention (~12 tooltip)
+  - SmtpProfileEditDialog: Sunucu, port, SSL, kimlik (~10 tooltip)
+  - RestoreDialog: Veritabanı, dosya, yol (~6 tooltip)
+  - PasswordDialog / PasswordSetupDialog: Şifre, güvenlik sorusu (~11 tooltip)
+  - FileBackupSourceEditDialog: Kaynak, filtre, alt klasör (~8 tooltip)
+  - GoogleOAuthSettingsDialog: Client ID/Secret, JSON (~4 tooltip)
+
+### Düzeltme
+- **ToolStripButton/Label tooltip API uyumsuzluğu** — `ToolStripButton` için `.ToolTipText` property, normal kontroller için `ToolTip.SetToolTip()` kullanılacak şekilde düzeltildi
+- **Yanlış kontrol isimleri** — `_txtPlanSearch` → `_tstSearch`, `_cmbLogLevel` → `_cmbLevel` düzeltildi
+
+### Etkilenen Dosyalar
+- `Resources.resx`, `Resources.tr-TR.resx` — ~80 yeni tooltip anahtarı
+- `MainWindow.Settings.cs` — Tooltip wiring düzeltmesi
+- `MainWindow.Designer.cs` — `_toolTip` bileşeni eklendi
+- `PlanEditForm.cs` — Tam lokalizasyon + tooltip
+- `CloudTargetEditDialog.cs`, `SmtpProfileEditDialog.cs/.Designer.cs`, `RestoreDialog.cs/.Designer.cs`, `PasswordDialog.cs/.Designer.cs`, `PasswordSetupDialog.cs/.Designer.cs`, `FileBackupSourceEditDialog.cs`, `GoogleOAuthSettingsDialog.cs/.Designer.cs`, `AboutForm.cs`
+
+## [0.99.39] - 2025-07-17 — Oto. Tam Yedek Eşiği Strateji Bağımlı Devre Dışı
 
 ### Düzeltme
 - **"Oto. Tam Yedek Eşiği" tam yedekte devre dışı** — Yedekleme stratejisi "Yalnızca Tam Yedek" seçildiğinde eşik kontrolü ve etiketi artık `Enabled = false` oluyor. Fark/Artırımlı strateji seçildiğinde tekrar aktif.

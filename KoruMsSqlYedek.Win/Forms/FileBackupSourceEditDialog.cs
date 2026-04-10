@@ -30,6 +30,7 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             InitializeComponent();
             ApplyIcons();
+            ApplyLocalization();
             WireEvents();
 
             if (existing != null)
@@ -44,14 +45,41 @@ namespace KoruMsSqlYedek.Win.Forms
             }
         }
 
+        private void ApplyLocalization()
+        {
+            _lblSourceName.Text = Res.Get("FileSource_SourceName");
+            _btnNavigate.Text = Res.Get("FileSource_Navigate");
+            _lblStatus.Text = Res.Get("FileSource_StatusHint");
+            _grpPatterns.Text = Res.Get("FileSource_PatternsGroup");
+            _lblInclude.Text = Res.Get("FileSource_Include");
+            _lblExclude.Text = Res.Get("FileSource_Exclude");
+            _lblHint.Text = Res.Get("FileSource_Hint");
+            _grpOptions.Text = Res.Get("FileSource_OptionsGroup");
+            _chkRecursive.Text = Res.Get("FileSource_Recursive");
+            _chkUseVss.Text = Res.Get("FileSource_UseVss");
+            _chkEnabled.Text = Res.Get("FileSource_Enabled");
+            _btnSave.Text = Res.Get("FileSource_Save");
+            _btnCancel.Text = Res.Get("FileSource_Cancel");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_txtSourceName, Res.Get("Tip_FileSource_SourceName"));
+            _toolTip.SetToolTip(_treeView, Res.Get("Tip_FileSource_TreeView"));
+            _toolTip.SetToolTip(_txtIncludePatterns, Res.Get("Tip_FileSource_Include"));
+            _toolTip.SetToolTip(_txtExcludePatterns, Res.Get("Tip_FileSource_Exclude"));
+            _toolTip.SetToolTip(_chkRecursive, Res.Get("Tip_FileSource_Recursive"));
+            _toolTip.SetToolTip(_chkUseVss, Res.Get("Tip_FileSource_UseVss"));
+            _toolTip.SetToolTip(_chkEnabled, Res.Get("Tip_FileSource_Enabled"));
+            _toolTip.SetToolTip(_btnNavigate, Res.Get("Tip_FileSource_Navigate"));
+        }
+
         private void ApplyIcons()
         {
             _btnSave.Image = LoadIcon("Save_16x16.png");
-            _btnSave.Text = "Kaydet";
+            _btnSave.Text = Res.Get("FileSource_Save");
             _btnSave.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnCancel.Image = LoadIcon("Cancel_16x16.png");
-            _btnCancel.Text = "Iptal";
+            _btnCancel.Text = Res.Get("FileSource_Cancel");
             _btnCancel.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnNavigate.Image = LoadIcon("Open_16x16.png");
@@ -245,7 +273,7 @@ namespace KoruMsSqlYedek.Win.Forms
             (int folders, int files) = _treeView.GetCheckedCounts();
             if (folders == 0 && files == 0)
             {
-                _lblStatus.Text = "Yedeklenecek öğeleri seçmek için klasörlere göz atın ve onay kutularını işaretleyin";
+                _lblStatus.Text = Res.Get("FileSource_StatusHint");
                 _lblStatus.ForeColor = Theme.ModernTheme.TextSecondary;
             }
             else
@@ -256,9 +284,9 @@ namespace KoruMsSqlYedek.Win.Forms
                 else if (totalBytes >= 0)
                     sizeText = $" — {FormatFileSize(totalBytes)}";
                 else
-                    sizeText = " — hesaplanıyor...";
+                    sizeText = " — " + Res.Get("FileSource_Calculating");
 
-                _lblStatus.Text = $"✅ {folders} klasör, {files} dosya seçili{sizeText}";
+                _lblStatus.Text = Res.Format("FileSource_StatusSelected", folders, files, sizeText);
                 _lblStatus.ForeColor = Theme.ModernTheme.AccentPrimary;
             }
         }

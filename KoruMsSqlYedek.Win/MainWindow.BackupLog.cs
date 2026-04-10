@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Win.Helpers;
 
 namespace KoruMsSqlYedek.Win
 {
@@ -17,8 +18,7 @@ namespace KoruMsSqlYedek.Win
     /// </summary>
     public partial class MainWindow
     {
-        // İlerleme satırı tespiti için önek sabitleri
-            private const string CloudUploadLineMarker = "Bulut yükleme başladı:";
+        // İlerleme satırı tespiti için sıkıştırma markeri (Engine tarafından üretilir, dil bağımsız)
             private const string CompressProgressMarker = "\u0131k\u0131\u015ft\u0131r\u0131l\u0131yor";
 
         // Per-plan log buffer (planId → satır listesi + renk)
@@ -29,7 +29,7 @@ namespace KoruMsSqlYedek.Win
         /// Bulut yükleme progress ve sıkıştırma progress satırlarını kapsar.
         /// </summary>
         private static bool IsProgressLine(string text)
-            => (text.Contains(CloudUploadLineMarker) && text.Contains("Yükleniyor"))
+            => (text.Contains(Res.Get("Cloud_UploadPrefix")) && text.Contains(Res.Get("Cloud_Uploading")))
             || text.Contains(CompressProgressMarker);
 
         /// <summary>

@@ -13,6 +13,9 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
+            _toolTip = new System.Windows.Forms.ToolTip(components);
+
             _lblTitle = new System.Windows.Forms.Label();
             _lblPrompt = new System.Windows.Forms.Label();
             _txtPassword = new Theme.ModernTextBox();
@@ -137,5 +140,6 @@ namespace KoruMsSqlYedek.Win.Forms
         private System.Windows.Forms.Label _lblSecurityQuestion;
         private Theme.ModernTextBox _txtSecurityAnswer;
         private Theme.ModernButton _btnVerifyAnswer;
+        private System.Windows.Forms.ToolTip _toolTip;
     }
 }

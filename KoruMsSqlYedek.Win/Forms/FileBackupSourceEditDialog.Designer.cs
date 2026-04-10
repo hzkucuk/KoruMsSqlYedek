@@ -104,9 +104,9 @@ namespace KoruMsSqlYedek.Win.Forms
             _txtIncludePatterns.Anchor = System.Windows.Forms.AnchorStyles.Top
                 | System.Windows.Forms.AnchorStyles.Left
                 | System.Windows.Forms.AnchorStyles.Right;
-            _txtIncludePatterns.Location = new System.Drawing.Point(115, 21);
+            _txtIncludePatterns.Location = new System.Drawing.Point(135, 21);
             _txtIncludePatterns.Name = "_txtIncludePatterns";
-            _txtIncludePatterns.Size = new System.Drawing.Size(645, 23);
+            _txtIncludePatterns.Size = new System.Drawing.Size(625, 23);
             _toolTip.SetToolTip(_txtIncludePatterns, "Sadece bu kal\u0131plara uyan dosyalar yedeklenir.\nBo\u015f b\u0131rak\u0131l\u0131rsa t\u00fcm dosyalar dahil edilir.\n\u00d6rnek: *.pst; *.docx; *.xlsx");
 
             _lblExclude.AutoSize = true;
@@ -118,9 +118,9 @@ namespace KoruMsSqlYedek.Win.Forms
             _txtExcludePatterns.Anchor = System.Windows.Forms.AnchorStyles.Top
                 | System.Windows.Forms.AnchorStyles.Left
                 | System.Windows.Forms.AnchorStyles.Right;
-            _txtExcludePatterns.Location = new System.Drawing.Point(115, 50);
+            _txtExcludePatterns.Location = new System.Drawing.Point(135, 50);
             _txtExcludePatterns.Name = "_txtExcludePatterns";
-            _txtExcludePatterns.Size = new System.Drawing.Size(645, 23);
+            _txtExcludePatterns.Size = new System.Drawing.Size(625, 23);
             _toolTip.SetToolTip(_txtExcludePatterns, "Bu kal\u0131plara uyan dosyalar yedeklenmez.\n\u00d6rnek: *.tmp; *.log; ~$*");
 
             _lblHint.AutoSize = true;

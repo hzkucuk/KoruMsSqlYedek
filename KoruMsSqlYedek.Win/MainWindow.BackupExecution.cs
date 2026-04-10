@@ -89,7 +89,7 @@ namespace KoruMsSqlYedek.Win
             else if (selectedRunning)
                 _lblBackupStatus.Text = Res.Format("Backup_ReadyForPlan", plan.PlanName);
             else if (anyRunning)
-                _lblBackupStatus.Text = string.Format("{0} görev çalışıyor", _runningPlanIds.Count);
+                _lblBackupStatus.Text = Res.Format("Backup_TasksRunning", _runningPlanIds.Count);
             else if (hasPlan)
                 _lblBackupStatus.Text = Res.Format("Backup_ReadyForPlan", plan.PlanName);
             else

@@ -14,6 +14,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            _toolTip = new System.Windows.Forms.ToolTip(components);
 
             _tlpMain = new System.Windows.Forms.TableLayoutPanel();
             _lblDisplayName = new System.Windows.Forms.Label();
@@ -48,7 +49,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _tlpMain.Dock = System.Windows.Forms.DockStyle.Fill;
             _tlpMain.Padding = new System.Windows.Forms.Padding(16, 12, 16, 8);
             _tlpMain.ColumnCount = 2;
-            _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 130F));
+            _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 150F));
             _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             _tlpMain.RowCount = 10;
             _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
@@ -231,5 +232,6 @@ namespace KoruMsSqlYedek.Win.Forms
         private Theme.ModernButton _btnTest;
         private Theme.ModernButton _btnSave;
         private Theme.ModernButton _btnCancel;
+        private System.Windows.Forms.ToolTip _toolTip;
     }
 }

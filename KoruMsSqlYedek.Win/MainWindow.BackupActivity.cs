@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using KoruMsSqlYedek.Core;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Win.Helpers;
 
 namespace KoruMsSqlYedek.Win
 {
@@ -333,13 +334,13 @@ namespace KoruMsSqlYedek.Win
         private string BuildActivityLogLine(BackupActivityEventArgs e) => e.ActivityType switch
         {
             BackupActivityType.Started
-                => string.Format("[{0}] Yedekleme başladı.", e.PlanName ?? e.PlanId),
+                => Res.Format("Activity_BackupStarted", e.PlanName ?? e.PlanId),
 
             BackupActivityType.DatabaseProgress
-                => string.Format("{0} ({1}/{2}) işleniyor.", e.DatabaseName, e.CurrentIndex, e.TotalCount),
+                => Res.Format("Activity_DbProcessing", e.DatabaseName, e.CurrentIndex, e.TotalCount),
 
             BackupActivityType.StepChanged
-                => !string.IsNullOrEmpty(e.Message) ? e.Message : string.Format("Adım: {0}", e.StepName),
+                => !string.IsNullOrEmpty(e.Message) ? e.Message : Res.Format("Activity_Step", e.StepName),
 
             BackupActivityType.CloudUploadStarted
                 => "",
@@ -352,27 +353,27 @@ namespace KoruMsSqlYedek.Win
 
             BackupActivityType.CloudUploadAbandoned
                 => e.AbandonedFiles is { Count: > 0 }
-                    ? string.Format("⚠ Bulut yükleme terk edildi ({0} dosya): {1}", e.AbandonedFiles.Count, string.Join(", ", e.AbandonedFiles))
-                    : string.Format("⚠ Bulut yükleme terk edildi: {0}", e.Message ?? "Maksimum deneme aşıldı"),
+                    ? Res.Format("Activity_CloudAbandoned", e.AbandonedFiles.Count, string.Join(", ", e.AbandonedFiles))
+                    : Res.Format("Activity_CloudAbandonedMsg", e.Message ?? Res.Get("Activity_MaxRetryExceeded")),
 
             BackupActivityType.Completed
                 => e.IsSuccess
                     ? (string.IsNullOrEmpty(e.Message)
-                        ? string.Format("[{0}] Görevi için Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId)
-                        : string.Format("[{0}] Görevi için Yedekleme tamamlandı. ✓ {1}.", e.PlanName ?? e.PlanId, e.Message))
+                        ? Res.Format("Activity_BackupCompleted", e.PlanName ?? e.PlanId)
+                        : Res.Format("Activity_BackupCompletedMsg", e.PlanName ?? e.PlanId, e.Message))
                     : (string.IsNullOrEmpty(e.Message)
-                        ? string.Format("[{0}] Görevi için Yedekleme tamamlandı. ✓", e.PlanName ?? e.PlanId)
-                        : string.Format("[{0}] Görevi için Yedekleme tamamlandı ({1}). ⚠", e.PlanName ?? e.PlanId, e.Message)),
+                        ? Res.Format("Activity_BackupCompleted", e.PlanName ?? e.PlanId)
+                        : Res.Format("Activity_BackupCompletedWarn", e.PlanName ?? e.PlanId, e.Message)),
 
             BackupActivityType.Failed
-                => string.Format("[{0}] Yedekleme başarısız: {1}", e.PlanName ?? e.PlanId, e.Message),
+                => Res.Format("Activity_BackupFailed", e.PlanName ?? e.PlanId, e.Message),
 
             BackupActivityType.Cancelled
-                => string.Format("[{0}] Yedekleme iptal edildi.", e.PlanName ?? e.PlanId),
+                => Res.Format("Activity_BackupCancelled", e.PlanName ?? e.PlanId),
 
             _ => throw new ArgumentOutOfRangeException(
                 nameof(e.ActivityType), e.ActivityType,
-                $"Unhandled BackupActivityType: {e.ActivityType}. Tüm 5 sorumluluk noktasını güncelleyin.")
+                $"Unhandled BackupActivityType: {e.ActivityType}")
         };
 
         private string BuildCloudUploadLogLine(BackupActivityEventArgs e)
@@ -381,14 +382,21 @@ namespace KoruMsSqlYedek.Win
             if (e.ProgressPercent >= 100)
                 return "";
 
-            // Dosya adı prefix: "Bulut yükleme başladı: (dosyaAdı) "
+            string cloudPrefix = Res.Get("Cloud_UploadPrefix");
+            string uploading = Res.Get("Cloud_Uploading");
+            string sent = Res.Get("Cloud_Sent");
+            string remaining = Res.Get("Cloud_Remaining");
+            string speed = Res.Get("Cloud_Speed");
+            string eta = Res.Get("Cloud_ETA");
+
+            // Dosya adı prefix
             string filePrefix;
             if (!string.IsNullOrEmpty(e.CloudFileName))
-                filePrefix = $"Bulut yükleme başladı: ({e.CloudFileName}) ";
+                filePrefix = $"{cloudPrefix} ({e.CloudFileName}) ";
             else if (e.CloudFileTotal > 1)
-                filePrefix = $"Bulut yükleme başladı: ({e.CloudFileIndex}/{e.CloudFileTotal}) ";
+                filePrefix = $"{cloudPrefix} ({e.CloudFileIndex}/{e.CloudFileTotal}) ";
             else
-                filePrefix = "Bulut yükleme başladı: ";
+                filePrefix = $"{cloudPrefix} ";
 
             if (e.BytesTotal > 0)
             {
@@ -405,10 +413,10 @@ namespace KoruMsSqlYedek.Win
                 string etaStr = e.SpeedBytesPerSecond > 0
                     ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
                     : "";
-                string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
-                return $"{filePrefix}Yükleniyor: %{filePct} | Gönderilen: {FormatFileSize(fileSentBytes)}/{FormatFileSize(fileTotalBytes)} | Kalan: {FormatFileSize(bytesRemaining)} | Hız: {FormatFileSize(e.SpeedBytesPerSecond)}/s{etaPart}";
+                string etaPart = etaStr.Length > 0 ? $" | {eta} {etaStr}" : "";
+                return $"{filePrefix}{uploading} %{filePct} | {sent} {FormatFileSize(fileSentBytes)}/{FormatFileSize(fileTotalBytes)} | {remaining} {FormatFileSize(bytesRemaining)} | {speed} {FormatFileSize(e.SpeedBytesPerSecond)}/s{etaPart}";
             }
-            return $"{filePrefix}Yükleniyor: %{e.ProgressPercent}";
+            return $"{filePrefix}{uploading} %{e.ProgressPercent}";
         }
 
         private static Color GetLogColor(BackupActivityType activityType) => activityType switch

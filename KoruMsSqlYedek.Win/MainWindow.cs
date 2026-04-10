@@ -112,6 +112,7 @@ namespace KoruMsSqlYedek.Win
             _tslVersion.Click += OnVersionLabelClick;
 
             ApplyIcons();
+            ApplyLocalization();
 
             _dashboardTimer = new System.Windows.Forms.Timer { Interval = 30000 };
             _dashboardTimer.Tick += (s, e) =>
@@ -144,12 +145,12 @@ namespace KoruMsSqlYedek.Win
             this.Icon = Helpers.SymbolIconHelper.CreateTrayIcon();
 
             _btnStart.Image = LoadToolStripIcon("Apply_16x16.png");
-            _btnStart.Text = "Yedeklemeyi Baslat";
+            _btnStart.Text = Res.Get("Btn_StartBackup");
             _btnStart.TextImageRelation = TextImageRelation.ImageBeforeText;
             _btnStart.ImageAlign = ContentAlignment.MiddleLeft;
 
             _btnCancelBackup.Image = LoadToolStripIcon("Close_16x16.png");
-            _btnCancelBackup.Text = "Iptal Et";
+            _btnCancelBackup.Text = Res.Get("Btn_Cancel");
             _btnCancelBackup.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             // Context menu ikonları
@@ -161,15 +162,15 @@ namespace KoruMsSqlYedek.Win
             _ctxViewPlanLogs.Image = LoadToolStripIcon("Article_16x16.png");
 
             _btnClearLogFilter.Image = LoadToolStripIcon("Clear_16x16.png");
-            _btnClearLogFilter.Text = "Temizle";
+            _btnClearLogFilter.Text = Res.Get("Btn_ClearFilter");
             _btnClearLogFilter.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnLogRefresh.Image = LoadToolStripIcon("Refresh_16x16.png");
-            _btnLogRefresh.Text = "Yenile";
+            _btnLogRefresh.Text = Res.Get("Btn_Refresh");
             _btnLogRefresh.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnLogExport.Image = LoadToolStripIcon("Export_16x16.png");
-            _btnLogExport.Text = "Disa Aktar";
+            _btnLogExport.Text = Res.Get("Btn_Export");
             _btnLogExport.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnBrowseBackupPath.Image = LoadToolStripIcon("Open_16x16.png");
@@ -177,15 +178,15 @@ namespace KoruMsSqlYedek.Win
             _btnBrowseBackupPath.ImageAlign = ContentAlignment.MiddleCenter;
 
             _btnSmtpTest.Image = LoadToolStripIcon("Send_16x16.png");
-            _btnSmtpTest.Text = "Test E-postasi Gonder";
+            _btnSmtpTest.Text = Res.Get("Btn_SmtpTest");
             _btnSmtpTest.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnSaveSettings.Image = LoadToolStripIcon("Save_16x16.png");
-            _btnSaveSettings.Text = "Kaydet";
+            _btnSaveSettings.Text = Res.Get("Btn_Save");
             _btnSaveSettings.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _btnCancelSettings.Image = LoadToolStripIcon("Cancel_16x16.png");
-            _btnCancelSettings.Text = "Iptal";
+            _btnCancelSettings.Text = Res.Get("Btn_CancelSettings");
             _btnCancelSettings.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             // Dashboard KPI kart ikonları
@@ -209,37 +210,37 @@ namespace KoruMsSqlYedek.Win
         private void ApplyToolStripIcons()
         {
             _tsbNew.Image = LoadToolStripIcon("New_16x16.png");
-            _tsbNew.Text = "Yeni Görev";
+            _tsbNew.Text = Res.Get("Tsb_NewPlan");
             _tsbNew.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
             _tsbNew.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _tsbEdit.Image = LoadToolStripIcon("Edit_16x16.png");
-            _tsbEdit.Text = "Düzenle";
+            _tsbEdit.Text = Res.Get("Tsb_Edit");
             _tsbEdit.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
             _tsbEdit.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _tsbDelete.Image = LoadToolStripIcon("Delete_16x16.png");
-            _tsbDelete.Text = "Sil";
+            _tsbDelete.Text = Res.Get("Tsb_Delete");
             _tsbDelete.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
             _tsbDelete.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _tsbExport.Image = LoadToolStripIcon("Export_16x16.png");
-            _tsbExport.Text = "Dışa Aktar";
+            _tsbExport.Text = Res.Get("Tsb_Export");
             _tsbExport.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
             _tsbExport.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _tsbImport.Image = LoadToolStripIcon("Import_16x16.png");
-            _tsbImport.Text = "İçe Aktar";
+            _tsbImport.Text = Res.Get("Tsb_Import");
             _tsbImport.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
             _tsbImport.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _tsbRefreshPlans.Image = LoadToolStripIcon("Refresh_16x16.png");
-            _tsbRefreshPlans.Text = "Yenile";
+            _tsbRefreshPlans.Text = Res.Get("Tsb_Refresh");
             _tsbRefreshPlans.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
             _tsbRefreshPlans.TextImageRelation = TextImageRelation.ImageBeforeText;
 
             _tslSearchLabel.Image = LoadToolStripIcon("Find_16x16.png");
-            _tslSearchLabel.Text = "Ara:";
+            _tslSearchLabel.Text = Res.Get("Tsl_Search");
             _tslSearchLabel.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
             _tslSearchLabel.TextImageRelation = TextImageRelation.ImageBeforeText;
         }

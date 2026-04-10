@@ -28,17 +28,45 @@ namespace KoruMsSqlYedek.Win.Forms
         public SmtpProfileEditDialog(SmtpProfile existing)
         {
             InitializeComponent();
+            ApplyLocalization();
 
             if (existing != null)
             {
                 _profile = existing;
-                Text = "SMTP Profilini Düzenle";
+                Text = Helpers.Res.Get("Smtp_TitleEdit");
             }
             else
             {
                 _profile = new SmtpProfile();
-                Text = "Yeni SMTP Profili";
+                Text = Helpers.Res.Get("Smtp_TitleNew");
             }
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblDisplayName.Text = Helpers.Res.Get("Smtp_DisplayName");
+            _lblHost.Text = Helpers.Res.Get("Smtp_Host");
+            _chkUseSsl.Text = Helpers.Res.Get("Smtp_UseSsl");
+            _lblUsername.Text = Helpers.Res.Get("Smtp_Username");
+            _lblPassword.Text = Helpers.Res.Get("Smtp_Password");
+            _lblSenderEmail.Text = Helpers.Res.Get("Smtp_SenderEmail");
+            _lblSenderName.Text = Helpers.Res.Get("Smtp_SenderName");
+            _lblRecipients.Text = Helpers.Res.Get("Smtp_Recipients");
+            _btnCancel.Text = Helpers.Res.Get("Smtp_Cancel");
+            _btnSave.Text = Helpers.Res.Get("Smtp_Save");
+            _btnTest.Text = Helpers.Res.Get("Smtp_Test");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_txtDisplayName, Helpers.Res.Get("Tip_Smtp_DisplayName"));
+            _toolTip.SetToolTip(_txtHost, Helpers.Res.Get("Tip_Smtp_Host"));
+            _toolTip.SetToolTip(_nudPort, Helpers.Res.Get("Tip_Smtp_Port"));
+            _toolTip.SetToolTip(_chkUseSsl, Helpers.Res.Get("Tip_Smtp_UseSsl"));
+            _toolTip.SetToolTip(_txtUsername, Helpers.Res.Get("Tip_Smtp_Username"));
+            _toolTip.SetToolTip(_txtPassword, Helpers.Res.Get("Tip_Smtp_Password"));
+            _toolTip.SetToolTip(_txtSenderEmail, Helpers.Res.Get("Tip_Smtp_SenderEmail"));
+            _toolTip.SetToolTip(_txtSenderName, Helpers.Res.Get("Tip_Smtp_SenderName"));
+            _toolTip.SetToolTip(_txtRecipients, Helpers.Res.Get("Tip_Smtp_Recipients"));
+            _toolTip.SetToolTip(_btnTest, Helpers.Res.Get("Tip_Smtp_Test"));
         }
 
         protected override void OnLoad(EventArgs e)
@@ -112,20 +140,20 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             if (string.IsNullOrWhiteSpace(_txtHost.Text))
             {
-                Theme.ModernMessageBox.Show("SMTP sunucu adresi giriniz.", "Uyarı",
+                Theme.ModernMessageBox.Show(Helpers.Res.Get("Smtp_HostRequired"), Helpers.Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(_txtRecipients.Text))
             {
-                Theme.ModernMessageBox.Show("Test e-postası için en az bir alıcı adresi giriniz.", "Uyarı",
+                Theme.ModernMessageBox.Show(Helpers.Res.Get("Smtp_RecipientRequired"), Helpers.Res.Get("Warning"),
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             _btnTest.Enabled = false;
-            _btnTest.Text = "Gönderiliyor...";
+            _btnTest.Text = Helpers.Res.Get("Smtp_Sending");
 
             try
             {
@@ -144,7 +172,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 string senderEmail = !string.IsNullOrWhiteSpace(_txtSenderEmail.Text)
                     ? _txtSenderEmail.Text.Trim() : username;
                 string senderName = !string.IsNullOrWhiteSpace(_txtSenderName.Text)
-                    ? _txtSenderName.Text.Trim() : "Koru MsSql Yedek";
+                    ? _txtSenderName.Text.Trim() : "Koru MsSql Yedek"; // brand name — intentionally not localized
 
                 string firstRecipient = _txtRecipients.Text.Trim().Split(new[] { ';', ',' },
                     StringSplitOptions.RemoveEmptyEntries)[0].Trim();
@@ -155,26 +183,26 @@ namespace KoruMsSqlYedek.Win.Forms
                 message.Subject = $"[Koru MsSql Yedek] SMTP Test — {DateTime.Now:yyyy-MM-dd HH:mm}";
                 message.Body = new TextPart("plain")
                 {
-                    Text = $"Bu bir test e-postasıdır.\nProfil: {_txtDisplayName.Text}\nZaman: {DateTime.Now}"
+                    Text = Helpers.Res.Format("Smtp_TestBody", _txtDisplayName.Text, DateTime.Now)
                 };
 
                 client.Send(message);
                 client.Disconnect(true);
 
-                Theme.ModernMessageBox.Show("Test e-postası başarıyla gönderildi.", "Başarılı",
+                Theme.ModernMessageBox.Show(Helpers.Res.Get("Smtp_TestSuccess"), Helpers.Res.Get("Success"),
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
                 string safeMessage = ex.Message.Length > 200 ? ex.Message[..200] + "..." : ex.Message;
-                Theme.ModernMessageBox.Show($"SMTP bağlantısı kurulamadı:\n{safeMessage}", "SMTP Test Hatası",
+                Theme.ModernMessageBox.Show(Helpers.Res.Format("Smtp_TestFailed", safeMessage), Helpers.Res.Get("Smtp_TestErrorTitle"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
                 _btnTest.Enabled = true;
-                _btnTest.Text = "✉ Test E-postası Gönder";
+                _btnTest.Text = Helpers.Res.Get("Smtp_Test");
             }
         }
     }

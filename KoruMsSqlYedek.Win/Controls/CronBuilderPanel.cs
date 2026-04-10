@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using KoruMsSqlYedek.Win.Helpers;
 
 namespace KoruMsSqlYedek.Win.Controls
 {
@@ -28,7 +29,14 @@ namespace KoruMsSqlYedek.Win.Controls
         private Label _lblHour;
         private Label _lblMinute;
 
-        private static readonly string[] DayNames = { "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz" };
+        /// <summary>Raised when the panel height changes due to visibility toggle (e.g., Daily→Weekly).</summary>
+        public event EventHandler? HeightChanged;
+
+        private static string[] GetDayNames() => [
+            Res.Get("Cron_DayMon"), Res.Get("Cron_DayTue"), Res.Get("Cron_DayWed"),
+            Res.Get("Cron_DayThu"), Res.Get("Cron_DayFri"), Res.Get("Cron_DaySat"),
+            Res.Get("Cron_DaySun")
+        ];
         // Quartz DOW: SUN=1, MON=2, ... SAT=7
         private static readonly string[] QuartzDayAbbrs = { "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN" };
 
@@ -142,7 +150,7 @@ namespace KoruMsSqlYedek.Win.Controls
         private string GetHumanReadable()
         {
             if (_cmbFrequency.SelectedIndex == 3)
-                return "Özel cron ifadesi";
+                return Res.Get("Cron_CustomExpr");
 
             int hour = (int)_nudHour.Value;
             int minute = (int)_nudMinute.Value;
@@ -150,23 +158,26 @@ namespace KoruMsSqlYedek.Win.Controls
 
             return _cmbFrequency.SelectedIndex switch
             {
-                0 => $"Her gün saat {time}",
-                1 => $"{BuildDowHumanReadable()} saat {time}",
-                2 => $"Her ayın {(int)_nudDayOfMonth.Value}. günü saat {time}",
+                0 => Res.Format("Cron_EveryDayAt", time),
+                1 => Res.Format("Cron_WeeklyAt", BuildDowHumanReadable(), time),
+                2 => Res.Format("Cron_MonthlyAt", (int)_nudDayOfMonth.Value, time),
                 _ => ""
             };
         }
 
         private string BuildDowHumanReadable()
         {
+            string[] dayNames = GetDayNames();
             var days = new List<string>();
             for (int i = 0; i < 7; i++)
             {
                 if (_dayChecks[i].Checked)
-                    days.Add(DayNames[i]);
+                    days.Add(dayNames[i]);
             }
 
-            return days.Count > 0 ? "Her " + string.Join(", ", days) : "Her Pzt";
+            return days.Count > 0
+                ? Res.Get("Cron_Every") + string.Join(", ", days)
+                : Res.Get("Cron_DefaultDay");
         }
 
         private void UpdatePreview()
@@ -179,7 +190,8 @@ namespace KoruMsSqlYedek.Win.Controls
         private void UpdateVisibility()
         {
             int idx = _cmbFrequency.SelectedIndex;
-            _pnlDaysOfWeek.Visible = idx == 1;
+            bool showDays = idx == 1;
+            _pnlDaysOfWeek.Visible = showDays;
             _nudDayOfMonth.Visible = idx == 2;
             _lblDayOfMonth.Visible = idx == 2;
 
@@ -189,6 +201,22 @@ namespace KoruMsSqlYedek.Win.Controls
             _nudMinute.Visible = !isCustom;
             _lblHour.Visible = !isCustom;
             _lblMinute.Visible = !isCustom;
+
+            AdjustHeight(showDays);
+        }
+
+        private void AdjustHeight(bool showDaysRow)
+        {
+            int previewY = showDaysRow ? 56 : 28;
+            _lblPreview.Top = previewY;
+            _lblCronRaw.Top = previewY;
+
+            int newH = showDaysRow ? 80 : 50;
+            if (Height != newH)
+            {
+                Height = newH;
+                HeightChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         private void OnValueChanged(object sender, EventArgs e)
@@ -201,57 +229,64 @@ namespace KoruMsSqlYedek.Win.Controls
         {
             SuspendLayout();
 
-            Height = 80;
+            Height = 50;
             Dock = DockStyle.None;
             BackColor = Color.Transparent;
 
             int y = 0;
 
-            // Row 1: Sıklık + Saat/Dakika
-            _lblFreq = new Label { Text = "Sıklık:", AutoSize = true, Location = new Point(0, y + 3) };
+            // Row 1: Frequency + Hour/Minute — dynamic positioning for i18n
+            _lblFreq = new Label { Text = Res.Get("Cron_LblFrequency"), AutoSize = true, Location = new Point(0, y + 3) };
             Controls.Add(_lblFreq);
 
+            int freqComboX = TextRenderer.MeasureText(_lblFreq.Text, _lblFreq.Font).Width + 2;
             _cmbFrequency = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(52, y),
-                Size = new Size(110, 23)
+                Location = new Point(freqComboX, y),
+                Size = new Size(120, 23)
             };
-            _cmbFrequency.Items.AddRange(new object[] { "Günlük", "Haftalık", "Aylık", "Özel (Cron)" });
+            _cmbFrequency.Items.AddRange(new object[] { Res.Get("Cron_FreqDaily"), Res.Get("Cron_FreqWeekly"), Res.Get("Cron_FreqMonthly"), Res.Get("Cron_FreqCustom") });
             _cmbFrequency.SelectedIndexChanged += OnValueChanged;
             Controls.Add(_cmbFrequency);
 
-            _lblHour = new Label { Text = "Saat:", AutoSize = true, Location = new Point(172, y + 3) };
+            int hourLabelX = freqComboX + 120 + 10;
+            _lblHour = new Label { Text = Res.Get("Cron_LblHour"), AutoSize = true, Location = new Point(hourLabelX, y + 3) };
             Controls.Add(_lblHour);
 
+            int hourNudX = hourLabelX + TextRenderer.MeasureText(_lblHour.Text, _lblHour.Font).Width + 2;
             _nudHour = new Theme.ModernNumericUpDown
             {
-                Location = new Point(208, y),
+                Location = new Point(hourNudX, y),
                 Size = new Size(55, 23),
                 Minimum = 0, Maximum = 23, Value = 2
             };
             _nudHour.ValueChanged += OnValueChanged;
             Controls.Add(_nudHour);
 
-            _lblMinute = new Label { Text = ":", AutoSize = true, Location = new Point(265, y + 3) };
+            int colonX = hourNudX + 57;
+            _lblMinute = new Label { Text = ":", AutoSize = true, Location = new Point(colonX, y + 3) };
             Controls.Add(_lblMinute);
 
+            int minuteNudX = colonX + 10;
             _nudMinute = new Theme.ModernNumericUpDown
             {
-                Location = new Point(275, y),
+                Location = new Point(minuteNudX, y),
                 Size = new Size(55, 23),
                 Minimum = 0, Maximum = 59, Value = 0
             };
             _nudMinute.ValueChanged += OnValueChanged;
             Controls.Add(_nudMinute);
 
-            // Aylık gün seçimi (aynı satırda, sıklık=Aylık olduğunda gösterilir)
-            _lblDayOfMonth = new Label { Text = "Gün:", AutoSize = true, Location = new Point(340, y + 3), Visible = false };
+            // Monthly day selection (same row, visible when frequency=Monthly)
+            int dayLabelX = minuteNudX + 65;
+            _lblDayOfMonth = new Label { Text = Res.Get("Cron_LblDay"), AutoSize = true, Location = new Point(dayLabelX, y + 3), Visible = false };
             Controls.Add(_lblDayOfMonth);
 
+            int dayNudX = dayLabelX + TextRenderer.MeasureText(_lblDayOfMonth.Text, _lblDayOfMonth.Font).Width + 2;
             _nudDayOfMonth = new Theme.ModernNumericUpDown
             {
-                Location = new Point(372, y),
+                Location = new Point(dayNudX, y),
                 Size = new Size(55, 23),
                 Minimum = 1, Maximum = 28, Value = 1,
                 Visible = false
@@ -259,10 +294,10 @@ namespace KoruMsSqlYedek.Win.Controls
             _nudDayOfMonth.ValueChanged += OnValueChanged;
             Controls.Add(_nudDayOfMonth);
 
-            // Özel cron TextBox (aynı satırda saat/dakika yerine)
+            // Custom cron TextBox (same row, replaces hour/minute)
             _txtCustomCron = new TextBox
             {
-                Location = new Point(172, y),
+                Location = new Point(hourLabelX, y),
                 Size = new Size(260, 23),
                 Visible = false,
                 PlaceholderText = "0 0 2 ? * SUN"
@@ -284,7 +319,7 @@ namespace KoruMsSqlYedek.Win.Controls
             {
                 _dayChecks[i] = new CheckBox
                 {
-                    Text = DayNames[i],
+                    Text = GetDayNames()[i],
                     AutoSize = true,
                     Location = new Point(i * 60, 0),
                     Checked = i == 6 // Pazar varsayılan
@@ -308,7 +343,7 @@ namespace KoruMsSqlYedek.Win.Controls
             _lblCronRaw = new Label
             {
                 AutoSize = true,
-                Location = new Point(250, y),
+                Location = new Point(170, y),
                 ForeColor = Theme.ModernTheme.TextSecondary,
                 Font = new Font("Segoe UI", 8F)
             };

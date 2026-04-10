@@ -26,10 +26,33 @@ namespace KoruMsSqlYedek.Win.Forms
             _settingsManager = settingsManager;
 
             InitializeComponent();
+            ApplyLocalization();
 
             // Mevcut güvenlik sorusu varsa doldur
             if (!string.IsNullOrEmpty(_settings.SecurityQuestion))
                 _txtSecurityQuestion.Text = _settings.SecurityQuestion;
+        }
+
+        private void ApplyLocalization()
+        {
+            _lblTitle.Text = Helpers.Res.Get("PwSetup_Title");
+            _lblNewPassword.Text = Helpers.Res.Get("PwSetup_NewPassword");
+            _lblConfirmPassword.Text = Helpers.Res.Get("PwSetup_ConfirmPassword");
+            _lblSecurityTitle.Text = Helpers.Res.Get("PwSetup_SecurityTitle");
+            _lblQuestion.Text = Helpers.Res.Get("PwSetup_Question");
+            _lblAnswer.Text = Helpers.Res.Get("PwSetup_Answer");
+            _btnSave.Text = Helpers.Res.Get("PwSetup_Save");
+            _btnCancel.Text = Helpers.Res.Get("PwSetup_Cancel");
+            _btnRemovePassword.Text = Helpers.Res.Get("PwSetup_RemovePassword");
+            Text = Helpers.Res.Get("PwSetup_Title");
+
+            // ── Rich Tooltips ────────────────────────────────────────────
+            _toolTip.SetToolTip(_txtNewPassword, Helpers.Res.Get("Tip_PwSetup_NewPassword"));
+            _toolTip.SetToolTip(_txtConfirmPassword, Helpers.Res.Get("Tip_PwSetup_ConfirmPassword"));
+            _toolTip.SetToolTip(_txtSecurityQuestion, Helpers.Res.Get("Tip_PwSetup_SecurityQuestion"));
+            _toolTip.SetToolTip(_txtSecurityAnswer, Helpers.Res.Get("Tip_PwSetup_SecurityAnswer"));
+            _toolTip.SetToolTip(_btnSave, Helpers.Res.Get("Tip_PwSetup_Save"));
+            _toolTip.SetToolTip(_btnRemovePassword, Helpers.Res.Get("Tip_PwSetup_RemovePassword"));
         }
 
         private void OnSaveClick(object sender, EventArgs e)

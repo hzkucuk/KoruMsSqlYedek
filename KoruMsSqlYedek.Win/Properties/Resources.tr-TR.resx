@@ -382,4 +382,759 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Tray_ServiceDebugMode" xml:space="preserve"><value>Servis: Bağlı (Debug) ✓</value></data>
   <data name="Settings_LogColorScheme" xml:space="preserve"><value>Log Renk Şeması:</value></data>
 
+  <!-- ── Güncelleme (O7) ───────────────────────────────────────── -->
+  <data name="Update_MenuCheckForUpdates" xml:space="preserve"><value>Güncelleme Kontrol Et</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Güncelleme kontrol ediliyor...</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>Yeni Sürüm Mevcut</value></data>
+  <data name="Update_AvailableMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} yayınlandı. Güncellemek ister misiniz?</value></data>
+  <data name="Update_NoUpdate" xml:space="preserve"><value>Güncelleme Yok</value></data>
+  <data name="Update_NoUpdateMessage" xml:space="preserve"><value>En güncel sürümü kullanıyorsunuz (v{0}).</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Güncelleme indiriliyor... %{0}</value></data>
+  <data name="Update_DownloadComplete" xml:space="preserve"><value>İndirme tamamlandı. Installer başlatılıyor...</value></data>
+  <data name="Update_DownloadFailed" xml:space="preserve"><value>Güncelleme indirilemedi: {0}</value></data>
+  <data name="Update_CheckFailed" xml:space="preserve"><value>Güncelleme kontrolü başarısız. İnternet bağlantınızı kontrol edin.</value></data>
+  <data name="Update_BalloonTitle" xml:space="preserve"><value>Güncelleme Mevcut</value></data>
+  <data name="Update_BalloonMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} yayınlandı. Tıklayarak güncelleyin.</value></data>
+  <data name="Update_ReleaseNotes" xml:space="preserve"><value>Değişiklikler:</value></data>
+
+  <!-- ===== MainWindow — Log Viewer Controls ===== -->
+  <data name="LogViewer_LblFile" xml:space="preserve"><value>Dosya:</value></data>
+  <data name="LogViewer_LblLevel" xml:space="preserve"><value>Seviye:</value></data>
+  <data name="LogViewer_ChkAutoTail" xml:space="preserve"><value>Otomatik Takip</value></data>
+  <data name="LogViewer_LblSearch" xml:space="preserve"><value>Ara:</value></data>
+  <data name="LogViewer_LblPlan" xml:space="preserve"><value>Görev:</value></data>
+  <data name="LogViewer_BtnClear" xml:space="preserve"><value>Temizle</value></data>
+  <data name="LogViewer_BtnRefresh" xml:space="preserve"><value>↻ Yenile</value></data>
+  <data name="LogViewer_BtnExport" xml:space="preserve"><value>💾 Dışa Aktar</value></data>
+
+  <!-- ===== MainWindow — Settings General ===== -->
+  <data name="Settings_Language" xml:space="preserve"><value>Dil:</value></data>
+  <data name="Settings_StartWithWindows" xml:space="preserve"><value>Windows ile birlikte başlat</value></data>
+  <data name="Settings_MinimizeToTray" xml:space="preserve"><value>Simge durumuna küçüldüğünde tepside gizle</value></data>
+  <data name="Settings_DefaultBackupPath" xml:space="preserve"><value>Varsayılan yedek dizini:</value></data>
+  <data name="Settings_LogRetention" xml:space="preserve"><value>Log saklama süresi:</value></data>
+  <data name="Settings_HistoryRetention" xml:space="preserve"><value>Geçmiş saklama süresi:</value></data>
+  <data name="Settings_RetentionSuffix" xml:space="preserve"><value>gün</value></data>
+  <data name="Settings_LogConsoleTheme" xml:space="preserve"><value>Log Konsol Teması:</value></data>
+  <data name="Settings_Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="Settings_Cancel" xml:space="preserve"><value>İptal</value></data>
+
+  <!-- ===== MainWindow — Settings SMTP ===== -->
+  <data name="Settings_SmtpTab" xml:space="preserve"><value>E-posta (SMTP)</value></data>
+  <data name="Settings_SmtpTitle" xml:space="preserve"><value>Kayıtlı SMTP Profilleri — birden fazla profil ekleyip görevlerde kullanabilirsiniz:</value></data>
+  <data name="Settings_SmtpAdd" xml:space="preserve"><value>➕ Ekle</value></data>
+  <data name="Settings_SmtpEdit" xml:space="preserve"><value>✏ Düzenle</value></data>
+  <data name="Settings_SmtpDelete" xml:space="preserve"><value>🗑 Sil</value></data>
+  <data name="Settings_SmtpTest" xml:space="preserve"><value>✉ Test</value></data>
+
+  <!-- ===== MainWindow — Settings Security ===== -->
+  <data name="Settings_SecurityTab" xml:space="preserve"><value>Güvenlik</value></data>
+  <data name="Settings_SecurityTitle" xml:space="preserve"><value>Şifre Koruması</value></data>
+  <data name="Settings_PasswordSetup" xml:space="preserve"><value>Şifre Belirle / Değiştir</value></data>
+  <data name="Settings_SecurityInfo" xml:space="preserve"><value>Uygulama açılışında ve kritik işlemlerde (görev silme vb.) şifre sorulmasını sağlar.
+Şifrenizi unutursanız güvenlik sorusu ile sıfırlayabilirsiniz.</value></data>
+
+  <!-- ===== MainWindow — Plans Grid Extra Columns ===== -->
+  <data name="PlanList_ColProgress" xml:space="preserve"><value>İlerleme</value></data>
+  <data name="PlanList_ColNextRun" xml:space="preserve"><value>Sonraki Çalışma</value></data>
+
+  <!-- ===== MainWindow — Plans Context Menu ===== -->
+  <data name="PlanList_CtxBackupNow" xml:space="preserve"><value>Şimdi Yedekle</value></data>
+  <data name="PlanList_CtxStopBackup" xml:space="preserve"><value>Yedeklemeyi Durdur</value></data>
+  <data name="PlanList_CtxEdit" xml:space="preserve"><value>Düzenle</value></data>
+  <data name="PlanList_CtxDelete" xml:space="preserve"><value>Sil</value></data>
+  <data name="PlanList_CtxExport" xml:space="preserve"><value>Dışa Aktar</value></data>
+  <data name="PlanList_CtxViewLogs" xml:space="preserve"><value>Görev Logları</value></data>
+  <data name="PlanList_CtxRestore" xml:space="preserve"><value>Geri Yükle...</value></data>
+
+  <!-- ===== MainWindow — Plans Toolbar ===== -->
+  <data name="PlanList_BtnRefresh" xml:space="preserve"><value>Yenile</value></data>
+  <data name="PlanList_SearchLabel" xml:space="preserve"><value>Ara:</value></data>
+
+  <!-- ===== MainWindow — Backup Panel ===== -->
+  <data name="Backup_Type" xml:space="preserve"><value>Yedek Türü:</value></data>
+  <data name="Backup_TypeFull" xml:space="preserve"><value>Full (Tam)</value></data>
+  <data name="Backup_TypeDiff" xml:space="preserve"><value>Differential (Fark)</value></data>
+  <data name="Backup_TypeIncr" xml:space="preserve"><value>Incremental (Artırımlı)</value></data>
+  <data name="Backup_StatusReady" xml:space="preserve"><value>Hazır — listeden plan seçin.</value></data>
+  <data name="Backup_Cancel" xml:space="preserve"><value>■ İptal Et</value></data>
+  <data name="Backup_Start" xml:space="preserve"><value>▶ Yedeklemeyi Başlat</value></data>
+
+  <!-- ===== PlanEdit — UI Controls ===== -->
+  <data name="PlanEdit_StepConnection" xml:space="preserve"><value>Bağlantı</value></data>
+  <data name="PlanEdit_StepSources" xml:space="preserve"><value>Kaynaklar</value></data>
+  <data name="PlanEdit_StepSchedule" xml:space="preserve"><value>Zamanlama</value></data>
+  <data name="PlanEdit_StepScheduling" xml:space="preserve"><value>Zamanlama</value></data>
+  <data name="PlanEdit_StepCompression" xml:space="preserve"><value>Sıkıştırma</value></data>
+  <data name="PlanEdit_StepTargets" xml:space="preserve"><value>Hedefler</value></data>
+  <data name="PlanEdit_StepNotification" xml:space="preserve"><value>Bildirim</value></data>
+  <data name="PlanEdit_Title" xml:space="preserve"><value>Yedekleme Planı Sihirbazı</value></data>
+  <data name="PlanEdit_Step1Header" xml:space="preserve"><value>① Plan Bilgileri</value></data>
+  <data name="PlanEdit_PlanName" xml:space="preserve"><value>Plan Adı:</value></data>
+  <data name="PlanEdit_PlanActive" xml:space="preserve"><value>Plan Aktif</value></data>
+  <data name="PlanEdit_LocalPath" xml:space="preserve"><value>Yerel Yedek Klasörü:</value></data>
+  <data name="PlanEdit_Step1SqlHeader" xml:space="preserve"><value>② SQL Server Bağlantısı</value></data>
+  <data name="PlanEdit_Server" xml:space="preserve"><value>Sunucu Adı / IP:</value></data>
+  <data name="PlanEdit_AuthMode" xml:space="preserve"><value>Kimlik Doğrulama:</value></data>
+  <data name="PlanEdit_SqlUser" xml:space="preserve"><value>Kullanıcı Adı:</value></data>
+  <data name="PlanEdit_SqlPassword" xml:space="preserve"><value>Şifre:</value></data>
+  <data name="PlanEdit_Timeout" xml:space="preserve"><value>Zaman Aşımı (sn):</value></data>
+  <data name="PlanEdit_TrustCert" xml:space="preserve"><value>Sertifikaya Güven</value></data>
+  <data name="PlanEdit_TestSql" xml:space="preserve"><value>Bağlantıyı Sına</value></data>
+  <data name="PlanEdit_Step2Header" xml:space="preserve"><value>③ Yedeklenecek Veritabanları</value></data>
+  <data name="PlanEdit_Step2Hint" xml:space="preserve"><value>SQL bağlantısı başarılıysa veritabanları otomatik listelenir.</value></data>
+  <data name="PlanEdit_SelectAll" xml:space="preserve"><value>Tümünü Seç</value></data>
+  <data name="PlanEdit_RefreshDatabases" xml:space="preserve"><value>Yenile</value></data>
+  <data name="PlanEdit_Step2FileHeader" xml:space="preserve"><value>④ Dosya / Klasör Kaynakları (VSS)</value></data>
+  <data name="PlanEdit_FileBackupEnabled" xml:space="preserve"><value>Dosya Yedeklemeyi Etkinleştir</value></data>
+  <data name="PlanEdit_ColFsName" xml:space="preserve"><value>Kaynak Adı</value></data>
+  <data name="PlanEdit_ColFsPath" xml:space="preserve"><value>Dosya Yolu</value></data>
+  <data name="PlanEdit_ColFsVss" xml:space="preserve"><value>VSS</value></data>
+  <data name="PlanEdit_ColFsStatus" xml:space="preserve"><value>Durum</value></data>
+  <data name="PlanEdit_FileAdd" xml:space="preserve"><value>Ekle</value></data>
+  <data name="PlanEdit_FileEdit" xml:space="preserve"><value>Düzenle</value></data>
+  <data name="PlanEdit_FileRemove" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="PlanEdit_Step3Header" xml:space="preserve"><value>⑤ Görev Zamanlama</value></data>
+  <data name="PlanEdit_Strategy" xml:space="preserve"><value>Yedekleme Stratejisi:</value></data>
+  <data name="PlanEdit_FullCron" xml:space="preserve"><value>Tam Yedek Görevi:</value></data>
+  <data name="PlanEdit_DiffCron" xml:space="preserve"><value>Fark Yedek Görevi:</value></data>
+  <data name="PlanEdit_IncrCron" xml:space="preserve"><value>Artırımlı Görevi:</value></data>
+  <data name="PlanEdit_AutoPromote" xml:space="preserve"><value>Oto. Tam Yedek Eşiği:</value></data>
+  <data name="PlanEdit_Verify" xml:space="preserve"><value>Yedek sonrası bütünlük doğrulaması yap (RESTORE VERIFYONLY)</value></data>
+  <data name="PlanEdit_FileSchedHeader" xml:space="preserve"><value>📁 Dosya Yedekleme Görevi</value></data>
+  <data name="PlanEdit_FileSchedule" xml:space="preserve"><value>Dosya Görevi:</value></data>
+  <data name="PlanEdit_Step4Header" xml:space="preserve"><value>⑥ Arşiv Sıkıştırma Ayarları</value></data>
+  <data name="PlanEdit_Algorithm" xml:space="preserve"><value>Sıkıştırma Algoritması:</value></data>
+  <data name="PlanEdit_Level" xml:space="preserve"><value>Sıkıştırma Düzeyi:</value></data>
+  <data name="PlanEdit_ArchivePassword" xml:space="preserve"><value>Arşiv Şifresi:</value></data>
+  <data name="PlanEdit_Step4RetHeader" xml:space="preserve"><value>Saklama (Retention) Politikası</value></data>
+  <data name="PlanEdit_RetentionTemplate" xml:space="preserve"><value>Saklama Şablonu:</value></data>
+  <data name="PlanEdit_Retention" xml:space="preserve"><value>Temizlik Kuralı:</value></data>
+  <data name="PlanEdit_KeepLastN" xml:space="preserve"><value>Saklanacak Yedek Sayısı:</value></data>
+  <data name="PlanEdit_DeleteDays" xml:space="preserve"><value>Silme Süresi (gün):</value></data>
+  <data name="PlanEdit_ProtectPlan" xml:space="preserve"><value>🔒 Bu görevi şifre ile koru</value></data>
+  <data name="PlanEdit_PlanPasswordPlaceholder" xml:space="preserve"><value>Şifre girin...</value></data>
+  <data name="PlanEdit_RecoveryPasswordPlaceholder" xml:space="preserve"><value>Kurtarma şifresi (isteğe bağlı)...</value></data>
+  <data name="PlanEdit_Step5Header" xml:space="preserve"><value>⑦ Yedek Gönderim Hedefleri</value></data>
+  <data name="PlanEdit_Step5Hint" xml:space="preserve"><value>Yedek dosyalarının kopyalanacağı bulut veya uzak hedefleri yönetin.
+Google Drive, FTP/SFTP ve UNC ağ paylaşımı desteklenir.</value></data>
+  <data name="PlanEdit_ColCtName" xml:space="preserve"><value>Hedef Adı</value></data>
+  <data name="PlanEdit_ColCtType" xml:space="preserve"><value>Tür</value></data>
+  <data name="PlanEdit_ColCtStatus" xml:space="preserve"><value>Durum</value></data>
+  <data name="PlanEdit_CloudAdd" xml:space="preserve"><value>Ekle</value></data>
+  <data name="PlanEdit_CloudEdit" xml:space="preserve"><value>Düzenle</value></data>
+  <data name="PlanEdit_CloudRemove" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="PlanEdit_Step6Header" xml:space="preserve"><value>⑧ E-posta Bildirimleri</value></data>
+  <data name="PlanEdit_EmailEnabled" xml:space="preserve"><value>E-posta Bildirimi Gönder</value></data>
+  <data name="PlanEdit_Toast" xml:space="preserve"><value>Windows Bildirim Balonu</value></data>
+  <data name="PlanEdit_SmtpProfile" xml:space="preserve"><value>SMTP Profili:</value></data>
+  <data name="PlanEdit_SmtpLink" xml:space="preserve"><value>Profil ekle / düzenle</value></data>
+  <data name="PlanEdit_NotifySuccess" xml:space="preserve"><value>Başarılı yedekte bildir</value></data>
+  <data name="PlanEdit_NotifyFailure" xml:space="preserve"><value>Başarısız yedekte bildir</value></data>
+  <data name="PlanEdit_Step6ReportHeader" xml:space="preserve"><value>⑨ Periyodik Yedek Raporu</value></data>
+  <data name="PlanEdit_ReportEnabled" xml:space="preserve"><value>Düzenli Yedek Raporu Gönder</value></data>
+  <data name="PlanEdit_ReportFreq" xml:space="preserve"><value>Rapor Sıklığı:</value></data>
+  <data name="PlanEdit_ReportHour" xml:space="preserve"><value>Gönderim Saati:</value></data>
+  <data name="PlanEdit_ReportEmail" xml:space="preserve"><value>Rapor Alıcısı:</value></data>
+  <data name="PlanEdit_Cancel" xml:space="preserve"><value>İptal</value></data>
+  <data name="PlanEdit_Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="PlanEdit_Next" xml:space="preserve"><value>İleri</value></data>
+  <data name="PlanEdit_Back" xml:space="preserve"><value>Geri</value></data>
+
+  <!-- ===== PlanEdit — Tooltips ===== -->
+  <data name="PlanEdit_Tip_PlanName" xml:space="preserve"><value>Bu yedekleme planının benzersiz adı.
+Örnek: "Mikro Veri Gece Yedek", "Haftalık Arşiv"</value></data>
+  <data name="PlanEdit_Tip_Enabled" xml:space="preserve"><value>Devre dışı bırakırsanız plan zamanlayıcı tarafından çalıştırılmaz.
+Manuel yedek almaya devam edebilirsiniz.</value></data>
+  <data name="PlanEdit_Tip_LocalPath" xml:space="preserve"><value>Yedek dosyalarının kaydedileceği yerel dizin.
+Örnek: D:\Backups\KoruMsSqlYedek
+Bulut hedef eklerseniz dosyalar önce buraya kaydedilir, sonra buluta yüklenir.
+Not: Yeterli disk alanı olduğundan emin olun.</value></data>
+  <data name="PlanEdit_Tip_Server" xml:space="preserve"><value>SQL Server sunucu adresi.
+Örnekler:
+  • localhost
+  • 192.168.1.100
+  • SUNUCU\SQLEXPRESS
+  • sunucu.domain.local,1433</value></data>
+  <data name="PlanEdit_Tip_AuthMode" xml:space="preserve"><value>Windows: Mevcut oturum bilgileriyle bağlanır.
+SQL Server: Kullanıcı adı ve şifre gerekir.</value></data>
+  <data name="PlanEdit_Tip_SqlUser" xml:space="preserve"><value>SQL Server kimlik doğrulaması için kullanıcı adı.
+Örnek: sa, backupuser</value></data>
+  <data name="PlanEdit_Tip_SqlPassword" xml:space="preserve"><value>SQL Server şifresi. DPAPI ile şifreli saklanır,
+düz metin olarak kaydedilmez.</value></data>
+  <data name="PlanEdit_Tip_Timeout" xml:space="preserve"><value>Sunucuya bağlanma süresi (saniye).
+Varsayılan: 30 sn. Ağ yavaşsa artırın.</value></data>
+  <data name="PlanEdit_Tip_TrustCert" xml:space="preserve"><value>Yerel veya test sunucularında self-signed
+SSL sertifikası kullanılıyorsa işaretleyin.
+Kapalıysa geçerli CA sertifikası gerekir.</value></data>
+  <data name="PlanEdit_Tip_TestSql" xml:space="preserve"><value>Girdiğiniz bilgilerle SQL Server bağlantısını test eder.
+Başarılıysa veritabanları otomatik listelenir.</value></data>
+  <data name="PlanEdit_Tip_SelectAll" xml:space="preserve"><value>Listedeki tüm veritabanlarını seçer veya seçimi kaldırır.</value></data>
+  <data name="PlanEdit_Tip_RefreshDatabases" xml:space="preserve"><value>Sunucudaki veritabanlarını yeniden sorgular.</value></data>
+  <data name="PlanEdit_Tip_Databases" xml:space="preserve"><value>Yedeklemek istediğiniz veritabanlarını işaretleyin.
+Sistem veritabanları (master, model, msdb, tempdb) listelenmez.</value></data>
+  <data name="PlanEdit_Tip_FileBackupEnabled" xml:space="preserve"><value>Açık/kilitli dosyaları (Outlook PST/OST,
+Excel, SQL MDF) VSS ile yedekler.
+SQL yedeklemeden bağımsız çalışır.</value></data>
+  <data name="PlanEdit_Tip_FileSources" xml:space="preserve"><value>Yedeklenecek dosya/klasör kaynakları.
+Her kaynak için ayrı include/exclude deseni tanımlanabilir.</value></data>
+  <data name="PlanEdit_Tip_Strategy" xml:space="preserve"><value>Yalnızca Tam: Her seferinde tüm veriyi yedekler. Basit ama büyük.
+Tam + Fark: Düzenli tam + aradaki değişiklikler. Dengeli çözüm.
+Tam + Fark + Artırımlı: En az alan, en hızlı — kurumsal önerimiz.</value></data>
+  <data name="PlanEdit_Tip_FullCron" xml:space="preserve"><value>Tam yedeğin çalışacağı zamanı belirleyin.
+Tüm veritabanı verisini içerir — geri yüklemede tek başına yeterli.
+Öneri: Haftada 1 (örn. Pazar gece 02:00)</value></data>
+  <data name="PlanEdit_Tip_DiffCron" xml:space="preserve"><value>Son tam yedekten bu yana değişen verileri yedekler.
+Geri yüklemede: Tam + son Fark yedek gerekir.
+Öneri: Günde 1 (örn. her gece 02:00)</value></data>
+  <data name="PlanEdit_Tip_IncrCron" xml:space="preserve"><value>Son yedekten (tam veya artırımlı) bu yana
+değişen verileri yedekler. En küçük boyut.
+Geri yüklemede: Tam + Fark + tüm Artırımlı zincir gerekir.
+Öneri: Saatte 1 (örn. mesai saatleri 09-18)</value></data>
+  <data name="PlanEdit_Tip_AutoPromote" xml:space="preserve"><value>Bu sayıda fark/artırımlı yedekten sonra
+otomatik olarak tam yedek tetiklenir.
+Zincir kırılmasını önler, geri yükleme güvenilirliğini artırır.
+Varsayılan: 7 (haftada bir tam yedek otomatik alınır)</value></data>
+  <data name="PlanEdit_Tip_Verify" xml:space="preserve"><value>Her yedek görevinden sonra SQL Server'ın RESTORE VERIFYONLY
+komutuyla dosya bütünlüğü doğrulanır.
+Bozuk yedek tespit edilirse hemen bildirim gönderilir.
+Öneri: Her zaman açık tutun.</value></data>
+  <data name="PlanEdit_Tip_Algorithm" xml:space="preserve"><value>LZMA2: En iyi sıkıştırma oranı (önerilen).
+LZMA: Eski uyumluluk için.
+BZip2: Orta seviye.
+Deflate: En hızlı, en büyük dosya.</value></data>
+  <data name="PlanEdit_Tip_Level" xml:space="preserve"><value>Yok: Sıkıştırma yapılmaz.
+Hızlı: Düşük sıkıştırma, hızlı işlem.
+Normal: Dengeli.
+Maksimum: Yüksek sıkıştırma.
+Ultra: En yüksek sıkıştırma, en yavaş.</value></data>
+  <data name="PlanEdit_Tip_ArchivePassword" xml:space="preserve"><value>7z arşivi için AES-256 şifreleme.
+Boş bırakırsanız arşiv şifresiz oluşturulur.
+Şifre DPAPI ile korunarak saklanır.</value></data>
+  <data name="PlanEdit_Tip_RetentionTemplate" xml:space="preserve"><value>Hazır şablon seçin veya Özel seçerek elle belirleyin.</value></data>
+  <data name="PlanEdit_Tip_Retention" xml:space="preserve"><value>Son N Adet: En son N yedeği sakla, eskilerini sil.
+Gün Sınırı: Belirtilen günden eski yedekleri sil.
+Her İkisi: İki kural birlikte uygulanır.</value></data>
+  <data name="PlanEdit_Tip_KeepLastN" xml:space="preserve"><value>En son kaç yedek dosyası saklanacak.
+Varsayılan: 30</value></data>
+  <data name="PlanEdit_Tip_DeleteDays" xml:space="preserve"><value>Bu gün sayısından eski yedekler silinir.
+Varsayılan: 90 gün (3 ay)</value></data>
+  <data name="PlanEdit_Tip_ProtectPlan" xml:space="preserve"><value>İşaretlerseniz plan düzenleme ve silme işlemlerinde şifre sorulur.</value></data>
+  <data name="PlanEdit_Tip_PlanPassword" xml:space="preserve"><value>Plan düzenleme ve silme işlemlerinde sorulacak şifre.</value></data>
+  <data name="PlanEdit_Tip_RecoveryPassword" xml:space="preserve"><value>Plan şifresini unutursanız bu şifre ile erişim sağlayabilirsiniz.</value></data>
+  <data name="PlanEdit_Tip_CloudTargets" xml:space="preserve"><value>Yedek dosyalarının gönderileceği hedefler.
+Birden fazla hedef tanımlayabilirsiniz.</value></data>
+  <data name="PlanEdit_Tip_EmailEnabled" xml:space="preserve"><value>Yedekleme sonuçları e-posta ile bildirilir.
+SMTP ayarlarının doğru girilmesi gerekir.</value></data>
+  <data name="PlanEdit_Tip_Toast" xml:space="preserve"><value>Görev çubuğu bildirim balonuyla
+yedek durumunu gösterir.</value></data>
+  <data name="PlanEdit_Tip_ReportEnabled" xml:space="preserve"><value>Etkinleştirirseniz belirtilen sıklıkta
+yedekleme özet raporu e-posta ile gönderilir.
+İçerik: Başarılı/başarısız sayısı, boyut, süre.</value></data>
+  <data name="PlanEdit_Tip_ReportFreq" xml:space="preserve"><value>Günlük: Her gün önceki günün özeti.
+Haftalık: Her Pazartesi geçen haftanın özeti.
+Aylık: Her ayın 1'inde geçen ayın özeti.</value></data>
+  <data name="PlanEdit_Tip_ReportHour" xml:space="preserve"><value>Raporun gönderileceği saat (0-23).
+Varsayılan: 08:00</value></data>
+  <data name="PlanEdit_Tip_ReportEmail" xml:space="preserve"><value>Rapor gönderilecek e-posta adresi.
+Boş bırakılırsa bildirim e-postası kullanılır.</value></data>
+
+  <!-- ===== CloudTarget — UI Controls ===== -->
+  <data name="CloudTarget_DisplayName" xml:space="preserve"><value>Görünen Ad:</value></data>
+  <data name="CloudTarget_ProviderType" xml:space="preserve"><value>Sağlayıcı Türü:</value></data>
+  <data name="CloudTarget_Enabled" xml:space="preserve"><value>Aktif</value></data>
+  <data name="CloudTarget_FtpGroup" xml:space="preserve"><value>FTP / SFTP Ayarları</value></data>
+  <data name="CloudTarget_Host" xml:space="preserve"><value>Sunucu:</value></data>
+  <data name="CloudTarget_Port" xml:space="preserve"><value>Port:</value></data>
+  <data name="CloudTarget_Username" xml:space="preserve"><value>Kullanıcı Adı:</value></data>
+  <data name="CloudTarget_Password" xml:space="preserve"><value>Şifre:</value></data>
+  <data name="CloudTarget_OAuthGroup" xml:space="preserve"><value>Hesap Bağlama</value></data>
+  <data name="CloudTarget_GoogleAuth" xml:space="preserve"><value>Hesabı Bağla</value></data>
+  <data name="CloudTarget_AuthStatus" xml:space="preserve"><value>Henüz doğrulanmadı</value></data>
+  <data name="CloudTarget_LocalGroup" xml:space="preserve"><value>Yerel / Ağ Yolu</value></data>
+  <data name="CloudTarget_PathLabel" xml:space="preserve"><value>Yol:</value></data>
+  <data name="CloudTarget_UncUser" xml:space="preserve"><value>Kullanıcı Adı:</value></data>
+  <data name="CloudTarget_UncPassword" xml:space="preserve"><value>Şifre:</value></data>
+  <data name="CloudTarget_RemotePath" xml:space="preserve"><value>Uzak Klasör Yolu:</value></data>
+  <data name="CloudTarget_Bandwidth" xml:space="preserve"><value>Hız Limiti (MB/s):</value></data>
+  <data name="CloudTarget_TrashRetention" xml:space="preserve"><value>Çöp Saklama (Gün):</value></data>
+  <data name="CloudTarget_TrashHint" xml:space="preserve"><value>(0 = hemen sil)</value></data>
+  <data name="CloudTarget_Save" xml:space="preserve"><value>💾 Kaydet</value></data>
+  <data name="CloudTarget_Cancel" xml:space="preserve"><value>İptal</value></data>
+
+  <!-- ===== SmtpProfile — UI Controls ===== -->
+  <data name="Smtp_DisplayName" xml:space="preserve"><value>Profil Adı:</value></data>
+  <data name="Smtp_Host" xml:space="preserve"><value>SMTP Sunucu:</value></data>
+  <data name="Smtp_Port" xml:space="preserve"><value>Port:</value></data>
+  <data name="Smtp_UseSsl" xml:space="preserve"><value>SSL/TLS Kullan</value></data>
+  <data name="Smtp_Username" xml:space="preserve"><value>Kullanıcı Adı:</value></data>
+  <data name="Smtp_Password" xml:space="preserve"><value>Şifre:</value></data>
+  <data name="Smtp_SenderEmail" xml:space="preserve"><value>Gönderici E-posta:</value></data>
+  <data name="Smtp_SenderName" xml:space="preserve"><value>Gönderici Adı:</value></data>
+  <data name="Smtp_Recipients" xml:space="preserve"><value>Alıcılar:</value></data>
+  <data name="Smtp_Cancel" xml:space="preserve"><value>İptal</value></data>
+  <data name="Smtp_Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="Smtp_Test" xml:space="preserve"><value>✉ Test E-postası Gönder</value></data>
+
+  <!-- ===== PasswordSetup — UI Controls ===== -->
+  <data name="PwSetup_Title" xml:space="preserve"><value>🔑 Şifre Koruması Ayarları</value></data>
+  <data name="PwSetup_NewPassword" xml:space="preserve"><value>Yeni Şifre:</value></data>
+  <data name="PwSetup_ConfirmPassword" xml:space="preserve"><value>Şifre Tekrar:</value></data>
+  <data name="PwSetup_SecurityTitle" xml:space="preserve"><value>Güvenlik Sorusu (Şifre Kurtarma)</value></data>
+  <data name="PwSetup_Question" xml:space="preserve"><value>Soru:</value></data>
+  <data name="PwSetup_Answer" xml:space="preserve"><value>Cevap:</value></data>
+  <data name="PwSetup_Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="PwSetup_Cancel" xml:space="preserve"><value>İptal</value></data>
+  <data name="PwSetup_RemovePassword" xml:space="preserve"><value>Şifreyi Kaldır</value></data>
+
+  <!-- ===== Password Dialog — UI Controls ===== -->
+  <data name="Pw_Title" xml:space="preserve"><value>🔒 Şifre Gerekli</value></data>
+  <data name="Pw_Prompt" xml:space="preserve"><value>Görev düzenleme için şifrenizi girin:</value></data>
+  <data name="Pw_Ok" xml:space="preserve"><value>Giriş</value></data>
+  <data name="Pw_Cancel" xml:space="preserve"><value>İptal</value></data>
+  <data name="Pw_Forgot" xml:space="preserve"><value>Şifremi Unuttum</value></data>
+  <data name="Pw_SecurityQuestion" xml:space="preserve"><value>(güvenlik sorusu)</value></data>
+  <data name="Pw_VerifyAnswer" xml:space="preserve"><value>Doğrula</value></data>
+
+  <!-- ===== FileBackupSource — UI Controls ===== -->
+  <data name="FileSource_SourceName" xml:space="preserve"><value>Kaynak Adı:</value></data>
+  <data name="FileSource_Navigate" xml:space="preserve"><value>📁 Konuma Git...</value></data>
+  <data name="FileSource_StatusHint" xml:space="preserve"><value>Dosya seçmek için klasörlere göz atın ve onay kutularını işaretleyin</value></data>
+  <data name="FileSource_PatternsGroup" xml:space="preserve"><value>Dosya Filtre Kalıpları</value></data>
+  <data name="FileSource_Include" xml:space="preserve"><value>Dahil Kalıpları:</value></data>
+  <data name="FileSource_Exclude" xml:space="preserve"><value>Hariç Kalıpları:</value></data>
+  <data name="FileSource_Hint" xml:space="preserve"><value>Kalıpları noktalı virgül (;) ile ayırın — Örnek: *.pst; *.docx</value></data>
+  <data name="FileSource_OptionsGroup" xml:space="preserve"><value>Seçenekler</value></data>
+  <data name="FileSource_Recursive" xml:space="preserve"><value>Alt dizinleri dahil et</value></data>
+  <data name="FileSource_UseVss" xml:space="preserve"><value>VSS kullan (açık/kilitli dosyalar)</value></data>
+  <data name="FileSource_Enabled" xml:space="preserve"><value>Bu kaynak aktif</value></data>
+  <data name="FileSource_Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="FileSource_Cancel" xml:space="preserve"><value>İptal</value></data>
+
+  <!-- ===== GoogleOAuth — UI Controls ===== -->
+  <data name="GoogleOAuth_Title" xml:space="preserve"><value>☁ Google API Kimlik Bilgileri</value></data>
+  <data name="GoogleOAuth_Info" xml:space="preserve"><value>Google Cloud Console'dan aldığınız OAuth 2.0 Desktop Client bilgilerini girin.</value></data>
+  <data name="GoogleOAuth_ClientId" xml:space="preserve"><value>Client ID:</value></data>
+  <data name="GoogleOAuth_ClientSecret" xml:space="preserve"><value>Client Secret:</value></data>
+  <data name="GoogleOAuth_Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="GoogleOAuth_Cancel" xml:space="preserve"><value>İptal</value></data>
+  <data name="GoogleOAuth_Remove" xml:space="preserve"><value>Temizle</value></data>
+
+  <!-- ===== About — UI Controls ===== -->
+  <data name="About_Description" xml:space="preserve"><value>SQL Server Yedekleme &amp; Bulut Senkronizasyon Sistemi</value></data>
+  <data name="About_Copyright" xml:space="preserve"><value>© 2026 Zafer Bilgisayar</value></data>
+  <data name="About_Developer" xml:space="preserve"><value>Geliştirici: Hüzeyin Küçük</value></data>
+  <data name="About_CreditsTitle" xml:space="preserve"><value>Açık Kaynak Kütüphaneler</value></data>
+  <data name="About_Close" xml:space="preserve"><value>Kapat</value></data>
+  <data name="About_Title" xml:space="preserve"><value>Hakkında — Koru MsSql Yedek</value></data>
+
+  <!-- ===== Common — Error ===== -->
+  <data name="Error_Unknown" xml:space="preserve"><value>Bilinmeyen bir hata oluştu.</value></data>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       ZENGİN İPUÇLARI — Bilgilendirici, kullanıcı dostu, örnekli ipuçları
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!-- ── MainWindow — Dashboard ── -->
+  <data name="Tip_Dashboard_Status" xml:space="preserve"><value>Uygulamanın mevcut durumunu gösterir.
+• Hazır: Herhangi bir işlem çalışmıyor.
+• Çalışıyor: Yedekleme veya geri yükleme işlemi aktif.</value></data>
+  <data name="Tip_Dashboard_NextBackup" xml:space="preserve"><value>Bir sonraki zamanlanmış yedekleme saatini gösterir.
+Aktif görev yoksa "—" görüntülenir.</value></data>
+  <data name="Tip_Dashboard_ActivePlans" xml:space="preserve"><value>Şu anda etkin olan yedekleme görev sayısı.
+Sadece etkinleştirilmiş görevler sayılır ve zamanlanır.</value></data>
+  <data name="Tip_Dashboard_LastBackups" xml:space="preserve"><value>En son yedekleme sonuçlarını listeler.
+Tarih, görev adı, tür ve durum hızlı bir bakış sağlar.</value></data>
+
+  <!-- ── MainWindow — Plans Tab ── -->
+  <data name="Tip_Plans_New" xml:space="preserve"><value>Yeni bir yedekleme görevi oluşturun.
+Sihirbaz size adım adım rehberlik eder: SQL bağlantısı,
+veritabanları, zamanlama, bulut hedefler ve bildirim ayarları.</value></data>
+  <data name="Tip_Plans_Edit" xml:space="preserve"><value>Seçili yedekleme görevini düzenleyin.
+Doğrudan açmak için satıra çift tıklayabilirsiniz.</value></data>
+  <data name="Tip_Plans_Delete" xml:space="preserve"><value>Seçili yedekleme görevini silin.
+Bu işlem mevcut yedek dosyalarını SİLMEZ — sadece görev yapılandırmasını kaldırır.</value></data>
+  <data name="Tip_Plans_Export" xml:space="preserve"><value>Seçili görevi JSON dosyası olarak dışa aktarın.
+Yedekleme veya görevleri başka bir makineye taşımak için kullanışlıdır.</value></data>
+  <data name="Tip_Plans_Import" xml:space="preserve"><value>JSON dosyasından görev içe aktarın.
+Daha önce dışa aktarılmış bir görev yapılandırmasını geri yükler.</value></data>
+  <data name="Tip_Plans_Refresh" xml:space="preserve"><value>Görev listesini yenileyin.
+Görev durumu ve zamanlama bilgilerini yapılandırmadan yeniden yükler.</value></data>
+  <data name="Tip_Plans_Search" xml:space="preserve"><value>Görevleri ada göre filtreleyin.
+Hızlıca bulmak için görev adının bir kısmını yazın.
+Örnek: "günlük" → "GünlükTamYedek" görevini bulur.</value></data>
+  <data name="Tip_Plans_BackupNow" xml:space="preserve"><value>Seçili görev için anında yedekleme başlatın.
+Zamanlamadan bağımsız olarak çalışır.</value></data>
+  <data name="Tip_Plans_StopBackup" xml:space="preserve"><value>Bu görev için çalışan yedeklemeyi durdurun.
+Yedekleme güvenli bir şekilde iptal edilecektir.</value></data>
+
+  <!-- ── MainWindow — Backup Panel ── -->
+  <data name="Tip_Backup_Type" xml:space="preserve"><value>Yedekleme türünü seçin:
+• Tam: Veritabanının tamamı (ilk çalıştırma için önerilir).
+• Farksal: Son tam yedekten bu yana yapılan değişiklikler (daha hızlı, daha küçük).
+• Artımlı (Log): İşlem günlüğü yedeği (en küçük boyut).</value></data>
+  <data name="Tip_Backup_Start" xml:space="preserve"><value>Seçili görev için manuel yedekleme başlatın.
+Önce listeden bir görev seçin ve yedekleme türünü belirleyin.</value></data>
+  <data name="Tip_Backup_Cancel" xml:space="preserve"><value>Çalışan yedekleme işlemini iptal edin.
+Kısmen oluşturulmuş dosyalar temizlenecektir.</value></data>
+
+  <!-- ── MainWindow — Log Viewer ── -->
+  <data name="Tip_Log_FileSelect" xml:space="preserve"><value>Görüntülenecek günlük dosyasını seçin.
+Günlük dosyaları günlük olarak döndürülür ve Logs klasöründe saklanır.
+Örnek: log-20260101.txt</value></data>
+  <data name="Tip_Log_Level" xml:space="preserve"><value>Günlük girişlerini önem derecesine göre filtreleyin:
+• Verbose/Debug: Ayrıntılı tanı bilgileri.
+• Information: Normal işlemler.
+• Warning: Olası sorunlar.
+• Error/Fatal: Dikkat gerektiren hatalar.</value></data>
+  <data name="Tip_Log_AutoTail" xml:space="preserve"><value>En son günlük girişlerine otomatik kaydırma.
+Yeni satırlar gerçek zamanlı olarak altta görünür.</value></data>
+  <data name="Tip_Log_Search" xml:space="preserve"><value>Günlük girişleri içinde arama yapın.
+Filtrelemek için anahtar kelime yazın — ör: "hata", "zaman aşımı", veritabanı adı.</value></data>
+  <data name="Tip_Log_PlanFilter" xml:space="preserve"><value>Günlükleri belirli bir yedekleme görevine göre filtreleyin.
+Sadece seçili görevle ilgili girişleri gösterir.</value></data>
+  <data name="Tip_Log_Clear" xml:space="preserve"><value>Tüm filtreleri temizleyin ve tüm günlük girişlerini gösterin.</value></data>
+  <data name="Tip_Log_Refresh" xml:space="preserve"><value>Günlük dosyasını diskten yeniden yükleyin.
+Otomatik takip kapalıysa en son girişleri görmek için kullanın.</value></data>
+  <data name="Tip_Log_Export" xml:space="preserve"><value>Filtrelenmiş günlük girişlerini dosyaya aktarın.
+Destek ile paylaşmak veya arşivlemek için kullanışlıdır.</value></data>
+
+  <!-- ── MainWindow — Settings General ── -->
+  <data name="Tip_Settings_Language" xml:space="preserve"><value>Uygulama dilini değiştirin.
+Desteklenen diller: Türkçe ve İngilizce (English).
+Tam etki için uygulama yeniden başlatılmalıdır.</value></data>
+  <data name="Tip_Settings_StartWithWindows" xml:space="preserve"><value>Windows başladığında uygulamayı otomatik çalıştırın.
+Uygulama sistem tepsisine küçültülmüş olarak başlar.
+Sürekli yedekleme zamanlaması için önerilir.</value></data>
+  <data name="Tip_Settings_MinimizeToTray" xml:space="preserve"><value>Görev çubuğu yerine sistem tepsisine küçültün.
+Uygulama arka planda çalışmaya devam eder.
+Geri yüklemek için tepsi simgesine çift tıklayın.</value></data>
+  <data name="Tip_Settings_DefaultBackupPath" xml:space="preserve"><value>Yedek dosyaların saklanacağı varsayılan klasör.
+Her görev kendi yolunu belirleyebilir.
+Örnek: D:\Yedekler\SQL</value></data>
+  <data name="Tip_Settings_LogRetention" xml:space="preserve"><value>Günlük dosyalarını kaç gün saklayacağınızı belirleyin.
+Eski günlük dosyaları otomatik silinir.
+Varsayılan: 30 gün. Sınırsız için 0 yazın.</value></data>
+  <data name="Tip_Settings_HistoryRetention" xml:space="preserve"><value>Yedekleme geçmişi kayıtlarını kaç gün saklayacağınızı belirleyin.
+Eski kayıtlar geçmiş veritabanından kaldırılır.
+Varsayılan: 90 gün. Sınırsız için 0 yazın.</value></data>
+  <data name="Tip_Settings_Theme" xml:space="preserve"><value>Koyu ve Açık tema arasında geçiş yapın.
+Değişiklikler anında uygulanır.</value></data>
+  <data name="Tip_Settings_LogColorScheme" xml:space="preserve"><value>Günlük görüntüleyici konsolu için renk şeması.
+Günlükleri okumak için rahat bir tema seçin.</value></data>
+  <data name="Tip_Settings_Save" xml:space="preserve"><value>Tüm ayarları kaydedin ve değişiklikleri uygulayın.
+Bazı ayarlar (dil gibi) yeniden başlatma gerektirir.</value></data>
+  <data name="Tip_Settings_Cancel" xml:space="preserve"><value>Kaydedilmemiş değişiklikleri iptal edin ve önceki ayarlara dönün.</value></data>
+
+  <!-- ── MainWindow — Settings SMTP ── -->
+  <data name="Tip_Settings_SmtpAdd" xml:space="preserve"><value>Yeni bir SMTP e-posta profili ekleyin.
+Yedekleme başarı/hata bildirimlerini göndermek için kullanılır.
+Örnek: office365, gmail, özel SMTP sunucusu.</value></data>
+  <data name="Tip_Settings_SmtpEdit" xml:space="preserve"><value>Seçili SMTP profil ayarlarını düzenleyin.</value></data>
+  <data name="Tip_Settings_SmtpDelete" xml:space="preserve"><value>Seçili SMTP profilini silin.
+Bu profili kullanan görevler bildirim gönderemez hale gelir.</value></data>
+  <data name="Tip_Settings_SmtpTest" xml:space="preserve"><value>Seçili SMTP profili ile test e-postası gönderin.
+E-posta yapılandırmasının doğru çalıştığını doğrular.</value></data>
+
+  <!-- ── MainWindow — Settings Security ── -->
+  <data name="Tip_Settings_PasswordSetup" xml:space="preserve"><value>Ana şifreyi ayarlayın veya değiştirin.
+Etkinleştirildiğinde, görev düzenleme veya silme şifre gerektirir.
+Şifre kurtarma için güvenlik sorusu da yapılandırılır.</value></data>
+  <data name="Tip_Settings_SecurityInfo" xml:space="preserve"><value>Şifre koruması, yedekleme görevlerinde yetkisiz değişiklikleri engeller.
+Şifre güvenli hash olarak saklanır — kurtarılamaz,
+ancak güvenlik sorusu ile sıfırlanabilir.</value></data>
+
+  <!-- ── CloudTargetEditDialog — Tooltips ── -->
+  <data name="Tip_Cloud_DisplayName" xml:space="preserve"><value>Bu bulut hedef için tanımlayıcı bir isim.
+Görev sihirbazında hedef seçerken gösterilir.
+Örnek: "Google Drive - Üretim", "FTP Arşiv"</value></data>
+  <data name="Tip_Cloud_ProviderType" xml:space="preserve"><value>Depolama sağlayıcı türünü seçin:
+• Google Drive: OAuth 2.0 kimlik doğrulaması ile bulut depolama.
+• FTP/FTPS/SFTP: Uzak sunucuya dosya aktarımı.
+• UNC Yolu: Windows ağ paylaşımı (\\sunucu\paylaşım).</value></data>
+  <data name="Tip_Cloud_Enabled" xml:space="preserve"><value>Bu bulut hedefi etkinleştirin veya devre dışı bırakın.
+Devre dışı hedefler yedekleme yüklemelerinde atlanır.</value></data>
+  <data name="Tip_Cloud_Host" xml:space="preserve"><value>FTP/SFTP sunucu adresi veya IP adresi.
+Örnek: ftp.ornek.com veya 192.168.1.100</value></data>
+  <data name="Tip_Cloud_Port" xml:space="preserve"><value>Sunucu port numarası.
+Varsayılanlar: FTP=21, FTPS=990, SFTP=22.
+Sunucunuz standart dışı port kullanıyorsa değiştirin.</value></data>
+  <data name="Tip_Cloud_Username" xml:space="preserve"><value>FTP/SFTP veya UNC kimlik doğrulama kullanıcı adı.
+UNC için: ALAN_ADI\kullanıcı_adı biçimi.
+Örnek: yedek_kullanici</value></data>
+  <data name="Tip_Cloud_Password" xml:space="preserve"><value>FTP/SFTP veya UNC kimlik doğrulama şifresi.
+Windows DPAPI ile şifrelenmiş olarak saklanır (makineye bağlı).</value></data>
+  <data name="Tip_Cloud_GoogleAuth" xml:space="preserve"><value>Google Drive ile OAuth 2.0 üzerinden kimlik doğrulayın.
+Google hesap yetkilendirmesi için tarayıcı penceresi açılır.
+Yetkilendirme tek seferliktir; token yerel olarak saklanır.</value></data>
+  <data name="Tip_Cloud_LocalPath" xml:space="preserve"><value>Yerel klasör yolu veya UNC ağ paylaşım yolu.
+Örnek: D:\YedekArsiv veya \\sunucu\yedekler$
+UNC yolları için gerekirse aşağıya kimlik bilgilerini girin.</value></data>
+  <data name="Tip_Cloud_RemotePath" xml:space="preserve"><value>Hedef sunucudaki uzak klasör yolu.
+Yoksa otomatik oluşturulur.
+Örnek: /Koru MsSql Yedek veya Koru MsSql Yedek</value></data>
+  <data name="Tip_Cloud_Bandwidth" xml:space="preserve"><value>Maksimum yükleme hızı (MB/s).
+Sınırsız bant genişliği için 0 ayarlayın.
+İş saatlerinde ağı yormamak için kullanışlıdır.</value></data>
+  <data name="Tip_Cloud_TrashRetention" xml:space="preserve"><value>Silinen dosyaları çöp/arşivde kaç gün saklayacağınızı belirleyin.
+Yedek saklama politikası eski dosyaları buluttan sildiğinde,
+kalıcı silme öncesi bu süre kadar çöpte kalırlar.
+Hemen silmek için 0 ayarlayın.</value></data>
+
+  <!-- ── SmtpProfileEditDialog — Tooltips ── -->
+  <data name="Tip_Smtp_DisplayName" xml:space="preserve"><value>Bu SMTP profili için tanımlayıcı bir isim.
+Örnek: "Office 365", "Gmail Bildirimleri"</value></data>
+  <data name="Tip_Smtp_Host" xml:space="preserve"><value>SMTP sunucu adresi.
+Örnekler:
+  smtp.office365.com (Office 365)
+  smtp.gmail.com (Gmail)
+  smtp.ornek.com (Özel)</value></data>
+  <data name="Tip_Smtp_Port" xml:space="preserve"><value>SMTP sunucu port numarası.
+Yaygın portlar: 587 (STARTTLS), 465 (SSL), 25 (şifresiz).
+Önerilen: SSL etkin ile 587.</value></data>
+  <data name="Tip_Smtp_UseSsl" xml:space="preserve"><value>SMTP bağlantısı için SSL/TLS şifrelemesi kullanın.
+Güvenlik için kesinlikle önerilir.
+Modern e-posta sağlayıcılarının çoğu tarafından zorunludur.</value></data>
+  <data name="Tip_Smtp_Username" xml:space="preserve"><value>SMTP kimlik doğrulama için e-posta hesabı kullanıcı adı.
+Genellikle tam e-posta adresinizdir.
+Örnek: yedek@ornek.com</value></data>
+  <data name="Tip_Smtp_Password" xml:space="preserve"><value>E-posta hesabı şifresi veya uygulamaya özel şifre.
+Gmail için: Google Hesabı ayarlarından "Uygulama Şifresi" oluşturun.
+Office 365 için: Hesap şifresi veya uygulama şifresi kullanın.</value></data>
+  <data name="Tip_Smtp_SenderEmail" xml:space="preserve"><value>Bildirimlerde gösterilen "Kimden" e-posta adresi.
+Genellikle kullanıcı adı ile aynıdır.
+Örnek: yedek@ornek.com</value></data>
+  <data name="Tip_Smtp_SenderName" xml:space="preserve"><value>"Kimden" alanında gösterilen görüntü adı.
+Örnek: "Koru MsSql Yedek" veya "Yedekleme Sistemi"</value></data>
+  <data name="Tip_Smtp_Recipients" xml:space="preserve"><value>Yedekleme bildirimlerini alacak e-posta adresleri.
+Birden fazla adresi noktalı virgül (;) ile ayırın.
+Örnek: admin@ornek.com; dba@ornek.com</value></data>
+  <data name="Tip_Smtp_Test" xml:space="preserve"><value>SMTP yapılandırmasını doğrulamak için test e-postası gönderin.
+Alıcı adreslerine bir test mesajı gönderilir.</value></data>
+
+  <!-- ── RestoreDialog — Tooltips ── -->
+  <data name="Tip_Restore_Grid" xml:space="preserve"><value>Geri yükleme için kullanılabilir başarılı yedeklerin listesi.
+Doğrulama ve geri yükleme işlemlerini etkinleştirmek için bir satır seçin.
+Tarih, veritabanı adı, tür, dosya yolu ve boyut gösterilir.</value></data>
+  <data name="Tip_Restore_TargetDb" xml:space="preserve"><value>Geri yüklenecek veritabanı adı.
+Varsayılan olarak orijinal veritabanı adıdır.
+Farklı bir veritabanına geri yüklemek için değiştirebilirsiniz.
+Uyarı: Mevcut veritabanının üzerine yazılacak!</value></data>
+  <data name="Tip_Restore_PreBackup" xml:space="preserve"><value>Geri yüklemeden önce hedef veritabanının güvenlik yedeğini alın.
+Veri kaybını önlemek için kesinlikle önerilir.
+Güvenlik yedeği varsayılan yedekleme yoluna kaydedilir.</value></data>
+  <data name="Tip_Restore_Verify" xml:space="preserve"><value>Geri yüklemeden yedek dosya bütünlüğünü doğrulayın.
+SQL Server'ın RESTORE VERIFYONLY komutunu çalıştırır.
+Yedeğin okunabilir ve bozuk olmadığını kontrol eder.</value></data>
+  <data name="Tip_Restore_Restore" xml:space="preserve"><value>Veritabanı geri yükleme işlemini başlatın.
+Hedef veritabanının ÜZERİNE YAZILACAK!
+İşlemden önce bir onay iletişim kutusu görüntülenir.</value></data>
+  <data name="Tip_Restore_Close" xml:space="preserve"><value>Geri yükleme diyalogunu kapatın.
+Bir işlem devam ediyorsa önce iptal etmeniz istenecektir.</value></data>
+
+  <!-- ── PasswordDialog — Tooltips ── -->
+  <data name="Tip_Pw_Password" xml:space="preserve"><value>Ana şifreyi veya göreve özel şifreyi girin.
+Yedekleme görevlerini düzenlemek veya silmek için gereklidir.</value></data>
+  <data name="Tip_Pw_Ok" xml:space="preserve"><value>Şifreyi doğrulama için gönderin.</value></data>
+  <data name="Tip_Pw_Forgot" xml:space="preserve"><value>Şifrenizi mi unuttunuz? Güvenlik sorusunu cevaplamak için tıklayın.
+Cevap doğruysa şifre koruması kaldırılır.</value></data>
+  <data name="Tip_Pw_SecurityAnswer" xml:space="preserve"><value>Güvenlik sorunuzun cevabını girin.
+Cevap büyük/küçük harf duyarsızdır.</value></data>
+  <data name="Tip_Pw_VerifyAnswer" xml:space="preserve"><value>Güvenlik cevabınızı doğrulayın.
+Doğruysa şifre koruması kaldırılacaktır.</value></data>
+
+  <!-- ── PasswordSetupDialog — Tooltips ── -->
+  <data name="Tip_PwSetup_NewPassword" xml:space="preserve"><value>Yeni bir ana şifre oluşturun (en az 4 karakter).
+Bu şifre, görev düzenleme/silme için gerekli olacaktır.</value></data>
+  <data name="Tip_PwSetup_ConfirmPassword" xml:space="preserve"><value>Onaylamak için şifreyi tekrar girin.
+Yukarıda girilen şifre ile eşleşmelidir.</value></data>
+  <data name="Tip_PwSetup_SecurityQuestion" xml:space="preserve"><value>Şifre kurtarma için bir güvenlik sorusu belirleyin.
+Örnek: "Evcil hayvanınızın adı nedir?"
+Sadece sizin bileceğiniz bir şey seçin.</value></data>
+  <data name="Tip_PwSetup_SecurityAnswer" xml:space="preserve"><value>Güvenlik sorusunun cevabı (büyük/küçük harf duyarsız).
+Şifre unutulduğunda sıfırlama için kullanılacaktır.</value></data>
+  <data name="Tip_PwSetup_Save" xml:space="preserve"><value>Şifreyi ve güvenlik sorusunu kaydedin.
+Şifre koruması hemen etkinleştirilecektir.</value></data>
+  <data name="Tip_PwSetup_RemovePassword" xml:space="preserve"><value>Şifre korumasını tamamen kaldırın.
+Görevler şifresiz düzenlenip silinebilir hale gelir.
+Güvenlik sorusu da kaldırılacaktır.</value></data>
+
+  <!-- ── GoogleOAuthSettingsDialog — Tooltips ── -->
+  <data name="Tip_GoogleOAuth_ClientId" xml:space="preserve"><value>Google Cloud Console'dan alınan OAuth 2.0 Client ID.
+Format: xxxxxxxx.apps.googleusercontent.com
+Oluşturma: console.cloud.google.com → APIs → Credentials</value></data>
+  <data name="Tip_GoogleOAuth_ClientSecret" xml:space="preserve"><value>Google Cloud Console'dan alınan OAuth 2.0 Client Secret.
+Masaüstü uygulamaları için "GOCSPX-..." ile başlar.
+Bu makinede DPAPI ile şifrelenmiş olarak saklanır.</value></data>
+  <data name="Tip_GoogleOAuth_Save" xml:space="preserve"><value>Özel Google OAuth kimlik bilgilerini kaydedin.
+Gömülü varsayılan kimlik bilgilerini kullanmak için her iki alanı boş bırakın.</value></data>
+  <data name="Tip_GoogleOAuth_Remove" xml:space="preserve"><value>Özel kimlik bilgilerini kaldırın ve gömülü varsayılanlara dönün.
+Mevcut Google Drive bağlantıları varsayılan kimlik bilgilerini kullanacaktır.</value></data>
+
+  <!-- ── FileBackupSourceEditDialog — Tooltips ── -->
+  <data name="Tip_FileSource_SourceName" xml:space="preserve"><value>Bu dosya yedekleme kaynağını tanımlayan kısa bir isim.
+Örnek: "Outlook PST", "Proje Dosyaları", "Belgeler"</value></data>
+  <data name="Tip_FileSource_Navigate" xml:space="preserve"><value>Ağaç görünümünde hızlıca gezinmek için bir klasöre göz atın.
+Seçilen klasör ağaçta genişletilecektir.</value></data>
+  <data name="Tip_FileSource_TreeView" xml:space="preserve"><value>Yedeklemeye dahil edilecek dosya ve klasörleri seçin.
+Yedeklemek istediğiniz öğelerin yanındaki kutuları işaretleyin.
+Üst klasörler otomatik olarak tüm alt öğeleri içerir.</value></data>
+  <data name="Tip_FileSource_IncludePatterns" xml:space="preserve"><value>Sadece bu kalıplara uyan dosyalar yedeklenir.
+TÜM dosyaları dahil etmek için boş bırakın.
+Kalıpları noktalı virgül (;) ile ayırın.
+Örnek: *.pst; *.docx; *.xlsx</value></data>
+  <data name="Tip_FileSource_ExcludePatterns" xml:space="preserve"><value>Bu kalıplara uyan dosyalar yedeklenmez.
+Dahil etme kalıplarını geçersiz kılar.
+Örnek: *.tmp; *.log; ~$*; Thumbs.db</value></data>
+  <data name="Tip_FileSource_Recursive" xml:space="preserve"><value>Seçili klasörlerin tüm alt dizinlerindeki dosyaları dahil edin.
+Sadece üst düzey klasördeki dosyaları yedeklemek için işareti kaldırın.</value></data>
+  <data name="Tip_FileSource_UseVss" xml:space="preserve"><value>Kilitli dosyaları yedeklemek için Volume Shadow Copy Servisi kullanın.
+Gerekli: Outlook PST/OST, veritabanları, açık belgeler.
+Yedekleme sırasında "dosya kullanımda" hatası alıyorsanız etkinleştirin.</value></data>
+  <data name="Tip_FileSource_Enabled" xml:space="preserve"><value>Bu dosya yedekleme kaynağını etkinleştirin veya devre dışı bırakın.
+Devre dışı kaynaklar yedekleme sırasında atlanır.</value></data>
+
+  <!-- Butonlar (MainWindow ApplyIcons) -->
+  <data name="Btn_StartBackup" xml:space="preserve"><value>Yedeklemeyi Başlat</value></data>
+  <data name="Btn_Cancel" xml:space="preserve"><value>İptal Et</value></data>
+  <data name="Btn_ClearFilter" xml:space="preserve"><value>Temizle</value></data>
+  <data name="Btn_Refresh" xml:space="preserve"><value>Yenile</value></data>
+  <data name="Btn_Export" xml:space="preserve"><value>Dışa Aktar</value></data>
+  <data name="Btn_SmtpTest" xml:space="preserve"><value>Test E-postası Gönder</value></data>
+  <data name="Btn_Save" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="Btn_CancelSettings" xml:space="preserve"><value>İptal</value></data>
+
+  <!-- Araç çubuğu (MainWindow ApplyToolStripIcons) -->
+  <data name="Tsb_NewPlan" xml:space="preserve"><value>Yeni Görev</value></data>
+  <data name="Tsb_Edit" xml:space="preserve"><value>Düzenle</value></data>
+  <data name="Tsb_Delete" xml:space="preserve"><value>Sil</value></data>
+  <data name="Tsb_Export" xml:space="preserve"><value>Dışa Aktar</value></data>
+  <data name="Tsb_Import" xml:space="preserve"><value>İçe Aktar</value></data>
+  <data name="Tsb_Refresh" xml:space="preserve"><value>Yenile</value></data>
+  <data name="Tsl_Search" xml:space="preserve"><value>Ara:</value></data>
+
+  <!-- SMTP Grid sütunları -->
+  <data name="SmtpGrid_ColName" xml:space="preserve"><value>Profil Adı</value></data>
+  <data name="SmtpGrid_ColHost" xml:space="preserve"><value>Sunucu</value></data>
+  <data name="SmtpGrid_ColUser" xml:space="preserve"><value>Kullanıcı</value></data>
+  <data name="SmtpGrid_ColRecipients" xml:space="preserve"><value>Alıcılar</value></data>
+
+  <!-- Yedekleme Etkinliği -->
+  <data name="Activity_BackupStarted" xml:space="preserve"><value>[{0}] Yedekleme başladı.</value></data>
+  <data name="Activity_DbProcessing" xml:space="preserve"><value>{0} ({1}/{2}) işleniyor.</value></data>
+  <data name="Activity_Step" xml:space="preserve"><value>Adım: {0}</value></data>
+  <data name="Activity_CloudAbandoned" xml:space="preserve"><value>⚠ Bulut yükleme terk edildi ({0} dosya): {1}</value></data>
+  <data name="Activity_CloudAbandonedMsg" xml:space="preserve"><value>⚠ Bulut yükleme terk edildi: {0}</value></data>
+  <data name="Activity_MaxRetryExceeded" xml:space="preserve"><value>Maksimum deneme aşıldı</value></data>
+  <data name="Activity_BackupCompleted" xml:space="preserve"><value>[{0}] Yedekleme tamamlandı. ✓</value></data>
+  <data name="Activity_BackupCompletedMsg" xml:space="preserve"><value>[{0}] Yedekleme tamamlandı. ✓ {1}.</value></data>
+  <data name="Activity_BackupCompletedWarn" xml:space="preserve"><value>[{0}] Yedekleme tamamlandı ({1}). ⚠</value></data>
+  <data name="Activity_BackupFailed" xml:space="preserve"><value>[{0}] Yedekleme başarısız: {1}</value></data>
+  <data name="Activity_BackupCancelled" xml:space="preserve"><value>[{0}] Yedekleme iptal edildi.</value></data>
+
+  <!-- Bulut Yükleme -->
+  <data name="Cloud_UploadPrefix" xml:space="preserve"><value>Bulut yükleme başladı:</value></data>
+  <data name="Cloud_Uploading" xml:space="preserve"><value>Yükleniyor:</value></data>
+  <data name="Cloud_Sent" xml:space="preserve"><value>Gönderilen:</value></data>
+  <data name="Cloud_Remaining" xml:space="preserve"><value>Kalan:</value></data>
+  <data name="Cloud_Speed" xml:space="preserve"><value>Hız:</value></data>
+  <data name="Cloud_ETA" xml:space="preserve"><value>Süre:</value></data>
+
+  <!-- Yedekleme Çalıştırma -->
+  <data name="Backup_TasksRunning" xml:space="preserve"><value>{0} görev çalışıyor</value></data>
+
+  <!-- Planlar -->
+  <data name="PlanList_StorageCloud" xml:space="preserve"><value>☁ Bulut ({0})</value></data>
+  <data name="PlanList_StorageLocal" xml:space="preserve"><value>💾 Yerel</value></data>
+  <data name="PlanList_FilteredTaskFormat" xml:space="preserve"><value>{0} / {1} görev</value></data>
+
+  <!-- Zaman kısaltmaları -->
+  <data name="Time_Seconds" xml:space="preserve"><value>sn</value></data>
+  <data name="Time_Minutes" xml:space="preserve"><value>dk</value></data>
+  <data name="Time_Hours" xml:space="preserve"><value>sa</value></data>
+
+  <!-- Sistem tepsisi -->
+  <data name="Tray_MenuAbout" xml:space="preserve"><value>Hakkında</value></data>
+  <data name="Tray_ServiceStatusFormat" xml:space="preserve"><value>Servis: {0}</value></data>
+
+  <!-- PlanEdit Saklama / Rapor -->
+  <data name="PlanEdit_RetTplMinimal" xml:space="preserve"><value>Minimal  (Full×3, Diff×7, Log×14, Dosya×5)</value></data>
+  <data name="PlanEdit_RetTplStandard" xml:space="preserve"><value>Standart  (Full×7, Diff×14, Log×30, Dosya×14)  ★</value></data>
+  <data name="PlanEdit_RetTplExtended" xml:space="preserve"><value>Genişletilmiş  (Full×14, Diff×30, Log×90, Dosya×30)</value></data>
+  <data name="PlanEdit_RetTplGFS" xml:space="preserve"><value>GFS  (Grandfather-Father-Son rotasyonu)</value></data>
+  <data name="PlanEdit_RetTplCustom" xml:space="preserve"><value>Özel  (elle ayarla)</value></data>
+  <data name="PlanEdit_ReportDaily" xml:space="preserve"><value>Günlük</value></data>
+  <data name="PlanEdit_ReportWeekly" xml:space="preserve"><value>Haftalık</value></data>
+  <data name="PlanEdit_ReportMonthly" xml:space="preserve"><value>Aylık</value></data>
+
+  <!-- CronBuilder -->
+  <data name="Cron_DayMon" xml:space="preserve"><value>Pzt</value></data>
+  <data name="Cron_DayTue" xml:space="preserve"><value>Sal</value></data>
+  <data name="Cron_DayWed" xml:space="preserve"><value>Çar</value></data>
+  <data name="Cron_DayThu" xml:space="preserve"><value>Per</value></data>
+  <data name="Cron_DayFri" xml:space="preserve"><value>Cum</value></data>
+  <data name="Cron_DaySat" xml:space="preserve"><value>Cmt</value></data>
+  <data name="Cron_DaySun" xml:space="preserve"><value>Paz</value></data>
+  <data name="Cron_LblFrequency" xml:space="preserve"><value>Sıklık:</value></data>
+  <data name="Cron_FreqDaily" xml:space="preserve"><value>Günlük</value></data>
+  <data name="Cron_FreqWeekly" xml:space="preserve"><value>Haftalık</value></data>
+  <data name="Cron_FreqMonthly" xml:space="preserve"><value>Aylık</value></data>
+  <data name="Cron_FreqCustom" xml:space="preserve"><value>Özel (Cron)</value></data>
+  <data name="Cron_LblHour" xml:space="preserve"><value>Saat:</value></data>
+  <data name="Cron_LblDay" xml:space="preserve"><value>Gün:</value></data>
+  <data name="Cron_CustomExpr" xml:space="preserve"><value>Özel cron ifadesi</value></data>
+  <data name="Cron_EveryDayAt" xml:space="preserve"><value>Her gün saat {0}</value></data>
+  <data name="Cron_WeeklyAt" xml:space="preserve"><value>{0} saat {1}</value></data>
+  <data name="Cron_MonthlyAt" xml:space="preserve"><value>Her ayın {0}. günü saat {1}</value></data>
+  <data name="Cron_Every" xml:space="preserve"><value>Her </value></data>
+  <data name="Cron_DefaultDay" xml:space="preserve"><value>Her Pzt</value></data>
+
+  <!-- Sihirbaz Butonları -->
+  <data name="PlanEdit_BtnSave" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="PlanEdit_BtnSaveExit" xml:space="preserve"><value>Kaydet &amp; Çık</value></data>
+
+  <!-- PlanEdit: Yükleme / Navigasyon -->
+  <data name="PlanEdit_Loading" xml:space="preserve"><value>Yükleniyor...</value></data>
+  <data name="PlanEdit_Next" xml:space="preserve"><value>İleri</value></data>
+
+  <!-- PlanEdit: Retention Şablon Açıklamaları -->
+  <data name="PlanEdit_RetTplMinimal" xml:space="preserve"><value>SQL Full: en son 3 • Diff: 7 • Log: 14 • Dosya arşivi: 5 yedek</value></data>
+  <data name="PlanEdit_RetTplStandard" xml:space="preserve"><value>SQL Full: en son 7 • Diff: 14 • Log: 30 • Dosya arşivi: 14 yedek</value></data>
+  <data name="PlanEdit_RetTplExtended" xml:space="preserve"><value>SQL Full: en son 14 • Diff: 30 • Log: 90 • Dosya arşivi: 30 yedek</value></data>
+  <data name="PlanEdit_RetTplGFS" xml:space="preserve"><value>GFS — Günlük 7 / Haftalık 4 / Aylık 12 / Yıllık 2 (Full için)</value></data>
+  <data name="PlanEdit_RetTplCustom" xml:space="preserve"><value>Temizlik kuralını ve saklanacak yedek sayısını elle belirleyin.</value></data>
+
+  <!-- SMTP Diyalog -->
+  <data name="Smtp_TitleEdit" xml:space="preserve"><value>SMTP Profilini Düzenle</value></data>
+  <data name="Smtp_TitleNew" xml:space="preserve"><value>Yeni SMTP Profili</value></data>
+  <data name="Smtp_HostRequired" xml:space="preserve"><value>SMTP sunucu adresi giriniz.</value></data>
+  <data name="Smtp_RecipientRequired" xml:space="preserve"><value>Test e-postası için en az bir alıcı adresi giriniz.</value></data>
+  <data name="Smtp_Sending" xml:space="preserve"><value>Gönderiliyor...</value></data>
+  <data name="Smtp_TestBody" xml:space="preserve"><value>Bu bir test e-postasıdır.\nProfil: {0}\nZaman: {1}</value></data>
+  <data name="Smtp_TestSuccess" xml:space="preserve"><value>Test e-postası başarıyla gönderildi.</value></data>
+  <data name="Smtp_TestErrorTitle" xml:space="preserve"><value>SMTP Test Hatası</value></data>
+  <data name="Smtp_TestFailed" xml:space="preserve"><value>SMTP bağlantısı kurulamadı:\n{0}</value></data>
+  <data name="Success" xml:space="preserve"><value>Başarılı</value></data>
+
+  <!-- Google OAuth Durum -->
+  <data name="GoogleOAuth_StatusCustom" xml:space="preserve"><value>✔ Özel kimlik bilgileri tanımlı</value></data>
+  <data name="GoogleOAuth_StatusDefault" xml:space="preserve"><value>ℹ Gömülü varsayılan değerler kullanılıyor</value></data>
+
+  <!-- Dosya Kaynağı Durum -->
+  <data name="FileSource_StatusHint" xml:space="preserve"><value>Yedeklenecek öğeleri seçmek için klasörlere göz atın ve onay kutularını işaretleyin</value></data>
+  <data name="FileSource_Calculating" xml:space="preserve"><value>hesaplanıyor...</value></data>
+  <data name="FileSource_StatusSelected" xml:space="preserve"><value>✅ {0} klasör, {1} dosya seçili{2}</value></data>
+
+  <!-- Eksik Restore Anahtarları -->
+  <data name="Restore_TargetDbEmpty" xml:space="preserve"><value>Hedef veritabanı adı boş olamaz.</value></data>
+  <data name="Restore_VerifyTimeout" xml:space="preserve"><value>Doğrulama zaman aşımına uğradı.</value></data>
+  <data name="Restore_Cancelled" xml:space="preserve"><value>Geri yükleme iptal edildi.</value></data>
+  <data name="Restore_Error" xml:space="preserve"><value>Hata: {0}</value></data>
+  <data name="Restore_Extracting" xml:space="preserve"><value>Sıkıştırılmış arşiv çıkartılıyor: {0}</value></data>
+  <data name="Restore_ExtractFailed" xml:space="preserve"><value>Arşiv çıkartma başarısız: {0}</value></data>
+  <data name="Restore_NoBakInArchive" xml:space="preserve"><value>Çıkartılan arşivde .bak dosyası bulunamadı.</value></data>
+  <data name="Restore_CancelConfirm" xml:space="preserve"><value>Bir işlem devam ediyor. İptal edilsin mi?</value></data>
+  <data name="Restore_CancelConfirmTitle" xml:space="preserve"><value>İşlemi İptal Et</value></data>
+  <data name="Restore_BtnCancel" xml:space="preserve"><value>İptal</value></data>
+
 </root>
