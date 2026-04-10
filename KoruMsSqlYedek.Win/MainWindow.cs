@@ -112,6 +112,7 @@ namespace KoruMsSqlYedek.Win
             _tslVersion.Click += OnVersionLabelClick;
 
             ApplyIcons();
+            ApplyLocalization();
 
             _dashboardTimer = new System.Windows.Forms.Timer { Interval = 30000 };
             _dashboardTimer.Tick += (s, e) =>

@@ -1,4 +1,13 @@
-﻿## [0.99.43] - 2025-07-19 — Kalan Hardcoded Türkçe Stringlerin Lokalizasyonu & Resx Temizliği
+﻿## [0.99.44] - 2025-07-19 — MainWindow Başlangıçta Lokalizasyon Çağrısı Eksikliği Düzeltmesi
+
+### Düzeltme
+- **MainWindow constructor**: `ApplyLocalization()` çağrısı eklendi — uygulama ilk açıldığında sekmeler, grid sütun başlıkları, ayarlar etiketi ve alt sekmeler artık doğru dilde gösteriliyor
+- Daha önce `ApplyLocalization()` sadece dil değiştirilip kaydedildiğinde çağrılıyordu; ilk açılışta Designer.cs'deki Türkçe metinler kalıyordu
+
+### Etkilenen Dosyalar
+- `MainWindow.cs` — Constructor'a `ApplyLocalization()` çağrısı eklendi
+
+## [0.99.43] - 2025-07-19 — Kalan Hardcoded Türkçe Stringlerin Lokalizasyonu & Resx Temizliği
 
 ### Düzeltme
 - **WizardNavigation**: "Yükleniyor..." ve "İleri" buton metinleri `Res.Get()` ile lokalize edildi
