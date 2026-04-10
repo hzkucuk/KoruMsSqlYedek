@@ -1,4 +1,11 @@
-﻿## [0.99.35] - 2025-07-17 — Yüklü Uygulamalar Simge Düzeltmesi
+﻿## [0.99.36] - 2025-07-17 — Bulut Yükleme Dosya Boyutu Düzeltmesi
+
+### Düzeltme
+- **Per-file boyut gösterimi** — Toplu bulut yüklemede her dosya satırı artık o dosyanın kendi boyutunu gösteriyor (önceden tüm dosyaların toplam boyutu gösteriliyordu).
+- **FileBytesSent alanı eklendi** — `BackupActivityEventArgs` ve `PipeProtocol.BackupActivityMessage` sınıflarına dosya bazlı gönderilen byte bilgisi (`FileBytesSent`) eklendi.
+- **Log satırı iyileştirmesi** — `BuildCloudUploadLogLine` batch modunda `LocalFileSizeBytes`/`FileBytesSent` kullanarak dosya bazlı yüzde, boyut, kalan ve ETA gösteriyor.
+
+## [0.99.35] - 2025-07-17 — Yüklü Uygulamalar Simge Düzeltmesi
 
 ### Düzeltme
 - **Windows "Yüklü Uygulamalar" simgesi** — InnoSetup script'ine `UninstallDisplayIcon` eklendi. Program artık Windows listesinde kendi simgesiyle görünüyor.
