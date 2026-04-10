@@ -1088,4 +1088,16 @@ Devre dışı kaynaklar yedekleme sırasında atlanır.</value></data>
   <data name="Cron_Every" xml:space="preserve"><value>Her </value></data>
   <data name="Cron_DefaultDay" xml:space="preserve"><value>Her Pzt</value></data>
 
+  <!-- Sihirbaz Adım Başlıkları -->
+  <data name="PlanEdit_StepConnection" xml:space="preserve"><value>Bağlantı</value></data>
+  <data name="PlanEdit_StepSources" xml:space="preserve"><value>Kaynaklar</value></data>
+  <data name="PlanEdit_StepScheduling" xml:space="preserve"><value>Zamanlama</value></data>
+  <data name="PlanEdit_StepCompression" xml:space="preserve"><value>Sıkıştırma</value></data>
+  <data name="PlanEdit_StepTargets" xml:space="preserve"><value>Hedefler</value></data>
+  <data name="PlanEdit_StepNotification" xml:space="preserve"><value>Bildirim</value></data>
+
+  <!-- Sihirbaz Butonları -->
+  <data name="PlanEdit_BtnSave" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="PlanEdit_BtnSaveExit" xml:space="preserve"><value>Kaydet &amp; Çık</value></data>
+
 </root>

@@ -1,4 +1,15 @@
-﻿## [0.99.41] - 2025-07-19 — Tam Runtime Lokalizasyon Düzeltmesi
+﻿## [0.99.42] - 2025-07-19 — Sihirbaz Adım Etiketleri & CronBuilder Layout Düzeltmesi
+
+### Düzeltme
+- **Sihirbaz adım etiketleri Türkçe kalıyordu** — "Bağlantı", "Kaynaklar", "Zamanlama" vb. → `Res.Get()` ile lokalize edildi
+- **"Kaydet & Çık" butonu Türkçe kalıyordu** — `Res.Get("PlanEdit_BtnSave/BtnSaveExit")` ile değiştirildi
+- **CronBuilderPanel kontrol kayması** — "Frequency:" etiketi "Sıklık:"dan geniş olduğu için combo kutusu kesişiyordu; `TextRenderer.MeasureText` ile dinamik pozisyonlama uygulandı
+
+### Etkilenen Dosyalar
+- `PlanEditForm.WizardNavigation.cs`, `CronBuilderPanel.cs`
+- `Resources.resx`, `Resources.tr-TR.resx` — 8 yeni anahtar
+
+## [0.99.41] - 2025-07-19 — Tam Runtime Lokalizasyon Düzeltmesi
 
 ### Düzeltme
 - **Dil değişikliğinde CultureInfo güncellenmeme hatası** — `OnSaveSettingsClick` artık `CurrentUICulture`, `CurrentCulture`, `DefaultThreadCurrentUICulture`, `DefaultThreadCurrentCulture` değerlerini güncelliyor ve `ApplyLocalization()` + `ApplyIcons()` + `LoadProfileList()` çağırıyor

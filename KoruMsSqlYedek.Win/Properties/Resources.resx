@@ -1098,4 +1098,16 @@ Disabled sources are skipped during backup execution.</value></data>
   <data name="Cron_Every" xml:space="preserve"><value>Every </value></data>
   <data name="Cron_DefaultDay" xml:space="preserve"><value>Every Mon</value></data>
 
+  <!-- Wizard Step Titles -->
+  <data name="PlanEdit_StepConnection" xml:space="preserve"><value>Connection</value></data>
+  <data name="PlanEdit_StepSources" xml:space="preserve"><value>Sources</value></data>
+  <data name="PlanEdit_StepScheduling" xml:space="preserve"><value>Scheduling</value></data>
+  <data name="PlanEdit_StepCompression" xml:space="preserve"><value>Compression</value></data>
+  <data name="PlanEdit_StepTargets" xml:space="preserve"><value>Targets</value></data>
+  <data name="PlanEdit_StepNotification" xml:space="preserve"><value>Notification</value></data>
+
+  <!-- Wizard Buttons -->
+  <data name="PlanEdit_BtnSave" xml:space="preserve"><value>Save</value></data>
+  <data name="PlanEdit_BtnSaveExit" xml:space="preserve"><value>Save &amp; Exit</value></data>
+
 </root>

@@ -29,7 +29,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _btnBack.Visible = activeIndex > 0;
             _btnNext.Visible = !isLastStep;
             _btnSave.Visible = true;
-            _btnSave.Text = isLastStep ? "Kaydet" : "Kaydet & Çık";
+            _btnSave.Text = isLastStep ? Res.Get("PlanEdit_BtnSave") : Res.Get("PlanEdit_BtnSaveExit");
         }
 
         /// <summary>Aktif adımları hesaplar. Hedefler adımı her zaman dahildir.</summary>
@@ -41,7 +41,14 @@ namespace KoruMsSqlYedek.Win.Forms
         /// <summary>Aktif adımlara göre üst bar göstergesini yeniden çizer.</summary>
         private void RebuildStepIndicator()
         {
-            string[] allTitles = { "Bağlantı", "Kaynaklar", "Zamanlama", "Sıkıştırma", "Hedefler", "Bildirim" };
+            string[] allTitles = {
+                Res.Get("PlanEdit_StepConnection"),
+                Res.Get("PlanEdit_StepSources"),
+                Res.Get("PlanEdit_StepScheduling"),
+                Res.Get("PlanEdit_StepCompression"),
+                Res.Get("PlanEdit_StepTargets"),
+                Res.Get("PlanEdit_StepNotification")
+            };
             int count = _activeSteps.Count;
             int stepW = count <= 5 ? 124 : 103;
             int stepStartX = 6;

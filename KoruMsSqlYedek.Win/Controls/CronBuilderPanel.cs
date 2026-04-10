@@ -215,51 +215,58 @@ namespace KoruMsSqlYedek.Win.Controls
 
             int y = 0;
 
-            // Row 1: Sıklık + Saat/Dakika
+            // Row 1: Frequency + Hour/Minute — dynamic positioning for i18n
             _lblFreq = new Label { Text = Res.Get("Cron_LblFrequency"), AutoSize = true, Location = new Point(0, y + 3) };
             Controls.Add(_lblFreq);
 
+            int freqComboX = TextRenderer.MeasureText(_lblFreq.Text, _lblFreq.Font).Width + 2;
             _cmbFrequency = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Location = new Point(52, y),
-                Size = new Size(110, 23)
+                Location = new Point(freqComboX, y),
+                Size = new Size(120, 23)
             };
             _cmbFrequency.Items.AddRange(new object[] { Res.Get("Cron_FreqDaily"), Res.Get("Cron_FreqWeekly"), Res.Get("Cron_FreqMonthly"), Res.Get("Cron_FreqCustom") });
             _cmbFrequency.SelectedIndexChanged += OnValueChanged;
             Controls.Add(_cmbFrequency);
 
-            _lblHour = new Label { Text = Res.Get("Cron_LblHour"), AutoSize = true, Location = new Point(172, y + 3) };
+            int hourLabelX = freqComboX + 120 + 10;
+            _lblHour = new Label { Text = Res.Get("Cron_LblHour"), AutoSize = true, Location = new Point(hourLabelX, y + 3) };
             Controls.Add(_lblHour);
 
+            int hourNudX = hourLabelX + TextRenderer.MeasureText(_lblHour.Text, _lblHour.Font).Width + 2;
             _nudHour = new Theme.ModernNumericUpDown
             {
-                Location = new Point(208, y),
+                Location = new Point(hourNudX, y),
                 Size = new Size(55, 23),
                 Minimum = 0, Maximum = 23, Value = 2
             };
             _nudHour.ValueChanged += OnValueChanged;
             Controls.Add(_nudHour);
 
-            _lblMinute = new Label { Text = ":", AutoSize = true, Location = new Point(265, y + 3) };
+            int colonX = hourNudX + 57;
+            _lblMinute = new Label { Text = ":", AutoSize = true, Location = new Point(colonX, y + 3) };
             Controls.Add(_lblMinute);
 
+            int minuteNudX = colonX + 10;
             _nudMinute = new Theme.ModernNumericUpDown
             {
-                Location = new Point(275, y),
+                Location = new Point(minuteNudX, y),
                 Size = new Size(55, 23),
                 Minimum = 0, Maximum = 59, Value = 0
             };
             _nudMinute.ValueChanged += OnValueChanged;
             Controls.Add(_nudMinute);
 
-            // Aylık gün seçimi (aynı satırda, sıklık=Aylık olduğunda gösterilir)
-            _lblDayOfMonth = new Label { Text = Res.Get("Cron_LblDay"), AutoSize = true, Location = new Point(340, y + 3), Visible = false };
+            // Monthly day selection (same row, visible when frequency=Monthly)
+            int dayLabelX = minuteNudX + 65;
+            _lblDayOfMonth = new Label { Text = Res.Get("Cron_LblDay"), AutoSize = true, Location = new Point(dayLabelX, y + 3), Visible = false };
             Controls.Add(_lblDayOfMonth);
 
+            int dayNudX = dayLabelX + TextRenderer.MeasureText(_lblDayOfMonth.Text, _lblDayOfMonth.Font).Width + 2;
             _nudDayOfMonth = new Theme.ModernNumericUpDown
             {
-                Location = new Point(372, y),
+                Location = new Point(dayNudX, y),
                 Size = new Size(55, 23),
                 Minimum = 1, Maximum = 28, Value = 1,
                 Visible = false
@@ -267,10 +274,10 @@ namespace KoruMsSqlYedek.Win.Controls
             _nudDayOfMonth.ValueChanged += OnValueChanged;
             Controls.Add(_nudDayOfMonth);
 
-            // Özel cron TextBox (aynı satırda saat/dakika yerine)
+            // Custom cron TextBox (same row, replaces hour/minute)
             _txtCustomCron = new TextBox
             {
-                Location = new Point(172, y),
+                Location = new Point(hourLabelX, y),
                 Size = new Size(260, 23),
                 Visible = false,
                 PlaceholderText = "0 0 2 ? * SUN"
