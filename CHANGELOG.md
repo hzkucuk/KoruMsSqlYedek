@@ -1,4 +1,11 @@
-﻿## [0.99.36] - 2025-07-17 — Bulut Yükleme Dosya Boyutu Düzeltmesi
+﻿## [0.99.37] - 2025-07-17 — Dosya Filtre Kalıpları Boyut Hesaplama Düzeltmesi
+
+### Düzeltme
+- **Filtre değişikliğinde boyut yeniden hesaplanıyor** — Dahil/Hariç kalıpları değiştirildiğinde dosya boyutu artık otomatik yeniden hesaplanıyor. Önceden filtre değişikliği boyut gösterimini güncellemiyordu.
+- **Boyut hesaplaması filtreleri dikkate alıyor** — `RequestSizeCalculationAsync` artık include/exclude kalıplarını uygulayarak yalnızca filtreyi geçen dosyaların boyutunu hesaplıyor. Exclude edilen dosyalar toplam boyuta dahil edilmiyor.
+- **İlk açılışta boyut hesaplama** — Dosya kaynağı düzenleme formu önceden seçilmiş klasörlerle açıldığında boyut artık otomatik hesaplanıyor. `SetCheckedPaths` sonrasında `RequestSizeCalculationAsync` tetikleniyor.
+
+## [0.99.36] - 2025-07-17 — Bulut Yükleme Dosya Boyutu Düzeltmesi
 
 ### Düzeltme
 - **Per-file boyut gösterimi** — Toplu bulut yüklemede her dosya satırı artık o dosyanın kendi boyutunu gösteriyor (önceden tüm dosyaların toplam boyutu gösteriliyordu).

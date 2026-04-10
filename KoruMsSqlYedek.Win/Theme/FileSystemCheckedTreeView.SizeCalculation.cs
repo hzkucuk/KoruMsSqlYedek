@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -26,6 +27,11 @@ namespace KoruMsSqlYedek.Win.Theme
             // Seçili yolları UI thread'inde topla
             List<string> checkedPaths = GetCheckedPaths();
 
+            // Filtre kalıplarını kopyala — arka plan thread'inde güvenli erişim
+            bool hasFilters = _includePatterns.Count > 0 || _excludePatterns.Count > 0;
+            List<string> includeSnap = new(_includePatterns);
+            List<string> excludeSnap = new(_excludePatterns);
+
             Task.Run(() =>
             {
                 long total = 0;
@@ -37,14 +43,28 @@ namespace KoruMsSqlYedek.Win.Theme
 
                     if (File.Exists(path))
                     {
+                        // Tekil dosya — filtre kontrolü
+                        if (hasFilters && !PassesFilter(Path.GetFileName(path), includeSnap, excludeSnap))
+                            continue;
+
                         long size = GetFileSizeCached(path);
                         total += size;
                         estimated7z += size * Estimate7zRatio(path);
                     }
                     else if (Directory.Exists(path))
                     {
-                        total += GetFolderSizeCached(path, ct);
-                        estimated7z += GetFolderEstimated7zSize(path, ct);
+                        if (hasFilters)
+                        {
+                            // Filtre varsa klasör içini tek tek tara
+                            var (folderTotal, folder7z) = GetFilteredFolderSize(path, includeSnap, excludeSnap, ct);
+                            total += folderTotal;
+                            estimated7z += folder7z;
+                        }
+                        else
+                        {
+                            total += GetFolderSizeCached(path, ct);
+                            estimated7z += GetFolderEstimated7zSize(path, ct);
+                        }
                     }
                 }
 
@@ -58,6 +78,56 @@ namespace KoruMsSqlYedek.Win.Theme
                     catch (InvalidOperationException) { }
                 }
             }, ct);
+        }
+
+        /// <summary>
+        /// Klasör içindeki dosyaları filtre kalıplarına göre filtreleyerek toplam boyut hesaplar.
+        /// </summary>
+        private (long Total, double Estimated7z) GetFilteredFolderSize(
+            string folderPath, List<string> includes, List<string> excludes, CancellationToken ct)
+        {
+            long total = 0;
+            double estimated7z = 0;
+
+            try
+            {
+                foreach (string file in Directory.EnumerateFiles(folderPath, "*", SearchOption.AllDirectories))
+                {
+                    if (ct.IsCancellationRequested) return (0, 0);
+
+                    string fileName = Path.GetFileName(file);
+                    if (!PassesFilter(fileName, includes, excludes))
+                        continue;
+
+                    try
+                    {
+                        long fileSize = GetFileSizeCached(file);
+                        total += fileSize;
+                        estimated7z += fileSize * Estimate7zRatio(file);
+                    }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+
+            return (total, estimated7z);
+        }
+
+        /// <summary>
+        /// Dosya adının dahil/hariç kalıplarına göre filtreyi geçip geçmediğini kontrol eder.
+        /// Thread-safe: kendi kalıp listelerini kullanır.
+        /// </summary>
+        private static bool PassesFilter(string fileName, List<string> includes, List<string> excludes)
+        {
+            if (excludes.Any(p => MatchesWildcard(fileName, p)))
+                return false;
+
+            if (includes.Count > 0 && !includes.Any(p => MatchesWildcard(fileName, p)))
+                return false;
+
+            return true;
         }
 
         /// <summary>Dosya boyutunu cache'den döndürür, yoksa hesaplar ve cache'ler.</summary>

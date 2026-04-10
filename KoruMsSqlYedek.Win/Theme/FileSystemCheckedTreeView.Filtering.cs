@@ -131,6 +131,34 @@ namespace KoruMsSqlYedek.Win.Theme
             return patternIdx == pattern.Length;
         }
 
+        // ═══════════════ FILTER CHECK FOR SIZE CALCULATION ═══════════════
+
+        /// <summary>
+        /// Dosya adının dahil/hariç kalıplarına göre filtreyi geçip geçmediğini döndürür.
+        /// Boyut hesaplamasında kullanılır — exclude edilen dosyalar sayılmaz.
+        /// </summary>
+        internal bool IsFilePassingFilter(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return false;
+
+            if (IsExcludedByPattern(fileName))
+                return false;
+
+            if (_includePatterns.Count > 0 && !IsIncludedByPattern(fileName))
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Filtre kalıpları değiştiğinde klasör boyut önbelleğini temizler.
+        /// Kalıplar dosya bazında filtre uyguladığından klasör toplamları geçersiz olur.
+        /// </summary>
+        private void InvalidateFilteredFolderCache()
+        {
+            _folderSizeCache.Clear();
+        }
+
         // ═══════════════ HELPER: COLLECT CHECKED PATHS ═══════════════
 
         private static void CollectCheckedPaths(TreeNodeCollection nodes, List<string> paths)
