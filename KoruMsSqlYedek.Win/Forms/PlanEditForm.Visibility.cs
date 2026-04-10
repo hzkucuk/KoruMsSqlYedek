@@ -64,6 +64,11 @@ namespace KoruMsSqlYedek.Win.Forms
             _cronDiff.Visible = idx >= 1;
             _lblIncrCron.Visible = idx >= 2;
             _cronIncr.Visible = idx >= 2;
+
+            // Oto. Tam Yedek Eşiği yalnızca Fark/Artırımlı stratejilerinde anlamlı
+            bool hasChain = idx >= 1;
+            _lblAutoPromote.Enabled = hasChain;
+            _nudAutoPromote.Enabled = hasChain;
         }
 
         private void UpdateRetentionFieldsVisibility()

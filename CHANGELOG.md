@@ -1,4 +1,9 @@
-﻿## [0.99.38] - 2025-07-17 — Bulut Çöp Kutusu Zamana Dayalı Saklama
+﻿## [0.99.39] - 2025-07-17 — Oto. Tam Yedek Eşiği Strateji Bağımlı Devre Dışı
+
+### Düzeltme
+- **"Oto. Tam Yedek Eşiği" tam yedekte devre dışı** — Yedekleme stratejisi "Yalnızca Tam Yedek" seçildiğinde eşik kontrolü ve etiketi artık `Enabled = false` oluyor. Fark/Artırımlı strateji seçildiğinde tekrar aktif.
+
+## [0.99.38] - 2025-07-17 — Bulut Çöp Kutusu Zamana Dayalı Saklama
 
 ### Yeni Özellik
 - **Çöp kutusu saklama süresi (gün)** — Bulut hedeflerinde silinen dosyalar artık belirli gün sayısı boyunca çöp kutusunda tutulabiliyor. Eski ikili seçenek (hemen sil / hiç silme) yerine 0-365 gün aralığında saklama süresi ayarlanabiliyor.
