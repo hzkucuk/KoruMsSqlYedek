@@ -168,7 +168,7 @@
             _toolTip.ShowAlways = true;
 
             int y;
-            int lx = 0, tx = 150, tw = 420;
+            int lx = 0, tx = 180, tw = 390;
 
             // ===================================================================
             // STEP INDICATOR (top bar)

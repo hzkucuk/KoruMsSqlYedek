@@ -1,4 +1,15 @@
-﻿## [0.99.45] - 2025-07-19 — Form Layout Düzeltmeleri & Resx Temizliği
+﻿## [0.99.46] - 2025-07-19 — PlanEditForm Wizard Layout Düzeltmesi
+
+### Düzeltme
+- **PlanEditForm**: Wizard adımlarında etiket-kontrol çakışması düzeltildi (tx=150→180, tw=420→390)
+- İngilizce "Auto Full Backup Threshold:" etiketi NumericUpDown kontrolünün üstüne biniyordu
+- Tüm wizard adımlarında etiket-kontrol aralığı 30px artırıldı
+
+### Etkilenen Dosyalar
+- `PlanEditForm.Designer.cs` — Global tx/tw değerleri güncellendi
+- `PlanEditForm.Visibility.cs` — RelayoutStep3 tx değeri güncellendi
+
+## [0.99.45] - 2025-07-19 — Form Layout Düzeltmeleri & Resx Temizliği
 
 ### Düzeltme
 - **CloudTargetEditDialog**: Form genişliği 450→520px, tüm input kontrolleri sağa kaydırıldı (EN/TR etiketlerin taşmasını önlemek için)

@@ -1,6 +1,6 @@
 # KoruMsSqlYedek
 
-![Version](https://img.shields.io/badge/version-0.99.45-blue)
+![Version](https://img.shields.io/badge/version-0.99.46-blue)
 
 **SQL Server Yedekleme & Bulut Senkronizasyon Sistemi**
 

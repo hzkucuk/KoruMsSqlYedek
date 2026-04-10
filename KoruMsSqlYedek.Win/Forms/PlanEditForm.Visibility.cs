@@ -79,7 +79,7 @@ namespace KoruMsSqlYedek.Win.Forms
             var step3 = _stepPanels[2];
             step3.SuspendLayout();
 
-            int lx = 0, tx = 150;
+            int lx = 0, tx = 180;
             int y = 5;
 
             // Header
