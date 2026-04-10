@@ -102,6 +102,15 @@ namespace KoruMsSqlYedek.Core.IPC
         [JsonProperty("cloudTargetTotal")]
         public int CloudTargetTotal { get; set; }
 
+        [JsonProperty("cloudFileName")]
+        public string CloudFileName { get; set; }
+
+        [JsonProperty("cloudFileIndex")]
+        public int CloudFileIndex { get; set; }
+
+        [JsonProperty("cloudFileTotal")]
+        public int CloudFileTotal { get; set; }
+
         [JsonProperty("progressPercent")]
         public int ProgressPercent { get; set; }
 
@@ -116,6 +125,24 @@ namespace KoruMsSqlYedek.Core.IPC
 
         [JsonProperty("speedBytesPerSecond")]
         public long SpeedBytesPerSecond { get; set; }
+
+        [JsonProperty("remoteFileSizeBytes")]
+        public long RemoteFileSizeBytes { get; set; }
+
+        [JsonProperty("localFileSizeBytes")]
+        public long LocalFileSizeBytes { get; set; }
+
+        [JsonProperty("isIntegrityVerified")]
+        public bool? IsIntegrityVerified { get; set; }
+
+        [JsonProperty("hasFileBackup")]
+        public bool HasFileBackup { get; set; }
+
+        [JsonProperty("hasCloudTargets")]
+        public bool HasCloudTargets { get; set; }
+
+        [JsonProperty("abandonedFiles")]
+        public List<string> AbandonedFiles { get; set; }
 
         /// <summary>
         /// Plan konfigürasyonundaki ToastEnabled değeri.
@@ -140,11 +167,20 @@ namespace KoruMsSqlYedek.Core.IPC
                 CloudTargetName   = args.CloudTargetName,
                 CloudTargetIndex  = args.CloudTargetIndex,
                 CloudTargetTotal  = args.CloudTargetTotal,
+                CloudFileName     = args.CloudFileName,
+                CloudFileIndex    = args.CloudFileIndex,
+                CloudFileTotal    = args.CloudFileTotal,
                 ProgressPercent   = args.ProgressPercent,
                 IsSuccess         = args.IsSuccess,
                 BytesSent         = args.BytesSent,
                 BytesTotal        = args.BytesTotal,
                 SpeedBytesPerSecond = args.SpeedBytesPerSecond,
+                RemoteFileSizeBytes = args.RemoteFileSizeBytes,
+                LocalFileSizeBytes  = args.LocalFileSizeBytes,
+                IsIntegrityVerified = args.IsIntegrityVerified,
+                HasFileBackup     = args.HasFileBackup,
+                HasCloudTargets   = args.HasCloudTargets,
+                AbandonedFiles    = args.AbandonedFiles,
                 ToastEnabled      = args.ToastEnabled
             };
         }
@@ -165,11 +201,20 @@ namespace KoruMsSqlYedek.Core.IPC
                 CloudTargetName  = CloudTargetName,
                 CloudTargetIndex = CloudTargetIndex,
                 CloudTargetTotal = CloudTargetTotal,
+                CloudFileName    = CloudFileName,
+                CloudFileIndex   = CloudFileIndex,
+                CloudFileTotal   = CloudFileTotal,
                 ProgressPercent  = ProgressPercent,
                 IsSuccess        = IsSuccess,
                 BytesSent        = BytesSent,
                 BytesTotal       = BytesTotal,
                 SpeedBytesPerSecond = SpeedBytesPerSecond,
+                RemoteFileSizeBytes = RemoteFileSizeBytes,
+                LocalFileSizeBytes  = LocalFileSizeBytes,
+                IsIntegrityVerified = IsIntegrityVerified,
+                HasFileBackup    = HasFileBackup,
+                HasCloudTargets  = HasCloudTargets,
+                AbandonedFiles   = AbandonedFiles,
                 ToastEnabled     = ToastEnabled
             };
         }

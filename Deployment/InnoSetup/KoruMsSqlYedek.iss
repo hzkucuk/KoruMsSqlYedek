@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.27"
+  #define MyAppVersion "0.99.35"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -57,6 +57,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 ; UI
 WizardStyle=modern
 SetupIconFile=KoruMsSqlYedek.ico
+UninstallDisplayIcon={app}\{#MyAppExeName}
 ; Güncelleme sırasında mevcut verileri koru
 UsePreviousAppDir=yes
 ; Versiyon bilgisi
