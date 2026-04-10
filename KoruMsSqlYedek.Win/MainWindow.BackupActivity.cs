@@ -392,12 +392,21 @@ namespace KoruMsSqlYedek.Win
 
             if (e.BytesTotal > 0)
             {
-                long bytesRemaining = e.BytesTotal - e.BytesSent;
+                // Batch modunda dosya bazlı boyut/ilerleme göster; tekli modda batch = dosya
+                long fileTotalBytes = e.LocalFileSizeBytes > 0 ? e.LocalFileSizeBytes : e.BytesTotal;
+                long fileSentBytes = e.LocalFileSizeBytes > 0 ? e.FileBytesSent : e.BytesSent;
+                fileSentBytes = Math.Clamp(fileSentBytes, 0, fileTotalBytes);
+
+                int filePct = fileTotalBytes > 0
+                    ? (int)(fileSentBytes * 100.0 / fileTotalBytes)
+                    : e.ProgressPercent;
+
+                long bytesRemaining = fileTotalBytes - fileSentBytes;
                 string etaStr = e.SpeedBytesPerSecond > 0
                     ? FormatEta(bytesRemaining, e.SpeedBytesPerSecond)
                     : "";
                 string etaPart = etaStr.Length > 0 ? $" | Süre: {etaStr}" : "";
-                return $"{filePrefix}Yükleniyor: %{e.ProgressPercent} | Gönderilen: {FormatFileSize(e.BytesSent)}/{FormatFileSize(e.BytesTotal)} | Kalan: {FormatFileSize(bytesRemaining)} | Hız: {FormatFileSize(e.SpeedBytesPerSecond)}/s{etaPart}";
+                return $"{filePrefix}Yükleniyor: %{filePct} | Gönderilen: {FormatFileSize(fileSentBytes)}/{FormatFileSize(fileTotalBytes)} | Kalan: {FormatFileSize(bytesRemaining)} | Hız: {FormatFileSize(e.SpeedBytesPerSecond)}/s{etaPart}";
             }
             return $"{filePrefix}Yükleniyor: %{e.ProgressPercent}";
         }

@@ -126,6 +126,9 @@ namespace KoruMsSqlYedek.Core.IPC
         [JsonProperty("speedBytesPerSecond")]
         public long SpeedBytesPerSecond { get; set; }
 
+        [JsonProperty("fileBytesSent")]
+        public long FileBytesSent { get; set; }
+
         [JsonProperty("remoteFileSizeBytes")]
         public long RemoteFileSizeBytes { get; set; }
 
@@ -175,6 +178,7 @@ namespace KoruMsSqlYedek.Core.IPC
                 BytesSent         = args.BytesSent,
                 BytesTotal        = args.BytesTotal,
                 SpeedBytesPerSecond = args.SpeedBytesPerSecond,
+                FileBytesSent     = args.FileBytesSent,
                 RemoteFileSizeBytes = args.RemoteFileSizeBytes,
                 LocalFileSizeBytes  = args.LocalFileSizeBytes,
                 IsIntegrityVerified = args.IsIntegrityVerified,
@@ -209,6 +213,7 @@ namespace KoruMsSqlYedek.Core.IPC
                 BytesSent        = BytesSent,
                 BytesTotal       = BytesTotal,
                 SpeedBytesPerSecond = SpeedBytesPerSecond,
+                FileBytesSent    = FileBytesSent,
                 RemoteFileSizeBytes = RemoteFileSizeBytes,
                 LocalFileSizeBytes  = LocalFileSizeBytes,
                 IsIntegrityVerified = IsIntegrityVerified,

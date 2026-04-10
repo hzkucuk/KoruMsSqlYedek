@@ -41,6 +41,13 @@ namespace KoruMsSqlYedek.Core.Events
         public long SpeedBytesPerSecond { get; set; }
 
         /// <summary>
+        /// Batch modunda şu an yüklenen dosyanın gönderilen byte miktarı.
+        /// Log satırlarında dosya bazlı ilerleme gösterimi için kullanılır.
+        /// BytesSent/BytesTotal batch toplam değerlerini taşırken bu alan dosya bazlıdır.
+        /// </summary>
+        public long FileBytesSent { get; set; }
+
+        /// <summary>
         /// Toplu bulut yüklemede şu an yüklenen dosyanın adı.
         /// </summary>
         public string CloudFileName { get; set; }

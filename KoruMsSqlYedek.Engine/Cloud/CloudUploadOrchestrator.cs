@@ -398,7 +398,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
                             ProgressPercent = batchPct,
                             BytesSent = totalSent,
                             BytesTotal = totalBatchBytes,
-                            SpeedBytesPerSecond = speedBps
+                            SpeedBytesPerSecond = speedBps,
+                            FileBytesSent = fileBytesSent,
+                            LocalFileSizeBytes = currentFileSize
                         });
                     });
 
@@ -438,7 +440,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
                             ProgressPercent = batchPct,
                             BytesSent = totalSent,
                             BytesTotal = totalBatchBytes,
-                            SpeedBytesPerSecond = speedBps
+                            SpeedBytesPerSecond = speedBps,
+                            FileBytesSent = fileBytesSent,
+                            LocalFileSizeBytes = currentFileSize
                         });
                     }
 
