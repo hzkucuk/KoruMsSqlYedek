@@ -54,7 +54,11 @@ namespace KoruMsSqlYedek.Engine
                 }
 
                 MigrateSmtpLegacy(settings);
-                MigrateDefaultLogScheme(settings);
+                bool migrated = MigrateDefaultLogScheme(settings);
+
+                if (migrated)
+                    Save(settings);
+
                 return settings;
             }
             catch (Exception ex)
@@ -104,17 +108,21 @@ namespace KoruMsSqlYedek.Engine
         }
 
         /// <summary>
-        /// Eski varsayılan log renk şeması (koru) → yeni varsayılan (ozgur-filistin) migrasyonu.
-        /// Kullanıcı açıkça farklı bir şema seçmemişse otomatik güncellenir.
+        /// SchemaVersion &lt; 2 olan mevcut kurulumları yeni varsayılan log renk şemasına (ozgur-filistin) taşır.
+        /// Tek seferlik zorunlu migrasyon — sonraki kullanıcı tercihleri korunur.
         /// </summary>
-        private static void MigrateDefaultLogScheme(AppSettings settings)
+        private static bool MigrateDefaultLogScheme(AppSettings settings)
         {
-            if (string.IsNullOrEmpty(settings.LogColorScheme) ||
-                string.Equals(settings.LogColorScheme, "koru", StringComparison.OrdinalIgnoreCase))
-            {
-                Log.Information("Log renk şeması eski varsayılandan (koru) yeni varsayılana (ozgur-filistin) taşınıyor.");
-                settings.LogColorScheme = "ozgur-filistin";
-            }
+            if (settings.SchemaVersion >= 2)
+                return false;
+
+            Log.Information(
+                "SchemaVersion {Old} → 2: Log renk şeması '{OldScheme}' → 'ozgur-filistin' olarak güncelleniyor.",
+                settings.SchemaVersion, settings.LogColorScheme);
+
+            settings.LogColorScheme = "ozgur-filistin";
+            settings.SchemaVersion = 2;
+            return true;
         }
 
         /// <inheritdoc/>

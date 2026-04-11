@@ -102,9 +102,9 @@ namespace KoruMsSqlYedek.Core.Models
             !string.IsNullOrEmpty(GoogleOAuthClientId) &&
             !string.IsNullOrEmpty(GoogleOAuthClientSecret);
 
-        /// <summary>Ayar şeması versiyonu (geriye uyumluluk).</summary>
+        /// <summary>Ayar şeması versiyonu (geriye uyumluluk migrasyonları için).</summary>
         [JsonProperty("schemaVersion")]
-        public int SchemaVersion { get; set; } = 1;
+        public int SchemaVersion { get; set; } = 2;
     }
 
     /// <summary>

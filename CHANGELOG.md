@@ -1,12 +1,15 @@
 ﻿## [0.99.54] - 2025-07-20 — Özgür Filistin Tema Migrasyon Düzeltmesi
 
 ### Düzeltme
-- **Tema varsayılan olarak uygulanmıyordu:** Disk üzerindeki mevcut ayar dosyası eski varsayılan "koru" değerini koruduğu için yeni varsayılan (Özgür Filistin) devreye giremiyordu
-- `AppSettingsManager` içine `MigrateDefaultLogScheme` migrasyon metodu eklendi — eski "koru" değeri otomatik olarak "ozgur-filistin" olarak güncelleniyor
+- **Tema tüm mevcut kurulumlarda uygulanmıyordu:** Diskteki ayar dosyasında farklı bir tema kayıtlıysa (ör. "ubuntu", "koru") yeni varsayılan (Özgür Filistin) devreye giremiyordu
+- `SchemaVersion` tabanlı zorunlu migrasyon eklendi — `SchemaVersion < 2` olan tüm mevcut kurulumlar otomatik olarak "ozgur-filistin" şemasına geçiriliyor
+- Migrasyon sonucu disk üzerine kalıcı yazılıyor (`Save()`)
+- Yeni kurulumlar `SchemaVersion = 2` ile başlıyor (migrasyon atlanır)
 - Koru tema adından "(Varsayılan)" etiketi kaldırıldı
 
 ### Etkilenen Dosyalar
-- `KoruMsSqlYedek.Engine\AppSettingsManager.cs` — MigrateDefaultLogScheme eklendi
+- `KoruMsSqlYedek.Engine\AppSettingsManager.cs` — SchemaVersion tabanlı MigrateDefaultLogScheme + Save
+- `KoruMsSqlYedek.Core\Models\AppSettings.cs` — SchemaVersion varsayılan 1→2
 - `KoruMsSqlYedek.Win\Theme\TerminalColorScheme.cs` — Koru DisplayName güncellendi
 
 ## [0.99.53] - 2025-07-20 — Özgür Filistin Varsayılan Tema
