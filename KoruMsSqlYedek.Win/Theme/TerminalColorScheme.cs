@@ -68,7 +68,7 @@ namespace KoruMsSqlYedek.Win.Theme
         // ───────────────────────────────────────────────────────
         //  1. Koru — varsayılan (mevcut palet)
         // ───────────────────────────────────────────────────────
-        internal static readonly TerminalColorScheme Koru = new("koru", "🌿 Koru (Varsayılan)")
+        internal static readonly TerminalColorScheme Koru = new("koru", "🌿 Koru")
         {
             Default    = Color.FromArgb(190, 195, 200),
             Timestamp  = Color.FromArgb( 90, 160, 120),

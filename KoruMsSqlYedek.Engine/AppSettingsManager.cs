@@ -54,6 +54,7 @@ namespace KoruMsSqlYedek.Engine
                 }
 
                 MigrateSmtpLegacy(settings);
+                MigrateDefaultLogScheme(settings);
                 return settings;
             }
             catch (Exception ex)
@@ -100,6 +101,20 @@ namespace KoruMsSqlYedek.Engine
 
             // Migrasyon tamamlandı — eski alan temizlendi, bir sonraki kayıtta dosyaya yazılmaz
             settings.Smtp = null;
+        }
+
+        /// <summary>
+        /// Eski varsayılan log renk şeması (koru) → yeni varsayılan (ozgur-filistin) migrasyonu.
+        /// Kullanıcı açıkça farklı bir şema seçmemişse otomatik güncellenir.
+        /// </summary>
+        private static void MigrateDefaultLogScheme(AppSettings settings)
+        {
+            if (string.IsNullOrEmpty(settings.LogColorScheme) ||
+                string.Equals(settings.LogColorScheme, "koru", StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Information("Log renk şeması eski varsayılandan (koru) yeni varsayılana (ozgur-filistin) taşınıyor.");
+                settings.LogColorScheme = "ozgur-filistin";
+            }
         }
 
         /// <inheritdoc/>

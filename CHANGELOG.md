@@ -1,4 +1,15 @@
-﻿## [0.99.53] - 2025-07-20 — Özgür Filistin Varsayılan Tema
+﻿## [0.99.54] - 2025-07-20 — Özgür Filistin Tema Migrasyon Düzeltmesi
+
+### Düzeltme
+- **Tema varsayılan olarak uygulanmıyordu:** Disk üzerindeki mevcut ayar dosyası eski varsayılan "koru" değerini koruduğu için yeni varsayılan (Özgür Filistin) devreye giremiyordu
+- `AppSettingsManager` içine `MigrateDefaultLogScheme` migrasyon metodu eklendi — eski "koru" değeri otomatik olarak "ozgur-filistin" olarak güncelleniyor
+- Koru tema adından "(Varsayılan)" etiketi kaldırıldı
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine\AppSettingsManager.cs` — MigrateDefaultLogScheme eklendi
+- `KoruMsSqlYedek.Win\Theme\TerminalColorScheme.cs` — Koru DisplayName güncellendi
+
+## [0.99.53] - 2025-07-20 — Özgür Filistin Varsayılan Tema
 
 ### İyileştirme
 - **🇵🇸 Özgür Filistin varsayılan tema oldu:** Log konsolu renk şeması artık varsayılan olarak Özgür Filistin paleti ile başlıyor
