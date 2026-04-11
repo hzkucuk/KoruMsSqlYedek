@@ -53,22 +53,22 @@ namespace KoruMsSqlYedek.Win.Theme
         internal static Color GridHeaderText = Color.FromArgb(160, 160, 170);
         internal static Color GridErrorRow = Color.FromArgb(58, 20, 20);
 
-        // Backup Log Console — "Koru" (Protect) trust-inspired palette
-        internal static Color LogDefault = Color.FromArgb(190, 195, 200);
-        internal static Color LogTimestamp = Color.FromArgb(90, 160, 120);
-        internal static Color LogSuccess = Color.FromArgb(46, 204, 113);
-        internal static Color LogError = Color.FromArgb(255, 107, 107);
-        internal static Color LogWarning = Color.FromArgb(255, 193, 69);
-        internal static Color LogInfo = Color.FromArgb(116, 185, 255);
-        internal static Color LogProgress = Color.FromArgb(0, 210, 211);
-        internal static Color LogCloud = Color.FromArgb(162, 155, 254);
-        internal static Color LogStarted = Color.FromArgb(16, 185, 129);
-        internal static Color LogConsoleBg = Color.FromArgb(22, 24, 28);
+        // Backup Log Console — Özgür Filistin varsayılan palette
+        internal static Color LogDefault = Color.FromArgb(232, 228, 220);
+        internal static Color LogTimestamp = Color.FromArgb(85, 105, 72);
+        internal static Color LogSuccess = Color.FromArgb(0, 158, 73);
+        internal static Color LogError = Color.FromArgb(214, 40, 52);
+        internal static Color LogWarning = Color.FromArgb(218, 178, 52);
+        internal static Color LogInfo = Color.FromArgb(120, 180, 228);
+        internal static Color LogProgress = Color.FromArgb(46, 204, 120);
+        internal static Color LogCloud = Color.FromArgb(195, 100, 125);
+        internal static Color LogStarted = Color.FromArgb(0, 168, 82);
+        internal static Color LogConsoleBg = Color.FromArgb(10, 10, 14);
 
         // ═══════════════ THEME APPLY ═══════════════
 
         /// <summary>Şu anda uygulanan log konsolu renk şablonu.</summary>
-        internal static TerminalColorScheme ActiveLogScheme { get; private set; } = TerminalColorScheme.Koru;
+        internal static TerminalColorScheme ActiveLogScheme { get; private set; } = TerminalColorScheme.OzgurFilistin;
 
         internal static void ApplyTheme(ThemeMode mode)
         {
@@ -87,7 +87,7 @@ namespace KoruMsSqlYedek.Win.Theme
         /// </summary>
         internal static void ApplyLogColorScheme(TerminalColorScheme scheme)
         {
-            ActiveLogScheme = scheme ?? TerminalColorScheme.Koru;
+            ActiveLogScheme = scheme ?? TerminalColorScheme.OzgurFilistin;
             LogDefault   = ActiveLogScheme.Default;
             LogTimestamp  = ActiveLogScheme.Timestamp;
             LogSuccess   = ActiveLogScheme.Success;

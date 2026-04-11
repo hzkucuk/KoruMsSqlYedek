@@ -41,6 +41,7 @@ namespace KoruMsSqlYedek.Win.Theme
         /// <summary>Tüm yerleşik şablonları döndürür.</summary>
         internal static TerminalColorScheme[] GetAll() =>
         [
+            OzgurFilistin,
             Koru,
             SolarizedDark,
             Monokai,
@@ -52,17 +53,16 @@ namespace KoruMsSqlYedek.Win.Theme
             CatppuccinMocha,
             Ubuntu,
             MatrixGreen,
-            OzgurFilistin,
             SolarizedLight,
         ];
 
-        /// <summary>Id ile şablon arar; bulunamazsa Koru döner.</summary>
+        /// <summary>Id ile şablon arar; bulunamazsa Özgür Filistin döner.</summary>
         internal static TerminalColorScheme FindById(string id)
         {
-            if (string.IsNullOrEmpty(id)) return Koru;
+            if (string.IsNullOrEmpty(id)) return OzgurFilistin;
             foreach (var s in GetAll())
                 if (s.Id == id) return s;
-            return Koru;
+            return OzgurFilistin;
         }
 
         // ───────────────────────────────────────────────────────

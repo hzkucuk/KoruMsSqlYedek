@@ -1,4 +1,17 @@
-﻿## [0.99.52] - 2025-07-20 — Özgür Filistin Tema & Installer Uyumluluk Düzeltmesi
+﻿## [0.99.53] - 2025-07-20 — Özgür Filistin Varsayılan Tema
+
+### İyileştirme
+- **🇵🇸 Özgür Filistin varsayılan tema oldu:** Log konsolu renk şeması artık varsayılan olarak Özgür Filistin paleti ile başlıyor
+- Tema listesinde birinci sıraya taşındı
+- Tüm fallback referansları (AppSettings, ModernTheme, FindById) güncellendi
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core\Models\AppSettings.cs` — Varsayılan LogColorScheme: "ozgur-filistin"
+- `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — Varsayılan log renkleri ve fallback
+- `KoruMsSqlYedek.Win\Theme\TerminalColorScheme.cs` — GetAll() sıralama ve FindById fallback
+- `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — ControlsToSettings fallback
+
+## [0.99.52] - 2025-07-20 — Özgür Filistin Tema & Installer Uyumluluk Düzeltmesi
 
 ### Yeni Özellik
 - **🇵🇸 Özgür Filistin Terminal Renk Şeması:** Filistin bayrağı renkleri (Siyah, Beyaz, Yeşil, Kırmızı) ilham alınarak tasarlanmış yeni log konsolu renk şeması eklendi

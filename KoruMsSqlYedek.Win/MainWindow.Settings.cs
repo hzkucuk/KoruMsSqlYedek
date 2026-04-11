@@ -70,7 +70,7 @@ namespace KoruMsSqlYedek.Win
             int schemeIdx = _cmbLogColorScheme.SelectedIndex;
             s.LogColorScheme = (schemeIdx >= 0 && schemeIdx < schemes.Length)
                 ? schemes[schemeIdx].Id
-                : "koru";
+                : "ozgur-filistin";
 
             // SMTP profiller Add/Edit/Delete dialoglarında bağımsız kaydedilir; burada dokunulmaz.
 
