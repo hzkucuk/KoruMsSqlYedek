@@ -1,4 +1,24 @@
-﻿## [0.99.50] - 2025-07-19 — PlanEditForm Layout: Sol Kenar Boşluğu Düzeltmesi
+﻿## [0.99.51] - 2025-07-20 — Self-Contained Dağıtım & Geniş OS Uyumluluğu
+
+### İyileştirme
+- **Self-Contained Dağıtım:** Win ve Service projeleri `RuntimeIdentifier=win-x64` + `SelfContained=true` ile yapılandırıldı — hedef sunucuya .NET runtime yüklemesi artık gerekli değil
+- **Geniş OS Uyumluluğu:** `app.manifest` dosyalarına Windows Vista/Server 2008'den Windows 11/Server 2025'e kadar tüm `supportedOS` GUID'leri eklendi
+  - Windows 10/11 / Server 2016+ (`{8e0f7a12-...}`)
+  - Windows 8.1 / Server 2012 R2 (`{1f676c76-...}`)
+  - Windows 8 / Server 2012 (`{4a2f28e3-...}`)
+  - Windows 7 / Server 2008 R2 (`{35138b9a-...}`)
+  - Windows Vista / Server 2008 (`{e2011457-...}`)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\app.manifest` — 5 supportedOS GUID eklendi
+- `KoruMsSqlYedek.Service\app.manifest` — 5 supportedOS GUID eklendi
+- `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — RuntimeIdentifier + SelfContained eklendi
+- `KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj` — RuntimeIdentifier + SelfContained eklendi
+
+### Not
+- .NET 10 resmi olarak Windows Server 2012 ve üstünü destekler. Windows 7/Server 2008 manifest GUID'leri eklenmiş olmakla birlikte, bu sürümlerde runtime seviyesinde sorun çıkabilir.
+
+## [0.99.50] - 2025-07-19 — PlanEditForm Layout: Sol Kenar Boşluğu Düzeltmesi
 
 ### Düzeltme
 - **Tüm step panellerinde** (Step 1-6) label ve kontrollerin X=0 pozisyonu X=24'e kaydırıldı (sol kenar boşluğu eklendi)
