@@ -252,5 +252,16 @@ namespace KoruMsSqlYedek.Win.Theme
                 _textBox.Text = _value.ToString("F" + _decimalPlaces);
             }
         }
+
+        /// <summary>Tema değişikliğinde cache'lenmiş renkleri günceller.</summary>
+        internal void RefreshThemeColors()
+        {
+            _borderColor = ModernTheme.BorderColor;
+            _focusBorderColor = ModernTheme.AccentPrimary;
+            BackColor = ModernTheme.SurfaceColor;
+            _textBox.BackColor = ModernTheme.SurfaceColor;
+            _textBox.ForeColor = ModernTheme.TextPrimary;
+            Invalidate();
+        }
     }
 }

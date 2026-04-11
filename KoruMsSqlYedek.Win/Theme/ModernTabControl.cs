@@ -143,5 +143,16 @@ namespace KoruMsSqlYedek.Win.Theme
         {
             // Owner-draw modunda OnPaint ile çizim yapıldığı için burada işlem yok
         }
+
+        /// <summary>Tema değişikliğinde cache'lenmiş renkleri günceller.</summary>
+        internal void RefreshThemeColors()
+        {
+            _activeTabColor = ModernTheme.SurfaceColor;
+            _inactiveTabColor = ModernTheme.BackgroundColor;
+            _activeIndicatorColor = ModernTheme.AccentPrimary;
+            _activeTextColor = ModernTheme.AccentPrimary;
+            _inactiveTextColor = ModernTheme.TextSecondary;
+            Invalidate();
+        }
     }
 }

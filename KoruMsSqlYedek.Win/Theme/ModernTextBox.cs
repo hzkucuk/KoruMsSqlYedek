@@ -188,5 +188,16 @@ namespace KoruMsSqlYedek.Win.Theme
         {
             _innerTextBox.SelectAll();
         }
+
+        /// <summary>Tema değişikliğinde cache'lenmiş renkleri günceller.</summary>
+        internal void RefreshThemeColors()
+        {
+            _borderColor = ModernTheme.BorderColor;
+            _focusBorderColor = ModernTheme.AccentPrimary;
+            BackColor = ModernTheme.SurfaceColor;
+            _innerTextBox.BackColor = ModernTheme.SurfaceColor;
+            _innerTextBox.ForeColor = ModernTheme.TextPrimary;
+            Invalidate();
+        }
     }
 }

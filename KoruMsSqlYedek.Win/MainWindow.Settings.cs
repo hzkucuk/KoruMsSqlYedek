@@ -129,9 +129,18 @@ namespace KoruMsSqlYedek.Win
                 };
                 Theme.ModernTheme.ApplyTheme(themeMode);
 
+                // .NET 10 native color mode güncelle
+                var colorMode = themeMode == Theme.ThemeMode.Light
+                    ? SystemColorMode.Classic
+                    : SystemColorMode.Dark;
+                Application.SetColorMode(colorMode);
+
                 // Log renk şemasını uygula
                 Theme.ModernTheme.ApplyLogColorScheme(settings.LogColorScheme);
                 _txtBackupLog.BackColor = Theme.ModernTheme.LogConsoleBg;
+
+                // Tüm kontrollerin cache'lenmiş renklerini güncelle
+                RefreshTheme();
 
                 // Dil değişikliği varsa kültürü güncelle ve tüm UI'yı yeniden lokalize et
                 if (!string.Equals(previousLang, settings.Language, StringComparison.OrdinalIgnoreCase))

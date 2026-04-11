@@ -167,5 +167,14 @@ namespace KoruMsSqlYedek.Win.Theme
             path.CloseFigure();
             return path;
         }
+
+        /// <summary>Tema değişikliğinde cache'lenmiş renkleri günceller.</summary>
+        internal void RefreshThemeColors()
+        {
+            _checkedColor = ModernTheme.AccentPrimary;
+            _uncheckedBorderColor = ModernTheme.BorderColor;
+            ForeColor = ModernTheme.TextPrimary;
+            Invalidate();
+        }
     }
 }

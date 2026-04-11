@@ -197,6 +197,14 @@ namespace KoruMsSqlYedek.Win.Theme
             _progressColor = ModernTheme.AccentPrimary;
             Invalidate();
         }
+
+        /// <summary>Tema değişikliğinde cache'lenmiş renkleri günceller.</summary>
+        internal void RefreshThemeColors()
+        {
+            _progressColor = ModernTheme.AccentPrimary;
+            _trackColor = ModernTheme.BorderColor;
+            Invalidate();
+        }
     }
 
     internal enum ProgressBarDisplayMode

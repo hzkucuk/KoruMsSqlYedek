@@ -1,4 +1,20 @@
-﻿## [0.99.55] - 2025-07-20 — 🇵🇸 Özgür Filistin Full App Theme
+﻿## [0.99.56] - 2025-07-21 — 🔧 Tema Runtime Geçiş Düzeltmesi
+
+### Düzeltme
+- **Filistin teması (ve diğer temalar) runtime geçişte uygulanmıyordu:** Modern* kontrollerin constructor'da cache'lediği renkler tema değiştiğinde güncellenmiyor, kontroller eski renklerle kalıyordu
+- 11 Modern* kontrole `RefreshThemeColors()` metodu eklendi (ModernTabControl, ModernCardPanel, ModernHeaderPanel, ModernTextBox, ModernSearchBox, ModernNumericUpDown, ModernComboBox, ModernCheckBox, ModernGroupBox, ModernDivider, ModernProgressBar, ModernToggleSwitch)
+- `ModernFormBase.RefreshTheme()` metodu eklendi — tüm kontrol ağacını dolaşarak cache'lenmiş renkleri günceller
+- `OnSaveSettingsClick`'e `RefreshTheme()` ve `Application.SetColorMode()` eklendi
+- Tema değişikliği artık uygulama yeniden başlatılmadan anlık uygulanır
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — RefreshTheme + RefreshControlTree + RefreshSingleControl
+- `KoruMsSqlYedek.Win\Theme\Modern*.cs` (11 dosya) — RefreshThemeColors()
+- `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — RefreshTheme + SetColorMode
+
+---
+
+## [0.99.55] - 2025-07-20 — 🇵🇸 Özgür Filistin Full App Theme
 
 ### Yeni Özellik
 - **🇵🇸 Özgür Filistin tam uygulama teması eklendi:** Sadece log konsolunda değil, tüm uygulamada aktif olan yeni tema modu

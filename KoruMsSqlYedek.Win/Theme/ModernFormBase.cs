@@ -31,6 +31,28 @@ namespace KoruMsSqlYedek.Win.Theme
         }
 
         /// <summary>
+        /// Çalışma zamanında tema değişikliği sonrası tüm kontrollerin renklerini günceller.
+        /// ModernTheme.ApplyTheme() çağrıldıktan sonra bu metod çağrılmalıdır.
+        /// </summary>
+        internal void RefreshTheme()
+        {
+            SuspendLayout();
+
+            // Form kendi renklerini güncelle
+            BackColor = ModernTheme.BackgroundColor;
+            ForeColor = ModernTheme.TextPrimary;
+
+            // Global ToolStrip renderer'ı yenile
+            ToolStripManager.Renderer = new ModernToolStripRenderer();
+
+            // Tüm kontrol ağacını güncelle
+            RefreshControlTree(this);
+
+            ResumeLayout(true);
+            Invalidate(true);
+        }
+
+        /// <summary>
         /// Yalnızca custom owner-drawn kontrollere ve özel ayar gerektiren kontrollere tema uygular.
         /// Standart kontroller .NET 10 native dark mode tarafından otomatik yönetilir.
         /// </summary>
@@ -44,6 +66,148 @@ namespace KoruMsSqlYedek.Win.Theme
                 {
                     ApplyThemeToCustomControls(c);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Tüm kontrol ağacını dolaşarak hem Modern* hem standart kontrollerin
+        /// cache'lenmiş renklerini günceller.
+        /// </summary>
+        private static void RefreshControlTree(Control parent)
+        {
+            foreach (Control c in parent.Controls)
+            {
+                RefreshSingleControl(c);
+
+                if (c.HasChildren)
+                {
+                    RefreshControlTree(c);
+                }
+            }
+        }
+
+        private static void RefreshSingleControl(Control c)
+        {
+            // ── Modern* kontroller — cache'lenmiş renkleri yeniden yükle ──
+
+            if (c is ModernTabControl mtc)
+            {
+                mtc.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernCardPanel mcp)
+            {
+                mcp.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernHeaderPanel mhp)
+            {
+                mhp.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernTextBox mtb)
+            {
+                mtb.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernSearchBox msb)
+            {
+                msb.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernNumericUpDown mnud)
+            {
+                mnud.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernGroupBox mgb)
+            {
+                mgb.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernCheckBox mcb)
+            {
+                mcb.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernProgressBar mpb)
+            {
+                mpb.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernToggleSwitch mts)
+            {
+                mts.RefreshThemeColors();
+                return;
+            }
+
+            if (c is ModernDivider md)
+            {
+                md.RefreshThemeColors();
+                return;
+            }
+
+            // ModernButton, ModernLoadingOverlay — doğrudan
+            // ModernTheme.* okuyor (OnPaint'te), sadece Invalidate yeterli
+            if (c is ModernButton or ModernLoadingOverlay)
+            {
+                c.Invalidate();
+                return;
+            }
+
+            if (c is ModernComboBox mcmb)
+            {
+                mcmb.RefreshThemeColors();
+                return;
+            }
+
+            // ── Standart kontroller ──
+
+            if (c is DataGridView dgv)
+            {
+                ModernTheme.StyleDataGridView(dgv);
+                return;
+            }
+
+            if (c is ToolStrip ts && c is not StatusStrip && c is not MenuStrip)
+            {
+                ModernTheme.StyleToolStrip(ts);
+                ts.Renderer = new ModernToolStripRenderer();
+                return;
+            }
+
+            if (c is StatusStrip ss)
+            {
+                ModernTheme.StyleStatusStrip(ss);
+                ss.Renderer = new ModernToolStripRenderer();
+                return;
+            }
+
+            if (c is TabPage tp)
+            {
+                tp.BackColor = ModernTheme.BackgroundColor;
+                tp.ForeColor = ModernTheme.TextPrimary;
+                return;
+            }
+
+            if (c is Panel pnl)
+            {
+                pnl.BackColor = ModernTheme.BackgroundColor;
+                return;
+            }
+
+            if (c is RichTextBox or TreeView or ListBox)
+            {
+                ModernTheme.ApplyScrollBarTheme(c);
             }
         }
 
