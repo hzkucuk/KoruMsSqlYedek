@@ -47,8 +47,9 @@ OutputBaseFilename=KoruMsSqlYedek_v{#MyAppVersion}_Setup
 ; Sıkıştırma
 Compression=lzma2/ultra64
 SolidCompression=yes
-; Minimum OS: Windows 10 (gerekli: .NET 10 Desktop Runtime)
-MinVersion=10.0
+; Minimum OS: Windows Server 2012 / Windows 8 (self-contained deployment)
+; 6.2 = Windows 8 / Server 2012, 6.3 = Windows 8.1 / Server 2012 R2
+MinVersion=6.2
 ; Yönetici yetkisi gerekli (service kurulumu için)
 PrivilegesRequired=admin
 ; Mimari
@@ -117,8 +118,9 @@ Source: "install-service.cmd"; DestDir: "{app}\Service"; Components: service; Fl
 Source: "uninstall-service.cmd"; DestDir: "{app}\Service"; Components: service; Flags: ignoreversion
 
 ; --- .NET Desktop Runtime Redistributable ---
-; dontcopy: PrepareToInstall içinde ExtractTemporaryFile ile çıkarılır (PrepareToInstall, [Files] çıkarımından ÖNCE çalışır)
-Source: "redist\{#DotNetRuntimeInstaller}"; Flags: dontcopy nocompression
+; Self-contained deployment: .NET runtime uygulama içinde gömülüdür, ayrı runtime kurulumu gerekmez.
+; Aşağıdaki satır framework-dependent deploy için korunmuştur (şu an devre dışı).
+; Source: "redist\{#DotNetRuntimeInstaller}"; Flags: dontcopy nocompression
 
 ; --- Kurulum Bilgi Dosyaları ---
 Source: "license.txt"; DestDir: "{app}"; Flags: ignoreversion
@@ -174,6 +176,7 @@ var
 
 // .NET 10 Desktop Runtime kurulu mu kontrol et
 // Konum: C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\10.*
+// NOT: Self-contained deployment kullanıldığında runtime uygulama içinde gömülüdür.
 function IsDotNet10DesktopInstalled(): Boolean;
 var
   RuntimeBase: String;
@@ -195,56 +198,19 @@ end;
 function InitializeSetup(): Boolean;
 begin
   Result := True;
-  DotNetNeeded := not IsDotNet10DesktopInstalled();
+  // Self-contained deployment: .NET runtime uygulama içinde gömülüdür.
+  // Ayrı runtime kurulumu gerekmez.
+  DotNetNeeded := False;
 end;
 
 // Dosyalar kopyalandıktan sonra, asıl kurulum öncesi .NET Runtime kur
+// Self-contained deployment'ta bu fonksiyon bir şey yapmaz.
 function PrepareToInstall(var NeedsRestart: Boolean): String;
-var
-  RuntimePath: String;
-  ResultCode: Integer;
 begin
   Result := '';
   NeedsRestart := False;
-
-  if DotNetNeeded then
-  begin
-    // Önce runtime dosyasını {tmp} klasörüne çıkar
-    // (PrepareToInstall, [Files] çıkarımından ÖNCE çalışır; dontcopy dosyalar manuel çıkarılmalı)
-    ExtractTemporaryFile('{#DotNetRuntimeInstaller}');
-    RuntimePath := ExpandConstant('{tmp}\{#DotNetRuntimeInstaller}');
-    // Kullanıcıya bilgi ver
-    WizardForm.StatusLabel.Caption := ExpandConstant('{cm:DotNetInstalling}');
-    WizardForm.StatusLabel.Update;
-
-    // Sessiz kurulum: /install /quiet /norestart
-    if not Exec(RuntimePath, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-    begin
-      Result := ExpandConstant('{cm:DotNetFailed}');
-      StringChange(Result, '%1', IntToStr(ResultCode));
-      Exit;
-    end;
-
-    // Başarı kontrolleri:
-    // 0 = başarılı kurulum
-    // 1641 = kurulum başarılı, yeniden başlatma başlatıldı
-    // 3010 = kurulum başarılı, yeniden başlatma gerekli
-    if (ResultCode <> 0) and (ResultCode <> 1641) and (ResultCode <> 3010) then
-    begin
-      Result := ExpandConstant('{cm:DotNetFailed}');
-      StringChange(Result, '%1', IntToStr(ResultCode));
-      Exit;
-    end;
-
-    if (ResultCode = 1641) or (ResultCode = 3010) then
-      NeedsRestart := True;
-
-    // Kurulum sonrası doğrulama
-    if IsDotNet10DesktopInstalled() then
-      Log('.NET 10 Desktop Runtime başarıyla kuruldu.')
-    else if not NeedsRestart then
-      Log('.NET 10 Desktop Runtime kurulumu tamamlandı ancak doğrulanamadı (restart gerekebilir).');
-  end;
+  // Self-contained: .NET runtime uygulama ile birlikte dağıtılır, kurulum gerekmez.
+  Log('Self-contained deployment: .NET runtime kurulumu atlanıyor.');
 end;
 
 // Güncelleme öncesi servisi durdur ve tray uygulamasını kapat

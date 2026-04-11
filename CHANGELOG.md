@@ -1,4 +1,20 @@
-﻿## [0.99.51] - 2025-07-20 — Self-Contained Dağıtım & Geniş OS Uyumluluğu
+﻿## [0.99.52] - 2025-07-20 — Özgür Filistin Tema & Installer Uyumluluk Düzeltmesi
+
+### Yeni Özellik
+- **🇵🇸 Özgür Filistin Terminal Renk Şeması:** Filistin bayrağı renkleri (Siyah, Beyaz, Yeşil, Kırmızı) ilham alınarak tasarlanmış yeni log konsolu renk şeması eklendi
+  - Zeytindalı beyazı (varsayılan metin), Filistin yeşili (başarı), Filistin kırmızısı (hata), Akdeniz mavisi (bilgi), Zeytin yağı altını (uyarı), Umut yeşili (ilerleme)
+
+### Düzeltme
+- **Installer OS Uyumluluğu:** Inno Setup `MinVersion` değeri `10.0`'dan `6.2`'ye düşürüldü — Windows Server 2012 / Windows 8 ve üzeri artık destekleniyor
+- **Self-Contained Publish:** `Build-Release.ps1` publish komutları `--self-contained true` olarak güncellendi — .NET runtime artık uygulama ile birlikte dağıtılıyor
+- **Runtime Installer Kaldırıldı:** Self-contained dağıtımda ayrı .NET runtime kurulumu gerekmediği için ISS'den .NET runtime install mantığı devre dışı bırakıldı
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\TerminalColorScheme.cs` — Özgür Filistin şeması eklendi
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — MinVersion=6.2, runtime install devre dışı
+- `Deployment\Build-Release.ps1` — self-contained true
+
+## [0.99.51] - 2025-07-20 — Self-Contained Dağıtım & Geniş OS Uyumluluğu
 
 ### İyileştirme
 - **Self-Contained Dağıtım:** Win ve Service projeleri `RuntimeIdentifier=win-x64` + `SelfContained=true` ile yapılandırıldı — hedef sunucuya .NET runtime yüklemesi artık gerekli değil

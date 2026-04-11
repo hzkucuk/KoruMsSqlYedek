@@ -52,6 +52,7 @@ namespace KoruMsSqlYedek.Win.Theme
             CatppuccinMocha,
             Ubuntu,
             MatrixGreen,
+            OzgurFilistin,
             SolarizedLight,
         ];
 
@@ -252,7 +253,26 @@ namespace KoruMsSqlYedek.Win.Theme
         };
 
         // ───────────────────────────────────────────────────────
-        // 12. Solarized Light — Ethan Schoonover (light variant)
+        // 12. Özgür Filistin 🇵🇸 — Palestinian flag inspired
+        //     Siyah: Kararlılık, gece   |  Beyaz: Barış, umut
+        //     Yeşil: Toprak, bereket    |  Kırmızı: Cesaret, direniş
+        // ───────────────────────────────────────────────────────
+        internal static readonly TerminalColorScheme OzgurFilistin = new("ozgur-filistin", "🇵🇸 Özgür Filistin")
+        {
+            Default    = Color.FromArgb(232, 228, 220), // zeytindalı beyazı — barış
+            Timestamp  = Color.FromArgb( 85, 105,  72), // kadim zeytin ağacı gölgesi
+            Success    = Color.FromArgb(  0, 158,  73), // Filistin yeşili — verimli toprak
+            Error      = Color.FromArgb(214,  40,  52), // Filistin kırmızısı — cesaret
+            Warning    = Color.FromArgb(218, 178,  52), // altın zeytin yağı
+            Info       = Color.FromArgb(120, 180, 228), // Akdeniz gökyüzü mavisi
+            Progress   = Color.FromArgb( 46, 204, 120), // umut yeşili — filizlenen gelecek
+            Cloud      = Color.FromArgb(195, 100, 125), // gün batımı kızılı — ufuktaki özgürlük
+            Started    = Color.FromArgb(  0, 168,  82), // yeni başlangıç yeşili — direniş filizi
+            Background = Color.FromArgb( 10,  10,  14), // Filistin gecesi — karanlıktan doğan ışık
+        };
+
+        // ───────────────────────────────────────────────────────
+        // 13. Solarized Light — Ethan Schoonover (light variant)
         // ───────────────────────────────────────────────────────
         internal static readonly TerminalColorScheme SolarizedLight = new("solarized-light", "☀️ Solarized Light")
         {
