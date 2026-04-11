@@ -1,4 +1,22 @@
-﻿## [0.99.56] - 2025-07-21 — 🔧 Tema Runtime Geçiş Düzeltmesi
+﻿## [0.99.57] - 2025-07-22 — 🎨 Designer Hardcoded Renk Temizliği
+
+### Düzeltme
+- **Filistin teması formda görünmüyordu:** Designer.cs dosyalarındaki 83 hardcoded `Color.FromArgb` satırı Dark tema renklerini sabitliyordu — tema değişse bile InitializeComponent() her zaman aynı renkleri yüklüyordu
+- `MainWindow.Designer.cs`: 55 hardcoded renk kaldırıldı (Modern* kontrol renkleri + DataGridViewCellStyle)
+- `PlanEditForm.Designer.cs`: 24 hardcoded renk kaldırıldı/Tag tabanlı sisteme dönüştürüldü
+- `CloudTargetEditDialog.Designer.cs`: 4 hardcoded renk kaldırıldı/Tag tabanlı sisteme dönüştürüldü
+- Tag tabanlı Label/Panel temalama: `Tag="accent"` → AccentPrimary, `Tag="secondary"` → TextSecondary, `Tag="surface"` → SurfaceColor
+- `ModernFormBase.RefreshSingleControl` ve `ApplyControlTheme` güncellendi — Label ve Panel Tag desteği eklendi
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\MainWindow.Designer.cs` — 55 hardcoded renk kaldırıldı
+- `KoruMsSqlYedek.Win\Forms\PlanEditForm.Designer.cs` — 24 satır temizlendi/dönüştürüldü
+- `KoruMsSqlYedek.Win\Forms\CloudTargetEditDialog.Designer.cs` — 4 satır temizlendi/dönüştürüldü
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — Tag tabanlı Label/Panel temalama eklendi
+
+---
+
+## [0.99.56] - 2025-07-21 — 🔧 Tema Runtime Geçiş Düzeltmesi
 
 ### Düzeltme
 - **Filistin teması (ve diğer temalar) runtime geçişte uygulanmıyordu:** Modern* kontrollerin constructor'da cache'lediği renkler tema değiştiğinde güncellenmiyor, kontroller eski renklerle kalıyordu

@@ -201,7 +201,16 @@ namespace KoruMsSqlYedek.Win.Theme
 
             if (c is Panel pnl)
             {
-                pnl.BackColor = ModernTheme.BackgroundColor;
+                pnl.BackColor = pnl.Tag is "surface" ? ModernTheme.SurfaceColor : ModernTheme.BackgroundColor;
+                return;
+            }
+
+            if (c is Label lbl)
+            {
+                if (lbl.Tag is "accent")
+                    lbl.ForeColor = ModernTheme.AccentPrimary;
+                else if (lbl.Tag is "secondary")
+                    lbl.ForeColor = ModernTheme.TextSecondary;
                 return;
             }
 
@@ -255,7 +264,17 @@ namespace KoruMsSqlYedek.Win.Theme
             // Panel / FlowLayoutPanel / TableLayoutPanel — arka plan eşitle
             if (c is Panel pnl)
             {
-                pnl.BackColor = ModernTheme.BackgroundColor;
+                pnl.BackColor = pnl.Tag is "surface" ? ModernTheme.SurfaceColor : ModernTheme.BackgroundColor;
+                return;
+            }
+
+            // Label — Tag tabanlı tema renkleri
+            if (c is Label lbl)
+            {
+                if (lbl.Tag is "accent")
+                    lbl.ForeColor = ModernTheme.AccentPrimary;
+                else if (lbl.Tag is "secondary")
+                    lbl.ForeColor = ModernTheme.TextSecondary;
                 return;
             }
 
