@@ -1,4 +1,22 @@
-﻿## [0.99.54] - 2025-07-20 — Özgür Filistin Tema Migrasyon Düzeltmesi
+﻿## [0.99.55] - 2025-07-20 — 🇵🇸 Özgür Filistin Full App Theme
+
+### Yeni Özellik
+- **🇵🇸 Özgür Filistin tam uygulama teması eklendi:** Sadece log konsolunda değil, tüm uygulamada aktif olan yeni tema modu
+- `ThemeMode.OzgurFilistin` enum değeri ve dedike `ApplyOzgurFilistinColors()` metodu eklendi
+- Filistin bayrak renkleri: Kara (başlık), Beyaz (arka plan), Yeşil (vurgu), Kırmızı (aksan)
+- Ayarlar penceresinde 3 seçenekli tema ComboBox: Sistem, Karanlık, Özgür Filistin
+- `SchemaVersion = 3` ile otomatik migrasyon desteği
+- Program başlangıcında native color mode sisteme entegrasyon
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — OzgurFilistin enum + ApplyOzgurFilistinColors()
+- `KoruMsSqlYedek.Win\Program.cs` — ApplyNativeColorMode + ApplyThemeSetting uyumlu
+- `KoruMsSqlYedek.Core\Models\AppSettings.cs` — Theme varsayılan "system", SchemaVersion=3
+- `KoruMsSqlYedek.Engine\AppSettingsManager.cs` — SchemaVersion<3 migrasyon mantığı
+- `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — 3-way tema ComboBox binding
+- `KoruMsSqlYedek.Win\Properties\Resources.resx` — "Theme_OzgurFilistin" resource string
+
+## [0.99.54] - 2025-07-20 — Özgür Filistin Tema Migrasyon Düzeltmesi
 
 ### Düzeltme
 - **Tema tüm mevcut kurulumlarda uygulanmıyordu:** Diskteki ayar dosyasında farklı bir tema kayıtlıysa (ör. "ubuntu", "koru") yeni varsayılan (Özgür Filistin) devreye giremiyordu

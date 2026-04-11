@@ -46,9 +46,9 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("smtp", NullValueHandling = NullValueHandling.Ignore)]
         public SmtpSettings Smtp { get; set; }
 
-        /// <summary>Uygulama teması ("dark" veya "light").</summary>
+        /// <summary>Uygulama teması ("ozgur-filistin", "dark" veya "light").</summary>
         [JsonProperty("theme")]
-        public string Theme { get; set; } = "dark";
+        public string Theme { get; set; } = "ozgur-filistin";
 
         /// <summary>Log konsolu terminal renk şablonu (ör. "ozgur-filistin", "koru", "dracula").</summary>
         [JsonProperty("logColorScheme")]
@@ -104,7 +104,7 @@ namespace KoruMsSqlYedek.Core.Models
 
         /// <summary>Ayar şeması versiyonu (geriye uyumluluk migrasyonları için).</summary>
         [JsonProperty("schemaVersion")]
-        public int SchemaVersion { get; set; } = 2;
+        public int SchemaVersion { get; set; } = 3;
     }
 
     /// <summary>

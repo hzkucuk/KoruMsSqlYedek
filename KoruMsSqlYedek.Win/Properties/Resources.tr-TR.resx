@@ -317,6 +317,7 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Settings_Theme" xml:space="preserve"><value>Tema:</value></data>
   <data name="Theme_Dark" xml:space="preserve"><value>Koyu (Dark)</value></data>
   <data name="Theme_Light" xml:space="preserve"><value>Açık (Light)</value></data>
+  <data name="Theme_OzgurFilistin" xml:space="preserve"><value>Özgür Filistin 🇵🇸</value></data>
 
   <!-- ===== Plan Status ===== -->
   <data name="PlanList_ColStatus" xml:space="preserve"><value>Durum</value></data>
