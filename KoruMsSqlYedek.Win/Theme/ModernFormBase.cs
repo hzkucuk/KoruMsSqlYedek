@@ -68,16 +68,16 @@ namespace KoruMsSqlYedek.Win.Theme
 
             // ── 3 yatay şerit ──
 
-            // Siyah şerit (üst) — koyu arkaplanda hafif gri ile görünür kıl
-            using (SolidBrush blackBrush = new(Color.FromArgb(14, 140, 140, 140)))
+            // Siyah şerit (üst) — koyu arkaplanda açık gri ile fark edilir kıl
+            using (SolidBrush blackBrush = new(Color.FromArgb(35, 160, 160, 160)))
                 g.FillRectangle(blackBrush, x, y, flagWidth, stripeHeight);
 
             // Beyaz şerit (orta)
-            using (SolidBrush whiteBrush = new(Color.FromArgb(18, 255, 255, 255)))
+            using (SolidBrush whiteBrush = new(Color.FromArgb(40, 255, 255, 255)))
                 g.FillRectangle(whiteBrush, x, y + stripeHeight, flagWidth, stripeHeight);
 
             // Yeşil şerit (alt) — Filistin yeşili #009736
-            using (SolidBrush greenBrush = new(Color.FromArgb(22, 0, 151, 54)))
+            using (SolidBrush greenBrush = new(Color.FromArgb(50, 0, 151, 54)))
                 g.FillRectangle(greenBrush, x, y + stripeHeight * 2, flagWidth, lastStripeHeight);
 
             // ── Kırmızı üçgen (sol taraf) — Filistin kırmızısı #CE1126 ──
@@ -89,11 +89,11 @@ namespace KoruMsSqlYedek.Win.Theme
                 new(x, y + flagHeight)
             ];
 
-            using (SolidBrush redBrush = new(Color.FromArgb(24, 206, 17, 38)))
+            using (SolidBrush redBrush = new(Color.FromArgb(55, 206, 17, 38)))
                 g.FillPolygon(redBrush, triangle);
 
             // ── İnce kenarlık — bayrağı çerçevele ──
-            using (Pen borderPen = new(Color.FromArgb(10, 180, 180, 180), 1f))
+            using (Pen borderPen = new(Color.FromArgb(25, 200, 200, 200), 1f))
                 g.DrawRectangle(borderPen, x, y, flagWidth, flagHeight);
 
             g.SmoothingMode = prevSmoothing;

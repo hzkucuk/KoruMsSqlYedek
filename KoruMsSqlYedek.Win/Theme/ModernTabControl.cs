@@ -92,6 +92,68 @@ namespace KoruMsSqlYedek.Win.Theme
             {
                 DrawTab(g, i);
             }
+
+            // Özgür Filistin temasında tab header boş alanına bayrak çiz
+            if (ModernTheme.CurrentTheme == ThemeMode.OzgurFilistin && TabCount > 0)
+            {
+                DrawPalestineFlagInHeader(g);
+            }
+        }
+
+        /// <summary>
+        /// Sekme başlık şeridinin sağındaki boş alana Filistin bayrağı çizer.
+        /// </summary>
+        private void DrawPalestineFlagInHeader(Graphics g)
+        {
+            var lastTabRect = GetTabRect(TabCount - 1);
+            int availableWidth = Width - lastTabRect.Right;
+            int headerHeight = lastTabRect.Height;
+
+            // Bayrak boyutu — header yüksekliğine orantılı
+            const int flagPadding = 8;
+            int flagHeight = headerHeight - flagPadding * 2;
+            int flagWidth = flagHeight * 2; // 2:1 oran
+
+            // Yeterli alan yoksa çizme
+            if (availableWidth < flagWidth + flagPadding * 2 || flagHeight < 12)
+                return;
+
+            // Sağa yaslı, dikey ortalı
+            int flagX = Width - flagWidth - flagPadding * 2;
+            int flagY = (headerHeight - flagHeight) / 2;
+            int stripeH = flagHeight / 3;
+            int lastStripeH = flagHeight - stripeH * 2;
+
+            SmoothingMode prev = g.SmoothingMode;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // 3 yatay şerit
+            using (SolidBrush blackBrush = new(Color.FromArgb(180, 30, 30, 30)))
+                g.FillRectangle(blackBrush, flagX, flagY, flagWidth, stripeH);
+
+            using (SolidBrush whiteBrush = new(Color.FromArgb(180, 240, 240, 240)))
+                g.FillRectangle(whiteBrush, flagX, flagY + stripeH, flagWidth, stripeH);
+
+            using (SolidBrush greenBrush = new(Color.FromArgb(180, 0, 151, 54)))
+                g.FillRectangle(greenBrush, flagX, flagY + stripeH * 2, flagWidth, lastStripeH);
+
+            // Kırmızı üçgen (sol taraf)
+            int triW = (int)(flagWidth * 0.33f);
+            Point[] tri =
+            [
+                new(flagX, flagY),
+                new(flagX + triW, flagY + flagHeight / 2),
+                new(flagX, flagY + flagHeight)
+            ];
+
+            using (SolidBrush redBrush = new(Color.FromArgb(200, 206, 17, 38)))
+                g.FillPolygon(redBrush, tri);
+
+            // İnce kenarlık
+            using (Pen borderPen = new(Color.FromArgb(60, 200, 200, 200), 0.5f))
+                g.DrawRectangle(borderPen, flagX, flagY, flagWidth, flagHeight);
+
+            g.SmoothingMode = prev;
         }
 
         private void DrawTab(Graphics g, int index)

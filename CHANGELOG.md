@@ -1,12 +1,14 @@
 ﻿## [0.99.58] - 2025-07-22 — 🇵🇸 Filistin Bayrağı Watermark
 
 ### Yeni Özellik
-- **Özgür Filistin temasına transparan bayrak arka planı eklendi:** Ana form ve tüm ModernFormBase türevlerinin arka planına düşük opasite Filistin bayrağı watermark çiziliyor
-- 3 yatay şerit (siyah-beyaz-yeşil) + kırmızı üçgen, form boyutuna uyarlanarak ortalanmış
-- Yalnızca `OzgurFilistin` teması aktifken görünür; tema değişikliğinde otomatik güncellenir
+- **Özgür Filistin temasına Filistin bayrağı eklendi:**
+  - ModernTabControl sekme başlık şeridinin sağ tarafına net Filistin bayrağı (3 yatay şerit + kırmızı üçgen) çiziliyor
+  - ModernFormBase arka planına transparan bayrak watermark eklendi (dialog formlarında görünür)
+  - Yalnızca `OzgurFilistin` teması aktifken görünür; tema değişikliğinde otomatik güncellenir
 
 ### Etkilenen Dosyalar
-- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — OnPaintBackground override + DrawPalestineFlagWatermark metodu
+- `KoruMsSqlYedek.Win\Theme\ModernTabControl.cs` — OnPaint'e DrawPalestineFlagInHeader metodu
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — OnPaintBackground override + DrawPalestineFlagWatermark
 
 ---
 
