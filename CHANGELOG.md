@@ -1,4 +1,16 @@
-﻿## [0.99.57] - 2025-07-22 — 🎨 Designer Hardcoded Renk Temizliği
+﻿## [0.99.58] - 2025-07-22 — 🇵🇸 Filistin Bayrağı Watermark
+
+### Yeni Özellik
+- **Özgür Filistin temasına transparan bayrak arka planı eklendi:** Ana form ve tüm ModernFormBase türevlerinin arka planına düşük opasite Filistin bayrağı watermark çiziliyor
+- 3 yatay şerit (siyah-beyaz-yeşil) + kırmızı üçgen, form boyutuna uyarlanarak ortalanmış
+- Yalnızca `OzgurFilistin` teması aktifken görünür; tema değişikliğinde otomatik güncellenir
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — OnPaintBackground override + DrawPalestineFlagWatermark metodu
+
+---
+
+## [0.99.57] - 2025-07-22 — 🎨 Designer Hardcoded Renk Temizliği
 
 ### Düzeltme
 - **Filistin teması formda görünmüyordu:** Designer.cs dosyalarındaki 83 hardcoded `Color.FromArgb` satırı Dark tema renklerini sabitliyordu — tema değişse bile InitializeComponent() her zaman aynı renkleri yüklüyordu
