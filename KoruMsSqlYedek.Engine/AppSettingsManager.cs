@@ -54,6 +54,12 @@ namespace KoruMsSqlYedek.Engine
                 }
 
                 MigrateSmtpLegacy(settings);
+                bool migrated = MigrateDefaultLogScheme(settings);
+                migrated |= MigrateDefaultTheme(settings);
+
+                if (migrated)
+                    Save(settings);
+
                 return settings;
             }
             catch (Exception ex)
@@ -100,6 +106,42 @@ namespace KoruMsSqlYedek.Engine
 
             // Migrasyon tamamlandı — eski alan temizlendi, bir sonraki kayıtta dosyaya yazılmaz
             settings.Smtp = null;
+        }
+
+        /// <summary>
+        /// SchemaVersion &lt; 2 olan mevcut kurulumları yeni varsayılan log renk şemasına (ozgur-filistin) taşır.
+        /// Tek seferlik zorunlu migrasyon — sonraki kullanıcı tercihleri korunur.
+        /// </summary>
+        private static bool MigrateDefaultLogScheme(AppSettings settings)
+        {
+            if (settings.SchemaVersion >= 2)
+                return false;
+
+            Log.Information(
+                "SchemaVersion {Old} → 2: Log renk şeması '{OldScheme}' → 'ozgur-filistin' olarak güncelleniyor.",
+                settings.SchemaVersion, settings.LogColorScheme);
+
+            settings.LogColorScheme = "ozgur-filistin";
+            settings.SchemaVersion = 2;
+            return true;
+        }
+
+        /// <summary>
+        /// SchemaVersion &lt; 3 olan mevcut kurulumları yeni varsayılan tema (Özgür Filistin) ile günceller.
+        /// Tek seferlik zorunlu migrasyon — sonraki kullanıcı tercihleri korunur.
+        /// </summary>
+        private static bool MigrateDefaultTheme(AppSettings settings)
+        {
+            if (settings.SchemaVersion >= 3)
+                return false;
+
+            Log.Information(
+                "SchemaVersion {Old} → 3: Tema '{OldTheme}' → 'ozgur-filistin' olarak güncelleniyor.",
+                settings.SchemaVersion, settings.Theme);
+
+            settings.Theme = "ozgur-filistin";
+            settings.SchemaVersion = 3;
+            return true;
         }
 
         /// <inheritdoc/>

@@ -191,8 +191,6 @@
             // 
             // _tabControl
             // 
-            _tabControl.ActiveIndicatorColor = System.Drawing.Color.FromArgb(16, 185, 129);
-            _tabControl.ActiveTabColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _tabControl.Controls.Add(_tabDashboard);
             _tabControl.Controls.Add(_tabPlans);
             _tabControl.Controls.Add(_tabLogs);
@@ -222,8 +220,6 @@
             // 
             // _pnlGrid
             // 
-            _pnlGrid.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _pnlGrid.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _pnlGrid.Controls.Add(_lblGridTitle);
             _pnlGrid.Controls.Add(_olvLastBackups);
             _pnlGrid.CornerRadius = 8;
@@ -275,8 +271,6 @@
             // 
             // _cardStatus
             // 
-            _cardStatus.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cardStatus.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cardStatus.Controls.Add(_lblStatusIcon);
             _cardStatus.Controls.Add(_lblStatusCaption);
             _cardStatus.Controls.Add(_lblStatusValue);
@@ -322,8 +316,6 @@
             // 
             // _cardNextBackup
             // 
-            _cardNextBackup.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cardNextBackup.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cardNextBackup.Controls.Add(_lblNextIcon);
             _cardNextBackup.Controls.Add(_lblNextBackupCaption);
             _cardNextBackup.Controls.Add(_lblNextBackupValue);
@@ -369,8 +361,6 @@
             // 
             // _cardActivePlans
             // 
-            _cardActivePlans.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cardActivePlans.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cardActivePlans.Controls.Add(_lblPlansIcon);
             _cardActivePlans.Controls.Add(_lblActivePlansCaption);
             _cardActivePlans.Controls.Add(_lblActivePlansValue);
@@ -462,7 +452,6 @@
             dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Window;
             dataGridViewCellStyle1.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             dataGridViewCellStyle1.Padding = new System.Windows.Forms.Padding(8, 4, 8, 4);
             dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
             dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
@@ -678,14 +667,10 @@
             // 
             // _cmbBackupType
             // 
-            _cmbBackupType.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cmbBackupType.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cmbBackupType.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             _cmbBackupType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbBackupType.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            _cmbBackupType.FocusBorderColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _cmbBackupType.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _cmbBackupType.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _cmbBackupType.ItemHeight = 28;
             _cmbBackupType.Items.AddRange(new object[] { "Full (Tam)", "Differential (Fark)", "Incremental (Artırımlı)" });
             _cmbBackupType.Location = new System.Drawing.Point(97, 10);
@@ -718,7 +703,6 @@
             _progressBar.Maximum = 100;
             _progressBar.Minimum = 0;
             _progressBar.Name = "_progressBar";
-            _progressBar.ProgressColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _progressBar.ShowPercentage = false;
             _progressBar.Size = new System.Drawing.Size(994, 25);
             _progressBar.TabIndex = 3;
@@ -938,15 +922,11 @@
             // 
             // _cmbLogFile
             // 
-            _cmbLogFile.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cmbLogFile.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cmbLogFile.Dock = System.Windows.Forms.DockStyle.Fill;
             _cmbLogFile.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             _cmbLogFile.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbLogFile.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            _cmbLogFile.FocusBorderColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _cmbLogFile.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _cmbLogFile.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _cmbLogFile.ItemHeight = 28;
             _cmbLogFile.Location = new System.Drawing.Point(56, 5);
             _cmbLogFile.Margin = new System.Windows.Forms.Padding(3, 5, 8, 3);
@@ -968,15 +948,11 @@
             // 
             // _cmbLevel
             // 
-            _cmbLevel.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cmbLevel.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cmbLevel.Dock = System.Windows.Forms.DockStyle.Fill;
             _cmbLevel.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             _cmbLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbLevel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            _cmbLevel.FocusBorderColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _cmbLevel.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _cmbLevel.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _cmbLevel.ItemHeight = 28;
             _cmbLevel.Location = new System.Drawing.Point(293, 5);
             _cmbLevel.Margin = new System.Windows.Forms.Padding(3, 5, 8, 3);
@@ -989,16 +965,13 @@
             // 
             _chkAutoTail.Anchor = System.Windows.Forms.AnchorStyles.Left;
             _chkAutoTail.AutoSize = true;
-            _chkAutoTail.CheckedColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _chkAutoTail.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _chkAutoTail.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _chkAutoTail.Location = new System.Drawing.Point(448, 12);
             _chkAutoTail.Margin = new System.Windows.Forms.Padding(8, 7, 3, 3);
             _chkAutoTail.Name = "_chkAutoTail";
             _chkAutoTail.Size = new System.Drawing.Size(114, 21);
             _chkAutoTail.TabIndex = 4;
             _chkAutoTail.Text = "Otomatik Takip";
-            _chkAutoTail.UncheckedBorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _chkAutoTail.CheckedChanged += OnAutoTailToggle;
             // 
             // _lblLogSearch
@@ -1035,15 +1008,11 @@
             // 
             // _cmbLogPlan
             // 
-            _cmbLogPlan.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cmbLogPlan.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cmbLogPlan.Dock = System.Windows.Forms.DockStyle.Fill;
             _cmbLogPlan.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             _cmbLogPlan.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbLogPlan.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            _cmbLogPlan.FocusBorderColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _cmbLogPlan.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _cmbLogPlan.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _cmbLogPlan.ItemHeight = 28;
             _cmbLogPlan.Location = new System.Drawing.Point(293, 47);
             _cmbLogPlan.Margin = new System.Windows.Forms.Padding(3, 5, 8, 7);
@@ -1194,8 +1163,6 @@
             // 
             // _tabSettings2
             // 
-            _tabSettings2.ActiveIndicatorColor = System.Drawing.Color.FromArgb(16, 185, 129);
-            _tabSettings2.ActiveTabColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _tabSettings2.Controls.Add(_tabGeneral);
             _tabSettings2.Controls.Add(_tabSmtp);
             _tabSettings2.Controls.Add(_tabSecurity);
@@ -1274,14 +1241,10 @@
             // 
             // _cmbLanguage
             // 
-            _cmbLanguage.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cmbLanguage.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cmbLanguage.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             _cmbLanguage.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbLanguage.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            _cmbLanguage.FocusBorderColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _cmbLanguage.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _cmbLanguage.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _cmbLanguage.ItemHeight = 28;
             _cmbLanguage.Items.AddRange(new object[] { "Türkçe (tr-TR)", "English (en-US)" });
             _cmbLanguage.Location = new System.Drawing.Point(156, 7);
@@ -1294,29 +1257,23 @@
             // _chkStartWithWindows
             // 
             _chkStartWithWindows.AutoSize = true;
-            _chkStartWithWindows.CheckedColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _chkStartWithWindows.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _chkStartWithWindows.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _chkStartWithWindows.Location = new System.Drawing.Point(156, 51);
             _chkStartWithWindows.Margin = new System.Windows.Forms.Padding(3, 7, 3, 3);
             _chkStartWithWindows.Name = "_chkStartWithWindows";
             _chkStartWithWindows.Size = new System.Drawing.Size(179, 21);
             _chkStartWithWindows.TabIndex = 2;
             _chkStartWithWindows.Text = "Windows ile birlikte başlat";
-            _chkStartWithWindows.UncheckedBorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             // 
             // _chkMinimizeToTray
             // 
             _chkMinimizeToTray.AutoSize = true;
-            _chkMinimizeToTray.CheckedColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _chkMinimizeToTray.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _chkMinimizeToTray.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _chkMinimizeToTray.Location = new System.Drawing.Point(156, 78);
             _chkMinimizeToTray.Name = "_chkMinimizeToTray";
             _chkMinimizeToTray.Size = new System.Drawing.Size(289, 21);
             _chkMinimizeToTray.TabIndex = 3;
             _chkMinimizeToTray.Text = "Simge durumuna küçüldüğünde tepside gizle";
-            _chkMinimizeToTray.UncheckedBorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             // 
             // _lblDefaultBackupPath
             // 
@@ -1366,7 +1323,6 @@
             // 
             // _nudLogRetention
             // 
-            _nudLogRetention.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _nudLogRetention.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _nudLogRetention.Location = new System.Drawing.Point(156, 150);
             _nudLogRetention.Margin = new System.Windows.Forms.Padding(3, 7, 3, 3);
@@ -1402,7 +1358,6 @@
             // 
             // _nudHistoryRetention
             // 
-            _nudHistoryRetention.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _nudHistoryRetention.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _nudHistoryRetention.Location = new System.Drawing.Point(156, 192);
             _nudHistoryRetention.Margin = new System.Windows.Forms.Padding(3, 7, 3, 3);
@@ -1438,14 +1393,10 @@
             // 
             // _cmbTheme
             // 
-            _cmbTheme.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cmbTheme.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cmbTheme.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             _cmbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbTheme.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            _cmbTheme.FocusBorderColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _cmbTheme.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _cmbTheme.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _cmbTheme.ItemHeight = 28;
             _cmbTheme.Items.AddRange(new object[] { "Koyu (Dark)", "Açık (Light)" });
             _cmbTheme.Location = new System.Drawing.Point(156, 234);
@@ -1468,14 +1419,10 @@
             // 
             // _cmbLogColorScheme
             // 
-            _cmbLogColorScheme.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
-            _cmbLogColorScheme.BorderColor = System.Drawing.Color.FromArgb(56, 56, 64);
             _cmbLogColorScheme.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             _cmbLogColorScheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             _cmbLogColorScheme.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            _cmbLogColorScheme.FocusBorderColor = System.Drawing.Color.FromArgb(16, 185, 129);
             _cmbLogColorScheme.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            _cmbLogColorScheme.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _cmbLogColorScheme.ItemHeight = 28;
             _cmbLogColorScheme.Location = new System.Drawing.Point(156, 278);
             _cmbLogColorScheme.Margin = new System.Windows.Forms.Padding(3, 7, 3, 3);
@@ -1535,7 +1482,6 @@
             dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Window;
             dataGridViewCellStyle3.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            dataGridViewCellStyle3.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             dataGridViewCellStyle3.Padding = new System.Windows.Forms.Padding(8, 4, 8, 4);
             dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
             dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
@@ -1689,7 +1635,7 @@
             // _lblSecurityInfo
             // 
             _lblSecurityInfo.AutoSize = true;
-            _lblSecurityInfo.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblSecurityInfo.Tag = "secondary";
             _lblSecurityInfo.Location = new System.Drawing.Point(3, 101);
             _lblSecurityInfo.Margin = new System.Windows.Forms.Padding(3, 5, 3, 5);
             _lblSecurityInfo.Name = "_lblSecurityInfo";

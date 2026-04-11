@@ -141,9 +141,12 @@ namespace KoruMsSqlYedek.Win
             {
                 var settingsManager = new AppSettingsManager();
                 var settings = settingsManager.Load();
-                var mode = settings.Theme == "light"
-                    ? Theme.ThemeMode.Light
-                    : Theme.ThemeMode.Dark;
+                var mode = settings.Theme switch
+                {
+                    "light" => Theme.ThemeMode.Light,
+                    "ozgur-filistin" => Theme.ThemeMode.OzgurFilistin,
+                    _ => Theme.ThemeMode.Dark
+                };
                 Theme.ModernTheme.ApplyTheme(mode);
                 Theme.ModernTheme.ApplyLogColorScheme(settings.LogColorScheme);
                 Log.Information("Tema ayarı uygulandı: {Theme}, Log şeması: {Scheme}",
@@ -163,9 +166,9 @@ namespace KoruMsSqlYedek.Win
         {
             try
             {
-                var colorMode = Theme.ModernTheme.CurrentTheme == Theme.ThemeMode.Dark
-                    ? SystemColorMode.Dark
-                    : SystemColorMode.Classic;
+                var colorMode = Theme.ModernTheme.CurrentTheme == Theme.ThemeMode.Light
+                    ? SystemColorMode.Classic
+                    : SystemColorMode.Dark;
                 Application.SetColorMode(colorMode);
                 Log.Information(".NET 10 native color mode uygulandı: {ColorMode}", colorMode);
             }

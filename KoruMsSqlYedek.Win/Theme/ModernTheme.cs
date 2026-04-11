@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace KoruMsSqlYedek.Win.Theme
 {
-    internal enum ThemeMode { Dark, Light }
+    internal enum ThemeMode { Dark, Light, OzgurFilistin }
 
     /// <summary>
     /// Modern WinForms teması — renk paleti, font tanımları ve kontrol stillendirme metodları.
@@ -53,30 +53,38 @@ namespace KoruMsSqlYedek.Win.Theme
         internal static Color GridHeaderText = Color.FromArgb(160, 160, 170);
         internal static Color GridErrorRow = Color.FromArgb(58, 20, 20);
 
-        // Backup Log Console — "Koru" (Protect) trust-inspired palette
-        internal static Color LogDefault = Color.FromArgb(190, 195, 200);
-        internal static Color LogTimestamp = Color.FromArgb(90, 160, 120);
-        internal static Color LogSuccess = Color.FromArgb(46, 204, 113);
-        internal static Color LogError = Color.FromArgb(255, 107, 107);
-        internal static Color LogWarning = Color.FromArgb(255, 193, 69);
-        internal static Color LogInfo = Color.FromArgb(116, 185, 255);
-        internal static Color LogProgress = Color.FromArgb(0, 210, 211);
-        internal static Color LogCloud = Color.FromArgb(162, 155, 254);
-        internal static Color LogStarted = Color.FromArgb(16, 185, 129);
-        internal static Color LogConsoleBg = Color.FromArgb(22, 24, 28);
+        // Backup Log Console — Özgür Filistin varsayılan palette
+        internal static Color LogDefault = Color.FromArgb(232, 228, 220);
+        internal static Color LogTimestamp = Color.FromArgb(85, 105, 72);
+        internal static Color LogSuccess = Color.FromArgb(0, 158, 73);
+        internal static Color LogError = Color.FromArgb(214, 40, 52);
+        internal static Color LogWarning = Color.FromArgb(218, 178, 52);
+        internal static Color LogInfo = Color.FromArgb(120, 180, 228);
+        internal static Color LogProgress = Color.FromArgb(46, 204, 120);
+        internal static Color LogCloud = Color.FromArgb(195, 100, 125);
+        internal static Color LogStarted = Color.FromArgb(0, 168, 82);
+        internal static Color LogConsoleBg = Color.FromArgb(10, 10, 14);
 
         // ═══════════════ THEME APPLY ═══════════════
 
         /// <summary>Şu anda uygulanan log konsolu renk şablonu.</summary>
-        internal static TerminalColorScheme ActiveLogScheme { get; private set; } = TerminalColorScheme.Koru;
+        internal static TerminalColorScheme ActiveLogScheme { get; private set; } = TerminalColorScheme.OzgurFilistin;
 
         internal static void ApplyTheme(ThemeMode mode)
         {
             CurrentTheme = mode;
-            if (mode == ThemeMode.Dark)
-                ApplyDarkColors();
-            else
-                ApplyLightColors();
+            switch (mode)
+            {
+                case ThemeMode.OzgurFilistin:
+                    ApplyOzgurFilistinColors();
+                    break;
+                case ThemeMode.Light:
+                    ApplyLightColors();
+                    break;
+                default:
+                    ApplyDarkColors();
+                    break;
+            }
 
             // Log renkleri tema değişiminde de güncel kalsın
             ApplyLogColorScheme(ActiveLogScheme);
@@ -87,7 +95,7 @@ namespace KoruMsSqlYedek.Win.Theme
         /// </summary>
         internal static void ApplyLogColorScheme(TerminalColorScheme scheme)
         {
-            ActiveLogScheme = scheme ?? TerminalColorScheme.Koru;
+            ActiveLogScheme = scheme ?? TerminalColorScheme.OzgurFilistin;
             LogDefault   = ActiveLogScheme.Default;
             LogTimestamp  = ActiveLogScheme.Timestamp;
             LogSuccess   = ActiveLogScheme.Success;
@@ -172,6 +180,48 @@ namespace KoruMsSqlYedek.Win.Theme
             GridHeaderBack = Color.FromArgb(240, 241, 244);
             GridHeaderText = Color.FromArgb(80, 80, 90);
             GridErrorRow = Color.FromArgb(255, 232, 232);
+        }
+
+        /// <summary>
+        /// Özgür Filistin teması — Filistin bayrak renkleri (Siyah, Beyaz, Yeşil, Kırmızı)
+        /// ile boyanmış koyu tema varyantı.
+        /// </summary>
+        private static void ApplyOzgurFilistinColors()
+        {
+            // Siyah (kararlılık / gece) — arka plan ailesi
+            BackgroundColor = Color.FromArgb(12, 12, 14);
+            SurfaceColor = Color.FromArgb(24, 24, 28);
+            SurfaceHover = Color.FromArgb(38, 42, 38);
+            SurfacePressed = Color.FromArgb(18, 18, 20);
+            BorderColor = Color.FromArgb(0, 105, 55);
+            DividerColor = Color.FromArgb(34, 38, 34);
+
+            // Yeşil (toprak / bereket) — accent ailesi
+            AccentPrimary = Color.FromArgb(0, 158, 73);
+            AccentPrimaryDark = Color.FromArgb(0, 120, 55);
+            AccentPrimaryHover = Color.FromArgb(0, 188, 90);
+
+            // Kırmızı (cesaret / direniş) — status vurguları
+            StatusSuccess = Color.FromArgb(0, 168, 82);
+            StatusWarning = Color.FromArgb(245, 180, 42);
+            StatusError = Color.FromArgb(214, 40, 52);
+            StatusCancelled = Color.FromArgb(120, 120, 128);
+            StatusInfo = Color.FromArgb(232, 228, 220);
+
+            // Beyaz (barış / umut) — metin ailesi
+            TextPrimary = Color.FromArgb(240, 236, 228);
+            TextSecondary = Color.FromArgb(180, 176, 168);
+            TextDisabled = Color.FromArgb(90, 88, 82);
+            TextOnAccent = Color.White;
+
+            // Grid — Filistin yeşili vurgulu
+            GridAlternateRow = Color.FromArgb(18, 20, 18);
+            GridSelection = Color.FromArgb(0, 158, 73);
+            GridSelectionBack = Color.FromArgb(16, 62, 42);
+            GridSelectionBackUnfocused = Color.FromArgb(20, 48, 36);
+            GridHeaderBack = Color.FromArgb(28, 32, 28);
+            GridHeaderText = Color.FromArgb(180, 176, 168);
+            GridErrorRow = Color.FromArgb(62, 18, 22);
         }
 
         // ═══════════════ FONTS ═══════════════
@@ -316,7 +366,7 @@ namespace KoruMsSqlYedek.Win.Theme
             if (!control.IsHandleCreated)
                 return;
 
-            string theme = CurrentTheme == ThemeMode.Dark ? "DarkMode_Explorer" : "Explorer";
+            string theme = CurrentTheme == ThemeMode.Light ? "Explorer" : "DarkMode_Explorer";
             NativeMethods.SetWindowTheme(control.Handle, theme, null);
         }
 

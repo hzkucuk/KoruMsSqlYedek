@@ -41,6 +41,7 @@ namespace KoruMsSqlYedek.Win.Theme
         /// <summary>Tüm yerleşik şablonları döndürür.</summary>
         internal static TerminalColorScheme[] GetAll() =>
         [
+            OzgurFilistin,
             Koru,
             SolarizedDark,
             Monokai,
@@ -55,19 +56,19 @@ namespace KoruMsSqlYedek.Win.Theme
             SolarizedLight,
         ];
 
-        /// <summary>Id ile şablon arar; bulunamazsa Koru döner.</summary>
+        /// <summary>Id ile şablon arar; bulunamazsa Özgür Filistin döner.</summary>
         internal static TerminalColorScheme FindById(string id)
         {
-            if (string.IsNullOrEmpty(id)) return Koru;
+            if (string.IsNullOrEmpty(id)) return OzgurFilistin;
             foreach (var s in GetAll())
                 if (s.Id == id) return s;
-            return Koru;
+            return OzgurFilistin;
         }
 
         // ───────────────────────────────────────────────────────
         //  1. Koru — varsayılan (mevcut palet)
         // ───────────────────────────────────────────────────────
-        internal static readonly TerminalColorScheme Koru = new("koru", "🌿 Koru (Varsayılan)")
+        internal static readonly TerminalColorScheme Koru = new("koru", "🌿 Koru")
         {
             Default    = Color.FromArgb(190, 195, 200),
             Timestamp  = Color.FromArgb( 90, 160, 120),
@@ -252,7 +253,26 @@ namespace KoruMsSqlYedek.Win.Theme
         };
 
         // ───────────────────────────────────────────────────────
-        // 12. Solarized Light — Ethan Schoonover (light variant)
+        // 12. Özgür Filistin 🇵🇸 — Palestinian flag inspired
+        //     Siyah: Kararlılık, gece   |  Beyaz: Barış, umut
+        //     Yeşil: Toprak, bereket    |  Kırmızı: Cesaret, direniş
+        // ───────────────────────────────────────────────────────
+        internal static readonly TerminalColorScheme OzgurFilistin = new("ozgur-filistin", "🇵🇸 Özgür Filistin")
+        {
+            Default    = Color.FromArgb(232, 228, 220), // zeytindalı beyazı — barış
+            Timestamp  = Color.FromArgb( 85, 105,  72), // kadim zeytin ağacı gölgesi
+            Success    = Color.FromArgb(  0, 158,  73), // Filistin yeşili — verimli toprak
+            Error      = Color.FromArgb(214,  40,  52), // Filistin kırmızısı — cesaret
+            Warning    = Color.FromArgb(218, 178,  52), // altın zeytin yağı
+            Info       = Color.FromArgb(120, 180, 228), // Akdeniz gökyüzü mavisi
+            Progress   = Color.FromArgb( 46, 204, 120), // umut yeşili — filizlenen gelecek
+            Cloud      = Color.FromArgb(195, 100, 125), // gün batımı kızılı — ufuktaki özgürlük
+            Started    = Color.FromArgb(  0, 168,  82), // yeni başlangıç yeşili — direniş filizi
+            Background = Color.FromArgb( 10,  10,  14), // Filistin gecesi — karanlıktan doğan ışık
+        };
+
+        // ───────────────────────────────────────────────────────
+        // 13. Solarized Light — Ethan Schoonover (light variant)
         // ───────────────────────────────────────────────────────
         internal static readonly TerminalColorScheme SolarizedLight = new("solarized-light", "☀️ Solarized Light")
         {

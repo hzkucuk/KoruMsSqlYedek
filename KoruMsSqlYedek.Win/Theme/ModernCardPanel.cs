@@ -116,6 +116,14 @@ namespace KoruMsSqlYedek.Win.Theme
             }
         }
 
+        /// <summary>Tema değişikliğinde cache'lenmiş renkleri günceller.</summary>
+        internal void RefreshThemeColors()
+        {
+            _borderColor = ModernTheme.BorderColor;
+            BackColor = ModernTheme.SurfaceColor;
+            Invalidate();
+        }
+
         private void DrawHeader(Graphics g, Rectangle cardRect)
         {
             int headerY = cardRect.Y + ModernTheme.PaddingSmall;

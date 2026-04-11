@@ -1,4 +1,4 @@
-namespace KoruMsSqlYedek.Win.Forms
+﻿namespace KoruMsSqlYedek.Win.Forms
 {
     partial class PlanEditForm
     {
@@ -181,7 +181,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _pnlStepIndicator.Dock = System.Windows.Forms.DockStyle.Top;
             _pnlStepIndicator.Name = "_pnlStepIndicator";
             _pnlStepIndicator.Height = 56;
-            _pnlStepIndicator.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
+            _pnlStepIndicator.Tag = "surface";
             _pnlStepIndicator.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
 
             // Step num 1
@@ -202,7 +202,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStepTitle1.Size = new System.Drawing.Size(97, 18);
             _lblStepTitle1.Location = new System.Drawing.Point(6, 32);
             _lblStepTitle1.Font = new System.Drawing.Font("Segoe UI", 7.5F);
-            _lblStepTitle1.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblStepTitle1.Tag = "secondary";
             _lblStepTitle1.Cursor = System.Windows.Forms.Cursors.Hand;
             _lblStepTitle1.Tag = 0;
             _lblStepTitle1.Click += OnStepIndicatorClick;
@@ -226,7 +226,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStepTitle2.Size = new System.Drawing.Size(97, 18);
             _lblStepTitle2.Location = new System.Drawing.Point(109, 32);
             _lblStepTitle2.Font = new System.Drawing.Font("Segoe UI", 7.5F);
-            _lblStepTitle2.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblStepTitle2.Tag = "secondary";
             _lblStepTitle2.Cursor = System.Windows.Forms.Cursors.Hand;
             _lblStepTitle2.Tag = 1;
             _lblStepTitle2.Click += OnStepIndicatorClick;
@@ -250,7 +250,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStepTitle3.Size = new System.Drawing.Size(97, 18);
             _lblStepTitle3.Location = new System.Drawing.Point(212, 32);
             _lblStepTitle3.Font = new System.Drawing.Font("Segoe UI", 7.5F);
-            _lblStepTitle3.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblStepTitle3.Tag = "secondary";
             _lblStepTitle3.Cursor = System.Windows.Forms.Cursors.Hand;
             _lblStepTitle3.Tag = 2;
             _lblStepTitle3.Click += OnStepIndicatorClick;
@@ -274,7 +274,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStepTitle4.Size = new System.Drawing.Size(97, 18);
             _lblStepTitle4.Location = new System.Drawing.Point(315, 32);
             _lblStepTitle4.Font = new System.Drawing.Font("Segoe UI", 7.5F);
-            _lblStepTitle4.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblStepTitle4.Tag = "secondary";
             _lblStepTitle4.Cursor = System.Windows.Forms.Cursors.Hand;
             _lblStepTitle4.Tag = 3;
             _lblStepTitle4.Click += OnStepIndicatorClick;
@@ -298,7 +298,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStepTitle5.Size = new System.Drawing.Size(97, 18);
             _lblStepTitle5.Location = new System.Drawing.Point(418, 32);
             _lblStepTitle5.Font = new System.Drawing.Font("Segoe UI", 7.5F);
-            _lblStepTitle5.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblStepTitle5.Tag = "secondary";
             _lblStepTitle5.Cursor = System.Windows.Forms.Cursors.Hand;
             _lblStepTitle5.Tag = 4;
             _lblStepTitle5.Click += OnStepIndicatorClick;
@@ -322,7 +322,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStepTitle6.Size = new System.Drawing.Size(97, 18);
             _lblStepTitle6.Location = new System.Drawing.Point(521, 32);
             _lblStepTitle6.Font = new System.Drawing.Font("Segoe UI", 7.5F);
-            _lblStepTitle6.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblStepTitle6.Tag = "secondary";
             _lblStepTitle6.Cursor = System.Windows.Forms.Cursors.Hand;
             _lblStepTitle6.Tag = 5;
             _lblStepTitle6.Click += OnStepIndicatorClick;
@@ -367,7 +367,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep1Header.Text = "\u2460 Plan Bilgileri";
             _lblStep1Header.Name = "_lblStep1Header";
             _lblStep1Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep1Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep1Header.Tag = "accent";
             _lblStep1Header.AutoSize = true;
             _lblStep1Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep1.Controls.Add(_lblStep1Header);
@@ -415,7 +415,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep1SqlHeader.Text = "\u2461 SQL Server Ba\u011flant\u0131s\u0131";
             _lblStep1SqlHeader.Name = "_lblStep1SqlHeader";
             _lblStep1SqlHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep1SqlHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep1SqlHeader.Tag = "accent";
             _lblStep1SqlHeader.AutoSize = true;
             _lblStep1SqlHeader.Location = new System.Drawing.Point(24, 137);
             _pnlStep1.Controls.Add(_lblStep1SqlHeader);
@@ -509,7 +509,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep2Header.Text = "\u2462 Yedeklenecek Veritabanlar\u0131";
             _lblStep2Header.Name = "_lblStep2Header";
             _lblStep2Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep2Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep2Header.Tag = "accent";
             _lblStep2Header.AutoSize = true;
             _lblStep2Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep2.Controls.Add(_lblStep2Header);
@@ -517,7 +517,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep2Hint.Text = "SQL ba\u011flant\u0131s\u0131 ba\u015far\u0131l\u0131ysa veritabanlar\u0131 otomatik listelenir.";
             _lblStep2Hint.Name = "_lblStep2Hint";
             _lblStep2Hint.AutoSize = true;
-            _lblStep2Hint.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblStep2Hint.Tag = "secondary";
             _lblStep2Hint.Location = new System.Drawing.Point(24, 31);
             _pnlStep2.Controls.Add(_lblStep2Hint);
 
@@ -549,7 +549,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep2FileHeader.Text = "\u2463 Dosya / Klas\u00f6r Kaynaklar\u0131 (VSS)";
             _lblStep2FileHeader.Name = "_lblStep2FileHeader";
             _lblStep2FileHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep2FileHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep2FileHeader.Tag = "accent";
             _lblStep2FileHeader.AutoSize = true;
             _lblStep2FileHeader.Location = new System.Drawing.Point(24, 289);
             _pnlStep2.Controls.Add(_lblStep2FileHeader);
@@ -615,7 +615,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep3Header.Text = "\u2464 G\u00f6rev Zamanlama";
             _lblStep3Header.Name = "_lblStep3Header";
             _lblStep3Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep3Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep3Header.Tag = "accent";
             _lblStep3Header.AutoSize = true;
             _lblStep3Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep3.Controls.Add(_lblStep3Header);
@@ -707,7 +707,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep3FileSchedHeader.Text = "\U0001f4c1 Dosya Yedekleme G\u00f6revi";
             _lblStep3FileSchedHeader.Name = "_lblStep3FileSchedHeader";
             _lblStep3FileSchedHeader.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            _lblStep3FileSchedHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep3FileSchedHeader.Tag = "accent";
             _lblStep3FileSchedHeader.AutoSize = true;
             _lblStep3FileSchedHeader.Location = new System.Drawing.Point(24, 301);
             _lblStep3FileSchedHeader.Visible = false;
@@ -732,7 +732,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep4Header.Text = "\u2465 Ar\u015fiv S\u0131k\u0131\u015ft\u0131rma Ayarlar\u0131";
             _lblStep4Header.Name = "_lblStep4Header";
             _lblStep4Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep4Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep4Header.Tag = "accent";
             _lblStep4Header.AutoSize = true;
             _lblStep4Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep4.Controls.Add(_lblStep4Header);
@@ -779,7 +779,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep4RetHeader.Text = "Saklama (Retention) Politikas\u0131";
             _lblStep4RetHeader.Name = "_lblStep4RetHeader";
             _lblStep4RetHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep4RetHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep4RetHeader.Tag = "accent";
             _lblStep4RetHeader.AutoSize = true;
             _lblStep4RetHeader.Location = new System.Drawing.Point(24, 153);
             _pnlStep4.Controls.Add(_lblStep4RetHeader);
@@ -803,7 +803,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblRetentionTemplateInfo.Size = new System.Drawing.Size(390, 36);
             _lblRetentionTemplateInfo.AutoSize = false;
             _lblRetentionTemplateInfo.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Italic);
-            _lblRetentionTemplateInfo.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblRetentionTemplateInfo.Tag = "secondary";
             _pnlStep4.Controls.Add(_lblRetentionTemplateInfo);
 
             _lblRetention.Text = "Temizlik Kural\u0131:";
@@ -855,7 +855,6 @@ namespace KoruMsSqlYedek.Win.Forms
             _chkProtectPlan.Location = new System.Drawing.Point(24, 381);
             _chkProtectPlan.Text = "\U0001f512 Bu g\u00f6revi \u015fifre ile koru";
             _chkProtectPlan.Font = new System.Drawing.Font("Segoe UI", 10F);
-            _chkProtectPlan.ForeColor = System.Drawing.Color.FromArgb(240, 240, 245);
             _chkProtectPlan.CheckedChanged += OnProtectPlanChanged;
             _toolTip.SetToolTip(_chkProtectPlan, "\u0130\u015faretlerseniz plan d\u00fczenleme ve silme i\u015flemlerinde \u015fifre sorulur.");
             _pnlStep4.Controls.Add(_chkProtectPlan);
@@ -884,7 +883,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep5Header.Text = "\u2466 Yedek G\u00f6nderim Hedefleri";
             _lblStep5Header.Name = "_lblStep5Header";
             _lblStep5Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep5Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep5Header.Tag = "accent";
             _lblStep5Header.AutoSize = true;
             _lblStep5Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep5.Controls.Add(_lblStep5Header);
@@ -892,7 +891,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep5Hint.Text = "Yedek dosyalar\u0131n\u0131n kopyalanaca\u011f\u0131 bulut veya uzak hedefleri y\u00f6netin.\nGoogle Drive, FTP/SFTP ve UNC a\u011f payla\u015f\u0131m\u0131 desteklenir.";
             _lblStep5Hint.Name = "_lblStep5Hint";
             _lblStep5Hint.AutoSize = true;
-            _lblStep5Hint.ForeColor = System.Drawing.Color.FromArgb(160, 160, 170);
+            _lblStep5Hint.Tag = "secondary";
             _lblStep5Hint.Location = new System.Drawing.Point(24, 31);
             _lblStep5Hint.MaximumSize = new System.Drawing.Size(580, 0);
             _pnlStep5.Controls.Add(_lblStep5Hint);
@@ -943,7 +942,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep6Header.Text = "\u2467 E-posta Bildirimleri";
             _lblStep6Header.Name = "_lblStep6Header";
             _lblStep6Header.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep6Header.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep6Header.Tag = "accent";
             _lblStep6Header.AutoSize = true;
             _lblStep6Header.Location = new System.Drawing.Point(24, 5);
             _pnlStep6.Controls.Add(_lblStep6Header);
@@ -1003,7 +1002,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblStep6ReportHeader.Text = "\u2468 Periyodik Yedek Raporu";
             _lblStep6ReportHeader.Name = "_lblStep6ReportHeader";
             _lblStep6ReportHeader.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            _lblStep6ReportHeader.ForeColor = System.Drawing.Color.FromArgb(16, 185, 129);
+            _lblStep6ReportHeader.Tag = "accent";
             _lblStep6ReportHeader.AutoSize = true;
             _lblStep6ReportHeader.Location = new System.Drawing.Point(24, 123);
             _pnlStep6.Controls.Add(_lblStep6ReportHeader);
@@ -1062,7 +1061,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _pnlNavigation.Dock = System.Windows.Forms.DockStyle.Bottom;
             _pnlNavigation.Name = "_pnlNavigation";
             _pnlNavigation.Height = 52;
-            _pnlNavigation.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
+            _pnlNavigation.Tag = "surface";
             _pnlNavigation.Padding = new System.Windows.Forms.Padding(16, 8, 16, 8);
 
             _btnCancel.Text = "\u0130ptal";
@@ -1116,7 +1115,6 @@ namespace KoruMsSqlYedek.Win.Forms
             // ===================================================================
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            BackColor = System.Drawing.Color.FromArgb(18, 18, 22);
             ClientSize = new System.Drawing.Size(760, 640);
             MinimumSize = new System.Drawing.Size(780, 580);
             Controls.Add(_pnlContent);

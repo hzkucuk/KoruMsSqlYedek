@@ -1,4 +1,113 @@
-﻿## [0.99.51] - 2025-07-20 — Self-Contained Dağıtım & Geniş OS Uyumluluğu
+﻿## [0.99.58] - 2025-07-22 — 🇵🇸 Filistin Bayrağı Watermark
+
+### Yeni Özellik
+- **Özgür Filistin temasına Filistin bayrağı eklendi:**
+  - ModernTabControl sekme başlık şeridinin sağ tarafına net Filistin bayrağı (3 yatay şerit + kırmızı üçgen) çiziliyor
+  - ModernFormBase arka planına transparan bayrak watermark eklendi (dialog formlarında görünür)
+  - Yalnızca `OzgurFilistin` teması aktifken görünür; tema değişikliğinde otomatik güncellenir
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernTabControl.cs` — OnPaint'e DrawPalestineFlagInHeader metodu
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — OnPaintBackground override + DrawPalestineFlagWatermark
+
+---
+
+## [0.99.57] - 2025-07-22 — 🎨 Designer Hardcoded Renk Temizliği
+
+### Düzeltme
+- **Filistin teması formda görünmüyordu:** Designer.cs dosyalarındaki 83 hardcoded `Color.FromArgb` satırı Dark tema renklerini sabitliyordu — tema değişse bile InitializeComponent() her zaman aynı renkleri yüklüyordu
+- `MainWindow.Designer.cs`: 55 hardcoded renk kaldırıldı (Modern* kontrol renkleri + DataGridViewCellStyle)
+- `PlanEditForm.Designer.cs`: 24 hardcoded renk kaldırıldı/Tag tabanlı sisteme dönüştürüldü
+- `CloudTargetEditDialog.Designer.cs`: 4 hardcoded renk kaldırıldı/Tag tabanlı sisteme dönüştürüldü
+- Tag tabanlı Label/Panel temalama: `Tag="accent"` → AccentPrimary, `Tag="secondary"` → TextSecondary, `Tag="surface"` → SurfaceColor
+- `ModernFormBase.RefreshSingleControl` ve `ApplyControlTheme` güncellendi — Label ve Panel Tag desteği eklendi
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\MainWindow.Designer.cs` — 55 hardcoded renk kaldırıldı
+- `KoruMsSqlYedek.Win\Forms\PlanEditForm.Designer.cs` — 24 satır temizlendi/dönüştürüldü
+- `KoruMsSqlYedek.Win\Forms\CloudTargetEditDialog.Designer.cs` — 4 satır temizlendi/dönüştürüldü
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — Tag tabanlı Label/Panel temalama eklendi
+
+---
+
+## [0.99.56] - 2025-07-21 — 🔧 Tema Runtime Geçiş Düzeltmesi
+
+### Düzeltme
+- **Filistin teması (ve diğer temalar) runtime geçişte uygulanmıyordu:** Modern* kontrollerin constructor'da cache'lediği renkler tema değiştiğinde güncellenmiyor, kontroller eski renklerle kalıyordu
+- 11 Modern* kontrole `RefreshThemeColors()` metodu eklendi (ModernTabControl, ModernCardPanel, ModernHeaderPanel, ModernTextBox, ModernSearchBox, ModernNumericUpDown, ModernComboBox, ModernCheckBox, ModernGroupBox, ModernDivider, ModernProgressBar, ModernToggleSwitch)
+- `ModernFormBase.RefreshTheme()` metodu eklendi — tüm kontrol ağacını dolaşarak cache'lenmiş renkleri günceller
+- `OnSaveSettingsClick`'e `RefreshTheme()` ve `Application.SetColorMode()` eklendi
+- Tema değişikliği artık uygulama yeniden başlatılmadan anlık uygulanır
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — RefreshTheme + RefreshControlTree + RefreshSingleControl
+- `KoruMsSqlYedek.Win\Theme\Modern*.cs` (11 dosya) — RefreshThemeColors()
+- `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — RefreshTheme + SetColorMode
+
+---
+
+## [0.99.55] - 2025-07-20 — 🇵🇸 Özgür Filistin Full App Theme
+
+### Yeni Özellik
+- **🇵🇸 Özgür Filistin tam uygulama teması eklendi:** Sadece log konsolunda değil, tüm uygulamada aktif olan yeni tema modu
+- `ThemeMode.OzgurFilistin` enum değeri ve dedike `ApplyOzgurFilistinColors()` metodu eklendi
+- Filistin bayrak renkleri: Kara (başlık), Beyaz (arka plan), Yeşil (vurgu), Kırmızı (aksan)
+- Ayarlar penceresinde 3 seçenekli tema ComboBox: Sistem, Karanlık, Özgür Filistin
+- `SchemaVersion = 3` ile otomatik migrasyon desteği
+- Program başlangıcında native color mode sisteme entegrasyon
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — OzgurFilistin enum + ApplyOzgurFilistinColors()
+- `KoruMsSqlYedek.Win\Program.cs` — ApplyNativeColorMode + ApplyThemeSetting uyumlu
+- `KoruMsSqlYedek.Core\Models\AppSettings.cs` — Theme varsayılan "system", SchemaVersion=3
+- `KoruMsSqlYedek.Engine\AppSettingsManager.cs` — SchemaVersion<3 migrasyon mantığı
+- `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — 3-way tema ComboBox binding
+- `KoruMsSqlYedek.Win\Properties\Resources.resx` — "Theme_OzgurFilistin" resource string
+
+## [0.99.54] - 2025-07-20 — Özgür Filistin Tema Migrasyon Düzeltmesi
+
+### Düzeltme
+- **Tema tüm mevcut kurulumlarda uygulanmıyordu:** Diskteki ayar dosyasında farklı bir tema kayıtlıysa (ör. "ubuntu", "koru") yeni varsayılan (Özgür Filistin) devreye giremiyordu
+- `SchemaVersion` tabanlı zorunlu migrasyon eklendi — `SchemaVersion < 2` olan tüm mevcut kurulumlar otomatik olarak "ozgur-filistin" şemasına geçiriliyor
+- Migrasyon sonucu disk üzerine kalıcı yazılıyor (`Save()`)
+- Yeni kurulumlar `SchemaVersion = 2` ile başlıyor (migrasyon atlanır)
+- Koru tema adından "(Varsayılan)" etiketi kaldırıldı
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine\AppSettingsManager.cs` — SchemaVersion tabanlı MigrateDefaultLogScheme + Save
+- `KoruMsSqlYedek.Core\Models\AppSettings.cs` — SchemaVersion varsayılan 1→2
+- `KoruMsSqlYedek.Win\Theme\TerminalColorScheme.cs` — Koru DisplayName güncellendi
+
+## [0.99.53] - 2025-07-20 — Özgür Filistin Varsayılan Tema
+
+### İyileştirme
+- **🇵🇸 Özgür Filistin varsayılan tema oldu:** Log konsolu renk şeması artık varsayılan olarak Özgür Filistin paleti ile başlıyor
+- Tema listesinde birinci sıraya taşındı
+- Tüm fallback referansları (AppSettings, ModernTheme, FindById) güncellendi
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core\Models\AppSettings.cs` — Varsayılan LogColorScheme: "ozgur-filistin"
+- `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — Varsayılan log renkleri ve fallback
+- `KoruMsSqlYedek.Win\Theme\TerminalColorScheme.cs` — GetAll() sıralama ve FindById fallback
+- `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — ControlsToSettings fallback
+
+## [0.99.52] - 2025-07-20 — Özgür Filistin Tema & Installer Uyumluluk Düzeltmesi
+
+### Yeni Özellik
+- **🇵🇸 Özgür Filistin Terminal Renk Şeması:** Filistin bayrağı renkleri (Siyah, Beyaz, Yeşil, Kırmızı) ilham alınarak tasarlanmış yeni log konsolu renk şeması eklendi
+  - Zeytindalı beyazı (varsayılan metin), Filistin yeşili (başarı), Filistin kırmızısı (hata), Akdeniz mavisi (bilgi), Zeytin yağı altını (uyarı), Umut yeşili (ilerleme)
+
+### Düzeltme
+- **Installer OS Uyumluluğu:** Inno Setup `MinVersion` değeri `10.0`'dan `6.2`'ye düşürüldü — Windows Server 2012 / Windows 8 ve üzeri artık destekleniyor
+- **Self-Contained Publish:** `Build-Release.ps1` publish komutları `--self-contained true` olarak güncellendi — .NET runtime artık uygulama ile birlikte dağıtılıyor
+- **Runtime Installer Kaldırıldı:** Self-contained dağıtımda ayrı .NET runtime kurulumu gerekmediği için ISS'den .NET runtime install mantığı devre dışı bırakıldı
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\TerminalColorScheme.cs` — Özgür Filistin şeması eklendi
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — MinVersion=6.2, runtime install devre dışı
+- `Deployment\Build-Release.ps1` — self-contained true
+
+## [0.99.51] - 2025-07-20 — Self-Contained Dağıtım & Geniş OS Uyumluluğu
 
 ### İyileştirme
 - **Self-Contained Dağıtım:** Win ve Service projeleri `RuntimeIdentifier=win-x64` + `SelfContained=true` ile yapılandırıldı — hedef sunucuya .NET runtime yüklemesi artık gerekli değil

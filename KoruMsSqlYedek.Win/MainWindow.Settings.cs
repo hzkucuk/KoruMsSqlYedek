@@ -31,7 +31,12 @@ namespace KoruMsSqlYedek.Win
         private void SettingsToControls(AppSettings s)
         {
             _cmbLanguage.SelectedIndex = s.Language == "en-US" ? 1 : 0;
-            _cmbTheme.SelectedIndex = s.Theme == "light" ? 1 : 0;
+            _cmbTheme.SelectedIndex = s.Theme switch
+            {
+                "dark" => 1,
+                "light" => 2,
+                _ => 0  // ozgur-filistin (varsayılan)
+            };
             _chkStartWithWindows.Checked = s.StartWithWindows;
             _chkMinimizeToTray.Checked = s.MinimizeToTray;
             _txtDefaultBackupPath.Text = s.DefaultBackupPath;
@@ -58,7 +63,12 @@ namespace KoruMsSqlYedek.Win
             var s = _settings ?? new AppSettings();
 
             s.Language = _cmbLanguage.SelectedIndex == 1 ? "en-US" : "tr-TR";
-            s.Theme = _cmbTheme.SelectedIndex == 1 ? "light" : "dark";
+            s.Theme = _cmbTheme.SelectedIndex switch
+            {
+                1 => "dark",
+                2 => "light",
+                _ => "ozgur-filistin"
+            };
             s.StartWithWindows = _chkStartWithWindows.Checked;
             s.MinimizeToTray = _chkMinimizeToTray.Checked;
             s.DefaultBackupPath = _txtDefaultBackupPath.Text.Trim();
@@ -70,7 +80,7 @@ namespace KoruMsSqlYedek.Win
             int schemeIdx = _cmbLogColorScheme.SelectedIndex;
             s.LogColorScheme = (schemeIdx >= 0 && schemeIdx < schemes.Length)
                 ? schemes[schemeIdx].Id
-                : "koru";
+                : "ozgur-filistin";
 
             // SMTP profiller Add/Edit/Delete dialoglarında bağımsız kaydedilir; burada dokunulmaz.
 
@@ -111,12 +121,26 @@ namespace KoruMsSqlYedek.Win
                 string previousLang = _settings?.Language ?? "tr-TR";
                 var settings = ControlsToSettings();
                 _settingsManager.Save(settings);
-                Theme.ModernTheme.ApplyTheme(settings.Theme == "light"
-                    ? Theme.ThemeMode.Light : Theme.ThemeMode.Dark);
+                var themeMode = settings.Theme switch
+                {
+                    "light" => Theme.ThemeMode.Light,
+                    "ozgur-filistin" => Theme.ThemeMode.OzgurFilistin,
+                    _ => Theme.ThemeMode.Dark
+                };
+                Theme.ModernTheme.ApplyTheme(themeMode);
+
+                // .NET 10 native color mode güncelle
+                var colorMode = themeMode == Theme.ThemeMode.Light
+                    ? SystemColorMode.Classic
+                    : SystemColorMode.Dark;
+                Application.SetColorMode(colorMode);
 
                 // Log renk şemasını uygula
                 Theme.ModernTheme.ApplyLogColorScheme(settings.LogColorScheme);
                 _txtBackupLog.BackColor = Theme.ModernTheme.LogConsoleBg;
+
+                // Tüm kontrollerin cache'lenmiş renklerini güncelle
+                RefreshTheme();
 
                 // Dil değişikliği varsa kültürü güncelle ve tüm UI'yı yeniden lokalize et
                 if (!string.Equals(previousLang, settings.Language, StringComparison.OrdinalIgnoreCase))
@@ -400,6 +424,7 @@ namespace KoruMsSqlYedek.Win
             // Settings — theme items
             int prevThemeIdx = _cmbTheme.SelectedIndex;
             _cmbTheme.Items.Clear();
+            _cmbTheme.Items.Add(Res.Get("Theme_OzgurFilistin"));
             _cmbTheme.Items.Add(Res.Get("Theme_Dark"));
             _cmbTheme.Items.Add(Res.Get("Theme_Light"));
             if (prevThemeIdx >= 0 && prevThemeIdx < _cmbTheme.Items.Count)

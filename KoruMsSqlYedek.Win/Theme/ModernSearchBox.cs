@@ -219,5 +219,15 @@ namespace KoruMsSqlYedek.Win.Theme
         {
             _innerTextBox.Clear();
         }
+
+        /// <summary>Tema değişikliğinde cache'lenmiş renkleri günceller.</summary>
+        internal void RefreshThemeColors()
+        {
+            BackColor = ModernTheme.SurfaceColor;
+            _iconLabel.ForeColor = ModernTheme.TextDisabled;
+            _innerTextBox.BackColor = ModernTheme.SurfaceColor;
+            _innerTextBox.ForeColor = ModernTheme.TextPrimary;
+            Invalidate();
+        }
     }
 }

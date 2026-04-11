@@ -112,6 +112,13 @@ namespace KoruMsSqlYedek.Win.Theme
                 }
             }
         }
+
+        /// <summary>Tema değişikliğinde cache'lenmiş renkleri günceller.</summary>
+        internal void RefreshThemeColors()
+        {
+            _lineColor = ModernTheme.DividerColor;
+            Invalidate();
+        }
     }
 
     internal enum DividerOrientation

@@ -146,7 +146,6 @@
             // 
             // _nudPort
             // 
-            _nudPort.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _nudPort.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _nudPort.Location = new System.Drawing.Point(140, 59);
             _nudPort.Maximum = new decimal(new int[] { 65535, 0, 0, 0 });
@@ -344,7 +343,6 @@
             // 
             // _nudBandwidth
             // 
-            _nudBandwidth.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _nudBandwidth.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _nudBandwidth.Location = new System.Drawing.Point(180, 340);
             _nudBandwidth.Maximum = new decimal(new int[] { 10000, 0, 0, 0 });
@@ -364,7 +362,6 @@
             // 
             // _nudTrashRetention
             // 
-            _nudTrashRetention.BackColor = System.Drawing.Color.FromArgb(30, 30, 36);
             _nudTrashRetention.Font = new System.Drawing.Font("Segoe UI", 9.5F);
             _nudTrashRetention.Location = new System.Drawing.Point(180, 374);
             _nudTrashRetention.Maximum = new decimal(new int[] { 365, 0, 0, 0 });
@@ -376,7 +373,7 @@
             // _lblTrashRetentionHint
             // 
             _lblTrashRetentionHint.AutoSize = true;
-            _lblTrashRetentionHint.ForeColor = System.Drawing.Color.FromArgb(160, 160, 160);
+            _lblTrashRetentionHint.Tag = "secondary";
             _lblTrashRetentionHint.Location = new System.Drawing.Point(265, 377);
             _lblTrashRetentionHint.Name = "_lblTrashRetentionHint";
             _lblTrashRetentionHint.Size = new System.Drawing.Size(100, 17);
