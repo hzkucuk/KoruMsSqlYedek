@@ -130,7 +130,10 @@ namespace KoruMsSqlYedek.Win.Forms
                 return;
 
             // Adım 1'den (Bağlantı panel=0) geçerken otomatik DB listesi yükle
-            if (_activeSteps[_currentStep] == 0 && _clbDatabases.Items.Count == 0)
+            // Server boşsa (sadece dosya yedek planı) atla
+            if (_activeSteps[_currentStep] == 0
+                && _clbDatabases.Items.Count == 0
+                && !string.IsNullOrWhiteSpace(_txtServer.Text))
             {
                 await TryLoadDatabaseListAsync();
             }
@@ -152,13 +155,8 @@ namespace KoruMsSqlYedek.Win.Forms
                         _txtPlanName.Focus();
                         return false;
                     }
-                    if (string.IsNullOrWhiteSpace(_txtServer.Text))
-                    {
-                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ServerRequired"), Res.Get("ValidationError"),
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        _txtServer.Focus();
-                        return false;
-                    }
+                    // Server alanı sadece SQL veritabanı yedekleme yapılacaksa zorunludur.
+                    // Sadece dosya yedek planı oluşturulabilir.
                     return true;
                 default:
                     return true;
