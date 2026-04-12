@@ -1,4 +1,16 @@
-﻿## [0.99.60] - 2025-07-23 — 🇵🇸 DataGridView Filistin Bayrağı Watermark
+﻿## [0.99.61] - 2025-07-24 — 🔐 Servis Hesabı SQL Server Yetki Düzeltmesi
+
+### Düzeltme
+- **Dinamik Windows kimlik algılama:** `EnsureSystemLoginPermission` artık sadece `NT AUTHORITY\SYSTEM` değil, çalışan hesabı (makine hesapları dahil, ör. `DOMAIN\MACHINE$`) dinamik olarak algılayıp sysadmin rolü veriyor
+- **Türkçe hata çevirisi eklendi:** "is not able to access the database" hatası için kullanıcı dostu Türkçe açıklama
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine\Backup\SqlBackupService.Helpers.cs` — Dinamik kimlik algılama + hata çevirisi
+- `KoruMsSqlYedek.Engine\Backup\SqlBackupService.cs` — Yorum güncellemesi
+
+---
+
+## [0.99.60] - 2025-07-23 — 🇵🇸 DataGridView Filistin Bayrağı Watermark
 
 ### Yeni Özellik
 - **Dashboard DataGridView arka planına transparan Filistin bayrağı watermark eklendi:**
