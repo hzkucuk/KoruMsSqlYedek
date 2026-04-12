@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace KoruMsSqlYedek.Win.Theme
@@ -38,65 +37,7 @@ namespace KoruMsSqlYedek.Win.Theme
             if (ModernTheme.CurrentTheme != ThemeMode.OzgurFilistin)
                 return;
 
-            DrawPalestineFlagWatermark(e.Graphics, ClientSize);
-        }
-
-        /// <summary>
-        /// Filistin bayrağını transparan watermark olarak form arka planına çizer.
-        /// 3 yatay şerit (siyah-beyaz-yeşil) ve sol tarafta kırmızı üçgen.
-        /// Yalnızca OzgürFilistin teması aktifken çağrılır.
-        /// </summary>
-        private static void DrawPalestineFlagWatermark(Graphics g, Size clientSize)
-        {
-            const float flagRatio = 2f; // width:height = 2:1
-
-            // Bayrak boyutu — form genişliğinin ~55%'i, ortada
-            int flagWidth = (int)(clientSize.Width * 0.55f);
-            int flagHeight = (int)(flagWidth / flagRatio);
-
-            // Form çok küçükse çizme
-            if (flagWidth < 100 || flagHeight < 50)
-                return;
-
-            int x = (clientSize.Width - flagWidth) / 2;
-            int y = (clientSize.Height - flagHeight) / 2;
-            int stripeHeight = flagHeight / 3;
-            int lastStripeHeight = flagHeight - stripeHeight * 2; // kalan piksel farkını son şerite ver
-
-            SmoothingMode prevSmoothing = g.SmoothingMode;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-
-            // ── 3 yatay şerit ──
-
-            // Siyah şerit (üst) — koyu arkaplanda açık gri ile fark edilir kıl
-            using (SolidBrush blackBrush = new(Color.FromArgb(35, 160, 160, 160)))
-                g.FillRectangle(blackBrush, x, y, flagWidth, stripeHeight);
-
-            // Beyaz şerit (orta)
-            using (SolidBrush whiteBrush = new(Color.FromArgb(40, 255, 255, 255)))
-                g.FillRectangle(whiteBrush, x, y + stripeHeight, flagWidth, stripeHeight);
-
-            // Yeşil şerit (alt) — Filistin yeşili #009736
-            using (SolidBrush greenBrush = new(Color.FromArgb(50, 0, 151, 54)))
-                g.FillRectangle(greenBrush, x, y + stripeHeight * 2, flagWidth, lastStripeHeight);
-
-            // ── Kırmızı üçgen (sol taraf) — Filistin kırmızısı #CE1126 ──
-            int triangleWidth = (int)(flagWidth * 0.33f);
-            Point[] triangle =
-            [
-                new(x, y),
-                new(x + triangleWidth, y + flagHeight / 2),
-                new(x, y + flagHeight)
-            ];
-
-            using (SolidBrush redBrush = new(Color.FromArgb(55, 206, 17, 38)))
-                g.FillPolygon(redBrush, triangle);
-
-            // ── İnce kenarlık — bayrağı çerçevele ──
-            using (Pen borderPen = new(Color.FromArgb(25, 200, 200, 200), 1f))
-                g.DrawRectangle(borderPen, x, y, flagWidth, flagHeight);
-
-            g.SmoothingMode = prevSmoothing;
+            ModernTheme.DrawPalestineFlagWatermark(e.Graphics, ClientSize);
         }
 
         /// <summary>
