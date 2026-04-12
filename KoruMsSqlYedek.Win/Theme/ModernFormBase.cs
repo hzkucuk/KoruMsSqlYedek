@@ -247,6 +247,13 @@ namespace KoruMsSqlYedek.Win.Theme
                 return;
             }
 
+            // ListView — renkleri ve OwnerDraw güncellemesi
+            if (c is ListView lv)
+            {
+                ModernTheme.StyleListView(lv);
+                return;
+            }
+
             if (c is ToolStrip ts && c is not StatusStrip && c is not MenuStrip)
             {
                 ModernTheme.StyleToolStrip(ts);
@@ -303,6 +310,13 @@ namespace KoruMsSqlYedek.Win.Theme
             if (c is DataGridView dgv)
             {
                 ModernTheme.StyleDataGridView(dgv);
+                return;
+            }
+
+            // ListView — kolon başlıkları ve satırlar dark mode'da OwnerDraw ile çizilir
+            if (c is ListView lv)
+            {
+                ModernTheme.StyleListView(lv);
                 return;
             }
 
