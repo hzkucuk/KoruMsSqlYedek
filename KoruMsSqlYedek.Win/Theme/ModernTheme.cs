@@ -304,7 +304,62 @@ namespace KoruMsSqlYedek.Win.Theme
             lv.ForeColor = TextPrimary;
             lv.BackColor = SurfaceColor;
 
+            // OwnerDraw — kolon başlıkları ve satırlar dark mode'da düzgün görünsün
+            if (!lv.OwnerDraw)
+            {
+                lv.OwnerDraw = true;
+                lv.DrawColumnHeader += ListView_DrawColumnHeader;
+                lv.DrawItem += ListView_DrawItem;
+                lv.DrawSubItem += ListView_DrawSubItem;
+            }
+
             ApplyScrollBarTheme(lv);
+        }
+
+        private static void ListView_DrawColumnHeader(object? sender, DrawListViewColumnHeaderEventArgs e)
+        {
+            using SolidBrush bgBrush = new(GridHeaderBack);
+            e.Graphics.FillRectangle(bgBrush, e.Bounds);
+
+            // Alt kenarlık çizgisi
+            using Pen borderPen = new(BorderColor);
+            e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1,
+                                            e.Bounds.Right, e.Bounds.Bottom - 1);
+
+            TextRenderer.DrawText(e.Graphics, e.Header?.Text, FontBody,
+                new Rectangle(e.Bounds.X + 4, e.Bounds.Y, e.Bounds.Width - 8, e.Bounds.Height),
+                GridHeaderText, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+        }
+
+        private static void ListView_DrawItem(object? sender, DrawListViewItemEventArgs e)
+        {
+            // DrawSubItem ile çizilecek; burada sadece arka planı hazırla
+            e.DrawDefault = false;
+        }
+
+        private static void ListView_DrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
+        {
+            Color bgColor;
+            Color fgColor;
+
+            if (e.Item is not null && e.Item.Selected)
+            {
+                bgColor = GridSelectionBack;
+                fgColor = TextPrimary;
+            }
+            else
+            {
+                bgColor = (e.ItemIndex % 2 == 0) ? SurfaceColor : GridAlternateRow;
+                fgColor = TextPrimary;
+            }
+
+            using SolidBrush bgBrush = new(bgColor);
+            e.Graphics!.FillRectangle(bgBrush, e.Bounds);
+
+            string text = e.SubItem?.Text ?? string.Empty;
+            TextRenderer.DrawText(e.Graphics, text, FontBody,
+                new Rectangle(e.Bounds.X + 4, e.Bounds.Y, e.Bounds.Width - 8, e.Bounds.Height),
+                fgColor, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
         }
 
         internal static void StyleToolStrip(ToolStrip ts)

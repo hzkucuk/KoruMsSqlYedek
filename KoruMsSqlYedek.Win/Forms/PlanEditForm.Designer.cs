@@ -898,14 +898,14 @@
 
             _lvCloudTargets.Location = new System.Drawing.Point(24, 71);
             _lvCloudTargets.Name = "_lvCloudTargets";
-            _lvCloudTargets.Size = new System.Drawing.Size(556, 380);
+            _lvCloudTargets.Size = new System.Drawing.Size(450, 380);
             _lvCloudTargets.View = System.Windows.Forms.View.Details;
             _lvCloudTargets.FullRowSelect = true;
             _lvCloudTargets.GridLines = true;
             _colCtName.Text = "Hedef Ad\u0131";
             _colCtName.Width = 200;
             _colCtType.Text = "T\u00fcr";
-            _colCtType.Width = 160;
+            _colCtType.Width = 140;
             _colCtStatus.Text = "Durum";
             _colCtStatus.Width = 90;
             _lvCloudTargets.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] { _colCtName, _colCtType, _colCtStatus });

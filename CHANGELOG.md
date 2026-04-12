@@ -1,4 +1,20 @@
-﻿## [0.99.58] - 2025-07-22 — 🇵🇸 Filistin Bayrağı Watermark
+﻿## [0.99.59] - 2025-07-23 — 🎨 ListView Dark Theme & Step 5 Düğme Düzeltmesi
+
+### Düzeltme
+- **ListView dark theme desteği eklendi:**
+  - `StyleListView` OwnerDraw ile kolon başlıkları, satırlar ve seçim renkleri dark mode'da düzgün çiziliyor
+  - `ApplyControlTheme` ve `RefreshSingleControl` metodlarına ListView desteği eklendi
+- **Step 5 (Hedefler) düğmeleri görünür hale getirildi:**
+  - ListView genişliği 556→450px'e daraltıldı; Ekle/Düzenle/Kaldır düğmeleri artık ListView'ın arkasında kalmıyor
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — StyleListView + OwnerDraw event handler'ları
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — ListView desteği (ApplyControlTheme + RefreshSingleControl)
+- `KoruMsSqlYedek.Win\Forms\PlanEditForm.Designer.cs` — _lvCloudTargets genişlik düzeltmesi
+
+---
+
+## [0.99.58] - 2025-07-22 — 🇵🇸 Filistin Bayrağı Watermark
 
 ### Yeni Özellik
 - **Özgür Filistin temasına Filistin bayrağı eklendi:**
