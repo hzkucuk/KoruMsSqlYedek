@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
@@ -20,8 +21,9 @@ namespace KoruMsSqlYedek.Engine.Backup
         private static volatile bool _systemPermissionChecked;
 
         /// <summary>
-        /// NT AUTHORITY\SYSTEM hesabının SQL Server'da sysadmin rolüne sahip olup olmadığını kontrol eder.
+        /// Uygulamanın çalıştığı Windows hesabının SQL Server'da sysadmin rolüne sahip olup olmadığını kontrol eder.
         /// Yoksa otomatik olarak eklemeye çalışır. Windows Auth kullanılmıyorsa atlanır.
+        /// Hem NT AUTHORITY\SYSTEM hem de makine hesapları (DOMAIN\MACHINE$) desteklenir.
         /// </summary>
         internal static void EnsureSystemLoginPermission(SqlConnInfo connectionInfo)
         {
@@ -30,6 +32,10 @@ namespace KoruMsSqlYedek.Engine.Backup
 
             try
             {
+                // Çalışan hesabın adını al (ör. NT AUTHORITY\SYSTEM veya DOMAIN\MACHINE$)
+                string currentIdentity = WindowsIdentity.GetCurrent().Name;
+                Log.Debug("Mevcut Windows kimliği: {Identity}", currentIdentity);
+
                 var builder = new SqlConnectionStringBuilder
                 {
                     DataSource = connectionInfo.Server,
@@ -45,43 +51,54 @@ namespace KoruMsSqlYedek.Engine.Backup
                 using var conn = new SqlConnection(builder.ConnectionString);
                 conn.Open();
 
-                // Önce login var mı kontrol et
-                const string checkLoginSql =
-                    "SELECT COUNT(*) FROM sys.server_principals WHERE name = 'NT AUTHORITY\\SYSTEM'";
+                // Şu anki bağlantının zaten sysadmin olup olmadığını kontrol et
+                const string checkCurrentRoleSql = "SELECT IS_SRVROLEMEMBER('sysadmin')";
+                using var currentRoleCmd = new SqlCommand(checkCurrentRoleSql, conn);
+                var currentRoleResult = currentRoleCmd.ExecuteScalar();
+                bool isCurrentSysAdmin = currentRoleResult is not null
+                    && currentRoleResult != DBNull.Value
+                    && Convert.ToInt32(currentRoleResult) == 1;
+
+                if (isCurrentSysAdmin)
+                {
+                    Log.Debug("Mevcut hesap zaten sysadmin: {Identity}", currentIdentity);
+                    _systemPermissionChecked = true;
+                    return;
+                }
+
+                // Login var mı kontrol et
+                string escapedIdentity = currentIdentity.Replace("'", "''");
+                string checkLoginSql =
+                    $"SELECT COUNT(*) FROM sys.server_principals WHERE name = N'{escapedIdentity}'";
                 using var checkCmd = new SqlCommand(checkLoginSql, conn);
                 int loginExists = (int)checkCmd.ExecuteScalar();
 
                 if (loginExists == 0)
                 {
-                    using var createCmd = new SqlCommand(
-                        "CREATE LOGIN [NT AUTHORITY\\SYSTEM] FROM WINDOWS", conn);
+                    string createSql = $"CREATE LOGIN [{currentIdentity}] FROM WINDOWS";
+                    using var createCmd = new SqlCommand(createSql, conn);
                     createCmd.ExecuteNonQuery();
-                    Log.Information("SQL Server login oluşturuldu: NT AUTHORITY\\SYSTEM");
+                    Log.Information("SQL Server login oluşturuldu: {Identity}", currentIdentity);
                 }
 
-                // sysadmin rolünde mi kontrol et
-                const string checkRoleSql =
-                    "SELECT IS_SRVROLEMEMBER('sysadmin', 'NT AUTHORITY\\SYSTEM')";
-                using var roleCmd = new SqlCommand(checkRoleSql, conn);
-                var roleResult = roleCmd.ExecuteScalar();
-                bool isSysAdmin = roleResult != null && roleResult != DBNull.Value && Convert.ToInt32(roleResult) == 1;
-
-                if (!isSysAdmin)
-                {
-                    using var grantCmd = new SqlCommand(
-                        "ALTER SERVER ROLE [sysadmin] ADD MEMBER [NT AUTHORITY\\SYSTEM]", conn);
-                    grantCmd.ExecuteNonQuery();
-                    Log.Information("NT AUTHORITY\\SYSTEM hesabına sysadmin rolü verildi.");
-                }
+                // sysadmin rolüne ekle
+                string grantSql = $"ALTER SERVER ROLE [sysadmin] ADD MEMBER [{currentIdentity}]";
+                using var grantCmd = new SqlCommand(grantSql, conn);
+                grantCmd.ExecuteNonQuery();
+                Log.Information("{Identity} hesabına sysadmin rolü verildi.", currentIdentity);
 
                 _systemPermissionChecked = true;
             }
             catch (Exception ex)
             {
                 _systemPermissionChecked = true; // Tekrar denememek için
+                string identity = "bilinmiyor";
+                try { identity = WindowsIdentity.GetCurrent().Name; } catch { }
                 Log.Warning(ex,
-                    "NT AUTHORITY\\SYSTEM için SQL Server yetki kontrolü başarısız. " +
-                    "Manuel olarak şu komutu çalıştırın: ALTER SERVER ROLE [sysadmin] ADD MEMBER [NT AUTHORITY\\SYSTEM]");
+                    "{Identity} için SQL Server yetki kontrolü başarısız. " +
+                    "Manuel olarak şu komutu çalıştırın: " +
+                    "ALTER SERVER ROLE [sysadmin] ADD MEMBER [{Identity}]",
+                    identity, identity);
             }
         }
 
@@ -172,6 +189,11 @@ namespace KoruMsSqlYedek.Engine.Backup
 
             if (lowerMsg.Contains("insufficient memory") || lowerMsg.Contains("not enough memory"))
                 return $"Yetersiz bellek. SQL Server'ın yeterli RAM'e sahip olduğundan emin olun. (Detay: {innerMsg})";
+
+            if (lowerMsg.Contains("is not able to access the database") || lowerMsg.Contains("current security context"))
+                return $"SQL Server hesabının veritabanına erişim yetkisi yok. " +
+                       $"Servis hesabına SQL Server'da sysadmin rolü verin veya " +
+                       $"SQL Authentication kullanın. (Detay: {innerMsg})";
 
             if (lowerMsg.Contains("access is denied") || lowerMsg.Contains("operating system error 5"))
                 return $"Erişim reddedildi. SQL Server servis hesabının yedek dizinine yazma yetkisi " +
