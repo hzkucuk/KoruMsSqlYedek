@@ -292,6 +292,15 @@ namespace KoruMsSqlYedek.Win.Theme
             dgv.AllowUserToResizeRows = false;
             dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
 
+            // DoubleBuffered — watermark ve scroll sırasında flicker önleme
+            typeof(DataGridView)
+                .GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?
+                .SetValue(dgv, true);
+
+            // Filistin bayrağı watermark — Paint event
+            dgv.Paint -= DataGridView_PalestineWatermark;
+            dgv.Paint += DataGridView_PalestineWatermark;
+
             ApplyScrollBarTheme(dgv);
         }
 
@@ -455,6 +464,72 @@ namespace KoruMsSqlYedek.Win.Theme
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        }
+
+        /// <summary>
+        /// Filistin bayrağını transparan watermark olarak çizer.
+        /// 3 yatay şerit (siyah-beyaz-yeşil) ve sol tarafta kırmızı üçgen.
+        /// <paramref name="opacity"/> değeri 0.0–1.0 arasında alfa çarpanını belirler.
+        /// </summary>
+        internal static void DrawPalestineFlagWatermark(Graphics g, Size clientSize, float opacity = 1.0f)
+        {
+            const float flagRatio = 2f; // width:height = 2:1
+
+            int flagWidth = (int)(clientSize.Width * 0.55f);
+            int flagHeight = (int)(flagWidth / flagRatio);
+
+            if (flagWidth < 100 || flagHeight < 50)
+                return;
+
+            int x = (clientSize.Width - flagWidth) / 2;
+            int y = (clientSize.Height - flagHeight) / 2;
+            int stripeHeight = flagHeight / 3;
+            int lastStripeHeight = flagHeight - stripeHeight * 2;
+
+            SmoothingMode prevSmoothing = g.SmoothingMode;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // Siyah şerit (üst)
+            using (SolidBrush blackBrush = new(Color.FromArgb((int)(35 * opacity), 160, 160, 160)))
+                g.FillRectangle(blackBrush, x, y, flagWidth, stripeHeight);
+
+            // Beyaz şerit (orta)
+            using (SolidBrush whiteBrush = new(Color.FromArgb((int)(40 * opacity), 255, 255, 255)))
+                g.FillRectangle(whiteBrush, x, y + stripeHeight, flagWidth, stripeHeight);
+
+            // Yeşil şerit (alt) — #009736
+            using (SolidBrush greenBrush = new(Color.FromArgb((int)(50 * opacity), 0, 151, 54)))
+                g.FillRectangle(greenBrush, x, y + stripeHeight * 2, flagWidth, lastStripeHeight);
+
+            // Kırmızı üçgen (sol) — #CE1126
+            int triangleWidth = (int)(flagWidth * 0.33f);
+            Point[] triangle =
+            [
+                new(x, y),
+                new(x + triangleWidth, y + flagHeight / 2),
+                new(x, y + flagHeight)
+            ];
+
+            using (SolidBrush redBrush = new(Color.FromArgb((int)(55 * opacity), 206, 17, 38)))
+                g.FillPolygon(redBrush, triangle);
+
+            // İnce kenarlık
+            using (Pen borderPen = new(Color.FromArgb((int)(25 * opacity), 200, 200, 200), 1f))
+                g.DrawRectangle(borderPen, x, y, flagWidth, flagHeight);
+
+            g.SmoothingMode = prevSmoothing;
+        }
+
+        /// <summary>DataGridView arka planına transparan Filistin bayrağı watermark çizer.</summary>
+        private static void DataGridView_PalestineWatermark(object? sender, PaintEventArgs e)
+        {
+            if (CurrentTheme != ThemeMode.OzgurFilistin)
+                return;
+
+            if (sender is not DataGridView dgv)
+                return;
+
+            DrawPalestineFlagWatermark(e.Graphics, dgv.ClientSize, 0.5f);
         }
     }
 }

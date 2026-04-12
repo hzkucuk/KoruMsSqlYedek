@@ -1,4 +1,18 @@
-﻿## [0.99.59] - 2025-07-23 — 🎨 ListView Dark Theme & Step 5 Düğme Düzeltmesi
+﻿## [0.99.60] - 2025-07-23 — 🇵🇸 DataGridView Filistin Bayrağı Watermark
+
+### Yeni Özellik
+- **Dashboard DataGridView arka planına transparan Filistin bayrağı watermark eklendi:**
+  - `OzgürFilistin` teması aktifken plan listesi grid'inin arka planında bayrak görünür
+  - DataGridView `DoubleBuffered` etkinleştirilerek scroll/repaint flicker önlendi
+  - `DrawPalestineFlagWatermark` metodu `ModernTheme`'e taşındı; opacity parametresi ile form (%100) ve grid (%50) farklı yoğunlukta kullanılıyor
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — DrawPalestineFlagWatermark + DataGridView Paint handler
+- `KoruMsSqlYedek.Win\Theme\ModernFormBase.cs` — Shared watermark çağrısına geçiş, unused using temizliği
+
+---
+
+## [0.99.59] - 2025-07-23 — 🎨 ListView Dark Theme & Step 5 Düğme Düzeltmesi
 
 ### Düzeltme
 - **ListView dark theme desteği eklendi:**
