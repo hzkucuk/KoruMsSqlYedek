@@ -95,9 +95,7 @@ namespace KoruMsSqlYedek.Win
             _settingsManager = settingsManager;
             _pipeClient = pipeClient;
 
-            _logDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "KoruMsSqlYedek", "Logs");
+            _logDirectory = PathHelper.LogsDirectory;
 
             InitializeComponent();
 

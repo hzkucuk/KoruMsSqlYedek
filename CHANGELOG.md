@@ -1,4 +1,17 @@
-﻿## [0.99.61] - 2025-07-24 — 🔐 Servis Hesabı SQL Server Yetki Düzeltmesi
+﻿## [0.99.62] - 2025-07-24 — 🐛 Log Dizini + Dosya Yedek Planı Düzeltmesi
+
+### Düzeltme
+- **Log dizini yolu düzeltildi:** `MainWindow._logDirectory` eski `%APPDATA%` yolu yerine `PathHelper.LogsDirectory` (`%ProgramData%`) kullanıyor. Yeni kurulumlarda "Log dizini bulunamadı" sorunu giderildi.
+- **Sadece dosya yedek planı oluşturma:** `ValidateCurrentStep` artık SQL Server adresi boş olduğunda hata vermiyor. Dosya yedek planı (SQL olmadan) oluşturulabilir.
+- **Boş server ile otomatik DB yükleme atlanıyor:** Server alanı boşken gereksiz bağlantı denemesi yapılmıyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\MainWindow.cs` — `_logDirectory` düzeltmesi
+- `KoruMsSqlYedek.Win\Forms\PlanEditForm.WizardNavigation.cs` — Server validasyonu + DB yükleme koruması
+
+---
+
+## [0.99.61] - 2025-07-24 — 🔐 Servis Hesabı SQL Server Yetki Düzeltmesi
 
 ### Düzeltme
 - **Dinamik Windows kimlik algılama:** `EnsureSystemLoginPermission` artık sadece `NT AUTHORITY\SYSTEM` değil, çalışan hesabı (makine hesapları dahil, ör. `DOMAIN\MACHINE$`) dinamik olarak algılayıp sysadmin rolü veriyor
