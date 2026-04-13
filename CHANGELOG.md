@@ -1,4 +1,19 @@
-﻿## [0.99.62] - 2025-07-24 — 🐛 Log Dizini + Dosya Yedek Planı Düzeltmesi
+﻿## [0.99.63] - 2025-07-25 — 🐛 Retention Kritik Düzeltme: Çapraz Eşleşme + VSS
+
+### Düzeltme
+- **Retention çapraz eşleşme hatası giderildi (KRİTİK):** `CleanupForDatabaseByType` içindeki glob paterni `{dbName}_*.*` ile prefix-paylaşan veritabanı dosyaları siliniyordu. Örneğin `MikroDesktop` retention'ı `MikroDesktop_ASYA_Full_*.7z` dosyalarını da siliyordu. Glob paterni `{dbName}_{typeToken}*` olarak daraltıldı.
+- **Retention zamanlama hatası giderildi:** `RetentionService.CleanupAsync` her DB backup sonrası TÜM DB'ler için çalışıyordu (N×N). Artık tüm DB yedekleri tamamlandıktan sonra bir kez çalışır.
+- **VSS dosyaları artık retention tarafından temizleniyor:** `_VSS_*.7z` dosyaları daha önce hiçbir retention paterniyle eşleşmediği için süresiz birikiyordu. `BackupFileType.SqlVss` enum değeri ve retention kuralı eklendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine\Retention\RetentionCleanupService.cs` — Glob paterni daraltma + VSS temizlik
+- `KoruMsSqlYedek.Engine\Scheduling\BackupJobExecutor.SqlPipeline.cs` — Retention döngü dışına taşındı
+- `KoruMsSqlYedek.Core\Models\Enums.cs` — `BackupFileType.SqlVss = 4` eklendi
+- `KoruMsSqlYedek.Core\Models\BackupPlan.cs` — `GetEffectiveRetention` VSS desteği
+
+---
+
+## [0.99.62] - 2025-07-24 — 🐛 Log Dizini + Dosya Yedek Planı Düzeltmesi
 
 ### Düzeltme
 - **Log dizini yolu düzeltildi:** `MainWindow._logDirectory` eski `%APPDATA%` yolu yerine `PathHelper.LogsDirectory` (`%ProgramData%`) kullanıyor. Yeni kurulumlarda "Log dizini bulunamadı" sorunu giderildi.

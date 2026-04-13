@@ -284,36 +284,36 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     }
                 }
 
-                // 5. Retention
-                if (RetentionService != null)
-                {
-                    try
-                    {
-                        await RetentionService.CleanupAsync(plan, ct);
-
-                        BackupActivityHub.Raise(new BackupActivityEventArgs
-                        {
-                            PlanId = plan.PlanId,
-                            PlanName = plan.PlanName,
-                            DatabaseName = dbName,
-                            ActivityType = BackupActivityType.StepChanged,
-                            StepName = "Temizlik",
-                            Message = $"Eski yedek temizliği tamamlandı: {dbName}"
-                        });
-                    }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Retention temizliği hatası: {Database}", dbName);
-                    }
-                }
-
-                // 6. History (cloud sonuçları sonra atanacak)
+                // 5. History (cloud sonuçları sonra atanacak)
                 sqlResults.Add(result);
 
                 // Bu DB'nin lokal adımları tamamlandı — cleanup paths'ten çıkar
                 if (cleanupPaths.Count > cleanupSnapshot)
                     cleanupPaths.RemoveRange(cleanupSnapshot, cleanupPaths.Count - cleanupSnapshot);
+            }
+
+            // 6. Retention — tüm DB'ler tamamlandıktan sonra bir kez çalıştır.
+            // Döngü içinde çalıştırılırsa prefix-paylaşan DB dosyaları erken silinebilir.
+            if (RetentionService != null)
+            {
+                try
+                {
+                    await RetentionService.CleanupAsync(plan, ct);
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "Temizlik",
+                        Message = "Eski yedek temizliği tamamlandı"
+                    });
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName);
+                }
             }
 
             return (sqlResults, pendingUploads);

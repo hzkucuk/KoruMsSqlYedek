@@ -147,6 +147,7 @@ namespace KoruMsSqlYedek.Core.Models
                 BackupFileType.SqlDifferential => RetentionScheme.SqlDifferential ?? Retention,
                 BackupFileType.SqlLog => RetentionScheme.SqlLog ?? Retention,
                 BackupFileType.FileBackup => RetentionScheme.FileBackup ?? Retention,
+                BackupFileType.SqlVss => RetentionScheme.SqlFull ?? Retention,
                 _ => Retention
             };
         }
