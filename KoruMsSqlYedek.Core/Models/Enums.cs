@@ -110,7 +110,10 @@ namespace KoruMsSqlYedek.Core.Models
         SqlLog = 2,
 
         /// <summary>Dosya/klasör yedekleme arşivi (Files_*.7z).</summary>
-        FileBackup = 3
+        FileBackup = 3,
+
+        /// <summary>VSS ek güvenlik yedeği (_VSS_*.7z).</summary>
+        SqlVss = 4
     }
 
     /// <summary>

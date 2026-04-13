@@ -54,6 +54,9 @@ namespace KoruMsSqlYedek.Engine.Retention
 
                     CleanupForDatabaseByType(plan.LocalPath, dbName, BackupFileType.SqlLog,
                         plan.GetEffectiveRetention(BackupFileType.SqlLog), cloudProtectedFiles);
+
+                    CleanupForDatabaseByType(plan.LocalPath, dbName, BackupFileType.SqlVss,
+                        plan.GetEffectiveRetention(BackupFileType.SqlVss), cloudProtectedFiles);
                 }
 
                 // Dosya yedekleme arşivlerini de temizle (Files_*.7z)
@@ -122,19 +125,21 @@ namespace KoruMsSqlYedek.Engine.Retention
             if (retention == null || !Directory.Exists(localPath))
                 return;
 
-            // Dosya adındaki tipe göre filtre — her tip kendi havuzunda sayılır
-            string typeFilter = fileType switch
+            // Dosya adındaki tipe göre filtre — glob'a dahil edilerek
+            // prefix-paylaşan DB adlarının çapraz eşleşmesi önlenir.
+            // Örn: "MikroDesktop_Full_*" artık "MikroDesktop_ASYA_Full_*" ile eşleşmez.
+            string typeToken = fileType switch
             {
-                BackupFileType.SqlDifferential => "_Differential_",
-                BackupFileType.SqlLog => "_Log_",
-                _ => "_Full_"
+                BackupFileType.SqlDifferential => "Differential_",
+                BackupFileType.SqlLog => "Log_",
+                BackupFileType.SqlVss => "VSS_",
+                _ => "Full_"
             };
 
-            // .bak ve .7z dosyalarını topla, sadece ilgili tip
-            var allFiles = Directory.GetFiles(localPath, $"{databaseName}_*.*")
-                .Where(f => (f.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
-                             f.EndsWith(".7z", StringComparison.OrdinalIgnoreCase)) &&
-                            Path.GetFileName(f).Contains(typeFilter, StringComparison.OrdinalIgnoreCase))
+            // .bak ve .7z dosyalarını topla, sadece ilgili DB+tip
+            var allFiles = Directory.GetFiles(localPath, $"{databaseName}_{typeToken}*")
+                .Where(f => f.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
                 .Select(f => new FileInfo(f))
                 .OrderByDescending(f => f.CreationTime)
                 .ToList();
