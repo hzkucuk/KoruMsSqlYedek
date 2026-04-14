@@ -241,6 +241,52 @@ namespace KoruMsSqlYedek.Engine.Cloud
         #endregion
 
         /// <summary>
+        /// Verilen token JSON ile bağlı Google hesabının e-posta adresini döner.
+        /// Token geçersiz veya sorgu başarısız olursa null döner.
+        /// </summary>
+        public static async Task<string> GetAccountEmailAsync(
+            string oauthTokenJson,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(oauthTokenJson))
+                return null;
+
+            try
+            {
+                string json = DecryptIfNeeded(oauthTokenJson);
+                var token = JsonConvert.DeserializeObject<TokenResponse>(json);
+                if (token is null)
+                    return null;
+
+                var (clientId, clientSecret) = ResolveCredentials();
+                var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = new ClientSecrets { ClientId = clientId, ClientSecret = clientSecret },
+                    Scopes = Scopes
+                });
+
+                var credential = new UserCredential(flow, "user", token);
+
+                using var service = new DriveService(new BaseClientService.Initializer
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = ApplicationName
+                });
+
+                var request = service.About.Get();
+                request.Fields = "user(emailAddress)";
+                var about = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+                return about?.User?.EmailAddress;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Google hesap e-postası alınamadı.");
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Token saklamayan IDataStore implementasyonu.
         /// Etkileşimli auth sırasında kullanılır; token CloudTargetConfig'de DPAPI ile saklanır.
         /// </summary>

@@ -171,6 +171,10 @@ namespace KoruMsSqlYedek.Win
             _btnLogExport.Text = Res.Get("Btn_Export");
             _btnLogExport.TextImageRelation = TextImageRelation.ImageBeforeText;
 
+            _btnDashboardExport.Image = LoadToolStripIcon("Export_16x16.png");
+            _btnDashboardExport.Text = Res.Get("Btn_Export");
+            _btnDashboardExport.TextImageRelation = TextImageRelation.ImageBeforeText;
+
             _btnBrowseBackupPath.Image = LoadToolStripIcon("Open_16x16.png");
             _btnBrowseBackupPath.Text = "";
             _btnBrowseBackupPath.ImageAlign = ContentAlignment.MiddleCenter;

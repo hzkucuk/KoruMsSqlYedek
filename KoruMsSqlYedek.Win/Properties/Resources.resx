@@ -1136,4 +1136,14 @@ Disabled sources are skipped during backup execution.</value></data>
   <data name="FileSource_Calculating" xml:space="preserve"><value>calculating...</value></data>
   <data name="FileSource_StatusSelected" xml:space="preserve"><value>✅ {0} folder(s), {1} file(s) selected{2}</value></data>
 
+  <!-- Dashboard Export -->
+  <data name="Dashboard_ExportDialogTitle" xml:space="preserve"><value>Export Backup History</value></data>
+  <data name="Dashboard_ExportFilter" xml:space="preserve"><value>CSV File (*.csv)|*.csv|All Files (*.*)|*.*</value></data>
+  <data name="Dashboard_ExportSuccessFormat" xml:space="preserve"><value>{0} record(s) exported.</value></data>
+  <data name="Dashboard_ExportSuccessTitle" xml:space="preserve"><value>Export Successful</value></data>
+  <data name="Dashboard_ExportError" xml:space="preserve"><value>Export error: {0}</value></data>
+
+  <!-- Cloud Target Email -->
+  <data name="CloudTarget_FetchingEmail" xml:space="preserve"><value>Fetching account info...</value></data>
+
 </root>

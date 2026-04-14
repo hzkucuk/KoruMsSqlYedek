@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
@@ -132,11 +133,12 @@ namespace KoruMsSqlYedek.Win.Forms
             return System.Drawing.Image.FromStream(stream);
         }
 
-        protected override void OnLoad(EventArgs e)
+        protected override async void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
             PopulateProviderTypes();
             LoadTargetToUi();
+            await FetchMissingAccountEmailAsync();
         }
 
         #region ComboBox Population
@@ -203,6 +205,12 @@ namespace KoruMsSqlYedek.Win.Forms
             bool hasToken = !string.IsNullOrEmpty(_target.OAuthTokenJson);
             _lblAuthStatus.Text = hasToken ? "\u2714 Ba\u011fl\u0131" : "Hen\u00fcz do\u011frulanmad\u0131";
             _lblAuthStatus.ForeColor = hasToken ? Theme.ModernTheme.AccentPrimary : Theme.ModernTheme.TextSecondary;
+
+            // Ba\u011fl\u0131 hesap e-postas\u0131
+            if (hasToken && !string.IsNullOrEmpty(_target.OAuthAccountEmail))
+                _lblAccountEmail.Text = _target.OAuthAccountEmail;
+            else
+                _lblAccountEmail.Text = "";
 
             UpdateFieldVisibility();
         }
@@ -324,6 +332,21 @@ namespace KoruMsSqlYedek.Win.Forms
                 _target.OAuthClientSecret = null;
                 _lblAuthStatus.Text = "\u2714 Ba\u011fl\u0131";
                 _lblAuthStatus.ForeColor = Theme.ModernTheme.AccentPrimary;
+
+                // Bağlı hesabın e-posta adresini al ve göster
+                _lblAccountEmail.Text = "Hesap bilgisi alınıyor...";
+                string email = await GoogleDriveAuthHelper.GetAccountEmailAsync(
+                    tokenJson, System.Threading.CancellationToken.None);
+
+                if (!string.IsNullOrEmpty(email))
+                {
+                    _target.OAuthAccountEmail = email;
+                    _lblAccountEmail.Text = email;
+                }
+                else
+                {
+                    _lblAccountEmail.Text = "";
+                }
             }
             catch (Exception ex)
             {
@@ -342,6 +365,39 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             using var dialog = new GoogleOAuthSettingsDialog(_appSettings, _settingsManager);
             dialog.ShowDialog(this);
+        }
+
+        /// <summary>
+        /// Token mevcutken e-posta kaydı yoksa API'den çeker ve target'a yazar.
+        /// Eski bağlantılarda OAuthAccountEmail henüz yoktu; bu metod geriye dönük uyumluluk sağlar.
+        /// </summary>
+        private async Task FetchMissingAccountEmailAsync()
+        {
+            if (string.IsNullOrEmpty(_target.OAuthTokenJson))
+                return;
+            if (!string.IsNullOrEmpty(_target.OAuthAccountEmail))
+                return;
+
+            try
+            {
+                _lblAccountEmail.Text = Res.Get("CloudTarget_FetchingEmail");
+                string email = await GoogleDriveAuthHelper.GetAccountEmailAsync(
+                    _target.OAuthTokenJson, System.Threading.CancellationToken.None);
+
+                if (!string.IsNullOrEmpty(email))
+                {
+                    _target.OAuthAccountEmail = email;
+                    _lblAccountEmail.Text = email;
+                }
+                else
+                {
+                    _lblAccountEmail.Text = "";
+                }
+            }
+            catch
+            {
+                _lblAccountEmail.Text = "";
+            }
         }
 
         #endregion

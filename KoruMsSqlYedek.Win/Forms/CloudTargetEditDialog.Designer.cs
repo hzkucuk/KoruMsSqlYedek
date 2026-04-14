@@ -34,6 +34,7 @@
             _grpOAuth = new System.Windows.Forms.GroupBox();
             _btnGoogleAuth = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _lblAuthStatus = new System.Windows.Forms.Label();
+            _lblAccountEmail = new System.Windows.Forms.Label();
             _btnOAuthSettings = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _grpLocal = new System.Windows.Forms.GroupBox();
             _lblLocalOrUncPath = new System.Windows.Forms.Label();
@@ -193,10 +194,11 @@
             // 
             _grpOAuth.Controls.Add(_btnGoogleAuth);
             _grpOAuth.Controls.Add(_lblAuthStatus);
+            _grpOAuth.Controls.Add(_lblAccountEmail);
             _grpOAuth.Controls.Add(_btnOAuthSettings);
             _grpOAuth.Location = new System.Drawing.Point(15, 125);
             _grpOAuth.Name = "_grpOAuth";
-            _grpOAuth.Size = new System.Drawing.Size(490, 68);
+            _grpOAuth.Size = new System.Drawing.Size(490, 90);
             _grpOAuth.TabIndex = 6;
             _grpOAuth.TabStop = false;
             _grpOAuth.Text = "Hesap Bağlama";
@@ -224,8 +226,18 @@
             _lblAuthStatus.TabIndex = 1;
             _lblAuthStatus.Text = "Henüz doğrulanmadı";
             // 
-            // _btnOAuthSettings
+            // _lblAccountEmail
             // 
+            _lblAccountEmail.AutoSize = true;
+            _lblAccountEmail.Location = new System.Drawing.Point(6, 64);
+            _lblAccountEmail.Name = "_lblAccountEmail";
+            _lblAccountEmail.Size = new System.Drawing.Size(200, 17);
+            _lblAccountEmail.TabIndex = 3;
+            _lblAccountEmail.Text = "";
+            _lblAccountEmail.Tag = "secondary";
+            // 
+            // _btnOAuthSettings
+            //
             _btnOAuthSettings.ButtonStyle = Theme.ModernButtonStyle.Secondary;
             _btnOAuthSettings.CornerRadius = 6;
             _btnOAuthSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -469,6 +481,7 @@
         private System.Windows.Forms.GroupBox _grpOAuth;
         private Theme.ModernButton _btnGoogleAuth;
         private System.Windows.Forms.Label _lblAuthStatus;
+        private System.Windows.Forms.Label _lblAccountEmail;
         private Theme.ModernButton _btnOAuthSettings;
 
         // Yerel/UNC

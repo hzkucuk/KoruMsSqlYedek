@@ -23,6 +23,7 @@
             _tabControl = new KoruMsSqlYedek.Win.Theme.ModernTabControl();
             _tabDashboard = new System.Windows.Forms.TabPage();
             _pnlGrid = new KoruMsSqlYedek.Win.Theme.ModernCardPanel();
+            _btnDashboardExport = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _lblGridTitle = new System.Windows.Forms.Label();
             _olvLastBackups = new KoruMsSqlYedek.Win.Controls.GroupedBackupListPanel();
             _tlpCards = new System.Windows.Forms.TableLayoutPanel();
@@ -220,6 +221,7 @@
             // 
             // _pnlGrid
             // 
+            _pnlGrid.Controls.Add(_btnDashboardExport);
             _pnlGrid.Controls.Add(_lblGridTitle);
             _pnlGrid.Controls.Add(_olvLastBackups);
             _pnlGrid.CornerRadius = 8;
@@ -233,6 +235,22 @@
             _pnlGrid.ShowShadow = true;
             _pnlGrid.Size = new System.Drawing.Size(1016, 596);
             _pnlGrid.TabIndex = 0;
+            // 
+            // _btnDashboardExport
+            // 
+            _btnDashboardExport.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
+            _btnDashboardExport.AutoSize = true;
+            _btnDashboardExport.ButtonStyle = Theme.ModernButtonStyle.Ghost;
+            _btnDashboardExport.CornerRadius = 6;
+            _btnDashboardExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            _btnDashboardExport.Font = new System.Drawing.Font("Segoe UI", 9F);
+            _btnDashboardExport.IconSymbol = "";
+            _btnDashboardExport.Location = new System.Drawing.Point(886, 5);
+            _btnDashboardExport.Name = "_btnDashboardExport";
+            _btnDashboardExport.Size = new System.Drawing.Size(120, 30);
+            _btnDashboardExport.TabIndex = 2;
+            _btnDashboardExport.Text = "Dışa Aktar";
+            _btnDashboardExport.Click += OnDashboardExportClick;
             // 
             // _lblGridTitle
             // 
@@ -1810,6 +1828,7 @@
         private System.Windows.Forms.Label _lblActivePlansCaption;
         private System.Windows.Forms.Label _lblActivePlansValue;
         private Theme.ModernCardPanel _pnlGrid;
+        private Theme.ModernButton _btnDashboardExport;
         private System.Windows.Forms.Label _lblGridTitle;
         private Controls.GroupedBackupListPanel _olvLastBackups;
 
