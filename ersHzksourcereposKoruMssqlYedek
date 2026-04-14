@@ -1,0 +1,15 @@
+[33m97712df[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m)[m release: v0.99.63
+[33m93748f5[m[33m ([m[1;31morigin/develop[m[33m)[m feat: bulut hedef hesap email gosterimi ve dashboard CSV export eklendi
+[33m5a2db86[m fix: retention çapraz eşleşme + zamanlama hatası giderildi (v0.99.63)
+[33mc3efd98[m fix: log dizini %ProgramData% yoluna düzeltildi + dosya yedek planı server zorunluluğu kal dırıldı
+[33mad9ba7e[m fix: dinamik Windows kimlik algılama ile servis hesabı SQL Server yetki düzeltmesi
+[33m7f0d0aa[m feat: DataGridView arka planına transparan Filistin bayrağı watermark eklendi (v0.99.60)
+[33md1740d4[m fix: ListView dark theme + Step5 buton gorunurluk duzeltmesi
+[33m4e36d28[m feat: Filistin bayrağı tab header'a taşındı — görünür alan (v0.99.58)
+[33m1d96054[m feat: Filistin temasına transparan bayrak watermark eklendi (v0.99.58)
+[33ma9bf4d9[m fix: Designer hardcoded Color.FromArgb temizligi - 83 satir kaldirildi/Tag donusturuldu
+[33m45dd8da[m fix: tema runtime geçiş düzeltmesi - Modern* kontrollerin cache'lenmiş renkleri RefreshThemeColors ile güncelleniyor
+[33m2a70276[m feat: v0.99.55 - Özgür Filistin full app theme implementation
+[33mb028fa2[m fix: SchemaVersion tabanlı zorunlu tema migrasyonu - tüm mevcut kurulumlarda Özgür Filistin uygulanıyor
+[33m09f65fe[m fix: Özgür Filistin tema migrasyon düzeltmesi - kayıtlı ayar dosyasındaki eski varsayılan (koru) yeni varsayılana (ozgur-filistin) otomatik taşınıyor
+[33mfc64221[m feat: 🇵🇸 Özgür Filistin varsayılan log konsolu teması olarak ayarlandı
