@@ -407,6 +407,12 @@ Language change requires application restart.</value></data>
   <data name="Update_BalloonTitle" xml:space="preserve"><value>Update Available</value></data>
   <data name="Update_BalloonMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} has been released. Click to update.</value></data>
   <data name="Update_ReleaseNotes" xml:space="preserve"><value>Changes:</value></data>
+  <data name="Update_SilentInstalling" xml:space="preserve"><value>Installing update v{0} silently...</value></data>
+  <data name="Update_SilentSuccess" xml:space="preserve"><value>Update v{0} installed successfully. Restart the application to apply.</value></data>
+  <data name="Update_SilentFailed" xml:space="preserve"><value>Silent update failed: {0}. Falling back to manual update.</value></data>
+  <data name="Update_SilentRestart" xml:space="preserve"><value>Update Installed</value></data>
+  <data name="Update_SilentRestartMessage" xml:space="preserve"><value>v{0} has been installed silently. Restart the application to apply changes.</value></data>
+  <data name="Settings_AutoSilentUpdate" xml:space="preserve"><value>Install updates silently in the background</value></data>
 
   <!-- ===== MainWindow — Log Viewer Controls ===== -->
   <data name="LogViewer_LblFile" xml:space="preserve"><value>File:</value></data>
@@ -820,6 +826,9 @@ Recommended for continuous backup scheduling.</value></data>
   <data name="Tip_Settings_MinimizeToTray" xml:space="preserve"><value>Minimize to system tray instead of taskbar.
 The app continues running in the background.
 Double-click the tray icon to restore.</value></data>
+  <data name="Tip_Settings_AutoSilentUpdate" xml:space="preserve"><value>When enabled, updates are downloaded and installed
+automatically in the background without prompting.
+The app restarts after installation completes.</value></data>
   <data name="Tip_Settings_DefaultBackupPath" xml:space="preserve"><value>Default folder for storing backup files.
 Each plan can override this with its own path.
 Example: D:\Backups\SQL</value></data>

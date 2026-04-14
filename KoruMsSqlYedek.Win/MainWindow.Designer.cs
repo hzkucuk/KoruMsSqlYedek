@@ -118,6 +118,7 @@
             _cmbLanguage = new KoruMsSqlYedek.Win.Theme.ModernComboBox();
             _chkStartWithWindows = new KoruMsSqlYedek.Win.Theme.ModernCheckBox();
             _chkMinimizeToTray = new KoruMsSqlYedek.Win.Theme.ModernCheckBox();
+            _chkAutoSilentUpdate = new KoruMsSqlYedek.Win.Theme.ModernCheckBox();
             _lblDefaultBackupPath = new System.Windows.Forms.Label();
             _txtDefaultBackupPath = new System.Windows.Forms.TextBox();
             _btnBrowseBackupPath = new KoruMsSqlYedek.Win.Theme.ModernButton();
@@ -1217,23 +1218,25 @@
             _tlpGeneral.Controls.Add(_cmbLanguage, 1, 0);
             _tlpGeneral.Controls.Add(_chkStartWithWindows, 1, 1);
             _tlpGeneral.Controls.Add(_chkMinimizeToTray, 1, 2);
-            _tlpGeneral.Controls.Add(_lblDefaultBackupPath, 0, 3);
-            _tlpGeneral.Controls.Add(_txtDefaultBackupPath, 1, 3);
-            _tlpGeneral.Controls.Add(_btnBrowseBackupPath, 2, 3);
-            _tlpGeneral.Controls.Add(_lblLogRetention, 0, 4);
-            _tlpGeneral.Controls.Add(_nudLogRetention, 1, 4);
-            _tlpGeneral.Controls.Add(_lblLogRetentionSuffix, 2, 4);
-            _tlpGeneral.Controls.Add(_lblHistoryRetention, 0, 5);
-            _tlpGeneral.Controls.Add(_nudHistoryRetention, 1, 5);
-            _tlpGeneral.Controls.Add(_lblHistoryRetentionSuffix, 2, 5);
-            _tlpGeneral.Controls.Add(_lblTheme, 0, 6);
-            _tlpGeneral.Controls.Add(_cmbTheme, 1, 6);
-            _tlpGeneral.Controls.Add(_lblLogColorScheme, 0, 7);
-            _tlpGeneral.Controls.Add(_cmbLogColorScheme, 1, 7);
+            _tlpGeneral.Controls.Add(_chkAutoSilentUpdate, 1, 3);
+            _tlpGeneral.Controls.Add(_lblDefaultBackupPath, 0, 4);
+            _tlpGeneral.Controls.Add(_txtDefaultBackupPath, 1, 4);
+            _tlpGeneral.Controls.Add(_btnBrowseBackupPath, 2, 4);
+            _tlpGeneral.Controls.Add(_lblLogRetention, 0, 5);
+            _tlpGeneral.Controls.Add(_nudLogRetention, 1, 5);
+            _tlpGeneral.Controls.Add(_lblLogRetentionSuffix, 2, 5);
+            _tlpGeneral.Controls.Add(_lblHistoryRetention, 0, 6);
+            _tlpGeneral.Controls.Add(_nudHistoryRetention, 1, 6);
+            _tlpGeneral.Controls.Add(_lblHistoryRetentionSuffix, 2, 6);
+            _tlpGeneral.Controls.Add(_lblTheme, 0, 7);
+            _tlpGeneral.Controls.Add(_cmbTheme, 1, 7);
+            _tlpGeneral.Controls.Add(_lblLogColorScheme, 0, 8);
+            _tlpGeneral.Controls.Add(_cmbLogColorScheme, 1, 8);
             _tlpGeneral.Dock = System.Windows.Forms.DockStyle.Fill;
             _tlpGeneral.Location = new System.Drawing.Point(8, 9);
             _tlpGeneral.Name = "_tlpGeneral";
-            _tlpGeneral.RowCount = 9;
+            _tlpGeneral.RowCount = 10;
+            _tlpGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
             _tlpGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
             _tlpGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
             _tlpGeneral.RowStyles.Add(new System.Windows.Forms.RowStyle());
@@ -1292,6 +1295,16 @@
             _chkMinimizeToTray.Size = new System.Drawing.Size(289, 21);
             _chkMinimizeToTray.TabIndex = 3;
             _chkMinimizeToTray.Text = "Simge durumuna küçüldüğünde tepside gizle";
+            // 
+            // _chkAutoSilentUpdate
+            // 
+            _chkAutoSilentUpdate.AutoSize = true;
+            _chkAutoSilentUpdate.Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            _chkAutoSilentUpdate.Location = new System.Drawing.Point(156, 105);
+            _chkAutoSilentUpdate.Name = "_chkAutoSilentUpdate";
+            _chkAutoSilentUpdate.Size = new System.Drawing.Size(320, 21);
+            _chkAutoSilentUpdate.TabIndex = 4;
+            _chkAutoSilentUpdate.Text = "Güncellemeleri arka planda sessiz olarak kur";
             // 
             // _lblDefaultBackupPath
             // 
@@ -1925,6 +1938,7 @@
         private Theme.ModernComboBox _cmbLogColorScheme;
         private Theme.ModernCheckBox _chkStartWithWindows;
         private Theme.ModernCheckBox _chkMinimizeToTray;
+        private Theme.ModernCheckBox _chkAutoSilentUpdate;
         private System.Windows.Forms.Label _lblDefaultBackupPath;
         private System.Windows.Forms.TextBox _txtDefaultBackupPath;
         private Theme.ModernButton _btnBrowseBackupPath;

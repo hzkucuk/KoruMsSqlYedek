@@ -61,6 +61,10 @@ SetupIconFile=KoruMsSqlYedek.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ; Güncelleme sırasında mevcut verileri koru
 UsePreviousAppDir=yes
+; Sessiz güncelleme desteği (/VERYSILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS)
+CloseApplications=yes
+CloseApplicationsFilter=*.exe
+RestartApplications=yes
 ; Versiyon bilgisi
 VersionInfoVersion={#MyAppVersion}.0
 VersionInfoCompany=Zafer Bilgisayar

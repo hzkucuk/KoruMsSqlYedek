@@ -27,6 +27,11 @@ Bu dosya, KoruMsSqlYedek projesinin mevcut ve planlanan özelliklerini fazlar ha
 - `RetentionCleanupService` refactor: `_Full_`, `_Differential_`, `_Log_` dosya adı parse ile tip tespiti
 - PlanEditForm Step 4: şablon dropdown + info etiketi + Özel mod için mevcut kontroller korundu
 
+### v0.99.65 — Sessiz Otomatik Güncelleme
+- Ayarlar → "Güncellemeleri arka planda sessiz olarak kur" checkbox’ı ile etkinleştirilebilir
+- Güncelleme bulunduğunda arka planda indirilir, InnoSetup `/VERYSILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS` ile sessizce kurulur
+- Başarısız olursa mevcut bildirim akışına döner
+
 ### v0.99.4 — Güncelleme Kontrol Düzeltmesi
 - `InstallerPrefix` `"KoruMsSqlYedek_v"` olarak düzeltildi; artık GitHub asset eşleşiyor ve güncelleme bildirimi çalışıyor
 

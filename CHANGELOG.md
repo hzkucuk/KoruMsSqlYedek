@@ -1,4 +1,23 @@
-﻿## [0.99.64] - 2025-07-26 — 🔄 Bulut Yükleme Retry Güçlendirmesi
+﻿## [0.99.65] - 2025-07-26 — 🔇 Sessiz Otomatik Güncelleme
+
+### Yeni Özellik
+- **Sessiz (silent) otomatik güncelleme:** Ayarlardan etkinleştirildiğinde, yeni sürüm tespit edildiğinde arka planda indirilip InnoSetup `/VERYSILENT` moduyla sessizce kurulur. Kullanıcı müdahalesi gerekmez.
+- **AppSettings.AutoSilentUpdate:** Yeni boolean ayar eklenildi (varsayılan: kapalı).
+- **Ayarlar paneline checkbox:** "Güncellemeleri arka planda sessiz olarak kur" seçeneği eklendi.
+- **InnoSetup CloseApplications/RestartApplications:** Sessiz kurulum sırasında uygulama otomatik kapatılır ve kurulum sonrası yeniden başlatılır.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core\Models\AppSettings.cs` — `AutoSilentUpdate` property
+- `KoruMsSqlYedek.Win\TrayApplicationContext.UpdateCheck.cs` — `DownloadAndSilentInstallAsync`, `IsSilentUpdateEnabled`
+- `KoruMsSqlYedek.Win\MainWindow.Designer.cs` — `_chkAutoSilentUpdate` checkbox
+- `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — Settings binding + lokalizasyon
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — `CloseApplications=yes`, `RestartApplications=yes`
+- `KoruMsSqlYedek.Win\Properties\Resources.resx` — EN lokalizasyon
+- `KoruMsSqlYedek.Win\Properties\Resources.tr-TR.resx` — TR lokalizasyon
+
+---
+
+## [0.99.64] - 2025-07-26 — 🔄 Bulut Yükleme Retry Güçlendirmesi
 
 ### İyileştirme
 - **Bulut yükleme retry mekanizması güçlendirildi:** Kısa süreli bağlantı kopukluklarında yükleme artık 6 kez deneniyor (önceki: 4). Exponential backoff süreleri artırıldı: 5s → 10s → 20s → 40s → 60s (toplam ~135s bekleme). Geçici ağ kesintilerinde gereksiz "Başarısız" bildirimi önlendi.

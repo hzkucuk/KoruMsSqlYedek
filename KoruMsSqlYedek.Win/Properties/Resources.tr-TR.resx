@@ -397,6 +397,12 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Update_BalloonTitle" xml:space="preserve"><value>Güncelleme Mevcut</value></data>
   <data name="Update_BalloonMessage" xml:space="preserve"><value>Koru MsSql Yedek v{0} yayınlandı. Tıklayarak güncelleyin.</value></data>
   <data name="Update_ReleaseNotes" xml:space="preserve"><value>Değişiklikler:</value></data>
+  <data name="Update_SilentInstalling" xml:space="preserve"><value>v{0} güncellemesi sessiz olarak kuruluyor...</value></data>
+  <data name="Update_SilentSuccess" xml:space="preserve"><value>v{0} güncellemesi başarıyla kuruldu. Değişiklikleri uygulamak için uygulamayı yeniden başlatın.</value></data>
+  <data name="Update_SilentFailed" xml:space="preserve"><value>Sessiz güncelleme başarısız: {0}. Manuel güncellemeye geçiliyor.</value></data>
+  <data name="Update_SilentRestart" xml:space="preserve"><value>Güncelleme Kuruldu</value></data>
+  <data name="Update_SilentRestartMessage" xml:space="preserve"><value>v{0} sessiz olarak kuruldu. Değişiklikleri uygulamak için uygulamayı yeniden başlatın.</value></data>
+  <data name="Settings_AutoSilentUpdate" xml:space="preserve"><value>Güncellemeleri arka planda sessiz olarak kur</value></data>
 
   <!-- ===== MainWindow — Log Viewer Controls ===== -->
   <data name="LogViewer_LblFile" xml:space="preserve"><value>Dosya:</value></data>
@@ -810,6 +816,9 @@ Sürekli yedekleme zamanlaması için önerilir.</value></data>
   <data name="Tip_Settings_MinimizeToTray" xml:space="preserve"><value>Görev çubuğu yerine sistem tepsisine küçültün.
 Uygulama arka planda çalışmaya devam eder.
 Geri yüklemek için tepsi simgesine çift tıklayın.</value></data>
+  <data name="Tip_Settings_AutoSilentUpdate" xml:space="preserve"><value>Etkinleştirildiğinde güncellemeler arka planda
+otomatik olarak indirilir ve sessizce kurulur.
+Kurulum tamamlandıktan sonra uygulama yeniden başlar.</value></data>
   <data name="Tip_Settings_DefaultBackupPath" xml:space="preserve"><value>Yedek dosyaların saklanacağı varsayılan klasör.
 Her görev kendi yolunu belirleyebilir.
 Örnek: D:\Yedekler\SQL</value></data>
