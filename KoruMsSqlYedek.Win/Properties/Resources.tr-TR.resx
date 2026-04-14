@@ -1138,4 +1138,14 @@ Devre dışı kaynaklar yedekleme sırasında atlanır.</value></data>
   <data name="Restore_CancelConfirmTitle" xml:space="preserve"><value>İşlemi İptal Et</value></data>
   <data name="Restore_BtnCancel" xml:space="preserve"><value>İptal</value></data>
 
+  <!-- Dashboard Export -->
+  <data name="Dashboard_ExportDialogTitle" xml:space="preserve"><value>Yedekleme Geçmişini Dışa Aktar</value></data>
+  <data name="Dashboard_ExportFilter" xml:space="preserve"><value>CSV Dosyası (*.csv)|*.csv|Tüm Dosyalar (*.*)|*.*</value></data>
+  <data name="Dashboard_ExportSuccessFormat" xml:space="preserve"><value>{0} kayıt dışa aktarıldı.</value></data>
+  <data name="Dashboard_ExportSuccessTitle" xml:space="preserve"><value>Dışa Aktarma Başarılı</value></data>
+  <data name="Dashboard_ExportError" xml:space="preserve"><value>Dışa aktarma hatası: {0}</value></data>
+
+  <!-- Cloud Target Email -->
+  <data name="CloudTarget_FetchingEmail" xml:space="preserve"><value>Hesap bilgisi alınıyor...</value></data>
+
 </root>

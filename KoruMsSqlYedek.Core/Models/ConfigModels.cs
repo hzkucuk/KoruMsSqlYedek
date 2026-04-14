@@ -251,6 +251,10 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("oauthTokenJson")]
         public string OAuthTokenJson { get; set; }
 
+        /// <summary>OAuth bağlantısı yapılan hesabın e-posta adresi.</summary>
+        [JsonProperty("oauthAccountEmail")]
+        public string OAuthAccountEmail { get; set; }
+
         /// <summary>OAuth2 Client ID (Google Cloud Console'dan alınır).</summary>
         [JsonProperty("oauthClientId")]
         public string OAuthClientId { get; set; }

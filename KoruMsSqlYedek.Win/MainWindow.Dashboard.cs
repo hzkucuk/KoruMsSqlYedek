@@ -1,6 +1,8 @@
 using System;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Helpers;
@@ -103,6 +105,69 @@ namespace KoruMsSqlYedek.Win
             if (span.TotalMinutes < 60) return Res.Format("Dashboard_TimeMinFormat", (int)span.TotalMinutes);
             if (span.TotalHours < 24) return Res.Format("Dashboard_TimeHourFormat", (int)span.TotalHours);
             return Res.Format("Dashboard_TimeDayFormat", (int)span.TotalDays);
+        }
+
+        /// <summary>Dashboard son yedeklemeler grid'ini CSV olarak dışa aktarır.</summary>
+        private void OnDashboardExportClick(object? sender, EventArgs e)
+        {
+            using var sfd = new SaveFileDialog();
+            sfd.Title = Res.Get("Dashboard_ExportDialogTitle");
+            sfd.Filter = Res.Get("Dashboard_ExportFilter");
+            sfd.FileName = "KoruMsSqlYedek_Backups_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".csv";
+
+            if (sfd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                var history = _historyManager.GetRecentHistory(50);
+
+                using var sw = new StreamWriter(sfd.FileName, false, new UTF8Encoding(true));
+                // CSV header
+                sw.WriteLine("Plan,Database,Type,Status,StartedAt,CompletedAt,Duration,Size,CompressedSize,Error");
+
+                foreach (var r in history)
+                {
+                    string duration = r.Duration.HasValue
+                        ? r.Duration.Value.ToString(@"hh\:mm\:ss")
+                        : "";
+                    string completedAt = r.CompletedAt.HasValue
+                        ? r.CompletedAt.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                        : "";
+
+                    sw.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}",
+                        EscapeCsv(r.PlanName),
+                        EscapeCsv(r.DatabaseName),
+                        r.BackupType,
+                        r.Status,
+                        r.StartedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                        completedAt,
+                        duration,
+                        FormatFileSize(r.FileSizeBytes),
+                        FormatFileSize(r.CompressedSizeBytes),
+                        EscapeCsv(r.ErrorMessage));
+                }
+
+                Theme.ModernMessageBox.Show(
+                    Res.Format("Dashboard_ExportSuccessFormat", history.Count),
+                    Res.Get("Dashboard_ExportSuccessTitle"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                Theme.ModernMessageBox.Show(
+                    Res.Format("Dashboard_ExportError", ex.Message),
+                    Res.Get("Error"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static string EscapeCsv(string? value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+                return "\"" + value.Replace("\"", "\"\"") + "\"";
+            return value;
         }
     }
 }
