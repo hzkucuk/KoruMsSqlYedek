@@ -39,6 +39,7 @@ namespace KoruMsSqlYedek.Win
             };
             _chkStartWithWindows.Checked = s.StartWithWindows;
             _chkMinimizeToTray.Checked = s.MinimizeToTray;
+            _chkAutoSilentUpdate.Checked = s.AutoSilentUpdate;
             _txtDefaultBackupPath.Text = s.DefaultBackupPath;
             _nudLogRetention.Value = Math.Min(Math.Max(s.LogRetentionDays, 1), 365);
             _nudHistoryRetention.Value = Math.Min(Math.Max(s.HistoryRetentionDays, 1), 365);
@@ -71,6 +72,7 @@ namespace KoruMsSqlYedek.Win
             };
             s.StartWithWindows = _chkStartWithWindows.Checked;
             s.MinimizeToTray = _chkMinimizeToTray.Checked;
+            s.AutoSilentUpdate = _chkAutoSilentUpdate.Checked;
             s.DefaultBackupPath = _txtDefaultBackupPath.Text.Trim();
             s.LogRetentionDays = (int)_nudLogRetention.Value;
             s.HistoryRetentionDays = (int)_nudHistoryRetention.Value;
@@ -412,6 +414,7 @@ namespace KoruMsSqlYedek.Win
             _lblLanguage.Text = Res.Get("Settings_Language");
             _chkStartWithWindows.Text = Res.Get("Settings_StartWithWindows");
             _chkMinimizeToTray.Text = Res.Get("Settings_MinimizeToTray");
+            _chkAutoSilentUpdate.Text = Res.Get("Settings_AutoSilentUpdate");
             _lblDefaultBackupPath.Text = Res.Get("Settings_DefaultBackupPath");
             _lblLogRetention.Text = Res.Get("Settings_LogRetention");
             _lblLogRetentionSuffix.Text = Res.Get("Settings_RetentionSuffix");
@@ -492,6 +495,7 @@ namespace KoruMsSqlYedek.Win
             _toolTip.SetToolTip(_cmbLanguage, Res.Get("Tip_Settings_Language"));
             _toolTip.SetToolTip(_chkStartWithWindows, Res.Get("Tip_Settings_StartWithWindows"));
             _toolTip.SetToolTip(_chkMinimizeToTray, Res.Get("Tip_Settings_MinimizeToTray"));
+            _toolTip.SetToolTip(_chkAutoSilentUpdate, Res.Get("Tip_Settings_AutoSilentUpdate"));
             _toolTip.SetToolTip(_txtDefaultBackupPath, Res.Get("Tip_Settings_DefaultBackupPath"));
             _toolTip.SetToolTip(_nudLogRetention, Res.Get("Tip_Settings_LogRetention"));
             _toolTip.SetToolTip(_nudHistoryRetention, Res.Get("Tip_Settings_HistoryRetention"));

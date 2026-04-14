@@ -46,6 +46,10 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("smtp", NullValueHandling = NullValueHandling.Ignore)]
         public SmtpSettings Smtp { get; set; }
 
+        /// <summary>Güncelleme bulunduğunda sessiz (silent) kurulum yap.</summary>
+        [JsonProperty("autoSilentUpdate")]
+        public bool AutoSilentUpdate { get; set; }
+
         /// <summary>Uygulama teması ("ozgur-filistin", "dark" veya "light").</summary>
         [JsonProperty("theme")]
         public string Theme { get; set; } = "ozgur-filistin";
