@@ -1,4 +1,14 @@
-﻿## [0.99.63] - 2025-07-25 — 🐛 Retention Kritik Düzeltme: Çapraz Eşleşme + VSS
+﻿## [0.99.64] - 2025-07-26 — 🔄 Bulut Yükleme Retry Güçlendirmesi
+
+### İyileştirme
+- **Bulut yükleme retry mekanizması güçlendirildi:** Kısa süreli bağlantı kopukluklarında yükleme artık 6 kez deneniyor (önceki: 4). Exponential backoff süreleri artırıldı: 5s → 10s → 20s → 40s → 60s (toplam ~135s bekleme). Geçici ağ kesintilerinde gereksiz "Başarısız" bildirimi önlendi.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine\Cloud\CloudUploadOrchestrator.cs` — `MaxRetries` 3→5, `RetryDelaysMs` güncellendi
+
+---
+
+## [0.99.63] - 2025-07-25 — 🐛 Retention Kritik Düzeltme: Çapraz Eşleşme + VSS
 
 ### Düzeltme
 - **Retention çapraz eşleşme hatası giderildi (KRİTİK):** `CleanupForDatabaseByType` içindeki glob paterni `{dbName}_*.*` ile prefix-paylaşan veritabanı dosyaları siliniyordu. Örneğin `MikroDesktop` retention'ı `MikroDesktop_ASYA_Full_*.7z` dosyalarını da siliyordu. Glob paterni `{dbName}_{typeToken}*` olarak daraltıldı.

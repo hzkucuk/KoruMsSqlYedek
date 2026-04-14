@@ -13,14 +13,14 @@ namespace KoruMsSqlYedek.Engine.Cloud
 {
     /// <summary>
     /// Bulut upload orkestratörü.
-    /// Retry politikası (3 deneme, exponential backoff) uygular.
+    /// Retry politikası (6 deneme, exponential backoff: 5s→10s→20s→40s→60s) uygular.
     /// Provider factory veya doğrudan provider listesi ile çalışır.
     /// </summary>
     public partial class CloudUploadOrchestrator : ICloudUploadOrchestrator
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<CloudUploadOrchestrator>();
-        private const int MaxRetries = 3;
-        private static readonly int[] RetryDelaysMs = { 2000, 4000, 8000 };
+        private const int MaxRetries = 5;
+        private static readonly int[] RetryDelaysMs = { 5_000, 10_000, 20_000, 40_000, 60_000 };
 
         /// <summary>Recovery'de aynı dosya için maksimum toplam deneme sayısı. Aşılırsa vazgeçilir.</summary>
         private const int MaxRecoveryAttempts = 10;
