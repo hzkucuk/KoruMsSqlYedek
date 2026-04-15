@@ -160,8 +160,9 @@ Filename: "sc.exe"; Parameters: "config {#MyServiceName} obj= ""LocalSystem"""; 
 Filename: "sc.exe"; Parameters: "description {#MyServiceName} ""Koru MsSql Yedek — SQL Server Yedekleme & Bulut Senkronizasyon Servisi"""; Components: service; Flags: runhidden waituntilterminated
 ; Servisi başlat
 Filename: "sc.exe"; Parameters: "start {#MyServiceName}"; StatusMsg: "{cm:ServiceStart}"; Components: service; Flags: runhidden waituntilterminated
-; İsteğe bağlı: Kurulum sonrası Tray uygulamasını başlat (asInvoker — normal kullanıcı olarak)
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall skipifsilent
+; Kurulum sonrası Tray uygulamasını başlat (asInvoker — normal kullanıcı olarak)
+; skipifsilent kaldırıldı: sessiz güncelleme sonrası da tray uygulaması yeniden başlatılsın
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall
 
 [UninstallRun]
 ; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)

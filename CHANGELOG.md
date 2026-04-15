@@ -1,4 +1,19 @@
-﻿## [0.99.66] - 2025-07-26 — 🧹 Build Uyarıları Temizliği
+﻿## [0.99.67] - 2025-07-26 — 🔧 Sessiz Güncelleme Düzeltmesi
+
+### Düzeltme
+- **Scheduled Task yaklaşımı kaldırıldı:** Karmaşık SYSTEM scheduled task altyapısı geri alındı. Sessiz güncelleme artık basit `Verb = "runas"` (UAC) + `/VERYSILENT /SUPPRESSMSGBOXES` ile çalışır.
+- **UAC iptal yakalama:** Kullanıcı UAC onayını iptal ederse `Win32Exception (1223)` yakalanıp bildirim gösterilir.
+- **Sessiz kurulum sonrası uygulama yeniden başlatma:** InnoSetup `[Run]` girişinden `skipifsilent` flag'i kaldırıldı — sessiz kurulum tamamlandığında tray uygulaması otomatik başlatılır.
+- **Gereksiz dosyalar silindi:** `silent-update-runner.cmd`, `setup-update-task.ps1` kaldırıldı.
+- **InnoSetup temizliği:** `[Files]`, `[Dirs]`, `[Run]`, `[UninstallRun]` bölümlerindeki scheduled task altyapı girdileri kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\TrayApplicationContext.UpdateCheck.cs` — basit runas + /VERYSILENT yaklaşımına geri dönüldü
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — scheduled task girdileri kaldırıldı, skipifsilent düzeltildi
+- `Deployment\InnoSetup\silent-update-runner.cmd` — silindi
+- `Deployment\InnoSetup\setup-update-task.ps1` — silindi
+
+## [0.99.66] - 2025-07-26 — 🧹 Build Uyarıları Temizliği
 
 ### Düzeltme
 - **37 build uyarısı giderildi:** CS8632 (nullable annotation dışı bağlam), CS8618 (null olmayan alan uyarısı), MSB3568 (yinelenen resx kaynak adları), NU1701 (AlphaVSS paket uyumluluk) uyarıları temizlendi.

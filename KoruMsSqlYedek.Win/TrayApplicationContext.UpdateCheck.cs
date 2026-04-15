@@ -155,8 +155,8 @@ namespace KoruMsSqlYedek.Win
         }
 
         /// <summary>
-        /// Güncellemeyi sessiz modda indirir ve installer'ı /VERYSILENT ile çalıştırır.
-        /// Installer tamamlandığında uygulamayı yeniden başlatır.
+        /// Güncellemeyi sessiz modda indirir ve runas ile çalıştırır.
+        /// UAC onay penceresi açılır, ardından kurulum diyalogsuz tamamlanır.
         /// </summary>
         private async Task DownloadAndSilentInstallAsync(UpdateInfo info)
         {
@@ -166,11 +166,6 @@ namespace KoruMsSqlYedek.Win
 
             try
             {
-                Theme.ModernToast.Show(
-                    Res.Get("AppName"),
-                    Res.Format("Update_SilentInstalling", info.Version),
-                    Theme.ToastType.Info, 3000);
-
                 var progress = new Progress<int>(pct =>
                 {
                     _notifyIcon.Text = Res.Format("Update_Downloading", pct);
@@ -181,56 +176,29 @@ namespace KoruMsSqlYedek.Win
 
                 Log.Information("Sessiz güncelleme indirme tamamlandı: {Path}", installerPath);
 
-                // InnoSetup /VERYSILENT: Hiçbir UI göstermez, /SUPPRESSMSGBOXES: Hata dialog'larını bastırır
-                // /NORESTART: Otomatik restart engellenir, biz kendimiz yönetiriz
-                // /CLOSEAPPLICATIONS: Çalışan uygulamaları kapatır
-                // /RESTARTAPPLICATIONS: Kurulum sonrası uygulamayı yeniden başlatır
-                var startInfo = new ProcessStartInfo
+                Process.Start(new ProcessStartInfo
                 {
                     FileName = installerPath,
                     Arguments = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS",
                     UseShellExecute = true,
                     Verb = "runas"
-                };
+                });
 
-                var installerProcess = Process.Start(startInfo);
-
-                if (installerProcess is not null)
-                {
-                    // Installer'ın bitmesini arka planda bekle, sonra uygulamayı kapat
-                    // (InnoSetup /CLOSEAPPLICATIONS zaten kapatacak, ama biz de çıkıyoruz)
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await installerProcess.WaitForExitAsync().ConfigureAwait(false);
-                            int exitCode = installerProcess.ExitCode;
-                            installerProcess.Dispose();
-
-                            if (exitCode == 0)
-                            {
-                                Log.Information("Sessiz güncelleme başarıyla tamamlandı: v{Version}", info.Version);
-                            }
-                            else
-                            {
-                                Log.Warning("Sessiz güncelleme installer çıkış kodu: {ExitCode}", exitCode);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warning(ex, "Sessiz güncelleme installer bekleme hatası.");
-                        }
-                    });
-
-                    // Uygulamayı kapat — installer /RESTARTAPPLICATIONS ile yeniden başlatacak
-                    ExitApplication();
-                }
+                ExitApplication();
+            }
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+            {
+                // Kullanıcı UAC'yi iptal etti
+                Log.Information("Sessiz güncelleme: Kullanıcı UAC onayını iptal etti.");
+                Theme.ModernToast.Show(
+                    Res.Get("AppName"),
+                    Res.Get("Update_Cancelled"),
+                    Theme.ToastType.Warning, 3000);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Sessiz güncelleme indirme/başlatma hatası.");
 
-                // Sessiz güncelleme başarısız olursa bildirim göster, uygulamayı kapatma
                 Theme.ModernToast.Show(
                     Res.Get("AppName"),
                     Res.Format("Update_SilentFailed", ex.Message),
