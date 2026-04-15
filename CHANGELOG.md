@@ -1,4 +1,18 @@
-﻿## [0.99.67] - 2025-07-26 — 🔧 Sessiz Güncelleme Düzeltmesi
+﻿## [0.99.68] - 2025-07-27 — 🔇 Sessiz Kurulum Diyalog Sorunu Düzeltmesi
+
+### Düzeltme
+- **`/SP-` parametresi eklendi:** InnoSetup'un "Bu kurulumu çalıştırmak istiyor musunuz?" başlangıç diyalogu (`SetupPrompt`) `/VERYSILENT` ile atlanmıyordu — `/SP-` ile artık atlanır.
+- **`DisableWelcomePage=yes` eklendi:** Karşılama sayfasının sessiz modda görünmesi engellendi.
+- **`ShouldSkipPage` fonksiyonu eklendi:** Sessiz modda tüm wizard sayfaları (lisans, disclaimer, readme) kesinlikle atlanır.
+- **`CurStepChanged` taskkill çakışması düzeltildi:** Sessiz modda `taskkill` yerine InnoSetup'un `CloseApplications` mekanizması kullanılır. Bu sayede `RestartApplications` uygulama yeniden başlatma işlevini doğru çalıştırır.
+- **`runasoriginaluser` eklendi:** Kurulum sonrası tray uygulaması yükseltilmiş (admin) değil, orijinal kullanıcı olarak başlatılır.
+- **Tanılama logu eklendi:** Sessiz güncelleme başlatılırken geçirilen argümanlar loglanır.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\TrayApplicationContext.UpdateCheck.cs` — /SP- eklendi, diagnostik log
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — DisableWelcomePage, ShouldSkipPage, CurStepChanged fix, runasoriginaluser
+
+## [0.99.67] - 2025-07-26 — 🔧 Sessiz Güncelleme Düzeltmesi
 
 ### Düzeltme
 - **Scheduled Task yaklaşımı kaldırıldı:** Karmaşık SYSTEM scheduled task altyapısı geri alındı. Sessiz güncelleme artık basit `Verb = "runas"` (UAC) + `/VERYSILENT /SUPPRESSMSGBOXES` ile çalışır.

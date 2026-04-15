@@ -176,10 +176,14 @@ namespace KoruMsSqlYedek.Win
 
                 Log.Information("Sessiz güncelleme indirme tamamlandı: {Path}", installerPath);
 
+                const string silentArgs = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /SP-";
+                Log.Information("Installer başlatılıyor — FileName: {FileName}, Arguments: {Arguments}",
+                    installerPath, silentArgs);
+
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = installerPath,
-                    Arguments = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS",
+                    Arguments = silentArgs,
                     UseShellExecute = true,
                     Verb = "runas"
                 });
