@@ -61,10 +61,12 @@ SetupIconFile=KoruMsSqlYedek.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 ; Güncelleme sırasında mevcut verileri koru
 UsePreviousAppDir=yes
-; Sessiz güncelleme desteği (/VERYSILENT /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS)
+; Sessiz güncelleme desteği (/VERYSILENT /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS)
 CloseApplications=yes
 CloseApplicationsFilter=*.exe
 RestartApplications=yes
+; Sessiz modda karşılama sayfasını atla
+DisableWelcomePage=yes
 ; Versiyon bilgisi
 VersionInfoVersion={#MyAppVersion}.0
 VersionInfoCompany=Zafer Bilgisayar
@@ -160,9 +162,8 @@ Filename: "sc.exe"; Parameters: "config {#MyServiceName} obj= ""LocalSystem"""; 
 Filename: "sc.exe"; Parameters: "description {#MyServiceName} ""Koru MsSql Yedek — SQL Server Yedekleme & Bulut Senkronizasyon Servisi"""; Components: service; Flags: runhidden waituntilterminated
 ; Servisi başlat
 Filename: "sc.exe"; Parameters: "start {#MyServiceName}"; StatusMsg: "{cm:ServiceStart}"; Components: service; Flags: runhidden waituntilterminated
-; Kurulum sonrası Tray uygulamasını başlat (asInvoker — normal kullanıcı olarak)
-; skipifsilent kaldırıldı: sessiz güncelleme sonrası da tray uygulaması yeniden başlatılsın
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall
+; Kurulum sonrası Tray uygulamasını başlat (normal kullanıcı olarak, sessiz modda da çalışır)
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall runasoriginaluser
 
 [UninstallRun]
 ; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)
@@ -227,8 +228,12 @@ begin
   begin
     // Çalışan servisi durdur (güncelleme öncesi dosya kilidi önleme)
     Exec('sc.exe', 'stop {#MyServiceName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    // Çalışan tray uygulamasını kapat
-    Exec('taskkill', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    // Sessiz modda tray uygulamasını InnoSetup'un CloseApplications mekanizması kapatır.
+    // İnteraktif modda ek güvenlik: taskkill ile kapat.
+    if not WizardSilent then
+    begin
+      Exec('taskkill', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    end;
     // Kısa bekle (dosya kilidi serbest kalsın)
     Sleep(2000);
   end;
@@ -248,6 +253,12 @@ begin
   // Kurulum sonrası bilgi sayfası memo (setup_readme)
   WizardForm.InfoAfterMemo.Color := clWhite;
   WizardForm.InfoAfterMemo.Font.Color := clBlack;
+end;
+
+// Sessiz modda tüm wizard sayfalarını atla (güvenlik katmanı)
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := WizardSilent;
 end;
 
 // Kaldırma öncesi tray uygulamasını kapat
