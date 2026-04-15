@@ -1,4 +1,15 @@
-﻿## [0.99.68] - 2025-07-27 — 🔇 Sessiz Kurulum Diyalog Sorunu Düzeltmesi
+﻿## [0.99.69] - 2025-07-27 — 🔇 Sessiz Kurulum: Tray App Kapatma/Yeniden Başlatma Düzeltmesi
+
+### Düzeltme
+- **Tray app kapatma sorunu:** InnoSetup'un `CloseApplications` mekanizması penceresi olmayan tray uygulamalarını algılayamıyor. `taskkill` artık hem sessiz hem interaktif modda çalışır.
+- **Tray app yeniden başlatma:** `RestartApplications` da tray app için çalışmadığından, `[Run]` bölümüne sessiz mod için ayrı bir başlatma satırı (`skipifnotsilent`) eklendi.
+- **İnteraktif mod:** `postinstall skipifsilent` ile kullanıcıya "Uygulamayı başlat" checkbox'u gösterilir.
+- **`runasoriginaluser`:** Tray app her iki modda da normal kullanıcı olarak başlatılır (admin değil).
+
+### Etkilenen Dosyalar
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — CurStepChanged, [Run] sessiz/interaktif ayrımı, CloseApplications yorumu
+
+## [0.99.68] - 2025-07-27 — 🔇 Sessiz Kurulum Diyalog Sorunu Düzeltmesi
 
 ### Düzeltme
 - **`/SP-` parametresi eklendi:** InnoSetup'un "Bu kurulumu çalıştırmak istiyor musunuz?" başlangıç diyalogu (`SetupPrompt`) `/VERYSILENT` ile atlanmıyordu — `/SP-` ile artık atlanır.

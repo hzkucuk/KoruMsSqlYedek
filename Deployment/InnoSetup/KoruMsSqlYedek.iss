@@ -62,6 +62,9 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 ; Güncelleme sırasında mevcut verileri koru
 UsePreviousAppDir=yes
 ; Sessiz güncelleme desteği (/VERYSILENT /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS)
+; NOT: CloseApplications/RestartApplications tray app için çalışmaz (penceresi yok).
+; Tray app kapatma: CurStepChanged'de taskkill ile yapılır.
+; Tray app yeniden başlatma: [Run] bölümünde skipifnotsilent ile yapılır.
 CloseApplications=yes
 CloseApplicationsFilter=*.exe
 RestartApplications=yes
@@ -162,8 +165,11 @@ Filename: "sc.exe"; Parameters: "config {#MyServiceName} obj= ""LocalSystem"""; 
 Filename: "sc.exe"; Parameters: "description {#MyServiceName} ""Koru MsSql Yedek — SQL Server Yedekleme & Bulut Senkronizasyon Servisi"""; Components: service; Flags: runhidden waituntilterminated
 ; Servisi başlat
 Filename: "sc.exe"; Parameters: "start {#MyServiceName}"; StatusMsg: "{cm:ServiceStart}"; Components: service; Flags: runhidden waituntilterminated
-; Kurulum sonrası Tray uygulamasını başlat (normal kullanıcı olarak, sessiz modda da çalışır)
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall runasoriginaluser
+; Kurulum sonrası Tray uygulamasını başlat
+; İnteraktif modda: kullanıcıya checkbox göster
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall skipifsilent runasoriginaluser
+; Sessiz modda: tray app'ı otomatik başlat (RestartApplications tray app'ı algılayamaz)
+Filename: "{app}\{#MyAppExeName}"; Components: trayapp; Flags: shellexec nowait skipifdoesntexist skipifnotsilent runasoriginaluser
 
 [UninstallRun]
 ; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)
@@ -228,12 +234,9 @@ begin
   begin
     // Çalışan servisi durdur (güncelleme öncesi dosya kilidi önleme)
     Exec('sc.exe', 'stop {#MyServiceName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    // Sessiz modda tray uygulamasını InnoSetup'un CloseApplications mekanizması kapatır.
-    // İnteraktif modda ek güvenlik: taskkill ile kapat.
-    if not WizardSilent then
-    begin
-      Exec('taskkill', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    end;
+    // Tray uygulamasını kapat — ana penceresi olmadığı için InnoSetup'un
+    // CloseApplications mekanizması tray app'ı algılayamaz. taskkill zorunlu.
+    Exec('taskkill', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     // Kısa bekle (dosya kilidi serbest kalsın)
     Sleep(2000);
   end;
