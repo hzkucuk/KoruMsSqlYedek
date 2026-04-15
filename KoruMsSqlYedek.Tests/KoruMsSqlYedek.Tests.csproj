@@ -5,6 +5,7 @@
     <AssemblyName>KoruMsSqlYedek.Tests</AssemblyName>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

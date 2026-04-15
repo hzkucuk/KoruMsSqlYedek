@@ -1105,14 +1105,6 @@ Devre dışı kaynaklar yedekleme sırasında atlanır.</value></data>
 
   <!-- PlanEdit: Yükleme / Navigasyon -->
   <data name="PlanEdit_Loading" xml:space="preserve"><value>Yükleniyor...</value></data>
-  <data name="PlanEdit_Next" xml:space="preserve"><value>İleri</value></data>
-
-  <!-- PlanEdit: Retention Şablon Açıklamaları -->
-  <data name="PlanEdit_RetTplMinimal" xml:space="preserve"><value>SQL Full: en son 3 • Diff: 7 • Log: 14 • Dosya arşivi: 5 yedek</value></data>
-  <data name="PlanEdit_RetTplStandard" xml:space="preserve"><value>SQL Full: en son 7 • Diff: 14 • Log: 30 • Dosya arşivi: 14 yedek</value></data>
-  <data name="PlanEdit_RetTplExtended" xml:space="preserve"><value>SQL Full: en son 14 • Diff: 30 • Log: 90 • Dosya arşivi: 30 yedek</value></data>
-  <data name="PlanEdit_RetTplGFS" xml:space="preserve"><value>GFS — Günlük 7 / Haftalık 4 / Aylık 12 / Yıllık 2 (Full için)</value></data>
-  <data name="PlanEdit_RetTplCustom" xml:space="preserve"><value>Temizlik kuralını ve saklanacak yedek sayısını elle belirleyin.</value></data>
 
   <!-- SMTP Diyalog -->
   <data name="Smtp_TitleEdit" xml:space="preserve"><value>SMTP Profilini Düzenle</value></data>
@@ -1124,14 +1116,12 @@ Devre dışı kaynaklar yedekleme sırasında atlanır.</value></data>
   <data name="Smtp_TestSuccess" xml:space="preserve"><value>Test e-postası başarıyla gönderildi.</value></data>
   <data name="Smtp_TestErrorTitle" xml:space="preserve"><value>SMTP Test Hatası</value></data>
   <data name="Smtp_TestFailed" xml:space="preserve"><value>SMTP bağlantısı kurulamadı:\n{0}</value></data>
-  <data name="Success" xml:space="preserve"><value>Başarılı</value></data>
 
   <!-- Google OAuth Durum -->
   <data name="GoogleOAuth_StatusCustom" xml:space="preserve"><value>✔ Özel kimlik bilgileri tanımlı</value></data>
   <data name="GoogleOAuth_StatusDefault" xml:space="preserve"><value>ℹ Gömülü varsayılan değerler kullanılıyor</value></data>
 
   <!-- Dosya Kaynağı Durum -->
-  <data name="FileSource_StatusHint" xml:space="preserve"><value>Yedeklenecek öğeleri seçmek için klasörlere göz atın ve onay kutularını işaretleyin</value></data>
   <data name="FileSource_Calculating" xml:space="preserve"><value>hesaplanıyor...</value></data>
   <data name="FileSource_StatusSelected" xml:space="preserve"><value>✅ {0} klasör, {1} dosya seçili{2}</value></data>
 

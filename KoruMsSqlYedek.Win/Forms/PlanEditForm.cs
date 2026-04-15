@@ -38,10 +38,10 @@ namespace KoruMsSqlYedek.Win.Forms
     public partial class PlanEditForm : Theme.ModernFormBase
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<PlanEditForm>();
-        private readonly IPlanManager _planManager;
-        private readonly ISqlBackupService _sqlBackupService;
-        private readonly IAppSettingsManager _settingsManager;
-        private readonly BackupPlan _plan;
+        private readonly IPlanManager _planManager = null!;
+        private readonly ISqlBackupService _sqlBackupService = null!;
+        private readonly IAppSettingsManager _settingsManager = null!;
+        private readonly BackupPlan _plan = null!;
         private readonly bool _isNew;
         private int _currentStep;
         private bool _connectionTested;

@@ -325,7 +325,7 @@ namespace KoruMsSqlYedek.Win.Theme
             ApplyScrollBarTheme(lv);
         }
 
-        private static void ListView_DrawColumnHeader(object? sender, DrawListViewColumnHeaderEventArgs e)
+        private static void ListView_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
         {
             using SolidBrush bgBrush = new(GridHeaderBack);
             e.Graphics.FillRectangle(bgBrush, e.Bounds);
@@ -340,13 +340,13 @@ namespace KoruMsSqlYedek.Win.Theme
                 GridHeaderText, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
         }
 
-        private static void ListView_DrawItem(object? sender, DrawListViewItemEventArgs e)
+        private static void ListView_DrawItem(object sender, DrawListViewItemEventArgs e)
         {
             // DrawSubItem ile çizilecek; burada sadece arka planı hazırla
             e.DrawDefault = false;
         }
 
-        private static void ListView_DrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
+        private static void ListView_DrawSubItem(object sender, DrawListViewSubItemEventArgs e)
         {
             Color bgColor;
             Color fgColor;
@@ -521,7 +521,7 @@ namespace KoruMsSqlYedek.Win.Theme
         }
 
         /// <summary>DataGridView arka planına transparan Filistin bayrağı watermark çizer.</summary>
-        private static void DataGridView_PalestineWatermark(object? sender, PaintEventArgs e)
+        private static void DataGridView_PalestineWatermark(object sender, PaintEventArgs e)
         {
             if (CurrentTheme != ThemeMode.OzgurFilistin)
                 return;

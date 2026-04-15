@@ -109,7 +109,7 @@ internal sealed class GroupedBackupListPanel : Panel
     }
 
     /// <summary>Container boyutu değiştiğinde alt panellerin genişliğini toplu günceller.</summary>
-    private void Flow_Resize(object? sender, EventArgs e)
+    private void Flow_Resize(object sender, EventArgs e)
     {
         int w = CalcChildWidth();
         _flow.SuspendLayout();
