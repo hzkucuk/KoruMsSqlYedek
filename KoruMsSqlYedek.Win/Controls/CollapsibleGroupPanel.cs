@@ -27,7 +27,7 @@ internal sealed class CollapsibleGroupPanel : Panel
     private int _itemCount;
 
     /// <summary>Panel yüksekliği değiştiğinde üst container'ı bilgilendirir.</summary>
-    internal event EventHandler? HeightChanged;
+    internal event EventHandler HeightChanged;
 
     public CollapsibleGroupPanel()
     {
@@ -136,7 +136,7 @@ internal sealed class CollapsibleGroupPanel : Panel
 
     // ═══════════════ HEADER PAINTING ═══════════════
 
-    private void Header_Paint(object? sender, PaintEventArgs e)
+    private void Header_Paint(object sender, PaintEventArgs e)
     {
         Graphics g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;

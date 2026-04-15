@@ -1115,14 +1115,6 @@ Disabled sources are skipped during backup execution.</value></data>
 
   <!-- PlanEdit: Loading / Navigation -->
   <data name="PlanEdit_Loading" xml:space="preserve"><value>Loading...</value></data>
-  <data name="PlanEdit_Next" xml:space="preserve"><value>Next</value></data>
-
-  <!-- PlanEdit: Retention Template Descriptions -->
-  <data name="PlanEdit_RetTplMinimal" xml:space="preserve"><value>SQL Full: last 3 • Diff: 7 • Log: 14 • File archive: 5 backups</value></data>
-  <data name="PlanEdit_RetTplStandard" xml:space="preserve"><value>SQL Full: last 7 • Diff: 14 • Log: 30 • File archive: 14 backups</value></data>
-  <data name="PlanEdit_RetTplExtended" xml:space="preserve"><value>SQL Full: last 14 • Diff: 30 • Log: 90 • File archive: 30 backups</value></data>
-  <data name="PlanEdit_RetTplGFS" xml:space="preserve"><value>GFS — Daily 7 / Weekly 4 / Monthly 12 / Yearly 2 (for Full)</value></data>
-  <data name="PlanEdit_RetTplCustom" xml:space="preserve"><value>Manually specify cleanup rule and number of backups to keep.</value></data>
 
   <!-- SMTP Dialog -->
   <data name="Smtp_TitleEdit" xml:space="preserve"><value>Edit SMTP Profile</value></data>
@@ -1134,14 +1126,12 @@ Disabled sources are skipped during backup execution.</value></data>
   <data name="Smtp_TestSuccess" xml:space="preserve"><value>Test email sent successfully.</value></data>
   <data name="Smtp_TestErrorTitle" xml:space="preserve"><value>SMTP Test Error</value></data>
   <data name="Smtp_TestFailed" xml:space="preserve"><value>SMTP connection failed:\n{0}</value></data>
-  <data name="Success" xml:space="preserve"><value>Success</value></data>
 
   <!-- Google OAuth Status -->
   <data name="GoogleOAuth_StatusCustom" xml:space="preserve"><value>✔ Custom credentials defined</value></data>
   <data name="GoogleOAuth_StatusDefault" xml:space="preserve"><value>ℹ Using embedded default values</value></data>
 
   <!-- File Source Status -->
-  <data name="FileSource_StatusHint" xml:space="preserve"><value>Browse folders and check items to select backup sources</value></data>
   <data name="FileSource_Calculating" xml:space="preserve"><value>calculating...</value></data>
   <data name="FileSource_StatusSelected" xml:space="preserve"><value>✅ {0} folder(s), {1} file(s) selected{2}</value></data>
 

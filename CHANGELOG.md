@@ -1,4 +1,25 @@
-﻿## [0.99.65] - 2025-07-26 — 🔇 Sessiz Otomatik Güncelleme
+﻿## [0.99.66] - 2025-07-26 — 🧹 Build Uyarıları Temizliği
+
+### Düzeltme
+- **37 build uyarısı giderildi:** CS8632 (nullable annotation dışı bağlam), CS8618 (null olmayan alan uyarısı), MSB3568 (yinelenen resx kaynak adları), NU1701 (AlphaVSS paket uyumluluk) uyarıları temizlendi.
+- **Yinelenen resx girdileri silindi:** `Resources.resx` ve `Resources.tr-TR.resx` dosyalarındaki 8'er duplike kaynak adı (PlanEdit_Next, RetTpl*, Success, FileSource_StatusHint) kaldırıldı.
+- **NU1701 bastırma:** AlphaVSS .NET Framework uyumluluk uyarısı Win, Service ve Tests projelerinde `<NoWarn>` ile bastırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Win\Theme\ModernTheme.cs` — object? → object (4 method)
+- `KoruMsSqlYedek.Win\MainWindow.Dashboard.cs` — object? → object, string? → string
+- `KoruMsSqlYedek.Win\Forms\PlanEditForm.WizardNavigation.cs` — object? → object
+- `KoruMsSqlYedek.Win\Forms\PlanEditForm.cs` — readonly field = null!
+- `KoruMsSqlYedek.Win\Controls\CronBuilderPanel.cs` — EventHandler? → EventHandler
+- `KoruMsSqlYedek.Win\Controls\CollapsibleGroupPanel.cs` — EventHandler? → EventHandler, object? → object
+- `KoruMsSqlYedek.Win\Controls\GroupedBackupListPanel.cs` — object? → object
+- `KoruMsSqlYedek.Win\Properties\Resources.resx` — 8 duplike girdi silindi
+- `KoruMsSqlYedek.Win\Properties\Resources.tr-TR.resx` — 8 duplike girdi silindi
+- `KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj` — NoWarn'a NU1701 eklendi
+- `KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj` — NoWarn NU1701 eklendi
+- `KoruMsSqlYedek.Tests\KoruMsSqlYedek.Tests.csproj` — NoWarn NU1701 eklendi
+
+## [0.99.65] - 2025-07-26 — 🔇 Sessiz Otomatik Güncelleme
 
 ### Yeni Özellik
 - **Sessiz (silent) otomatik güncelleme:** Ayarlardan etkinleştirildiğinde, yeni sürüm tespit edildiğinde arka planda indirilip InnoSetup `/VERYSILENT` moduyla sessizce kurulur. Kullanıcı müdahalesi gerekmez.

@@ -108,7 +108,7 @@ namespace KoruMsSqlYedek.Win
         }
 
         /// <summary>Dashboard son yedeklemeler grid'ini CSV olarak dışa aktarır.</summary>
-        private void OnDashboardExportClick(object? sender, EventArgs e)
+        private void OnDashboardExportClick(object sender, EventArgs e)
         {
             using var sfd = new SaveFileDialog();
             sfd.Title = Res.Get("Dashboard_ExportDialogTitle");
@@ -162,7 +162,7 @@ namespace KoruMsSqlYedek.Win
             }
         }
 
-        private static string EscapeCsv(string? value)
+        private static string EscapeCsv(string value)
         {
             if (string.IsNullOrEmpty(value)) return "";
             if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))

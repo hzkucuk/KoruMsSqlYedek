@@ -30,7 +30,7 @@ namespace KoruMsSqlYedek.Win.Controls
         private Label _lblMinute;
 
         /// <summary>Raised when the panel height changes due to visibility toggle (e.g., Daily→Weekly).</summary>
-        public event EventHandler? HeightChanged;
+        public event EventHandler HeightChanged;
 
         private static string[] GetDayNames() => [
             Res.Get("Cron_DayMon"), Res.Get("Cron_DayTue"), Res.Get("Cron_DayWed"),

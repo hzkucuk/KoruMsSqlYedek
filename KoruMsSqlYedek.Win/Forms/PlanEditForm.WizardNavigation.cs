@@ -108,7 +108,7 @@ namespace KoruMsSqlYedek.Win.Forms
         /// Step indicator (dot veya label) tıklanınca doğrudan ilgili adıma geçer.
         /// Veri bağlamı korunur — yalnızca panel görünürlüğü değişir.
         /// </summary>
-        private void OnStepIndicatorClick(object? sender, EventArgs e)
+        private void OnStepIndicatorClick(object sender, EventArgs e)
         {
             if (sender is not Control ctl || ctl.Tag is not int visualIndex)
                 return;
