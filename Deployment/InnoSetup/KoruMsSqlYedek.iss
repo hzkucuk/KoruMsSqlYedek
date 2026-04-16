@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.39"
+  #define MyAppVersion "0.99.70"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -169,7 +169,8 @@ Filename: "sc.exe"; Parameters: "start {#MyServiceName}"; StatusMsg: "{cm:Servic
 ; İnteraktif modda: kullanıcıya checkbox göster
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Components: trayapp; Flags: shellexec nowait postinstall skipifsilent runasoriginaluser
 ; Sessiz modda: tray app'ı otomatik başlat (RestartApplications tray app'ı algılayamaz)
-Filename: "{app}\{#MyAppExeName}"; Components: trayapp; Flags: shellexec nowait skipifdoesntexist skipifnotsilent runasoriginaluser
+; /NOPOSTLAUNCH=1 parametresi verilmişse servis tray'ı kendisi başlatacak, burada atla
+Filename: "{app}\{#MyAppExeName}"; Components: trayapp; Flags: shellexec nowait skipifdoesntexist skipifnotsilent runasoriginaluser; Check: ShouldPostInstallLaunch
 
 [UninstallRun]
 ; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)
@@ -262,6 +263,13 @@ end;
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := WizardSilent;
+end;
+
+// Servis üzerinden güncelleme yapılırken tray uygulamasını installer'ın
+// başlatmasını engelle — servis, CreateProcessAsUser ile kendisi başlatacak.
+function ShouldPostInstallLaunch: Boolean;
+begin
+  Result := ExpandConstant('{param:NOPOSTLAUNCH|0}') <> '1';
 end;
 
 // Kaldırma öncesi tray uygulamasını kapat

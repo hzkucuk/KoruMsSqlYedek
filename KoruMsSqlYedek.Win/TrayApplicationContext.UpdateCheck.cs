@@ -2,9 +2,11 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Core.IPC;
 using KoruMsSqlYedek.Engine;
 using KoruMsSqlYedek.Win.Helpers;
 using Serilog;
@@ -104,7 +106,9 @@ namespace KoruMsSqlYedek.Win
         }
 
         /// <summary>
-        /// Installer'ı interaktif modda başlatır (kullanıcı onaylı güncelleme).
+        /// Installer'ı indirir ve kurar.
+        /// Önce servis üzerinden UAC'sız kurulumu dener.
+        /// Servis bağlı değilse fallback olarak runas ile başlatır.
         /// </summary>
         private async Task DownloadAndLaunchUpdateAsync(UpdateInfo info)
         {
@@ -133,7 +137,12 @@ namespace KoruMsSqlYedek.Win
 
                 Log.Information("Installer indirme tamamlandı, başlatılıyor: {Path}", installerPath);
 
-                // Installer'ı başlat ve uygulamayı kapat
+                // Önce servis üzerinden UAC'sız kurulumu dene
+                if (await TryInstallViaServiceAsync(installerPath).ConfigureAwait(true))
+                    return;
+
+                // Fallback: runas ile başlat (UAC gerekir)
+                Log.Information("Servis mevcut değil, doğrudan runas ile başlatılıyor.");
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = installerPath,
@@ -155,8 +164,9 @@ namespace KoruMsSqlYedek.Win
         }
 
         /// <summary>
-        /// Güncellemeyi sessiz modda indirir ve runas ile çalıştırır.
-        /// UAC onay penceresi açılır, ardından kurulum diyalogsuz tamamlanır.
+        /// Güncellemeyi sessiz modda indirir ve kurar.
+        /// Önce servis üzerinden UAC'sız kurulumu dener.
+        /// Servis bağlı değilse fallback olarak runas ile çalıştırır.
         /// </summary>
         private async Task DownloadAndSilentInstallAsync(UpdateInfo info)
         {
@@ -176,6 +186,12 @@ namespace KoruMsSqlYedek.Win
 
                 Log.Information("Sessiz güncelleme indirme tamamlandı: {Path}", installerPath);
 
+                // Önce servis üzerinden UAC'sız kurulumu dene
+                if (await TryInstallViaServiceAsync(installerPath).ConfigureAwait(true))
+                    return;
+
+                // Fallback: runas ile başlat (UAC gerekir)
+                Log.Information("Servis mevcut değil, doğrudan runas ile sessiz kurulum başlatılıyor.");
                 const string silentArgs = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /SP-";
                 Log.Information("Installer başlatılıyor — FileName: {FileName}, Arguments: {Arguments}",
                     installerPath, silentArgs);
@@ -207,6 +223,72 @@ namespace KoruMsSqlYedek.Win
                     Res.Get("AppName"),
                     Res.Format("Update_SilentFailed", ex.Message),
                     Theme.ToastType.Warning, 5000);
+            }
+        }
+
+        /// <summary>
+        /// Servis pipe üzerinden UAC'sız installer çalıştırmayı dener.
+        /// Servis SYSTEM yetkileriyle installer'ı başlatır — UAC penceresi açılmaz.
+        /// Başarılı olursa uygulamayı kapatır ve true döner.
+        /// </summary>
+        private async Task<bool> TryInstallViaServiceAsync(string installerPath)
+        {
+            if (!_pipeClient.IsConnected)
+            {
+                Log.Information("Servis pipe bağlı değil, UAC'sız kurulum atlanıyor.");
+                return false;
+            }
+
+            try
+            {
+                Log.Information("Servis üzerinden UAC'sız kurulum başlatılıyor: {Path}", installerPath);
+
+                // Yanıt beklemek için TaskCompletionSource kullan
+                var tcs = new TaskCompletionSource<InstallSelfUpdateResponseMessage>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+
+                void OnResponse(object sender, InstallSelfUpdateResponseMessage response)
+                {
+                    tcs.TrySetResult(response);
+                }
+
+                _pipeClient.SelfUpdateResponseReceived += OnResponse;
+
+                try
+                {
+                    await _pipeClient.SendInstallSelfUpdateAsync(installerPath).ConfigureAwait(true);
+
+                    // Servis yanıtını bekle (15 saniye timeout)
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                    using (cts.Token.Register(() => tcs.TrySetCanceled()))
+                    {
+                        InstallSelfUpdateResponseMessage result = await tcs.Task.ConfigureAwait(true);
+
+                        if (result.Success)
+                        {
+                            Log.Information("Self-update servise devredildi, uygulama kapatılıyor.");
+                            ExitApplication();
+                            return true;
+                        }
+
+                        Log.Warning("Servis üzerinden self-update başarısız: {Message}", result.Message);
+                        return false;
+                    }
+                }
+                finally
+                {
+                    _pipeClient.SelfUpdateResponseReceived -= OnResponse;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Log.Warning("Servis self-update yanıtı zaman aşımına uğradı.");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Servis üzerinden self-update denenirken hata.");
+                return false;
             }
         }
 

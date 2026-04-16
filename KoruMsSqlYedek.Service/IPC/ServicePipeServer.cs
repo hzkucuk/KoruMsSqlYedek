@@ -13,6 +13,7 @@ using Serilog;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.IPC;
+using KoruMsSqlYedek.Service.SelfUpdate;
 
 namespace KoruMsSqlYedek.Service.IPC
 {
@@ -236,9 +237,151 @@ namespace KoruMsSqlYedek.Service.IPC
                     await SendStatusToClientAsync(clientId, pipe, ct);
                     break;
 
+                case PipeMessageType.InstallSelfUpdate:
+                {
+                    var cmd = (InstallSelfUpdateCommand)message;
+                    Log.Information("Self-update installer komutu alındı: {Path}", cmd.InstallerPath);
+                    // Arka planda çalıştır — pipe yanıtı HandleInstallSelfUpdateAsync içinde gönderilir
+                    _ = Task.Run(() => HandleInstallSelfUpdateAsync(clientId, pipe, cmd.InstallerPath, ct), ct);
+                    break;
+                }
+
                 default:
                     Log.Debug("Bilinmeyen pipe mesaj tipi: {Type}", message.Type);
                     break;
+            }
+        }
+
+        // ── Self-Update ─────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Tray app'in indirdiği self-update installer'ını SYSTEM yetkileriyle (UAC'sız) çalıştırır.
+        /// 1. Installer yolunu doğrula
+        /// 2. Restart flag yaz (installer sonrası tray app yeniden başlatılacak)
+        /// 3. Pipe üzerinden yanıt gönder (tray app kapanacak)
+        /// 4. Installer'ı SYSTEM olarak sessiz modda çalıştır
+        /// 5. Tray app'i kullanıcı oturumunda yeniden başlat
+        /// </summary>
+        private async Task HandleInstallSelfUpdateAsync(
+            Guid clientId, NamedPipeServerStream pipe,
+            string installerPath, CancellationToken ct)
+        {
+            var selfUpdate = new SelfUpdateHandler();
+
+            try
+            {
+                // 1. Installer yolunu doğrula
+                if (string.IsNullOrWhiteSpace(installerPath) || !File.Exists(installerPath))
+                {
+                    Log.Error("Self-update installer bulunamadı: {Path}", installerPath);
+                    await SendResponseToClientAsync(clientId, pipe,
+                        new InstallSelfUpdateResponseMessage
+                        {
+                            Success = false,
+                            Message = $"Installer dosyası bulunamadı: {installerPath}"
+                        }, ct);
+                    return;
+                }
+
+                Log.Information("Self-update installer başlatılıyor: {Path}", installerPath);
+
+                // 2. Tray app yolunu belirle
+                string serviceDir = AppContext.BaseDirectory;
+                string trayAppPath = Path.GetFullPath(
+                    Path.Combine(serviceDir, "..", "KoruMsSqlYedek.exe"));
+
+                // 3. Restart flag dosyasını yaz
+                await selfUpdate.WriteFlagAsync(trayAppPath, ct);
+
+                // 4. Başarı yanıtını gönder — tray app kapanacak
+                await SendResponseToClientAsync(clientId, pipe,
+                    new InstallSelfUpdateResponseMessage
+                    {
+                        Success = true,
+                        Message = "Self-update başlatılıyor, uygulama yeniden başlatılacak."
+                    }, ct);
+
+                // 5. Tray app'in kapanmasını bekle (file lock'lar serbest kalsın)
+                await Task.Delay(3000, ct).ConfigureAwait(false);
+
+                // 6. Installer'ı başlat — SYSTEM olarak UAC gerekmez
+                //    /VERYSILENT: kullanıcıya hiçbir diyalog gösterme
+                //    /SUPPRESSMSGBOXES: hata mesajlarını da gösterme
+                //    /SP-: "Bu programı kurmak istiyor musunuz?" sorusunu atla
+                //    /CLOSEAPPLICATIONS: açık dosyaları kapat
+                //    /NOPOSTLAUNCH=1: [Run] bölümünde tray app başlatmasını engelle (biz başlatacağız)
+                using var process = System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = installerPath,
+                        Arguments = "/VERYSILENT /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOPOSTLAUNCH=1",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    });
+
+                if (process is null)
+                {
+                    Log.Error("Self-update installer process başlatılamadı.");
+                    selfUpdate.TryDeleteRestartFlag();
+                    return;
+                }
+
+                Log.Information("Installer PID: {PID}, bekleniyor...", process.Id);
+                await process.WaitForExitAsync(ct).ConfigureAwait(false);
+
+                if (process.ExitCode != 0)
+                {
+                    Log.Error("Self-update installer hata ile sonlandı. ExitCode: {ExitCode}",
+                        process.ExitCode);
+                    selfUpdate.TryDeleteRestartFlag();
+                    return;
+                }
+
+                Log.Information("Self-update installer başarıyla tamamlandı.");
+
+                // 7. Tray app'i kullanıcı oturumunda yeniden başlat
+                selfUpdate.LaunchTrayAppInUserSession(trayAppPath);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Log.Error(ex, "Self-update hatası.");
+                selfUpdate.TryDeleteRestartFlag();
+
+                try
+                {
+                    if (pipe.IsConnected)
+                    {
+                        await SendResponseToClientAsync(clientId, pipe,
+                            new InstallSelfUpdateResponseMessage
+                            {
+                                Success = false,
+                                Message = $"Self-update hatası: {ex.Message}"
+                            }, ct);
+                    }
+                }
+                catch { /* Pipe zaten kopmuş olabilir */ }
+            }
+        }
+
+        /// <summary>Belirli bir istemciye yanıt mesajı gönderir.</summary>
+        private async Task SendResponseToClientAsync(
+            Guid clientId, NamedPipeServerStream pipe,
+            PipeMessage response, CancellationToken ct)
+        {
+            string json = PipeSerializer.Serialize(response) + "\n";
+            byte[] data = Encoding.UTF8.GetBytes(json);
+
+            if (!_writeLocks.TryGetValue(clientId, out var writeLock)) return;
+            bool acquired = await writeLock.WaitAsync(2000, ct);
+            if (!acquired) return;
+            try
+            {
+                if (pipe.IsConnected)
+                    await pipe.WriteAsync(data, 0, data.Length, ct);
+            }
+            finally
+            {
+                writeLock.Release();
             }
         }
 
