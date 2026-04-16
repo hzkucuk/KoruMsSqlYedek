@@ -7,6 +7,7 @@ using Serilog;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Service.IPC;
+using KoruMsSqlYedek.Service.SelfUpdate;
 
 namespace KoruMsSqlYedek.Service
 {
@@ -61,6 +62,10 @@ namespace KoruMsSqlYedek.Service
 
             StartPlanWatcher();
             _pipeServer.Start();
+
+            // Self-update sonrası bekleyen tray app restart kontrolü
+            var selfUpdateHandler = new SelfUpdateHandler();
+            await selfUpdateHandler.CheckPendingAppRestartAsync(_cts.Token);
 
             // Yarıda kalan upload işlemlerini arka planda devam ettir
             _ = Task.Run(async () =>

@@ -16,10 +16,12 @@ namespace KoruMsSqlYedek.Core.IPC
         public const string ManualBackup = "ManualBackup";
         public const string CancelBackup  = "CancelBackup";
         public const string RequestStatus = "RequestStatus";
+        public const string InstallSelfUpdate = "InstallSelfUpdate";
 
         // Service → Tray (olaylar)
         public const string BackupActivity  = "BackupActivity";
         public const string ServiceStatus   = "ServiceStatus";
+        public const string InstallSelfUpdateResponse = "InstallSelfUpdateResponse";
     }
 
     /// <summary>Her pipe mesajının ortak alanları.</summary>
@@ -57,6 +59,19 @@ namespace KoruMsSqlYedek.Core.IPC
     public class RequestStatusCommand : PipeMessage
     {
         public RequestStatusCommand() { Type = PipeMessageType.RequestStatus; }
+    }
+
+    /// <summary>
+    /// Self-update installer'ını servis üzerinden çalıştır (UAC'sız).
+    /// Tray app installer'ı indirir, yolunu bu komutla servise gönderir.
+    /// </summary>
+    public class InstallSelfUpdateCommand : PipeMessage
+    {
+        public InstallSelfUpdateCommand() { Type = PipeMessageType.InstallSelfUpdate; }
+
+        /// <summary>İndirilen installer dosyasının tam yolu.</summary>
+        [JsonProperty("installerPath")]
+        public string InstallerPath { get; set; }
     }
 
     // ── Olaylar (Service → Tray) ─────────────────────────────────────────────
@@ -242,6 +257,22 @@ namespace KoruMsSqlYedek.Core.IPC
             = new Dictionary<string, string>();
     }
 
+    /// <summary>
+    /// Servisin self-update installer sonucunu tray app'e bildirmesi.
+    /// </summary>
+    public class InstallSelfUpdateResponseMessage : PipeMessage
+    {
+        public InstallSelfUpdateResponseMessage() { Type = PipeMessageType.InstallSelfUpdateResponse; }
+
+        /// <summary>İşlem başarılı mı?</summary>
+        [JsonProperty("success")]
+        public bool Success { get; set; }
+
+        /// <summary>Durum veya hata mesajı.</summary>
+        [JsonProperty("message")]
+        public string Message { get; set; }
+    }
+
     /// <summary>Mesaj serileştirme / deserileştirme yardımcıları.</summary>
     public static class PipeSerializer
     {
@@ -282,6 +313,10 @@ namespace KoruMsSqlYedek.Core.IPC
                         return JsonConvert.DeserializeObject<BackupActivityMessage>(json);
                     case PipeMessageType.ServiceStatus:
                         return JsonConvert.DeserializeObject<ServiceStatusMessage>(json);
+                    case PipeMessageType.InstallSelfUpdate:
+                        return JsonConvert.DeserializeObject<InstallSelfUpdateCommand>(json);
+                    case PipeMessageType.InstallSelfUpdateResponse:
+                        return JsonConvert.DeserializeObject<InstallSelfUpdateResponseMessage>(json);
                     default:
                         return null;
                 }

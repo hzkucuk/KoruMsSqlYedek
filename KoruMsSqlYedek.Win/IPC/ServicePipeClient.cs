@@ -73,6 +73,23 @@ namespace KoruMsSqlYedek.Win.IPC
             await SendAsync(new RequestStatusCommand());
         }
 
+        /// <summary>
+        /// Self-update installer'ı servise gönderir (UAC'sız kurulum için).
+        /// Servis SYSTEM yetkileriyle installer'ı çalıştırır.
+        /// </summary>
+        /// <param name="installerPath">Tray app'in indirdiği installer dosyasının tam yolu.</param>
+        public async Task SendInstallSelfUpdateAsync(string installerPath)
+        {
+            var cmd = new InstallSelfUpdateCommand { InstallerPath = installerPath };
+            await SendAsync(cmd);
+        }
+
+        /// <summary>
+        /// Servisin self-update yanıtını dinlemek için event.
+        /// Yanıt geldiğinde UI thread'de ateşlenir.
+        /// </summary>
+        public event EventHandler<InstallSelfUpdateResponseMessage> SelfUpdateResponseReceived;
+
         // ── Bağlantı döngüsü ────────────────────────────────────────────────
 
         private async Task ConnectLoopAsync(CancellationToken ct)
@@ -173,6 +190,15 @@ namespace KoruMsSqlYedek.Win.IPC
                     FireOnUiThread(() => ServiceStatusHub.Raise(msg));
                     Log.Debug("Servis durumu alındı: IsRunning={IsRunning}, PlanCount={Count}",
                         msg.IsRunning, msg.NextFireTimes?.Count ?? 0);
+                    break;
+                }
+
+                case PipeMessageType.InstallSelfUpdateResponse:
+                {
+                    var msg = (InstallSelfUpdateResponseMessage)message;
+                    Log.Information("Self-update yanıtı alındı: Success={Success}, Message={Message}",
+                        msg.Success, msg.Message);
+                    FireOnUiThread(() => SelfUpdateResponseReceived?.Invoke(this, msg));
                     break;
                 }
             }

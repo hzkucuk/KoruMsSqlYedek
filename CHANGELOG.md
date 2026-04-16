@@ -1,4 +1,31 @@
-﻿## [0.99.69] - 2025-07-27 — 🔇 Sessiz Kurulum: Tray App Kapatma/Yeniden Başlatma Düzeltmesi
+﻿## [0.99.70] - 2025-07-28 — 🚀 UAC-siz Servis Üzerinden Otomatik Güncelleme
+
+### Eklenen
+- **Servis tabanlı UAC-free self-update** — Windows Service (SYSTEM) aracılığıyla installer'ı UAC prompt'u olmadan çalıştırma
+  - `PipeProtocol`: `InstallSelfUpdate` / `InstallSelfUpdateResponse` Named Pipe mesaj tipleri
+  - `SelfUpdateHandler`: Restart flag yönetimi ve tray uygulaması yeniden başlatma koordinasyonu
+  - `UserSessionLauncher`: Session 0 → kullanıcı masaüstü oturumunda process başlatma (CreateProcessAsUser P/Invoke)
+  - `ServicePipeServer`: `InstallSelfUpdate` komut işleme ve installer yürütme
+  - `ServicePipeClient`: `SendInstallSelfUpdateAsync` metodu ve `SelfUpdateResponseReceived` event
+  - `TrayApplicationContext.UpdateCheck`: Servis-öncelikli güncelleme akışı, servis yoksa UAC fallback
+  - Inno Setup: `/NOPOSTLAUNCH=1` parametre desteği (servis tray'i kendisi başlatır)
+
+### Değiştirilen
+- `BackupWindowsService.StartAsync`: Servis başlangıcında bekleyen tray yeniden başlatma kontrolü eklendi
+- Tüm proje versiyonları 0.99.70'e senkronize edildi
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core\IPC\PipeProtocol.cs` — InstallSelfUpdate mesaj tipleri
+- `KoruMsSqlYedek.Service\SelfUpdate\SelfUpdateHandler.cs` — Yeni dosya
+- `KoruMsSqlYedek.Service\SelfUpdate\UserSessionLauncher.cs` — Yeni dosya (P/Invoke)
+- `KoruMsSqlYedek.Service\IPC\ServicePipeServer.cs` — InstallSelfUpdate handler
+- `KoruMsSqlYedek.Service\BackupWindowsService.cs` — Pending restart check
+- `KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj` — AllowUnsafeBlocks eklendi
+- `KoruMsSqlYedek.Win\IPC\ServicePipeClient.cs` — Send + response event
+- `KoruMsSqlYedek.Win\TrayApplicationContext.UpdateCheck.cs` — Servis-first güncelleme akışı
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — NOPOSTLAUNCH desteği
+
+## [0.99.69] - 2025-07-27 — 🔇 Sessiz Kurulum: Tray App Kapatma/Yeniden Başlatma Düzeltmesi
 
 ### Düzeltme
 - **Tray app kapatma sorunu:** InnoSetup'un `CloseApplications` mekanizması penceresi olmayan tray uygulamalarını algılayamıyor. `taskkill` artık hem sessiz hem interaktif modda çalışır.

@@ -7,14 +7,15 @@
     <LangVersion>latest</LangVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <NoWarn>$(NoWarn);NU1701</NoWarn>
-    <Version>0.99.64</Version>
-    <AssemblyVersion>0.99.64.0</AssemblyVersion>
-    <FileVersion>0.99.64.0</FileVersion>
+    <Version>0.99.70</Version>
+    <AssemblyVersion>0.99.70.0</AssemblyVersion>
+    <FileVersion>0.99.70.0</FileVersion>
     <Copyright>Copyright © 2026 Zafer Bilgisayar</Copyright>
     <Authors>Hüzeyin Küçük</Authors>
     <Company>Zafer Bilgisayar</Company>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
