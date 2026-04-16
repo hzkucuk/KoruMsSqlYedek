@@ -7,151 +7,137 @@ using Serilog;
 namespace KoruMsSqlYedek.Service.SelfUpdate
 {
     /// <summary>
-    /// Self-update sonrası tray app yeniden başlatma işlemlerini yönetir.
-    /// Restart flag dosyası üzerinden servis ↔ installer koordinasyonu sağlar.
+    /// Self-update sonrası tray uygulamasının yeniden başlatılmasını koordine eder.
+    /// Restart flag dosyası ile installer → servis arası iletişim sağlar.
+    /// Flag dosyası: %ProgramData%\KoruMsSqlYedek\pending_restart.flag
+    /// İçerik: yeniden başlatılacak tray exe yolu.
     /// </summary>
     internal sealed class SelfUpdateHandler
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<SelfUpdateHandler>();
 
-        /// <summary>
-        /// ProgramData altındaki restart flag dosyasının yolu.
-        /// Self-update installer tamamlandıktan sonra tray app'i yeniden başlatmak için kullanılır.
-        /// </summary>
-        internal static string RestartFlagPath =>
+        private static readonly string FlagDirectory =
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "KoruMsSqlYedek", "pending_restart.flag");
+                "KoruMsSqlYedek");
+
+        private static readonly string RestartFlagPath =
+            Path.Combine(FlagDirectory, "pending_restart.flag");
 
         /// <summary>
-        /// Restart flag dosyasını yazar. Installer tamamlandıktan sonra tray app yolunu saklar.
+        /// Restart flag dosyasını oluşturur.
+        /// İçeriğe tray app yolunu yazar — servis startup'ta bu yolu okuyup tray'i başlatır.
         /// </summary>
-        internal async Task WriteFlagAsync(string trayAppPath, CancellationToken cancellationToken)
-        {
-            string flagDir = Path.GetDirectoryName(RestartFlagPath)!;
-
-            if (!Directory.Exists(flagDir))
-                Directory.CreateDirectory(flagDir);
-
-            await File.WriteAllTextAsync(RestartFlagPath, trayAppPath, cancellationToken)
-                .ConfigureAwait(false);
-
-            Log.Information("Restart flag yazıldı: {FlagPath}", RestartFlagPath);
-        }
-
-        /// <summary>
-        /// Servis başlangıcında bekleyen restart flag'i kontrol eder.
-        /// Installer tamamlandıktan sonra servis yeniden başlatıldıysa tray app'i kullanıcı oturumunda başlatır.
-        /// </summary>
-        internal async Task CheckPendingAppRestartAsync(CancellationToken cancellationToken)
+        public async Task WriteFlagAsync(string trayAppPath, CancellationToken ct)
         {
             try
             {
-                if (!File.Exists(RestartFlagPath))
-                {
-                    Log.Debug("Bekleyen restart flag yok, devam ediliyor.");
-                    return;
-                }
-
-                string flagContent = File.ReadAllText(RestartFlagPath).Trim();
-                Log.Information(
-                    "Bekleyen restart flag bulundu: {FlagPath}, İçerik: {Content}",
-                    RestartFlagPath, flagContent);
-
-                // Installer hâlâ çalışıyor olabilir — sistemin oturmasını bekle
-                Log.Information("Installer'ın tamamlanması bekleniyor (5 saniye)...");
-                await Task.Delay(5000, cancellationToken).ConfigureAwait(false);
-
-                const int maxRetries = 3;
-
-                for (int attempt = 1; attempt <= maxRetries; attempt++)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    Log.Information(
-                        "Tray app başlatma denemesi {Attempt}/{MaxRetries}",
-                        attempt, maxRetries);
-
-                    bool launched = LaunchTrayAppInUserSession(flagContent);
-
-                    if (launched)
-                    {
-                        Log.Information(
-                            "Tray app başarıyla başlatıldı (deneme {Attempt}/{MaxRetries}).",
-                            attempt, maxRetries);
-                        return;
-                    }
-
-                    if (attempt < maxRetries)
-                    {
-                        int delaySeconds = attempt * 5;
-                        Log.Warning(
-                            "Tray app başlatılamadı (deneme {Attempt}/{MaxRetries}), {Delay} saniye sonra tekrar denenecek.",
-                            attempt, maxRetries, delaySeconds);
-
-                        await Task.Delay(delaySeconds * 1000, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        Log.Error("Tray app {MaxRetries} denemede de başlatılamadı.", maxRetries);
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                Log.Warning("Tray app restart kontrolü iptal edildi.");
+                Directory.CreateDirectory(FlagDirectory);
+                await File.WriteAllTextAsync(RestartFlagPath, trayAppPath, ct)
+                    .ConfigureAwait(false);
+                Log.Information("Restart flag yazıldı: {FlagPath}", RestartFlagPath);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Bekleyen restart kontrolü hatası.");
-            }
-            finally
-            {
-                TryDeleteRestartFlag();
+                Log.Error(ex, "Restart flag yazılamadı: {FlagPath}", RestartFlagPath);
+                throw;
             }
         }
 
         /// <summary>
-        /// Tray app'i aktif kullanıcı oturumunda başlatır.
+        /// Servis başlangıcında bekleyen tray app restart'ı kontrol eder.
+        /// Installer sonrası servis yeniden başladığında flag varsa tray'i kullanıcı oturumunda başlatır.
+        /// Retry: 3 deneme (1s, 3s, 5s) — installer dosyaları kopyalıyor olabilir.
         /// </summary>
-        internal bool LaunchTrayAppInUserSession(string flagContent)
+        public async Task CheckPendingAppRestartAsync(CancellationToken ct)
         {
-            string trayAppPath = flagContent;
+            if (!File.Exists(RestartFlagPath))
+                return;
 
-            if (string.IsNullOrWhiteSpace(trayAppPath) || !File.Exists(trayAppPath))
+            Log.Information("Pending restart flag bulundu: {FlagPath}", RestartFlagPath);
+
+            string trayAppPath;
+            try
             {
-                // Fallback: servis dizininden tahmin et
-                string serviceDir = AppContext.BaseDirectory;
-                trayAppPath = Path.GetFullPath(
-                    Path.Combine(serviceDir, "..", "KoruMsSqlYedek.exe"));
+                trayAppPath = (await File.ReadAllTextAsync(RestartFlagPath, ct)
+                    .ConfigureAwait(false)).Trim();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Restart flag okunamadı.");
+                TryDeleteRestartFlag();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(trayAppPath))
+            {
+                Log.Warning("Restart flag boş — tray app yolu yok.");
+                TryDeleteRestartFlag();
+                return;
+            }
+
+            // Exe'nin mevcut olmasını bekle (installer kopyalıyor olabilir)
+            int[] delaysMs = [1000, 3000, 5000];
+            for (int i = 0; i < delaysMs.Length; i++)
+            {
+                if (File.Exists(trayAppPath))
+                    break;
+
                 Log.Information(
-                    "Flag içeriği geçersiz, fallback yol kullanılıyor: {Path}", trayAppPath);
+                    "Tray exe henüz mevcut değil, bekleniyor... Deneme {Attempt}/{Max}",
+                    i + 1, delaysMs.Length);
+
+                await Task.Delay(delaysMs[i], ct).ConfigureAwait(false);
             }
 
             if (!File.Exists(trayAppPath))
             {
-                Log.Error("Tray app bulunamadı: {Path}", trayAppPath);
-                return false;
+                Log.Error("Tray exe bulunamadı (tüm denemeler tükendi): {Path}", trayAppPath);
+                TryDeleteRestartFlag();
+                return;
             }
 
-            Log.Information("Tray app başlatılıyor: {Path}", trayAppPath);
-            return UserSessionLauncher.LaunchInUserSession(trayAppPath);
+            LaunchTrayAppInUserSession(trayAppPath);
+            TryDeleteRestartFlag();
         }
 
         /// <summary>
-        /// Restart flag dosyasını güvenli şekilde siler.
+        /// Tray uygulamasını aktif kullanıcının masaüstü oturumunda başlatır.
+        /// UserSessionLauncher (CreateProcessAsUser) kullanır.
         /// </summary>
-        internal void TryDeleteRestartFlag()
+        public void LaunchTrayAppInUserSession(string trayAppPath)
+        {
+            if (string.IsNullOrWhiteSpace(trayAppPath))
+            {
+                // Fallback: servis dizininden bir üst klasördeki exe'yi dene
+                string serviceDir = AppContext.BaseDirectory;
+                trayAppPath = Path.GetFullPath(
+                    Path.Combine(serviceDir, "..", "KoruMsSqlYedek.exe"));
+            }
+
+            Log.Information("Tray uygulaması kullanıcı oturumunda başlatılıyor: {Path}", trayAppPath);
+            bool launched = UserSessionLauncher.LaunchInUserSession(trayAppPath);
+
+            if (launched)
+                Log.Information("Tray uygulaması başarıyla başlatıldı.");
+            else
+                Log.Error("Tray uygulaması başlatılamadı: {Path}", trayAppPath);
+        }
+
+        /// <summary>Restart flag dosyasını siler. Hata durumunda sessizce loglar.</summary>
+        public void TryDeleteRestartFlag()
         {
             try
             {
                 if (File.Exists(RestartFlagPath))
+                {
                     File.Delete(RestartFlagPath);
+                    Log.Debug("Restart flag silindi.");
+                }
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Restart flag dosyası silinemedi: {Path}", RestartFlagPath);
+                Log.Warning(ex, "Restart flag silinemedi: {Path}", RestartFlagPath);
             }
         }
     }
