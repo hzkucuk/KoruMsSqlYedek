@@ -51,7 +51,8 @@ namespace KoruMsSqlYedek.Engine.Backup
             SqlBackupType backupType,
             string destinationPath,
             IProgress<int> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool enableVssBackup = true)
         {
             var result = new BackupResult
             {
@@ -176,8 +177,16 @@ namespace KoruMsSqlYedek.Engine.Backup
 
                 // Tüm edition'larda ek güvenlik olarak VSS üzerinden MDF/LDF dosya kopyası al.
                 // Başarısız olursa sessizce atlanır; .bak yedek zaten mevcut.
-                await TryExpressVssBackupAsync(
-                    server, dbObj, databaseName, destinationPath, result, cancellationToken);
+                // Plan ayarı ile devre dışı bırakılabilir (EnableSqlVssBackup=false).
+                if (enableVssBackup)
+                {
+                    await TryExpressVssBackupAsync(
+                        server, dbObj, databaseName, destinationPath, result, cancellationToken);
+                }
+                else
+                {
+                    Log.Debug("VSS ek yedeği plan ayarı ile devre dışı: {Database}", databaseName);
+                }
             }
             catch (OperationCanceledException)
             {

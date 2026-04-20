@@ -96,6 +96,16 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("verifyAfterBackup")]
         public bool VerifyAfterBackup { get; set; } = true;
 
+        /// <summary>
+        /// SQL veritabanı yedeği sonrası ek güvenlik olarak VSS üzerinden
+        /// MDF/LDF dosya kopyası alınsın mı? (Ham dosya yedeği — .7z arşivi)
+        /// false ise sadece standart SMO .bak yedeği alınır; VSS adımı tamamen atlanır.
+        /// Default true (geriye dönük uyumluluk).
+        /// Not: Dosya yedekleme (FileBackup) bu ayardan etkilenmez.
+        /// </summary>
+        [JsonProperty("enableSqlVssBackup")]
+        public bool EnableSqlVssBackup { get; set; } = true;
+
         [JsonProperty("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
