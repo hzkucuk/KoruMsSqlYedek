@@ -79,10 +79,10 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     }
                 }
 
-                // 1. SQL Backup
+                // 1. SQL Backup (VSS ek yedeği plan ayarına göre)
                 var result = await SqlBackupService.BackupDatabaseAsync(
                     plan.SqlConnection, dbName, effectiveType, plan.LocalPath,
-                    null, ct);
+                    null, ct, plan.EnableSqlVssBackup);
 
                 result.PlanId = plan.PlanId;
                 result.PlanName = plan.PlanName;

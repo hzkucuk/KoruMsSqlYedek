@@ -1,4 +1,33 @@
-﻿## [0.99.70] - 2025-07-28 — 🚀 UAC-siz Servis Üzerinden Otomatik Güncelleme
+﻿## [0.99.71] - 2026-04-21 — ⚙️ Opsiyonel SQL VSS Yedekleme
+
+### Eklenen
+- **SQL DB seçili planlarda VSS yedeği opsiyonel** — Plan editörü Adım 3'e "SQL yedeği sonrası VSS ile MDF/LDF ham dosya kopyası al" CheckBox'ı eklendi (varsayılan: işaretli — geriye dönük uyumluluk)
+  - `BackupPlan.EnableSqlVssBackup` property (JSON: `enableSqlVssBackup`)
+  - `ISqlBackupService.BackupDatabaseAsync` opsiyonel `bool enableVssBackup = true` parametresi
+  - `SqlBackupService`: `TryExpressVssBackupAsync` artık koşullu çağrılıyor
+  - `BackupJobExecutor.SqlPipeline`: plan tercihini servise iletir
+  - Lokalizasyon: TR + EN (`PlanEdit_EnableSqlVss`, `PlanEdit_Tip_EnableSqlVss`)
+
+### Düzeltilen
+- `PlanEditForm.Designer.cs`: `_chkEnableSqlVss` CheckBox instantiation eksikliği nedeniyle plan düzenleme formu açılırken oluşan `NullReferenceException` giderildi.
+
+### Notlar
+- Linux/Docker SQL Server senaryolarında VSS uygulanamaz; bu seçenek işaretsiz bırakılmalıdır. (Windows-lokal SQL Server için önerilen değer: işaretli.)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/BackupPlan.cs`
+- `KoruMsSqlYedek.Core/Interfaces/ISqlBackupService.cs`
+- `KoruMsSqlYedek.Engine/Backup/SqlBackupService.cs`
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.SqlPipeline.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.Designer.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.cs`
+- `KoruMsSqlYedek.Win/Forms/PlanEditForm.PlanBinding.cs`
+- `KoruMsSqlYedek.Win/Properties/Resources.resx`
+- `KoruMsSqlYedek.Win/Properties/Resources.tr-TR.resx`
+
+---
+
+## [0.99.70] - 2025-07-28 — 🚀 UAC-siz Servis Üzerinden Otomatik Güncelleme
 
 ### Eklenen
 - **Servis tabanlı UAC-free self-update** — Windows Service (SYSTEM) aracılığıyla installer'ı UAC prompt'u olmadan çalıştırma

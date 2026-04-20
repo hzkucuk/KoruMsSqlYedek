@@ -518,6 +518,11 @@ If you forget your password, you can reset it using the security question.</valu
   <data name="PlanEdit_IncrCron" xml:space="preserve"><value>Incremental Task:</value></data>
   <data name="PlanEdit_AutoPromote" xml:space="preserve"><value>Auto Full Backup Threshold:</value></data>
   <data name="PlanEdit_Verify" xml:space="preserve"><value>Run integrity verification after backup (RESTORE VERIFYONLY)</value></data>
+  <data name="PlanEdit_EnableSqlVss" xml:space="preserve"><value>Take VSS raw MDF/LDF copy after SQL backup</value></data>
+  <data name="PlanEdit_Tip_EnableSqlVss" xml:space="preserve"><value>In addition to the standard .bak backup, a VSS snapshot is used to create a .7z archive of the MDF/LDF files.
+When disabled: only the standard SMO backup is taken; the VSS step is skipped.
+Note: File backup (FileBackup) is not affected by this setting.
+Recommendation: keep enabled on Express edition.</value></data>
   <data name="PlanEdit_FileSchedHeader" xml:space="preserve"><value>📁 File Backup Task</value></data>
   <data name="PlanEdit_FileSchedule" xml:space="preserve"><value>File Task:</value></data>
   <data name="PlanEdit_Step4Header" xml:space="preserve"><value>⑥ Archive Compression Settings</value></data>

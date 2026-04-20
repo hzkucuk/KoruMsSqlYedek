@@ -107,6 +107,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _cronIncr.SetCronExpression(_plan.Strategy?.IncrementalSchedule ?? "");
             _nudAutoPromote.Value = _plan.Strategy?.AutoPromoteToFullAfter ?? 7;
             _chkVerify.Checked = _plan.VerifyAfterBackup;
+            _chkEnableSqlVss.Checked = _plan.EnableSqlVssBackup;
             UpdateStrategyFieldsVisibility();
 
             // Adım 4: Sıkıştırma + Saklama
@@ -216,6 +217,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _plan.Strategy.IncrementalSchedule = _cronIncr.GetCronExpression();
             _plan.Strategy.AutoPromoteToFullAfter = (int)_nudAutoPromote.Value;
             _plan.VerifyAfterBackup = _chkVerify.Checked;
+            _plan.EnableSqlVssBackup = _chkEnableSqlVss.Checked;
             _plan.FileBackup.Schedule = null;
 
             // Adım 4: Sıkıştırma + Saklama

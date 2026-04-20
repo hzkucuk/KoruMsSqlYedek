@@ -14,13 +14,19 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// <summary>
         /// Belirtilen veritabanının yedeğini alır.
         /// </summary>
+        /// <param name="enableVssBackup">
+        /// true (default): standart .bak yedeğinden sonra ek güvenlik olarak
+        /// VSS üzerinden MDF/LDF ham dosya kopyası (.7z) alınır.
+        /// false: VSS adımı tamamen atlanır; sadece standart SMO yedeği alınır.
+        /// </param>
         Task<BackupResult> BackupDatabaseAsync(
             SqlConnectionInfo connection,
             string databaseName,
             SqlBackupType backupType,
             string destinationPath,
             IProgress<int> progress,
-            CancellationToken cancellationToken);
+            CancellationToken cancellationToken,
+            bool enableVssBackup = true);
 
         /// <summary>
         /// RESTORE VERIFYONLY ile yedek dosyasını doğrular.

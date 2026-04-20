@@ -508,6 +508,11 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="PlanEdit_IncrCron" xml:space="preserve"><value>Artırımlı Görevi:</value></data>
   <data name="PlanEdit_AutoPromote" xml:space="preserve"><value>Oto. Tam Yedek Eşiği:</value></data>
   <data name="PlanEdit_Verify" xml:space="preserve"><value>Yedek sonrası bütünlük doğrulaması yap (RESTORE VERIFYONLY)</value></data>
+  <data name="PlanEdit_EnableSqlVss" xml:space="preserve"><value>SQL yedeği sonrası VSS ile MDF/LDF ham dosya kopyası al</value></data>
+  <data name="PlanEdit_Tip_EnableSqlVss" xml:space="preserve"><value>Standart .bak yedeğine ek olarak VSS snapshot üzerinden MDF/LDF dosyalarının .7z arşivi alınır.
+Kapalıysa: sadece standart SMO yedeği alınır, VSS adımı atlanır.
+Not: Dosya yedekleme (FileBackup) bu ayardan etkilenmez.
+Öneri: Express edition'da açık tutun.</value></data>
   <data name="PlanEdit_FileSchedHeader" xml:space="preserve"><value>📁 Dosya Yedekleme Görevi</value></data>
   <data name="PlanEdit_FileSchedule" xml:space="preserve"><value>Dosya Görevi:</value></data>
   <data name="PlanEdit_Step4Header" xml:space="preserve"><value>⑥ Arşiv Sıkıştırma Ayarları</value></data>

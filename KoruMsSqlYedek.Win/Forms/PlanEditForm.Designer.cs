@@ -102,6 +102,7 @@
             _lblAutoPromote = new System.Windows.Forms.Label();
             _nudAutoPromote = new KoruMsSqlYedek.Win.Theme.ModernNumericUpDown();
             _chkVerify = new System.Windows.Forms.CheckBox();
+            _chkEnableSqlVss = new System.Windows.Forms.CheckBox();
             _lblStep3FileSchedHeader = new System.Windows.Forms.Label();
             _lblStep3FileSep = new System.Windows.Forms.Label();
             _lblFileSchedule = new System.Windows.Forms.Label();
@@ -696,10 +697,18 @@
             _toolTip.SetToolTip(_chkVerify, "Her yedek g\u00f6revinden sonra SQL Server\u2019\u0131n RESTORE VERIFYONLY\nkomutuyla dosya b\u00fct\u00fcnl\u00fc\u011f\u00fc do\u011frulan\u0131r.\nBozuk yedek tespit edilirse hemen bildirim g\u00f6nderilir.\n\u00d6neri: Her zaman a\u00e7\u0131k tutun.");
             _pnlStep3.Controls.Add(_chkVerify);
 
+            _chkEnableSqlVss.Text = "SQL yede\u011fi sonras\u0131 VSS ile MDF/LDF ham dosya kopyas\u0131 al";
+            _chkEnableSqlVss.Name = "_chkEnableSqlVss";
+            _chkEnableSqlVss.Location = new System.Drawing.Point(24, 285);
+            _chkEnableSqlVss.AutoSize = true;
+            _chkEnableSqlVss.Checked = true;
+            _toolTip.SetToolTip(_chkEnableSqlVss, "Standart .bak yede\u011fine ek olarak VSS snapshot \u00fczerinden\nMDF/LDF dosyalar\u0131n\u0131n .7z arşivi al\u0131n\u0131r.\nKapal\u0131ysa: sadece standart SMO yede\u011fi al\u0131n\u0131r, VSS ad\u0131m\u0131 atlan\u0131r.\nNot: Dosya yedekleme (FileBackup) bu ayardan etkilenmez.\n\u00d6neri: Express edition'da a\u00e7\u0131k tutun.");
+            _pnlStep3.Controls.Add(_chkEnableSqlVss);
+
             // --- Dosya Yedekleme Zamanlaması (gizli) ---
             _lblStep3FileSep.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             _lblStep3FileSep.Name = "_lblStep3FileSep";
-            _lblStep3FileSep.Location = new System.Drawing.Point(24, 301);
+            _lblStep3FileSep.Location = new System.Drawing.Point(24, 320);
             _lblStep3FileSep.Size = new System.Drawing.Size(546, 2);
             _lblStep3FileSep.Visible = false;
             _pnlStep3.Controls.Add(_lblStep3FileSep);
@@ -709,18 +718,18 @@
             _lblStep3FileSchedHeader.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             _lblStep3FileSchedHeader.Tag = "accent";
             _lblStep3FileSchedHeader.AutoSize = true;
-            _lblStep3FileSchedHeader.Location = new System.Drawing.Point(24, 301);
+            _lblStep3FileSchedHeader.Location = new System.Drawing.Point(24, 320);
             _lblStep3FileSchedHeader.Visible = false;
             _pnlStep3.Controls.Add(_lblStep3FileSchedHeader);
 
             _lblFileSchedule.Text = "Dosya G\u00f6revi:";
             _lblFileSchedule.Name = "_lblFileSchedule";
             _lblFileSchedule.AutoSize = true;
-            _lblFileSchedule.Location = new System.Drawing.Point(24, 304);
+            _lblFileSchedule.Location = new System.Drawing.Point(24, 323);
             _lblFileSchedule.Visible = false;
             _pnlStep3.Controls.Add(_lblFileSchedule);
 
-            _cronFileSchedule.Location = new System.Drawing.Point(180, 301);
+            _cronFileSchedule.Location = new System.Drawing.Point(180, 320);
             _cronFileSchedule.Name = "_cronFileSchedule";
             _cronFileSchedule.Size = new System.Drawing.Size(390, 80);
             _cronFileSchedule.Visible = false;
@@ -1237,6 +1246,7 @@
         private System.Windows.Forms.Label _lblAutoPromote;
         private Theme.ModernNumericUpDown _nudAutoPromote;
         private System.Windows.Forms.CheckBox _chkVerify;
+        private System.Windows.Forms.CheckBox _chkEnableSqlVss;
         private System.Windows.Forms.Label _lblStep3FileSchedHeader;
         private System.Windows.Forms.Label _lblStep3FileSep;
         private System.Windows.Forms.Label _lblFileSchedule;

@@ -233,6 +233,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblIncrCron.Text = Res.Get("PlanEdit_IncrCron");
             _lblAutoPromote.Text = Res.Get("PlanEdit_AutoPromote");
             _chkVerify.Text = Res.Get("PlanEdit_Verify");
+            _chkEnableSqlVss.Text = Res.Get("PlanEdit_EnableSqlVss");
             _lblStep3FileSchedHeader.Text = Res.Get("PlanEdit_FileSchedHeader");
             _lblFileSchedule.Text = Res.Get("PlanEdit_FileSchedule");
 
