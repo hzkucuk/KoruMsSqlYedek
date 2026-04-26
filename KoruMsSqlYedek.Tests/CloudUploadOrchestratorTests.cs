@@ -165,7 +165,7 @@ namespace KoruMsSqlYedek.Tests
             results.Should().HaveCount(1);
             results[0].IsSuccess.Should().BeFalse();
             results[0].ErrorMessage.Should().Contain("Sunucu yanıt vermiyor");
-            results[0].RetryCount.Should().Be(3); // MaxRetries = 3
+            results[0].RetryCount.Should().Be(5); // MaxRetries = 5
         }
 
         [TestMethod]
@@ -185,9 +185,9 @@ namespace KoruMsSqlYedek.Tests
             };
 
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<OperationCanceledException>(
-                () => orchestrator.UploadToAllAsync(
-                    @"C:\test.7z", "test.7z", targets, null, cts.Token));
+            Func<Task> act = () => orchestrator.UploadToAllAsync(
+                @"C:\test.7z", "test.7z", targets, null, cts.Token);
+            await act.Should().ThrowAsync<OperationCanceledException>();
         }
 
         [TestMethod]

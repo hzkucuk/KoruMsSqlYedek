@@ -58,6 +58,9 @@ namespace KoruMsSqlYedek.Engine.IoC
             // Retention
             builder.RegisterType<RetentionCleanupService>()
                 .As<IRetentionService>()
+                .WithParameter(
+                    (pi, _) => pi.ParameterType == typeof(ICloudUploadOrchestrator),
+                    (_, ctx) => ctx.ResolveOptional<ICloudUploadOrchestrator>())
                 .InstancePerDependency();
 
             // Bildirim

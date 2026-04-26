@@ -111,9 +111,9 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             Alphaleonis.Win32.Vss.IVssBackupComponents backupComponents = null;
             try
             {
-                // AlphaVSS ile snapshot oluştur
-                var implementation = Alphaleonis.Win32.Vss.VssUtils.LoadImplementation();
-                backupComponents = implementation.CreateVssBackupComponents();
+                // AlphaVSS 2.x ile snapshot oluştur (VssUtils → VssFactoryProvider)
+                var factory = Alphaleonis.Win32.Vss.VssFactoryProvider.Default.GetVssFactory();
+                backupComponents = factory.CreateVssBackupComponents();
 
                 backupComponents.InitializeForBackup(null);
                 backupComponents.SetBackupState(false, true,
