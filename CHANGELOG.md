@@ -1,4 +1,25 @@
-﻿## [0.99.71] - 2026-04-21 — ⚙️ Opsiyonel SQL VSS Yedekleme
+﻿## [0.99.72] - 2026-07-29 — 🔒 Cloud Retention & Çöp Kutusu Güvenliği
+
+### Eklenen
+- **Google Drive cloud retention** — `RetentionCleanupService`'e `ICloudUploadOrchestrator` enjekte edildi; retention politikası artık local dosyayı silmeden önce cloud'daki kopyayı da temizliyor
+- **FileBackup history kaydı** — Dosya yedeklerinin (`__FileBackup__`) `BackupResult` olarak history'e kaydedilmesi sağlandı; cloud-local retention senkronizasyonu tamamlandı
+- **EmptyTrashAsync güvenlik katmanı** — `folderId` bulunamazsa tüm Drive çöpü yerine güvenli çıkış; sorguya `.bak`/`.7z` uzantı filtresi eklendi (yanlışlıkla silme önlendi)
+
+### Düzeltilen
+- `BackupJobExecutor`: FileBackup-only ve SQL+FileBackup pipeline'larında retention tetiklenmiyor; FileBackup arşivleri cloud retention için eşleşme yapamıyordu
+- `EmptyTrashAsync`: `folderId` null iken tüm Google Drive çöp kutusu taranıyordu (güvenlik açığı)
+- `CloudUploadOrchestratorTests`: `RetryCount` assertion 3→5 (`MaxRetries = 5` gerçek değerle senkronize)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Retention/RetentionCleanupService.cs`
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs`
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.Operations.cs`
+- `KoruMsSqlYedek.Engine/IoC/EngineModule.cs`
+- `KoruMsSqlYedek.Tests/CloudUploadOrchestratorTests.cs`
+
+---
+
+## [0.99.71] - 2026-04-21
 
 ### Eklenen
 - **SQL DB seçili planlarda VSS yedeği opsiyonel** — Plan editörü Adım 3'e "SQL yedeği sonrası VSS ile MDF/LDF ham dosya kopyası al" CheckBox'ı eklendi (varsayılan: işaretli — geriye dönük uyumluluk)
