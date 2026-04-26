@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
@@ -31,7 +31,7 @@ namespace KoruMsSqlYedek.Tests
             if (Directory.Exists(_testHistoryDir))
             {
                 try { Directory.Delete(_testHistoryDir, true); }
-                catch { /* test temizliÄŸi */ }
+                catch { /* test temizliði */ }
             }
         }
 
@@ -50,7 +50,7 @@ namespace KoruMsSqlYedek.Tests
 
             var history = _historyManager.GetHistoryByPlan(_testPlanId);
 
-            // Assert â€” sadece test planÄ± sonuÃ§larÄ± dÃ¶nmeli
+            // Assert — sadece test planý sonuçlarý dönmeli
             history.Should().HaveCount(2);
             history.Should().OnlyContain(r => r.PlanId == _testPlanId);
         }
@@ -58,7 +58,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public void SaveResult_NullResult_DoesNotThrow()
         {
-            // Act â€” null geÃ§ilince hata atmamalÄ±
+            // Act — null geçilince hata atmamalý
             Action act = () => _historyManager.SaveResult(null);
             act.Should().NotThrow();
         }
@@ -66,7 +66,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public void GetRecentHistory_ReturnsOrderedByDate()
         {
-            // Arrange â€” aynÄ± gÃ¼n iÃ§inde yakÄ±n zamanlar kullan (global Take limiti aÅŸÄ±lmasÄ±n)
+            // Arrange — ayný gün içinde yakýn zamanlar kullan (global Take limiti aþýlmasýn)
             var oldResult = TestDataFactory.CreateSuccessResult(_testPlanId, "OldDB");
             oldResult.StartedAt = DateTime.UtcNow.AddMinutes(-30);
             oldResult.CompletedAt = DateTime.UtcNow.AddMinutes(-20);
@@ -78,34 +78,34 @@ namespace KoruMsSqlYedek.Tests
             _historyManager.SaveResult(oldResult);
             _historyManager.SaveResult(newResult);
 
-            // Act â€” plan bazlÄ± sorgula (global kayÄ±t birikiminden etkilenmesin)
+            // Act — plan bazlý sorgula (global kayýt birikiminden etkilenmesin)
             var testPlanResults = _historyManager.GetHistoryByPlan(_testPlanId, maxRecords: 100);
 
-            // Assert â€” yeni olan Ã¶nce gelmeli (OrderByDescending)
-            testPlanResults.Should().HaveCountGreaterOrEqualTo(2);
+            // Assert — yeni olan önce gelmeli (OrderByDescending)
+            testPlanResults.Should().HaveCountGreaterThanOrEqualTo(2);
             testPlanResults[0].StartedAt.Should().BeOnOrAfter(testPlanResults[1].StartedAt);
 
-            // GetRecentHistory sÄ±ralama doÄŸrulamasÄ±
+            // GetRecentHistory sýralama doðrulamasý
             var recent = _historyManager.GetRecentHistory(10000);
             recent.Should().NotBeEmpty();
             for (int i = 1; i < recent.Count; i++)
             {
                 recent[i - 1].StartedAt.Should().BeOnOrAfter(recent[i].StartedAt,
-                    "GetRecentHistory sonuÃ§larÄ± tarihe gÃ¶re azalan sÄ±rada olmalÄ±");
+                    "GetRecentHistory sonuçlarý tarihe göre azalan sýrada olmalý");
             }
         }
 
         [TestMethod]
         public void GetHistoryByPlan_MaxRecords_LimitsResults()
         {
-            // Arrange â€” 5 sonuÃ§ kaydet
+            // Arrange — 5 sonuç kaydet
             for (int i = 0; i < 5; i++)
             {
                 var result = TestDataFactory.CreateSuccessResult(_testPlanId, $"DB{i}");
                 _historyManager.SaveResult(result);
             }
 
-            // Act â€” maxRecords=3 ile sorgula
+            // Act — maxRecords=3 ile sorgula
             var history = _historyManager.GetHistoryByPlan(_testPlanId, maxRecords: 3);
 
             // Assert
@@ -121,7 +121,7 @@ namespace KoruMsSqlYedek.Tests
             todayResult.CompletedAt = DateTime.UtcNow;
             _historyManager.SaveResult(todayResult);
 
-            // Act â€” bugÃ¼nÃ¼n aralÄ±ÄŸÄ±
+            // Act — bugünün aralýðý
             var from = DateTime.UtcNow.Date;
             var to = DateTime.UtcNow.Date.AddDays(1).AddTicks(-1);
             var history = _historyManager.GetHistoryByDateRange(from, to);
@@ -134,7 +134,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public void GetHistoryByDateRange_EmptyRange_ReturnsEmpty()
         {
-            // Act â€” geÃ§miÅŸ bir tarih aralÄ±ÄŸÄ± (veri olmayan)
+            // Act — geçmiþ bir tarih aralýðý (veri olmayan)
             var from = new DateTime(2020, 1, 1);
             var to = new DateTime(2020, 1, 2);
             var history = _historyManager.GetHistoryByDateRange(from, to);
@@ -147,7 +147,7 @@ namespace KoruMsSqlYedek.Tests
         public void SaveResult_FailedResult_PersistsErrorMessage()
         {
             // Arrange
-            var failedResult = TestDataFactory.CreateFailedResult(_testPlanId, "BaÄŸlantÄ± zaman aÅŸÄ±mÄ±");
+            var failedResult = TestDataFactory.CreateFailedResult(_testPlanId, "Baðlantý zaman aþýmý");
 
             // Act
             _historyManager.SaveResult(failedResult);
@@ -156,25 +156,25 @@ namespace KoruMsSqlYedek.Tests
             // Assert
             history.Should().Contain(r =>
                 r.Status == BackupResultStatus.Failed &&
-                r.ErrorMessage == "BaÄŸlantÄ± zaman aÅŸÄ±mÄ±");
+                r.ErrorMessage == "Baðlantý zaman aþýmý");
         }
 
         [TestMethod]
         public void SaveResult_MultipleSameDay_AppendsToDayFile()
         {
-            // Arrange â€” aynÄ± gÃ¼n iÃ§inde birden fazla kayÄ±t
+            // Arrange — ayný gün içinde birden fazla kayýt
             for (int i = 0; i < 3; i++)
             {
                 var result = TestDataFactory.CreateSuccessResult(_testPlanId, $"SameDayDB{i}");
-                result.CompletedAt = DateTime.UtcNow; // hepsi bugÃ¼ne kaydedilecek
+                result.CompletedAt = DateTime.UtcNow; // hepsi bugüne kaydedilecek
                 _historyManager.SaveResult(result);
             }
 
             // Act
             var history = _historyManager.GetHistoryByPlan(_testPlanId);
 
-            // Assert â€” 3 kayÄ±t olmalÄ± (aynÄ± gÃ¼n dosyasÄ±nda)
-            history.Should().HaveCountGreaterOrEqualTo(3);
+            // Assert — 3 kayýt olmalý (ayný gün dosyasýnda)
+            history.Should().HaveCountGreaterThanOrEqualTo(3);
         }
     }
 }

@@ -215,7 +215,7 @@ namespace KoruMsSqlYedek.Tests
                 It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()), Times.Never);
 
             _mockRetention.Verify(r => r.CleanupAsync(
-                It.IsAny<BackupPlan>(), It.IsAny<CancellationToken>()), Times.Never);
+                It.IsAny<BackupPlan>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [TestMethod]
@@ -1210,9 +1210,10 @@ namespace KoruMsSqlYedek.Tests
             _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
                     It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
                     It.IsAny<SqlBackupType>(), It.IsAny<string>(),
-                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                .Returns<SqlConnectionInfo, string, SqlBackupType, string, IProgress<int>, CancellationToken>(
-                    (conn, db, type, path, prog, ct) =>
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(),
+                    It.IsAny<bool>()))
+                .Returns<SqlConnectionInfo, string, SqlBackupType, string, IProgress<int>, CancellationToken, bool>(
+                    (conn, db, type, path, prog, ct, vss) =>
                     {
                         cts.Cancel();
                         ct.ThrowIfCancellationRequested();

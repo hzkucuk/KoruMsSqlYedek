@@ -139,6 +139,34 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             var (cloudOk, fileCloudResults) = await UploadAllPendingAsync(
                                 plan, null, fileArchivePath, cts.Token);
 
+                            // Dosya arşivi için history kaydı (retention + cloud senkron için şart)
+                            if (!string.IsNullOrEmpty(fileArchivePath))
+                            {
+                                SaveHistory(new BackupResult
+                                {
+                                    CorrelationId = correlationId,
+                                    PlanId = plan.PlanId,
+                                    PlanName = plan.PlanName,
+                                    DatabaseName = "__FileBackup__",
+                                    BackupType = SqlBackupType.Full,
+                                    Status = (fileResults == null || fileResults.Any(r => r.Status != BackupResultStatus.Success))
+                                        ? BackupResultStatus.Failed : BackupResultStatus.Success,
+                                    StartedAt = jobStartedAt,
+                                    CompletedAt = DateTime.Now,
+                                    CompressedFilePath = fileArchivePath,
+                                    CompressedSizeBytes = GetFileSize(fileArchivePath),
+                                    CloudUploadResults = fileCloudResults ?? new List<CloudUploadResult>()
+                                });
+                            }
+
+                            // Retention temizliği
+                            if (RetentionService != null)
+                            {
+                                try { await RetentionService.CleanupAsync(plan, cts.Token); }
+                                catch (OperationCanceledException) { throw; }
+                                catch (Exception ex) { Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName); }
+                            }
+
                             await EmptyTrashIfNeededAsync(plan, cts.Token);
                             cleanupPaths.Clear();
 
@@ -200,6 +228,26 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         {
                             foreach (var sqlResult in sqlResults)
                                 SaveHistory(sqlResult);
+                        }
+
+                        // Dosya arşivi için history kaydı (retention + cloud senkron için şart)
+                        if (!string.IsNullOrEmpty(fileArchivePath2))
+                        {
+                            SaveHistory(new BackupResult
+                            {
+                                CorrelationId = correlationId,
+                                PlanId = plan.PlanId,
+                                PlanName = plan.PlanName,
+                                DatabaseName = "__FileBackup__",
+                                BackupType = SqlBackupType.Full,
+                                Status = (fileResults2 == null || fileResults2.Any(r => r.Status != BackupResultStatus.Success))
+                                    ? BackupResultStatus.Failed : BackupResultStatus.Success,
+                                StartedAt = jobStartedAt,
+                                CompletedAt = DateTime.Now,
+                                CompressedFilePath = fileArchivePath2,
+                                CompressedSizeBytes = GetFileSize(fileArchivePath2),
+                                CloudUploadResults = fileCloudResults2 ?? new List<CloudUploadResult>()
+                            });
                         }
 
                         bool anySqlFailed = sqlResults != null && sqlResults.Any(r => r.Status != BackupResultStatus.Success);

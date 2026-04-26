@@ -292,7 +292,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 using (var driveService = await GoogleDriveAuthHelper.CreateDriveServiceAsync(config, cancellationToken)
                     .ConfigureAwait(false))
                 {
-                    // Bizim klasörümüzün ID'sini bul
+                    // Bizim klasörümüzün ID'sini bul — bulunamazsa GÜVENLİK gereği işlem yapma
                     string folderId = null;
                     if (!string.IsNullOrEmpty(config.RemoteFolderPath))
                     {
@@ -303,14 +303,23 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         }
                         catch
                         {
-                            // Klasör bulunamazsa root'tan arayacağız
+                            // Klasör bulunamazsa güvenli çık
                         }
                     }
 
+                    if (folderId is null)
+                    {
+                        Log.Warning(
+                            "EmptyTrash atlandı: Klasör bulunamadı veya RemoteFolderPath boş — " +
+                            "kullanıcı çöp kutusuna dokunmamak için işlem iptal edildi. (Klasör: {Folder})",
+                            config.RemoteFolderPath ?? "(boş)");
+                        return 0;
+                    }
+
                     // Sadece bizim klasörümüzdeki çöp dosyalarını listele
-                    string query = folderId is not null
-                        ? $"trashed = true and '{folderId}' in parents"
-                        : "trashed = true";
+                    // trashed=true AND klasörümüz parent AND yedek dosya adı uzantısı
+                    string query = $"trashed = true and '{folderId}' in parents " +
+                                   "and (name contains '.bak' or name contains '.7z')";
 
                     var expiredFileIds = new System.Collections.Generic.List<string>();
                     int totalTrashed = 0;
