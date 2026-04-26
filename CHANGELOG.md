@@ -1,4 +1,15 @@
-﻿## [0.99.72] - 2026-07-29 — 🔒 Cloud Retention & Çöp Kutusu Güvenliği
+﻿## [0.99.73] - 2026-07-29 — 🔧 Self-Update Sonrası Tray Başlamıyor Düzeltmesi
+
+### Düzeltilen
+- **Self-update sonrası tray uygulaması başlamıyordu** — Servis yeniden başladığında installer henüz dosyaları kopyalıyordu; 9 saniyelik bekleme yetmiyordu. Retry stratejisi 9s → 5 dakikaya (10s aralıkla) çıkarıldı. Kontrol ayrıca `Task.Run` ile arka plana alındı — servis startup'ı artık bloklanmıyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Service/SelfUpdate/SelfUpdateHandler.cs`
+- `KoruMsSqlYedek.Service/BackupWindowsService.cs`
+
+---
+
+## [0.99.72]
 
 ### Eklenen
 - **Google Drive cloud retention** — `RetentionCleanupService`'e `ICloudUploadOrchestrator` enjekte edildi; retention politikası artık local dosyayı silmeden önce cloud'daki kopyayı da temizliyor
