@@ -76,25 +76,25 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
                 return;
             }
 
-            // Exe'nin mevcut olmasını bekle (installer kopyalıyor olabilir)
-            int[] delaysMs = [1000, 3000, 5000];
-            for (int i = 0; i < delaysMs.Length; i++)
+            // Exe'nin mevcut olmasını bekle — installer bitene kadar (maks 5 dk, 10s aralık)
+            const int maxWaitMs = 5 * 60 * 1000;
+            const int intervalMs = 10_000;
+            int waited = 0;
+            while (!File.Exists(trayAppPath))
             {
-                if (File.Exists(trayAppPath))
-                    break;
+                if (waited >= maxWaitMs)
+                {
+                    Log.Error("Tray exe bulunamadı (tüm denemeler tükendi): {Path}", trayAppPath);
+                    TryDeleteRestartFlag();
+                    return;
+                }
 
                 Log.Information(
-                    "Tray exe henüz mevcut değil, bekleniyor... Deneme {Attempt}/{Max}",
-                    i + 1, delaysMs.Length);
+                    "Tray exe henüz mevcut değil, bekleniyor... ({Waited}s/{Max}s)",
+                    waited / 1000, maxWaitMs / 1000);
 
-                await Task.Delay(delaysMs[i], ct).ConfigureAwait(false);
-            }
-
-            if (!File.Exists(trayAppPath))
-            {
-                Log.Error("Tray exe bulunamadı (tüm denemeler tükendi): {Path}", trayAppPath);
-                TryDeleteRestartFlag();
-                return;
+                await Task.Delay(intervalMs, ct).ConfigureAwait(false);
+                waited += intervalMs;
             }
 
             LaunchTrayAppInUserSession(trayAppPath);
