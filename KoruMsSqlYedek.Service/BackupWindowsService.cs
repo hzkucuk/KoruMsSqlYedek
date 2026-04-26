@@ -63,9 +63,20 @@ namespace KoruMsSqlYedek.Service
             StartPlanWatcher();
             _pipeServer.Start();
 
-            // Self-update sonrası bekleyen tray app restart kontrolü
-            var selfUpdateHandler = new SelfUpdateHandler();
-            await selfUpdateHandler.CheckPendingAppRestartAsync(_cts.Token);
+            // Self-update sonrası bekleyen tray app restart kontrolü (arka planda — installer bitene kadar bekler)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var selfUpdateHandler = new SelfUpdateHandler();
+                    await selfUpdateHandler.CheckPendingAppRestartAsync(_cts.Token);
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Self-update tray restart kontrolü başarısız.");
+                }
+            }, _cts.Token);
 
             // Yarıda kalan upload işlemlerini arka planda devam ettir
             _ = Task.Run(async () =>
