@@ -1,4 +1,15 @@
-﻿## [0.99.77] - 2026-04-27 — 🧪 Self-Update Tray Otomatik Başlatma Testi
+﻿## [0.99.78] - 2026-04-27 — 🐛 Kritik: SQL+FileBackup Kombinasyonunda Dosya Yedek Retention Çalışmıyordu
+
+### Düzeltilen
+- **Retention SQL+FileBackup birlikte çalışırken FileBackup arşivlerini temizlemiyordu** — `BackupJobExecutor` içinde sadece `FileBackup-only` branch'te `RetentionService.CleanupAsync` çağrısı vardı; SQL+FileBackup combined branch'te çağrı yoktu
+- Artık her iki branch de retention temizliği yapıyor — "son 2 kopya tut" ayarı FileBackup arşivleri için de düzgün çalışıyor
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Scheduling/BackupJobExecutor.cs`
+
+---
+
+## [0.99.77]
 
 ### Test
 - Self-update sonrası tray'in otomatik başlatılmasını doğrulamak için çıkarılan test sürümü
