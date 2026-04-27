@@ -194,17 +194,29 @@ try {
         $setupFile = Join-Path $rootDir "releases\KoruMsSqlYedek_v$version`_Setup.exe"
         $ghCmd = Get-Command "gh" -ErrorAction SilentlyContinue
         if ($ghCmd -and (Test-Path $setupFile)) {
-            Write-Host "`n[GitHub] Draft release olusmasini bekleniyor (10s)..." -ForegroundColor Cyan
-            Start-Sleep -Seconds 10
+            # GitHub Actions'in draft release olusturmasini bekle (maks 90s, 15s aralik)
+            Write-Host "`n[GitHub] Draft release bekleniyor (maks 90s)..." -ForegroundColor Cyan
+            $waited = 0; $maxWait = 90; $interval = 15; $releaseReady = $false
+            while ($waited -le $maxWait) {
+                Start-Sleep -Seconds $interval
+                $waited += $interval
+                $checkResult = gh release view "v$version" --repo hzkucuk/KoruMsSqlYedek 2>&1
+                if ($LASTEXITCODE -eq 0) { $releaseReady = $true; break }
+                Write-Host "  Bekleniyor... ($waited/$maxWait s)" -ForegroundColor DarkGray
+            }
 
-            Write-Host "[GitHub] Setup.exe yukleniyor: $setupFile" -ForegroundColor Cyan
-            gh release upload "v$version" $setupFile --clobber
-            if ($LASTEXITCODE -eq 0) {
-                # Draft'i yayinla
-                gh release edit "v$version" --draft=false
-                Write-Host "[GitHub] Release yayinlandi: v$version" -ForegroundColor Green
+            if ($releaseReady) {
+                Write-Host "[GitHub] Setup.exe yukleniyor: $setupFile" -ForegroundColor Cyan
+                gh release upload "v$version" $setupFile --clobber
+                if ($LASTEXITCODE -eq 0) {
+                    # Draft'i yayinla
+                    gh release edit "v$version" --draft=false
+                    Write-Host "[GitHub] Release yayinlandi: v$version" -ForegroundColor Green
+                } else {
+                    Write-Warning "gh release upload basarisiz. Manuel olarak yukleyin: $setupFile"
+                }
             } else {
-                Write-Warning "gh release upload basarisiz. Manuel olarak yukleyin: $setupFile"
+                Write-Warning "Draft release 90s icinde olusturulamadi. Manuel olarak yukleyin: $setupFile"
             }
         } elseif (-not $ghCmd) {
             Write-Warning "'gh' CLI bulunamadi. Setup.exe'yi manuel olarak GitHub Release'e yukleyin."
