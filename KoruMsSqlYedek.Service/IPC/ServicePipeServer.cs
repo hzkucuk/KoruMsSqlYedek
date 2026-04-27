@@ -288,7 +288,7 @@ namespace KoruMsSqlYedek.Service.IPC
                 // 2. Tray app yolunu belirle
                 string serviceDir = AppContext.BaseDirectory;
                 string trayAppPath = Path.GetFullPath(
-                    Path.Combine(serviceDir, "..", "KoruMsSqlYedek.exe"));
+                    Path.Combine(serviceDir, "..", "KoruMsSqlYedek.Win.exe"));
 
                 // 3. Restart flag dosyasını yaz
                 await selfUpdate.WriteFlagAsync(trayAppPath, ct);
