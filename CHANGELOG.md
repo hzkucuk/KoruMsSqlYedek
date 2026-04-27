@@ -1,4 +1,12 @@
-﻿## [0.99.75] - 2026-07-29 — 🚀 CI/CD: GitHub Release Otomasyonu (gh CLI)
+﻿## [0.99.76] - 2026-07-27 — 🐛 Kritik: Self-Update Sonrası Tray Başlamıyor (Exe Adı Hatası)
+
+### Düzeltilen
+- **Self-update sonrası tray başlamıyordu** — `ServicePipeServer` ve `SelfUpdateHandler` fallback kodu `KoruMsSqlYedek.exe` arıyordu; gerçek exe adı `KoruMsSqlYedek.Win.exe` olduğundan 5 dakika boyunca "bulunamadı" döngüsüne giriyordu
+- Etkilenen dosyalar: `ServicePipeServer.cs` (flag'e yazılan yol), `SelfUpdateHandler.cs` (fallback yol)
+
+---
+
+## [0.99.75]
 
 ### Eklenen
 - **`Build-Release.ps1 -GitRelease`** — local build + Inno Setup'tan sonra `gh release upload` ile setup exe'yi otomatik GitHub Release'e yükler, draft'ı publish eder
