@@ -112,7 +112,7 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
                 // Fallback: servis dizininden bir üst klasördeki exe'yi dene
                 string serviceDir = AppContext.BaseDirectory;
                 trayAppPath = Path.GetFullPath(
-                    Path.Combine(serviceDir, "..", "KoruMsSqlYedek.exe"));
+                    Path.Combine(serviceDir, "..", "KoruMsSqlYedek.Win.exe"));
             }
 
             Log.Information("Tray uygulaması kullanıcı oturumunda başlatılıyor: {Path}", trayAppPath);
