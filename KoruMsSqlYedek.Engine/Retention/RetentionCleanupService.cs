@@ -140,6 +140,92 @@ namespace KoruMsSqlYedek.Engine.Retention
                     "Retention tamamlandı: Plan={PlanName} — Local={DeletedLocal} silindi, Cloud={DeletedCloud} silindi, {Skipped} korundu",
                     plan.PlanName, deletedLocal, deletedCloud, skipped);
             }
+
+            // Cloud orphan temizliği:
+            // Yerel dosyası zaten silinmiş ama cloud'da hâlâ duran kayıtları da temizle.
+            // History'deki tüm başarılı cloud upload'ları retention'a tabi tut;
+            // local dosyası artık mevcut değilse (veya zaten sil listesindeyse) cloud'dan da sil.
+            if (plan.HasCloudTargets && _cloudOrchestrator != null && cloudFileMap != null)
+            {
+                await CleanupOrphanCloudEntriesAsync(plan, cloudFileMap, filesToDelete, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Yerel dosyası silinmiş ama cloud'da hâlâ duran kayıtları retention'a göre temizler.
+        /// cloudFileMap'teki her local yol için: dosya diskte yoksa VE bu run'da sil listesinde de
+        /// yoksa (yani önceki bir run'da silinmiş demek), cloud kaydını da siler.
+        /// </summary>
+        private async Task CleanupOrphanCloudEntriesAsync(
+            BackupPlan plan,
+            Dictionary<string, List<(string FileId, CloudTargetConfig Target)>> cloudFileMap,
+            List<FileInfo> alreadyDeletedThisRun,
+            CancellationToken ct)
+        {
+            // Bu run'da local olarak silinen dosyalar — bunlar yukarıdaki döngüde zaten cloud'dan silindi
+            var alreadyHandled = new HashSet<string>(
+                alreadyDeletedThisRun.Select(f => f.FullName),
+                StringComparer.OrdinalIgnoreCase);
+
+            int orphansDeleted = 0;
+
+            foreach (var kvp in cloudFileMap)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                string localPath = kvp.Key;
+
+                // Dosya bu run'da zaten işlendi — atla
+                if (alreadyHandled.Contains(localPath))
+                    continue;
+
+                // Dosya hâlâ diskte var — retention henüz silmemişse dokunma
+                if (File.Exists(localPath))
+                    continue;
+
+                // Local dosya yok ama cloud'da kaydı var → orphan, sil
+                Log.Information(
+                    "Cloud orphan temizliği: Local dosya yok, cloud'dan siliniyor: {FileName}",
+                    Path.GetFileName(localPath));
+
+                foreach (var (fileId, target) in kvp.Value)
+                {
+                    try
+                    {
+                        var results = await _cloudOrchestrator.DeleteFromAllAsync(
+                            fileId,
+                            new List<CloudTargetConfig> { target },
+                            ct).ConfigureAwait(false);
+
+                        if (results?.Count > 0 && results[0].IsSuccess)
+                        {
+                            orphansDeleted++;
+                            Log.Information(
+                                "Cloud orphan silindi: {Provider} — {FileId} ({FileName})",
+                                target.DisplayName, fileId, Path.GetFileName(localPath));
+                        }
+                        else
+                        {
+                            Log.Warning(
+                                "Cloud orphan silinemedi: {Provider} — {FileId} ({FileName})",
+                                target.DisplayName, fileId, Path.GetFileName(localPath));
+                        }
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex,
+                            "Cloud orphan silme hatası: {Provider} — {FileId} ({FileName})",
+                            target.DisplayName, fileId, Path.GetFileName(localPath));
+                    }
+                }
+            }
+
+            if (orphansDeleted > 0)
+                Log.Information(
+                    "Cloud orphan temizliği tamamlandı: Plan={PlanName} — {Count} cloud kaydı silindi",
+                    plan.PlanName, orphansDeleted);
         }
 
         /// <summary>
