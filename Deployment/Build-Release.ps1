@@ -45,6 +45,17 @@ try {
         exit 1
     }
 
+    # --- Service csproj versiyonunu Win versiyonu ile senkronize et ---
+    $serviceCsprojPath = Join-Path $rootDir "KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj"
+    if (Test-Path $serviceCsprojPath) {
+        $svcContent = Get-Content $serviceCsprojPath -Raw
+        $svcContent = $svcContent -replace '<Version>\d+\.\d+\.\d+</Version>', "<Version>$version</Version>"
+        $svcContent = $svcContent -replace '<AssemblyVersion>\d+\.\d+\.\d+\.\d+</AssemblyVersion>', "<AssemblyVersion>$version.0</AssemblyVersion>"
+        $svcContent = $svcContent -replace '<FileVersion>\d+\.\d+\.\d+\.\d+</FileVersion>', "<FileVersion>$version.0</FileVersion>"
+        Set-Content $serviceCsprojPath $svcContent -NoNewline
+        Write-Host "  Service csproj versiyonu senkronize edildi: $version" -ForegroundColor DarkGray
+    }
+
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host " KoruMsSqlYedek Build & Package" -ForegroundColor Cyan
     Write-Host " Versiyon: $version" -ForegroundColor Cyan
