@@ -1,4 +1,16 @@
-﻿## [0.99.78] - 2026-04-27 — 🐛 Kritik: SQL+FileBackup Kombinasyonunda Dosya Yedek Retention Çalışmıyordu
+﻿## [0.99.79] - 2026-04-27 — 🐛 Kritik: Yerel Silinen Dosyaların Cloud Kopyaları Temizlenmiyordu
+
+### Düzeltilen
+- **Cloud retention eksikliği** — Yerel dosya önceki bir run'da silinmişse, cloud'daki kopyası hiçbir zaman silinmiyordu. Örneğin 25 Nisan yedekleri localde silindi ama Google Drive/FTP'de kaldı.
+- **Kök neden:** `RetentionCleanupService` yalnızca disk'te mevcut dosyaları tarayıp cloud'dan siliyordu; diskten zaten gitmiş ama history'de cloud kaydı olan "orphan" kayıtlara dokunmuyordu.
+- **Çözüm:** `CleanupOrphanCloudEntriesAsync` metodu eklendi — her retention çalışmasında history'deki tüm cloud kayıtları kontrol edilir, yerel dosyası artık diskte yoksa cloud'dan da silinir.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Retention/RetentionCleanupService.cs`
+
+---
+
+## [0.99.78]
 
 ### Düzeltilen
 - **Retention SQL+FileBackup birlikte çalışırken FileBackup arşivlerini temizlemiyordu** — `BackupJobExecutor` içinde sadece `FileBackup-only` branch'te `RetentionService.CleanupAsync` çağrısı vardı; SQL+FileBackup combined branch'te çağrı yoktu
