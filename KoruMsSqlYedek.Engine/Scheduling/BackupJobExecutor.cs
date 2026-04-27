@@ -253,6 +253,15 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         bool anySqlFailed = sqlResults != null && sqlResults.Any(r => r.Status != BackupResultStatus.Success);
                         bool anyFileFailed = fileResults2 != null && fileResults2.Any(r => r.Status != BackupResultStatus.Success);
                         bool overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed;
+
+                        // Retention temizliği (SQL + FileBackup combined branch)
+                        if (RetentionService != null)
+                        {
+                            try { await RetentionService.CleanupAsync(plan, cts.Token); }
+                            catch (OperationCanceledException) { throw; }
+                            catch (Exception ex) { Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName); }
+                        }
+
                         await EmptyTrashIfNeededAsync(plan, cts.Token);
                         cleanupPaths.Clear();
 
