@@ -1,9 +1,161 @@
 # ═══════════════════════════════════════════════════════════════════
 # GitHub Actions — Koru MsSql Yedek Release Workflow
 # ═══════════════════════════════════════════════════════════════════
-# Tetik: vX.Y.Z tag push (ör: git tag v0.99.1 && git push --tags)
-# Adımlar: dotnet publish → Inno Setup compile → ZIP → GitHub Release
+# Tetik: vX.Y.Z tag push
+# Görev: SADECE GitHub Release oluştur (boş — asset'i Build-Release.ps1
+#        içindeki "gh release upload" adımı yükler).
+# Derleme/paketleme/yükleme LOCAL'de Build-Release.ps1 ile yapılır.
 # ═══════════════════════════════════════════════════════════════════
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Extract version from tag
+      id: version
+      shell: bash
+      run: |
+        ver="${{ github.ref_name }}"
+        ver="${ver#v}"
+        echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
+
+    - name: Extract changelog notes
+      id: changelog
+      shell: bash
+      run: |
+        ver="${{ steps.version.outputs.VERSION }}"
+        notes=$(awk "/^## \[$ver\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md | sed '/^[[:space:]]*$/d' | head -60)
+        if [ -z "$notes" ]; then
+          notes="Bkz: [CHANGELOG.md](https://github.com/hzkucuk/KoruMsSqlYedek/blob/master/CHANGELOG.md)"
+        fi
+        delim="NOTES_DELIM_$(uuidgen)"
+        echo "NOTES<<$delim" >> "$GITHUB_OUTPUT"
+        echo "$notes"        >> "$GITHUB_OUTPUT"
+        echo "$delim"        >> "$GITHUB_OUTPUT"
+
+    # Release'i DRAFT olarak oluştur — asset yoksa indirilemez
+    # Build-Release.ps1 "gh release upload" ile exe'yi ekler ve draft'ı yayınlar
+    - name: Create GitHub Release (draft)
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: "Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}"
+        draft: true
+        prerelease: false
+        body: |
+          ## Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}
+
+          ${{ steps.changelog.outputs.NOTES }}
+
+          ---
+          ### Kurulum
+          1. `KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe` indirin ve yönetici olarak çalıştırın
+          2. Kurulum sihirbazını takip edin
+
+          ### Gereksinimler
+          - Windows 10/11 (x64)
+
+          > Güncelleme yapıyorsanız mevcut ayarlarınız korunur.
+
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    steps:
+
+    # ── Checkout (CHANGELOG okumak için) ──────────────────────────
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # ── Versiyon çıkar ────────────────────────────────────────────
+    - name: Extract version from tag
+      id: version
+      shell: bash
+      run: |
+        ver="${{ github.ref_name }}"
+        ver="${ver#v}"
+        echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
+        echo "Version: $ver"
+
+    # ── Değişiklik notlarını çıkar ────────────────────────────────
+    - name: Extract changelog notes
+      id: changelog
+      shell: bash
+      run: |
+        ver="${{ steps.version.outputs.VERSION }}"
+        notes=$(awk "/^## \[$ver\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md | sed '/^[[:space:]]*$/d' | head -60)
+        if [ -z "$notes" ]; then
+          notes="Bkz: [CHANGELOG.md](https://github.com/hzkucuk/KoruMsSqlYedek/blob/master/CHANGELOG.md)"
+        fi
+        delim="NOTES_DELIM_$(uuidgen)"
+        echo "NOTES<<$delim" >> "$GITHUB_OUTPUT"
+        echo "$notes"        >> "$GITHUB_OUTPUT"
+        echo "$delim"        >> "$GITHUB_OUTPUT"
+
+    # ── Setup.exe release asset olarak al ─────────────────────────
+    # Local'de Build-Release.ps1 ile üretilen exe tag ile birlikte
+    # push edilmiş olmalı (releases/ klasörü repo'da takip ediliyor).
+    - name: Verify installer exists
+      shell: bash
+      run: |
+        ver="${{ steps.version.outputs.VERSION }}"
+        exe="releases/KoruMsSqlYedek_v${ver}_Setup.exe"
+        if [ ! -f "$exe" ]; then
+          echo "HATA: $exe bulunamadı. Build-Release.ps1 çalıştırılıp commit edildi mi?"
+          exit 1
+        fi
+        size=$(du -sh "$exe" | cut -f1)
+        echo "Installer bulundu: $exe ($size)"
+
+    # ── GitHub Release oluştur + exe yükle ────────────────────────
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: "Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}"
+        body: |
+          ## Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}
+
+          ${{ steps.changelog.outputs.NOTES }}
+
+          ---
+          ### Kurulum
+          1. `KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe` indirin ve yönetici olarak çalıştırın
+          2. Kurulum sihirbazını takip edin
+
+          ### Gereksinimler
+          - Windows 10/11 (x64)
+
+          > Güncelleme yapıyorsanız mevcut ayarlarınız korunur.
+        draft: false
+        prerelease: false
+        files: |
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
+
 
 name: Release
 

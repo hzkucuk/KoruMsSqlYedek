@@ -181,7 +181,7 @@ try {
         git tag "v$version"
         if ($LASTEXITCODE -ne 0) { Write-Warning "Tag zaten mevcut olabilir: v$version" }
 
-        # Push master + tags
+        # Push master + tags (GitHub Actions draft release'i olusturur)
         git push origin master --tags
         if ($LASTEXITCODE -ne 0) { Write-Error "git push origin master --tags basarisiz."; exit 1 }
 
@@ -190,13 +190,33 @@ try {
         git push origin develop
         if ($LASTEXITCODE -ne 0) { Write-Warning "git push origin develop basarisiz." }
 
+        # --- GitHub Release'e Setup.exe yukle ---
+        $setupFile = Join-Path $rootDir "releases\KoruMsSqlYedek_v$version`_Setup.exe"
+        $ghCmd = Get-Command "gh" -ErrorAction SilentlyContinue
+        if ($ghCmd -and (Test-Path $setupFile)) {
+            Write-Host "`n[GitHub] Draft release olusmasini bekleniyor (10s)..." -ForegroundColor Cyan
+            Start-Sleep -Seconds 10
+
+            Write-Host "[GitHub] Setup.exe yukleniyor: $setupFile" -ForegroundColor Cyan
+            gh release upload "v$version" $setupFile --clobber
+            if ($LASTEXITCODE -eq 0) {
+                # Draft'i yayinla
+                gh release edit "v$version" --draft=false
+                Write-Host "[GitHub] Release yayinlandi: v$version" -ForegroundColor Green
+            } else {
+                Write-Warning "gh release upload basarisiz. Manuel olarak yukleyin: $setupFile"
+            }
+        } elseif (-not $ghCmd) {
+            Write-Warning "'gh' CLI bulunamadi. Setup.exe'yi manuel olarak GitHub Release'e yukleyin."
+            Write-Warning "Installer: $setupFile"
+        } else {
+            Write-Warning "Setup.exe bulunamadi: $setupFile"
+        }
+
         Write-Host ""
         Write-Host "========================================" -ForegroundColor Cyan
         Write-Host " Git Release tamamlandi!" -ForegroundColor Cyan
         Write-Host " Tag   : v$version" -ForegroundColor Cyan
-        Write-Host " GitHub Actions tetiklendi — setup.exe" -ForegroundColor Cyan
-        Write-Host " yukleme tamamlaninca GitHub Releases'da" -ForegroundColor Cyan
-        Write-Host " gorunur." -ForegroundColor Cyan
         Write-Host "========================================" -ForegroundColor Cyan
     }
 }
