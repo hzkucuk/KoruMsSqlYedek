@@ -1,4 +1,16 @@
-﻿## [0.99.74] - 2026-07-29 — 🔧 Servis Versiyon Senkronizasyonu + Self-Update Tray Fix
+﻿## [0.99.75] - 2026-07-29 — 🚀 CI/CD: GitHub Release Otomasyonu (gh CLI)
+
+### Eklenen
+- **`Build-Release.ps1 -GitRelease`** — local build + Inno Setup'tan sonra `gh release upload` ile setup exe'yi otomatik GitHub Release'e yükler, draft'ı publish eder
+- **GitHub Actions** sadeleştirildi: derleme/paketleme yok, sadece tag push'ta draft release oluşturur (~30s)
+
+### Etkilenen Dosyalar
+- `Deployment/Build-Release.ps1`
+- `.github/workflows/release.yml`
+
+---
+
+## [0.99.74] - 2026-07-29
 
 ### Düzeltilen
 - **Servis binary sürümü güncellenmiyordu** — `KoruMsSqlYedek.Service.csproj` versiyon bilgisi 0.99.71'de kalmıştı; self-update sonrası eski servis kodu çalışıyordu (tray başlatma fix'i hiç devreye girmemişti)
