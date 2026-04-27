@@ -1,4 +1,19 @@
-﻿## [0.99.73] - 2026-07-29 — 🔧 Self-Update Sonrası Tray Başlamıyor Düzeltmesi
+﻿## [0.99.74] - 2026-07-29 — 🔧 Servis Versiyon Senkronizasyonu + Self-Update Tray Fix
+
+### Düzeltilen
+- **Servis binary sürümü güncellenmiyordu** — `KoruMsSqlYedek.Service.csproj` versiyon bilgisi 0.99.71'de kalmıştı; self-update sonrası eski servis kodu çalışıyordu (tray başlatma fix'i hiç devreye girmemişti)
+- **`Build-Release.ps1`** artık Service csproj versiyonunu da okuyacak şekilde güncellendi (versiyon senkronizasyon kontrolü)
+- Self-update sonrası tray başlamıyor (0.99.73 fix'i bu sürümde gerçekten devreye giriyor)
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Service/KoruMsSqlYedek.Service.csproj`
+- `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj`
+- `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs`
+- `Deployment/Build-Release.ps1`
+
+---
+
+## [0.99.73]
 
 ### Düzeltilen
 - **Self-update sonrası tray uygulaması başlamıyordu** — Servis yeniden başladığında installer henüz dosyaları kopyalıyordu; 9 saniyelik bekleme yetmiyordu. Retry stratejisi 9s → 5 dakikaya (10s aralıkla) çıkarıldı. Kontrol ayrıca `Task.Run` ile arka plana alındı — servis startup'ı artık bloklanmıyor.
