@@ -1,4 +1,12 @@
-﻿## [0.99.76] - 2026-07-27 — 🐛 Kritik: Self-Update Sonrası Tray Başlamıyor (Exe Adı Hatası)
+﻿## [0.99.77] - 2026-04-27 — 🧪 Self-Update Tray Otomatik Başlatma Testi
+
+### Test
+- Self-update sonrası tray'in otomatik başlatılmasını doğrulamak için çıkarılan test sürümü
+- v0.99.76'daki `KoruMsSqlYedek.Win.exe` fix'inin uçtan uca çalıştığını doğrular
+
+---
+
+## [0.99.76]
 
 ### Düzeltilen
 - **Self-update sonrası tray başlamıyordu** — `ServicePipeServer` ve `SelfUpdateHandler` fallback kodu `KoruMsSqlYedek.exe` arıyordu; gerçek exe adı `KoruMsSqlYedek.Win.exe` olduğundan 5 dakika boyunca "bulunamadı" döngüsüne giriyordu
