@@ -370,7 +370,8 @@ MigrationBackup/
 FodyWeavers.xsd
 # Build/Publish output
 publish/
-releases/
+releases/*.zip
+releases/*.nupkg
 
 # Bundled redistributables (e.g., .NET Desktop Runtime installer ~60MB)
 Deployment/InnoSetup/redist/
