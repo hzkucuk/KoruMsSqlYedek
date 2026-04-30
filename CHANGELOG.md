@@ -1,4 +1,20 @@
-﻿## [0.99.79] - 2026-04-27 — 🐛 Kritik: Yerel Silinen Dosyaların Cloud Kopyaları Temizlenmiyordu
+﻿## [0.99.80] - 2026-04-27 — 🐛 Kritik: Google Drive Eski Yedekleri Cloud'dan Silinmiyordu
+
+### Düzeltilen
+- **Google Drive cloud retention çalışmıyordu** — Yerel dosyalar düzgün siliniyor, ancak Google Drive'daki eski kopyalar hiç temizlenmiyordu. Loglarda "silindi" görünmesine rağmen dosyalar Drive'da duruyordu.
+- **Kök neden:** `GoogleDriveProvider.UploadAsync`, `CloudUploadResult.RemoteFilePath` alanına Google Drive **fileId** yerine `"klasör/dosyaadı"` **yolu** yazıyordu. Retention sırasında `DeleteAsync` bu path'i fileId sanıp `Files.Delete(path)` çağırıyor, Google API **404 NotFound** döndürüyor, mevcut catch bloğu bunu "zaten silinmiş" sayıp sessizce `true` döndürüyordu → log "silindi" yazıyor ama gerçekte silme hiç olmuyordu.
+- **Çözüm 1:** `UploadAsync` artık `RemoteFilePath` alanına gerçek `fileId` yazıyor (yol log mesajında kalıyor). FTP/SFTP path-tabanlı silme yaptığı için onlarda değişiklik yok.
+- **Çözüm 2 (geriye dönük uyumluluk):** `DeleteAsync` identifier path benzeri ise (slash içeriyorsa) klasör hiyerarşisini takip edip dosya adıyla gerçek `fileId`'yi çözüyor — eski history kayıtları için de cloud silme çalışıyor.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.Operations.cs`
+
+### Yüksek Risk Dosya Notu
+- `GoogleDriveProvider` yine kritik dosyalar listesine girer (`EmptyTrashAsync` zaten 🔴). `UploadAsync` ve `DeleteAsync` arasındaki fileId sözleşmesi artık tutarlı.
+
+---
+
+## [0.99.79] - 2026-04-27 — 🐛 Kritik: Yerel Silinen Dosyaların Cloud Kopyaları Temizlenmiyordu
 
 ### Düzeltilen
 - **Cloud retention eksikliği** — Yerel dosya önceki bir run'da silinmişse, cloud'daki kopyası hiçbir zaman silinmiyordu. Örneğin 25 Nisan yedekleri localde silindi ama Google Drive/FTP'de kaldı.
