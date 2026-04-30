@@ -49,17 +49,22 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         resumeSessionUri, sessionUriObtained)
                         .ConfigureAwait(false);
 
-                    result.IsSuccess = true;
-                    result.RemoteFilePath = string.IsNullOrWhiteSpace(config.RemoteFolderPath)
+                    string remotePath = string.IsNullOrWhiteSpace(config.RemoteFolderPath)
                         ? remoteFileName
                         : $"{config.RemoteFolderPath}/{remoteFileName}";
+
+                    result.IsSuccess = true;
+                    // ÖNEMLİ: RemoteFilePath, ICloudProvider.DeleteAsync'in remoteFileIdentifier parametresine
+                    // beslenir. Google Drive için fileId zorunludur (path ile silme API'si yok).
+                    // Path'i log mesajında tutuyoruz; tanımlayıcı olarak fileId saklanır.
+                    result.RemoteFilePath = fileId;
                     result.RemoteFileSizeBytes = remoteSize;
                     result.UploadedAt = DateTime.UtcNow;
 
                     var fileInfo = new FileInfo(localFilePath);
                     Log.Information(
                         "Google Drive upload başarılı: {FileName} → {FileId} ({Size:N0} bytes, uzak={RemoteSize:N0} bytes), yol={RemotePath}",
-                        remoteFileName, fileId, fileInfo.Length, remoteSize, result.RemoteFilePath);
+                        remoteFileName, fileId, fileInfo.Length, remoteSize, remotePath);
                 }
             }
             catch (OperationCanceledException)
@@ -88,23 +93,46 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 using (var driveService = await GoogleDriveAuthHelper.CreateDriveServiceAsync(config, cancellationToken)
                     .ConfigureAwait(false))
                 {
+                    // Geriye dönük uyumluluk: v0.99.79 ve öncesinde history'ye fileId yerine
+                    // "klasör/dosyaadı" yolu kaydedildiği için identifier path olabilir.
+                    // Path benzeri ise gerçek fileId'yi çöz; aksi halde olduğu gibi kullan.
+                    string fileId = remoteFileIdentifier;
+                    if (LooksLikePath(remoteFileIdentifier))
+                    {
+                        string resolvedId = await ResolveFileIdFromPathAsync(
+                            driveService, remoteFileIdentifier, cancellationToken).ConfigureAwait(false);
+
+                        if (string.IsNullOrEmpty(resolvedId))
+                        {
+                            Log.Warning(
+                                "Google Drive silme atlandı: Path'ten fileId çözülemedi (dosya mevcut değil olabilir): {Path}",
+                                remoteFileIdentifier);
+                            // Dosya zaten yoksa idempotent başarı say — orphan history kaydı temizlenir
+                            return true;
+                        }
+
+                        fileId = resolvedId;
+                        Log.Information("Google Drive silme: path → fileId çözüldü: {Path} → {FileId}",
+                            remoteFileIdentifier, fileId);
+                    }
+
                     if (!config.UsesTrash)
                     {
                         // Kalıcı silme (çöp kutusuna göndermeden doğrudan sil)
-                        await driveService.Files.Delete(remoteFileIdentifier)
+                        await driveService.Files.Delete(fileId)
                             .ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-                        Log.Information("Google Drive dosyası kalıcı olarak silindi: {FileId}", remoteFileIdentifier);
+                        Log.Information("Google Drive dosyası kalıcı olarak silindi: {FileId}", fileId);
                     }
                     else
                     {
                         // Çöp kutusuna gönder (TrashRetentionDays gün sonra temizlenecek)
                         var updateRequest = driveService.Files.Update(
-                            new GoogleFile { Trashed = true }, remoteFileIdentifier);
+                            new GoogleFile { Trashed = true }, fileId);
                         await updateRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
                         Log.Information("Google Drive dosyası çöp kutusuna taşındı ({Days} gün saklama): {FileId}",
-                            config.TrashRetentionDays, remoteFileIdentifier);
+                            config.TrashRetentionDays, fileId);
                     }
 
                     return true;
@@ -125,6 +153,51 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 Log.Warning(ex, "Google Drive silme başarısız: {FileId}", remoteFileIdentifier);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Identifier path benzeri mi? '/' veya '\' içeriyorsa veya tipik fileId formatı dışındaysa path say.
+        /// </summary>
+        private static bool LooksLikePath(string identifier)
+        {
+            if (string.IsNullOrEmpty(identifier))
+                return false;
+
+            return identifier.Contains('/') || identifier.Contains('\\') || identifier.Contains(' ');
+        }
+
+        /// <summary>
+        /// "klasör/dosyaadı" yolundan Google Drive fileId çözer. Bulamazsa null döner.
+        /// </summary>
+        private static async Task<string> ResolveFileIdFromPathAsync(
+            DriveService driveService,
+            string path,
+            CancellationToken cancellationToken)
+        {
+            string[] parts = path.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                return null;
+
+            string fileName = parts[parts.Length - 1];
+            string parentId = "root";
+
+            // Klasör hiyerarşisini takip et
+            for (int i = 0; i < parts.Length - 1; i++)
+            {
+                string folderId = await FindFolderAsync(driveService, parts[i], parentId, cancellationToken)
+                    .ConfigureAwait(false);
+                if (folderId is null)
+                    return null;
+                parentId = folderId;
+            }
+
+            var listRequest = driveService.Files.List();
+            listRequest.Q = $"name = '{EscapeQuery(fileName)}' and '{parentId}' in parents and trashed = false";
+            listRequest.Fields = "files(id)";
+            listRequest.PageSize = 1;
+
+            var result = await listRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            return result.Files?.FirstOrDefault()?.Id;
         }
 
         public async Task<bool> TestConnectionAsync(
