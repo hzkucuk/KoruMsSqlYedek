@@ -150,6 +150,15 @@ namespace KoruMsSqlYedek.Engine.Retention
                 await CleanupOrphanCloudEntriesAsync(plan, cloudFileMap, filesToDelete, cancellationToken)
                     .ConfigureAwait(false);
             }
+
+            // Cloud folder sweep:
+            // History'de hiç kaydı olmayan ama bulut klasöründe duran ESKİ yedek dosyalarını
+            // (önceki cihazdan, yeniden kurulumdan vs.) retention politikasına göre temizler.
+            // Yalnızca plan'ın bilinen dosya isim desenine uyan dosyalara dokunur.
+            if (plan.HasCloudTargets && _cloudOrchestrator != null)
+            {
+                await SweepCloudFoldersAsync(plan, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         /// <summary>
@@ -543,6 +552,215 @@ namespace KoruMsSqlYedek.Engine.Retention
             {
                 Log.Warning(ex, "Dosya silinemedi: {FileName}", file.Name);
             }
+        }
+
+        // ── Cloud Folder Sweep ────────────────────────────────────────────
+        // History'de hiç kaydı olmayan ama bulut klasöründe duran ESKİ yedek dosyalarını
+        // (önceki cihazdan, yeniden kurulumdan vs. kalmış) retention politikasına göre temizler.
+        //
+        // GÜVENLİK:
+        // - Yalnızca plan'ın bilinen dosya isim desenine uyan dosyalara dokunur
+        //   ({db}_Full_*, {db}_Differential_*, {db}_Log_*, {db}_VSS_*, Files_*).
+        // - Yalnızca .bak veya .7z uzantılı dosyalar.
+        // - Yalnızca config.RemoteFolderPath altındaki dosyalar (provider tarafından zorlanır).
+        // - "Sadece dosya yaşına göre" karar verir; yerel disk varlığına bakmaz (zaten history yok).
+        // - GFS modunda sadece "DeleteOlderThanDays" (varsa) veya 90 gün varsayılanı uygulanır;
+        //   GFS karmaşık periyot seçimi orphan/uzak dosyalar için güvenli değil.
+
+        private async Task SweepCloudFoldersAsync(BackupPlan plan, CancellationToken ct)
+        {
+            if (plan.CloudTargets is null || plan.CloudTargets.Count == 0)
+                return;
+
+            foreach (var target in plan.CloudTargets)
+            {
+                if (target is null || !target.IsEnabled)
+                    continue;
+
+                ct.ThrowIfCancellationRequested();
+
+                List<CloudFileEntry> remoteFiles;
+                try
+                {
+                    remoteFiles = await _cloudOrchestrator.ListFolderAsync(target, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Cloud folder sweep: Listeleme başarısız ({Provider})", target.DisplayName);
+                    continue;
+                }
+
+                if (remoteFiles is null)
+                {
+                    // Provider listeleme desteklemiyor (FTP/SFTP/Local) — atla
+                    Log.Debug("Cloud folder sweep: {Provider} listeleme desteklemiyor, atlanıyor.",
+                        target.DisplayName);
+                    continue;
+                }
+
+                if (remoteFiles.Count == 0)
+                    continue;
+
+                int deleted = await SweepFilesForTargetAsync(plan, target, remoteFiles, ct)
+                    .ConfigureAwait(false);
+
+                if (deleted > 0)
+                {
+                    Log.Information(
+                        "Cloud folder sweep tamamlandı: {Provider} — {Count} eski dosya silindi (Plan={PlanName})",
+                        target.DisplayName, deleted, plan.PlanName);
+                }
+            }
+        }
+
+        private async Task<int> SweepFilesForTargetAsync(
+            BackupPlan plan,
+            CloudTargetConfig target,
+            List<CloudFileEntry> remoteFiles,
+            CancellationToken ct)
+        {
+            int totalDeleted = 0;
+
+            // Her veritabanı + dosya türü için ayrı kümele
+            foreach (string dbName in plan.Databases ?? new List<string>())
+            {
+                totalDeleted += await SweepGroupAsync(target, remoteFiles,
+                    MatchByPattern(remoteFiles, $"{dbName}_Full_"),
+                    plan.GetEffectiveRetention(BackupFileType.SqlFull), ct).ConfigureAwait(false);
+
+                totalDeleted += await SweepGroupAsync(target, remoteFiles,
+                    MatchByPattern(remoteFiles, $"{dbName}_Differential_"),
+                    plan.GetEffectiveRetention(BackupFileType.SqlDifferential), ct).ConfigureAwait(false);
+
+                totalDeleted += await SweepGroupAsync(target, remoteFiles,
+                    MatchByPattern(remoteFiles, $"{dbName}_Log_"),
+                    plan.GetEffectiveRetention(BackupFileType.SqlLog), ct).ConfigureAwait(false);
+
+                totalDeleted += await SweepGroupAsync(target, remoteFiles,
+                    MatchByPattern(remoteFiles, $"{dbName}_VSS_"),
+                    plan.GetEffectiveRetention(BackupFileType.SqlVss), ct).ConfigureAwait(false);
+            }
+
+            if (plan.FileBackup?.IsEnabled == true)
+            {
+                totalDeleted += await SweepGroupAsync(target, remoteFiles,
+                    MatchByPattern(remoteFiles, "Files_"),
+                    plan.GetEffectiveRetention(BackupFileType.FileBackup), ct).ConfigureAwait(false);
+            }
+
+            return totalDeleted;
+        }
+
+        private static List<CloudFileEntry> MatchByPattern(
+            List<CloudFileEntry> all, string namePrefix)
+        {
+            // Plan dosya isim deseni: "{db}_{Type}_yyyyMMdd_HHmmss.bak" veya ".7z"
+            return all.Where(e =>
+                    !string.IsNullOrEmpty(e.Name) &&
+                    e.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase) &&
+                    (e.Name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
+                     e.Name.EndsWith(".7z", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
+
+        private async Task<int> SweepGroupAsync(
+            CloudTargetConfig target,
+            List<CloudFileEntry> allRemoteFiles,
+            List<CloudFileEntry> group,
+            RetentionPolicy retention,
+            CancellationToken ct)
+        {
+            if (retention is null || group.Count == 0)
+                return 0;
+
+            // En yeni dosya başta
+            var ordered = group.OrderByDescending(e => e.CreatedAtUtc).ToList();
+
+            var toDelete = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // GFS uzak dosyalar için güvenli değil (boyut/hash bilgisi sınırlı, periyot seçimi yanılabilir)
+            // → GFS de "DeleteOlderThanDays varsa onu, yoksa KeepLastN'i" uygula.
+            switch (retention.Type)
+            {
+                case RetentionPolicyType.KeepLastN:
+                    foreach (var e in ordered.Skip(Math.Max(1, retention.KeepLastN)))
+                        toDelete.Add(e.FileId);
+                    break;
+
+                case RetentionPolicyType.DeleteOlderThanDays:
+                    {
+                        DateTime cutoff = DateTime.UtcNow.AddDays(-Math.Max(1, retention.DeleteOlderThanDays));
+                        foreach (var e in ordered.Where(x => x.CreatedAtUtc < cutoff))
+                            toDelete.Add(e.FileId);
+                        break;
+                    }
+
+                case RetentionPolicyType.Both:
+                    {
+                        foreach (var e in ordered.Skip(Math.Max(1, retention.KeepLastN)))
+                            toDelete.Add(e.FileId);
+
+                        DateTime cutoff = DateTime.UtcNow.AddDays(-Math.Max(1, retention.DeleteOlderThanDays));
+                        foreach (var e in ordered.Where(x => x.CreatedAtUtc < cutoff))
+                            toDelete.Add(e.FileId);
+                        break;
+                    }
+
+                case RetentionPolicyType.GFS:
+                    {
+                        // Yıl bazlı en uzak periyodu kullan; en azından son 1 günlük dosyayı koru
+                        int days = retention.GfsKeepDaily > 0 ? retention.GfsKeepDaily : 7;
+                        // Aylık varsa aylık günü baz al (12 ay ≈ 365 gün)
+                        if (retention.GfsKeepMonthly > 0)
+                            days = Math.Max(days, retention.GfsKeepMonthly * 31);
+                        if (retention.GfsKeepYearly > 0)
+                            days = Math.Max(days, retention.GfsKeepYearly * 366);
+
+                        DateTime cutoff = DateTime.UtcNow.AddDays(-days);
+                        foreach (var e in ordered.Where(x => x.CreatedAtUtc < cutoff))
+                            toDelete.Add(e.FileId);
+                        break;
+                    }
+            }
+
+            int deleted = 0;
+            foreach (string fileId in toDelete)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var entry = allRemoteFiles.FirstOrDefault(e => e.FileId == fileId);
+                string fileName = entry?.Name ?? fileId;
+
+                try
+                {
+                    bool ok = await _cloudOrchestrator.DeleteFromTargetAsync(fileId, target, ct)
+                        .ConfigureAwait(false);
+
+                    if (ok)
+                    {
+                        deleted++;
+                        Log.Information(
+                            "Cloud folder sweep: {Provider} — eski dosya silindi: {FileName} (oluşturma: {Created:yyyy-MM-dd})",
+                            target.DisplayName, fileName, entry?.CreatedAtUtc ?? DateTime.MinValue);
+                    }
+                    else
+                    {
+                        Log.Warning(
+                            "Cloud folder sweep: {Provider} — silme başarısız: {FileName}",
+                            target.DisplayName, fileName);
+                    }
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex,
+                        "Cloud folder sweep hatası: {Provider} — {FileName}",
+                        target.DisplayName, fileName);
+                }
+            }
+
+            return deleted;
         }
     }
 }

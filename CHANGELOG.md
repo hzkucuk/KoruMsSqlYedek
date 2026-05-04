@@ -1,4 +1,29 @@
-﻿## [0.99.80] - 2026-04-27 — 🐛 Kritik: Google Drive Eski Yedekleri Cloud'dan Silinmiyordu
+﻿## [0.99.81] - 2026-05-05 — ✨ Cloud Folder Sweep (History-Bağımsız Bulut Retention)
+
+### Eklenen
+- **Bulut klasör tarama (sweep) tabanlı retention** — History'de kaydı olmayan ama bulut klasöründe kalmış eski yedek dosyaları için ek temizlik adımı. Önceki cihazdan, yeniden kurulumdan veya silinmiş history dosyalarından kalan eski Drive yedekleri artık retention politikasına göre otomatik silinir.
+- **`ICloudFolderListProvider`** — Opsiyonel provider yeteneği. Şu an yalnızca Google Drive uygular; FTP/SFTP/Local provider'lar listeleme desteklemiyor (sweep güvenle atlanır, mevcut davranış değişmez).
+- **`CloudFileEntry`** — Provider-bağımsız uzak dosya DTO'su (FileId, Name, CreatedAtUtc, SizeBytes).
+- **`ICloudUploadOrchestrator.ListFolderAsync` / `DeleteFromTargetAsync`** — Tek hedef üzerinde liste + silme için yeni sözleşme metodları.
+
+### Güvenlik Kuralları (Sweep)
+- Yalnızca `target.RemoteFolderPath` altındaki dosyalar (Drive query `parents` ile zorlanır).
+- Yalnızca `.bak` veya `.7z` uzantılı dosyalar.
+- Yalnızca plan'ın bilinen isim deseni: `{db}_Full_*`, `_Differential_*`, `_Log_*`, `_VSS_*`, `Files_*`.
+- `RemoteFolderPath` boşsa listeleme tetiklenmez (tüm Drive taranmasını engeller).
+- GFS modunda en geniş periyot baz alınır (uzak metada hash/boyut bilgisi tam değil → en güvenli karar).
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Core/Models/CloudFileEntry.cs` (yeni)
+- `KoruMsSqlYedek.Core/Interfaces/ICloudFolderListProvider.cs` (yeni)
+- `KoruMsSqlYedek.Core/Interfaces/ICloudUploadOrchestrator.cs` (genişletildi)
+- `KoruMsSqlYedek.Engine/Cloud/GoogleDriveProvider.FolderList.cs` (yeni)
+- `KoruMsSqlYedek.Engine/Cloud/CloudUploadOrchestrator.CloudOperations.cs` (yeni metodlar)
+- `KoruMsSqlYedek.Engine/Retention/RetentionCleanupService.cs` (`SweepCloudFoldersAsync`)
+
+---
+
+## [0.99.80] - 2026-04-27 — 🐛 Kritik: Google Drive Eski Yedekleri Cloud'dan Silinmiyordu
 
 ### Düzeltilen
 - **Google Drive cloud retention çalışmıyordu** — Yerel dosyalar düzgün siliniyor, ancak Google Drive'daki eski kopyalar hiç temizlenmiyordu. Loglarda "silindi" görünmesine rağmen dosyalar Drive'da duruyordu.

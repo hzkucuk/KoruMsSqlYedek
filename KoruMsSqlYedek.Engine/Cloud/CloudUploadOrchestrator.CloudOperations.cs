@@ -155,5 +155,77 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
             return results;
         }
+
+        /// <summary>
+        /// Tek bir hedeften uzak dosyayı siler. Folder sweep için kullanılır.
+        /// </summary>
+        public async Task<bool> DeleteFromTargetAsync(
+            string remoteFileIdentifier,
+            CloudTargetConfig target,
+            CancellationToken cancellationToken)
+        {
+            if (target is null || !target.IsEnabled)
+                return false;
+
+            try
+            {
+                var provider = GetProvider(target.Type);
+                if (provider is null)
+                {
+                    Log.Warning("DeleteFromTarget: Provider bulunamadı: {Type}", target.Type);
+                    return false;
+                }
+
+                bool ok = await provider.DeleteAsync(remoteFileIdentifier, target, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (ok)
+                    Log.Information("Bulut dosya silindi: {Provider} — {FileId}",
+                        target.DisplayName, remoteFileIdentifier);
+
+                return ok;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Bulut silme hatası: {Provider} — {FileId}",
+                    target.DisplayName, remoteFileIdentifier);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Belirtilen hedefin uzak klasörünü listeler.
+        /// Provider <see cref="ICloudFolderListProvider"/> uygulamıyorsa null döner.
+        /// </summary>
+        public async Task<List<CloudFileEntry>> ListFolderAsync(
+            CloudTargetConfig target,
+            CancellationToken cancellationToken)
+        {
+            if (target is null || !target.IsEnabled)
+                return null;
+
+            try
+            {
+                var provider = GetProvider(target.Type);
+                if (provider is null)
+                    return null;
+
+                if (provider is ICloudFolderListProvider folderProvider)
+                {
+                    return await folderProvider.ListFolderAsync(target, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
+                // Provider folder list desteklemiyor
+                return null;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Bulut klasör listeleme başarısız: {Provider}", target.DisplayName);
+                return null;
+            }
+        }
     }
 }
