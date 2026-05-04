@@ -75,6 +75,23 @@ namespace KoruMsSqlYedek.Core.Interfaces
             CancellationToken cancellationToken,
             string planName = null,
             string planId = null);
+
+        /// <summary>
+        /// Belirtilen hedefin uzak klasörünü listeler.
+        /// Provider <see cref="ICloudFolderListProvider"/> uygulamıyorsa null döner.
+        /// Retention "folder sweep" için kullanılır.
+        /// </summary>
+        Task<List<CloudFileEntry>> ListFolderAsync(
+            CloudTargetConfig target,
+            CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Tek bir hedeften uzak dosyayı siler. Folder sweep'in fileId tabanlı silme adımı için kullanılır.
+        /// </summary>
+        Task<bool> DeleteFromTargetAsync(
+            string remoteFileIdentifier,
+            CloudTargetConfig target,
+            CancellationToken cancellationToken);
     }
 
     /// <summary>
