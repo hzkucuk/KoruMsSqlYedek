@@ -680,7 +680,7 @@ If left empty, notification email is used.</value></data>
   <data name="CloudTarget_RemotePath" xml:space="preserve"><value>Remote Folder Path:</value></data>
   <data name="CloudTarget_Bandwidth" xml:space="preserve"><value>Speed Limit (MB/s):</value></data>
   <data name="CloudTarget_TrashRetention" xml:space="preserve"><value>Trash Retention (Days):</value></data>
-  <data name="CloudTarget_TrashHint" xml:space="preserve"><value>(0 = delete immediately)</value></data>
+  <data name="CloudTarget_TrashHint" xml:space="preserve"><value>(0 = delete immediately • recommended: ≥ plan retention days)</value></data>
   <data name="CloudTarget_Save" xml:space="preserve"><value>💾 Save</value></data>
   <data name="CloudTarget_Cancel" xml:space="preserve"><value>Cancel</value></data>
 
@@ -904,7 +904,12 @@ Useful to avoid saturating the network during business hours.</value></data>
   <data name="Tip_Cloud_TrashRetention" xml:space="preserve"><value>Days to keep deleted files in trash/archive.
 When backup retention deletes old files from cloud,
 they stay in trash for this many days before permanent deletion.
-Set 0 to delete immediately.</value></data>
+Set 0 to delete immediately.
+
+Recommendation: set this value greater than or equal to your plan's "Keep Last N" days.
+This gives you a safety window to restore files accidentally removed by retention
+(e.g. plan keeps 7 days → trash retention 7-14 days = 1-2x safety margin).
+Note: files in trash still count against your cloud quota.</value></data>
 
   <!-- ── SmtpProfileEditDialog — Tooltips ── -->
   <data name="Tip_Smtp_DisplayName" xml:space="preserve"><value>A friendly name for this SMTP profile.

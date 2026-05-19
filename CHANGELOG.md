@@ -1,4 +1,12 @@
-﻿## [0.99.81] - 2026-05-05 — ✨ Cloud Folder Sweep (History-Bağımsız Bulut Retention)
+﻿## [0.99.82] - 2026-05-19 — 🐛 SQL Yedekleme Zaman Aşımı & UX İyileştirmeleri
+
+### Düzeltilen
+- **Büyük/yoğun veritabanlarında yedekleme zaman aşımı** — `ServerConnection.StatementTimeout = 0` (sınırsız) ayarlandı. SMO varsayılan 600 sn limiti büyük DB'lerde `FailedOperationException: Yürütme Zaman Aşımı` hatasına yol açıyordu. İptal işlemi `backup.Abort()` + `CancellationToken` üzerinden çalışmaya devam eder.
+
+### İyileştirilen
+- **Çöp kutusu saklama alanı (CloudTargetEditDialog)** — `TrashRetentionDays` alanına rehber hint ve genişletilmiş tooltip eklendi. Kullanıcıya "önerilen: plan saklama gün sayısından büyük veya eşit" bilgisi verilir; kota etkisi de belirtilir (TR + EN).
+
+## [0.99.81] - 2026-05-05 — ✨ Cloud Folder Sweep (History-Bağımsız Bulut Retention)
 
 ### Eklenen
 - **Bulut klasör tarama (sweep) tabanlı retention** — History'de kaydı olmayan ama bulut klasöründe kalmış eski yedek dosyaları için ek temizlik adımı. Önceki cihazdan, yeniden kurulumdan veya silinmiş history dosyalarından kalan eski Drive yedekleri artık retention politikasına göre otomatik silinir.
