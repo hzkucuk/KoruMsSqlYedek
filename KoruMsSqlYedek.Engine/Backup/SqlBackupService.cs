@@ -69,7 +69,13 @@ namespace KoruMsSqlYedek.Engine.Backup
                 EnsureSystemLoginPermission(connectionInfo);
 
                 using var sqlConn1 = new SqlConnection(BuildConnectionString(connectionInfo));
-                var serverConnection = new ServerConnection(sqlConn1);
+                var serverConnection = new ServerConnection(sqlConn1)
+                {
+                    // Yedekleme komutu için zaman aşımı kapatılır (0 = sınırsız).
+                    // Büyük/yoğun veritabanlarında yedek süresi önceden bilinemez;
+                    // iptal işlemi backup.Abort() + CancellationToken üzerinden yönetilir.
+                    StatementTimeout = 0
+                };
                 var server = new Server(serverConnection);
 
                 // ── Pre-backup health check ──────────────────────────────

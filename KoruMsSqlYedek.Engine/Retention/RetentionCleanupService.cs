@@ -570,7 +570,13 @@ namespace KoruMsSqlYedek.Engine.Retention
         private async Task SweepCloudFoldersAsync(BackupPlan plan, CancellationToken ct)
         {
             if (plan.CloudTargets is null || plan.CloudTargets.Count == 0)
+            {
+                Log.Information("Cloud folder sweep: Plan={PlanName} — bulut hedefi yok, atlanıyor.", plan.PlanName);
                 return;
+            }
+
+            Log.Information("Cloud folder sweep başlıyor: Plan={PlanName} — {Count} hedef",
+                plan.PlanName, plan.CloudTargets.Count);
 
             foreach (var target in plan.CloudTargets)
             {
@@ -594,10 +600,14 @@ namespace KoruMsSqlYedek.Engine.Retention
                 if (remoteFiles is null)
                 {
                     // Provider listeleme desteklemiyor (FTP/SFTP/Local) — atla
-                    Log.Debug("Cloud folder sweep: {Provider} listeleme desteklemiyor, atlanıyor.",
+                    Log.Information("Cloud folder sweep: {Provider} listeleme desteklemiyor (atlandı).",
                         target.DisplayName);
                     continue;
                 }
+
+                Log.Information(
+                    "Cloud folder sweep: {Provider} klasöründe {Count} dosya bulundu (RemoteFolderPath={Path})",
+                    target.DisplayName, remoteFiles.Count, string.IsNullOrEmpty(target.RemoteFolderPath) ? "(boş)" : target.RemoteFolderPath);
 
                 if (remoteFiles.Count == 0)
                     continue;
@@ -605,12 +615,9 @@ namespace KoruMsSqlYedek.Engine.Retention
                 int deleted = await SweepFilesForTargetAsync(plan, target, remoteFiles, ct)
                     .ConfigureAwait(false);
 
-                if (deleted > 0)
-                {
-                    Log.Information(
-                        "Cloud folder sweep tamamlandı: {Provider} — {Count} eski dosya silindi (Plan={PlanName})",
-                        target.DisplayName, deleted, plan.PlanName);
-                }
+                Log.Information(
+                    "Cloud folder sweep tamamlandı: {Provider} — {Count} eski dosya silindi (Plan={PlanName})",
+                    target.DisplayName, deleted, plan.PlanName);
             }
         }
 
@@ -673,6 +680,10 @@ namespace KoruMsSqlYedek.Engine.Retention
         {
             if (retention is null || group.Count == 0)
                 return 0;
+
+            Log.Information(
+                "Cloud folder sweep grubu: {Provider} — {Count} aday dosya, Policy={Policy} (KeepLastN={Keep}, OlderDays={Days})",
+                target.DisplayName, group.Count, retention.Type, retention.KeepLastN, retention.DeleteOlderThanDays);
 
             // En yeni dosya başta
             var ordered = group.OrderByDescending(e => e.CreatedAtUtc).ToList();

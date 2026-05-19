@@ -670,7 +670,7 @@ Boş bırakılırsa bildirim e-postası kullanılır.</value></data>
   <data name="CloudTarget_RemotePath" xml:space="preserve"><value>Uzak Klasör Yolu:</value></data>
   <data name="CloudTarget_Bandwidth" xml:space="preserve"><value>Hız Limiti (MB/s):</value></data>
   <data name="CloudTarget_TrashRetention" xml:space="preserve"><value>Çöp Saklama (Gün):</value></data>
-  <data name="CloudTarget_TrashHint" xml:space="preserve"><value>(0 = hemen sil)</value></data>
+  <data name="CloudTarget_TrashHint" xml:space="preserve"><value>(0 = hemen sil • önerilen: ≥ plan saklama gün sayısı)</value></data>
   <data name="CloudTarget_Save" xml:space="preserve"><value>💾 Kaydet</value></data>
   <data name="CloudTarget_Cancel" xml:space="preserve"><value>İptal</value></data>
 
@@ -894,7 +894,12 @@ Sınırsız bant genişliği için 0 ayarlayın.
   <data name="Tip_Cloud_TrashRetention" xml:space="preserve"><value>Silinen dosyaları çöp/arşivde kaç gün saklayacağınızı belirleyin.
 Yedek saklama politikası eski dosyaları buluttan sildiğinde,
 kalıcı silme öncesi bu süre kadar çöpte kalırlar.
-Hemen silmek için 0 ayarlayın.</value></data>
+Hemen silmek için 0 ayarlayın.
+
+Öneri: Bu değeri plan saklama ("Son N gün") değerinizden büyük veya eşit ayarlayın.
+Böylece retention'ın yanlışlıkla sildiği dosyaları geri alabileceğiniz bir güvenlik penceresi oluşur
+(örn. plan 7 gün tutuyorsa → çöp saklama 7-14 gün = 1-2x güvenlik payı).
+Not: Çöpteki dosyalar bulut kotanızdan düşmeye devam eder.</value></data>
 
   <!-- ── SmtpProfileEditDialog — Tooltips ── -->
   <data name="Tip_Smtp_DisplayName" xml:space="preserve"><value>Bu SMTP profili için tanımlayıcı bir isim.
