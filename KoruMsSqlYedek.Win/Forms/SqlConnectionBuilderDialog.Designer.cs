@@ -27,10 +27,6 @@ namespace KoruMsSqlYedek.Win.Forms
             _txtUsername = new KoruMsSqlYedek.Win.Theme.ModernTextBox();
             _lblPassword = new System.Windows.Forms.Label();
             _txtPassword = new KoruMsSqlYedek.Win.Theme.ModernTextBox();
-            _lblDatabase = new System.Windows.Forms.Label();
-            _pnlDatabase = new System.Windows.Forms.Panel();
-            _cmbDatabase = new KoruMsSqlYedek.Win.Theme.ModernComboBox();
-            _btnRefreshDbs = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _pnlAdvanced = new System.Windows.Forms.Panel();
             _chkTrustCert = new System.Windows.Forms.CheckBox();
             _lblTimeout = new System.Windows.Forms.Label();
@@ -47,7 +43,6 @@ namespace KoruMsSqlYedek.Win.Forms
             _tlpMain.SuspendLayout();
             _pnlServer.SuspendLayout();
             _pnlCredentials.SuspendLayout();
-            _pnlDatabase.SuspendLayout();
             _pnlAdvanced.SuspendLayout();
             _grpPreview.SuspendLayout();
             _pnlButtons.SuspendLayout();
@@ -56,15 +51,14 @@ namespace KoruMsSqlYedek.Win.Forms
             // _tlpMain
             _tlpMain.Location = new System.Drawing.Point(12, 12);
             _tlpMain.Name = "_tlpMain";
-            _tlpMain.Size = new System.Drawing.Size(500, 330);
+            _tlpMain.Size = new System.Drawing.Size(500, 260);
             _tlpMain.ColumnCount = 2;
             _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 130F));
             _tlpMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            _tlpMain.RowCount = 6;
+            _tlpMain.RowCount = 5;
             _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
             _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
             _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
-            _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 40F));
             _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             _tlpMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
 
@@ -154,39 +148,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _tlpMain.Controls.Add(_pnlCredentials, 1, 2);
             _tlpMain.SetColumnSpan(_pnlCredentials, 1);
 
-            // _lblDatabase
-            _lblDatabase.Text = "Veritaban\u0131:";
-            _lblDatabase.Name = "_lblDatabase";
-            _lblDatabase.AutoSize = true;
-            _lblDatabase.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            _tlpMain.Controls.Add(_lblDatabase, 0, 3);
-
-            // _pnlDatabase
-            _pnlDatabase.Name = "_pnlDatabase";
-            _pnlDatabase.Dock = System.Windows.Forms.DockStyle.Fill;
-
-            // _cmbDatabase
-            _cmbDatabase.Name = "_cmbDatabase";
-            _cmbDatabase.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown;
-            _cmbDatabase.Location = new System.Drawing.Point(0, 7);
-            _cmbDatabase.Size = new System.Drawing.Size(268, 26);
-            _cmbDatabase.Anchor = System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Top;
-            _cmbDatabase.TextChanged += OnFieldChanged;
-            _pnlDatabase.Controls.Add(_cmbDatabase);
-
-            // _btnRefreshDbs
-            _btnRefreshDbs.Text = "Yenile";
-            _btnRefreshDbs.Name = "_btnRefreshDbs";
-            _btnRefreshDbs.ButtonStyle = KoruMsSqlYedek.Win.Theme.ModernButtonStyle.Secondary;
-            _btnRefreshDbs.IconSymbol = "\uE72C";
-            _btnRefreshDbs.Size = new System.Drawing.Size(78, 26);
-            _btnRefreshDbs.Location = new System.Drawing.Point(272, 7);
-            _btnRefreshDbs.Click += OnRefreshDatabasesClick;
-            _pnlDatabase.Controls.Add(_btnRefreshDbs);
-
-            _tlpMain.Controls.Add(_pnlDatabase, 1, 3);
-
-            // _pnlAdvanced (satır 4)
+            // _pnlAdvanced (satır 3)
             _pnlAdvanced.Name = "_pnlAdvanced";
             _pnlAdvanced.Dock = System.Windows.Forms.DockStyle.Fill;
             _pnlAdvanced.AutoSize = true;
@@ -224,20 +186,20 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblTimeoutSuffix.Location = new System.Drawing.Point(218, 40);
             _pnlAdvanced.Controls.Add(_lblTimeoutSuffix);
 
-            _tlpMain.Controls.Add(_pnlAdvanced, 1, 4);
+            _tlpMain.Controls.Add(_pnlAdvanced, 1, 3);
 
-            // _lblStatus (satır 5 — işlem durumu)
+            // _lblStatus (satır 4)
             _lblStatus.Text = "";
             _lblStatus.Name = "_lblStatus";
             _lblStatus.AutoSize = true;
             _lblStatus.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            _tlpMain.Controls.Add(_lblStatus, 0, 5);
+            _tlpMain.Controls.Add(_lblStatus, 0, 4);
             _tlpMain.SetColumnSpan(_lblStatus, 2);
 
             // _grpPreview
             _grpPreview.Text = "Olu\u015fturulan Ba\u011flant\u0131 Dizisi";
             _grpPreview.Name = "_grpPreview";
-            _grpPreview.Location = new System.Drawing.Point(12, 350);
+            _grpPreview.Location = new System.Drawing.Point(12, 280);
             _grpPreview.Size = new System.Drawing.Size(500, 52);
 
             // _txtPreview
@@ -252,7 +214,7 @@ namespace KoruMsSqlYedek.Win.Forms
 
             // _pnlButtons
             _pnlButtons.Name = "_pnlButtons";
-            _pnlButtons.Location = new System.Drawing.Point(12, 414);
+            _pnlButtons.Location = new System.Drawing.Point(12, 344);
             _pnlButtons.Size = new System.Drawing.Size(500, 44);
 
             // _btnTestConn
@@ -303,7 +265,6 @@ namespace KoruMsSqlYedek.Win.Forms
             _tlpMain.ResumeLayout(false);
             _pnlServer.ResumeLayout(false);
             _pnlCredentials.ResumeLayout(false);
-            _pnlDatabase.ResumeLayout(false);
             _pnlAdvanced.ResumeLayout(false);
             _grpPreview.ResumeLayout(false);
             _pnlButtons.ResumeLayout(false);
@@ -325,10 +286,6 @@ namespace KoruMsSqlYedek.Win.Forms
         private KoruMsSqlYedek.Win.Theme.ModernTextBox _txtUsername;
         private System.Windows.Forms.Label _lblPassword;
         private KoruMsSqlYedek.Win.Theme.ModernTextBox _txtPassword;
-        private System.Windows.Forms.Label _lblDatabase;
-        private System.Windows.Forms.Panel _pnlDatabase;
-        private KoruMsSqlYedek.Win.Theme.ModernComboBox _cmbDatabase;
-        private KoruMsSqlYedek.Win.Theme.ModernButton _btnRefreshDbs;
         private System.Windows.Forms.Panel _pnlAdvanced;
         private System.Windows.Forms.CheckBox _chkTrustCert;
         private System.Windows.Forms.Label _lblTimeout;

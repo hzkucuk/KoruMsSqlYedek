@@ -1,4 +1,12 @@
-﻿## [0.99.84] - 2026-05-20 — 🔧 Tam Teşekküllü SQL Bağlantı Yapılandırıcı (VS-Style)
+﻿## [0.99.85] - 2026-06-03 — 🔧 SQL Bağlantı Yapılandırıcı Database Seçimi Sadeleştirmesi
+
+### Düzeltilen
+- **`SqlConnectionBuilderDialog` veritabanı alanı kaldırıldı** — Sunucu bağlantısının oluşturulması ile veritabanı seçimi rolleri netleştirildi. Veritabanı seçimi zaten wizard sayfalarında yapıldığından bu dialogdan kaldırıldı.
+- **`PlanEditForm.OnBuildConnClick` entegrasyonu** — Bağlantı kurulduğunda dialogdan database seçimi okuma akışı kaldırılarak doğrudan asenkron `LoadDatabaseListAsync` tetiği uygulandı.
+
+---
+
+## [0.99.84] - 2026-05-20 — 🔧 Tam Teşekküllü SQL Bağlantı Yapılandırıcı (VS-Style)
 
 ### Eklenen
 - **`SqlConnectionBuilderDialog` (tam yeniden yazım)** — Visual Studio "Add Connection" tarzında; sunucu tarama (SQL Browser UDP), auth modu, SQL kimlik bilgileri, veritabanı listesi yenileme, bağlantı zaman aşımı, TrustServerCertificate, bağlantı dizesi önizleme ve bağlantı testi içeren tam teşekküllü dialog.

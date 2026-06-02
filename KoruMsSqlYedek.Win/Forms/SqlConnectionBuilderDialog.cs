@@ -59,7 +59,24 @@ namespace KoruMsSqlYedek.Win.Forms
             _cmbServer.Text = connInfo.Server ?? string.Empty;
             _cmbAuthMode.SelectedIndex = connInfo.AuthMode == SqlAuthMode.SqlAuthentication ? 1 : 0;
             _txtUsername.Text = connInfo.Username ?? string.Empty;
-            // Şifre alanı güvenlik nedeniyle boş bırakılır
+
+            // Eğer mevcut bir şifre varsa veya boş değilse, şifrelenmiş şifreyi çözüp dialog şifre alanına yerleştirelim
+            if (connInfo.AuthMode == SqlAuthMode.SqlAuthentication && !string.IsNullOrEmpty(connInfo.Password))
+            {
+                try
+                {
+                    _txtPassword.Text = PasswordProtector.Unprotect(connInfo.Password) ?? string.Empty;
+                }
+                catch
+                {
+                    _txtPassword.Text = string.Empty;
+                }
+            }
+            else
+            {
+                _txtPassword.Text = string.Empty;
+            }
+
             _nudTimeout.Value = Math.Clamp(connInfo.ConnectionTimeoutSeconds, 5, 300);
             _chkTrustCert.Checked = connInfo.TrustServerCertificate;
 
@@ -172,50 +189,6 @@ namespace KoruMsSqlYedek.Win.Forms
             return result.OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
-        // ─── Veritabanı listesi yenile ───────────────────────────────────────────
-
-        private async void OnRefreshDatabasesClick(object? sender, EventArgs e)
-        {
-            string server = _cmbServer.Text.Trim();
-            if (string.IsNullOrWhiteSpace(server))
-            {
-                SetStatus("Önce sunucu adını giriniz.", isError: true);
-                return;
-            }
-
-            _btnRefreshDbs.Enabled = false;
-            SetStatus("Veritabanı listesi alınıyor...", isError: false);
-
-            try
-            {
-                SqlConnectionInfo connInfo = BuildCurrentConnInfo();
-
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(connInfo.ConnectionTimeoutSeconds));
-                List<DatabaseInfo> databases = await _sqlBackupService.ListDatabasesAsync(connInfo, cts.Token);
-
-                string? current = _cmbDatabase.Text;
-                _cmbDatabase.Items.Clear();
-                foreach (DatabaseInfo db in databases.OrderBy(d => d.IsSystemDb).ThenBy(d => d.Name))
-                    _cmbDatabase.Items.Add(db.Name);
-
-                // Seçimi koru
-                if (!string.IsNullOrWhiteSpace(current) && _cmbDatabase.Items.Contains(current))
-                    _cmbDatabase.Text = current;
-
-                SetStatus($"{databases.Count} veritabanı listelendi.", isError: false);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Veritabanı listesi alınamadı.");
-                SetStatus($"Liste alınamadı: {ex.Message}", isError: true);
-            }
-            finally
-            {
-                _btnRefreshDbs.Enabled = true;
-                UpdatePreview();
-            }
-        }
-
         // ─── Bağlantı testi ──────────────────────────────────────────────────────
 
         private async void OnTestConnectionClick(object? sender, EventArgs e)
@@ -240,9 +213,6 @@ namespace KoruMsSqlYedek.Win.Forms
                 if (ok)
                 {
                     SetStatus("✔  Bağlantı başarılı!", isError: false, success: true);
-
-                    // Bağlantı başarılıysa DB listesini otomatik yükle
-                    await LoadDatabasesAsync(connInfo);
                 }
                 else
                 {
@@ -257,27 +227,6 @@ namespace KoruMsSqlYedek.Win.Forms
             finally
             {
                 _btnTestConn.Enabled = true;
-            }
-        }
-
-        private async Task LoadDatabasesAsync(SqlConnectionInfo connInfo)
-        {
-            try
-            {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-                List<DatabaseInfo> databases = await _sqlBackupService.ListDatabasesAsync(connInfo, cts.Token);
-
-                string? current = _cmbDatabase.Text;
-                _cmbDatabase.Items.Clear();
-                foreach (DatabaseInfo db in databases.OrderBy(d => d.IsSystemDb).ThenBy(d => d.Name))
-                    _cmbDatabase.Items.Add(db.Name);
-
-                if (!string.IsNullOrWhiteSpace(current) && _cmbDatabase.Items.Contains(current))
-                    _cmbDatabase.Text = current;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Veritabanı listesi yüklenemedi.");
             }
         }
 
@@ -325,10 +274,6 @@ namespace KoruMsSqlYedek.Win.Forms
                 builder.UserID = _txtUsername.Text.Trim();
                 builder.Password = "***";
             }
-
-            string? db = _cmbDatabase.Text.Trim();
-            if (!string.IsNullOrWhiteSpace(db))
-                builder.InitialCatalog = db;
 
             return builder.ConnectionString;
         }

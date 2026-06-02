@@ -385,11 +385,27 @@ namespace KoruMsSqlYedek.Win.Forms
             _nudTimeout.Value = Math.Clamp(result.ConnectionTimeoutSeconds, 5, 300);
             _chkTrustCert.Checked = result.TrustServerCertificate;
 
-            // Şifre şifrelenmiş geldiği için sadece SQL Auth + yeni şifre varsa aktar
+            // Şifreyi de ana forma aktaralım
             if (result.AuthMode == SqlAuthMode.SqlAuthentication && !string.IsNullOrWhiteSpace(result.Password))
-                _txtSqlPassword.Text = string.Empty; // Güvenlik: şifre alanı dialog'da * olarak gösterildi
+            {
+                try
+                {
+                    _txtSqlPassword.Text = PasswordProtector.Unprotect(result.Password) ?? string.Empty;
+                }
+                catch
+                {
+                    _txtSqlPassword.Text = string.Empty;
+                }
+            }
+            else
+            {
+                _txtSqlPassword.Text = string.Empty;
+            }
 
             UpdateAuthFieldsVisibility();
+
+            // Veritabanı listesini ana form üzerinden asenkron tetikleyelim
+            _ = LoadDatabaseListAsync(result);
         }
 
         private async Task LoadDatabaseListAsync(SqlConnectionInfo connInfo)
