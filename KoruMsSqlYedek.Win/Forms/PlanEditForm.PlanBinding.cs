@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Helpers;
+using Serilog;
 
 namespace KoruMsSqlYedek.Win.Forms
 {
@@ -365,6 +366,48 @@ namespace KoruMsSqlYedek.Win.Forms
             }
         }
 
+        private void OnBuildConnClick(object? sender, EventArgs e)
+        {
+            var current = BuildCurrentConnInfo();
+
+            using var dlg = new SqlConnectionBuilderDialog(_sqlBackupService);
+            dlg.LoadFrom(current);
+
+            if (dlg.ShowDialog(this) != DialogResult.OK || dlg.Result is null)
+                return;
+
+            SqlConnectionInfo result = dlg.Result;
+
+            // Sunucu, auth, kullanıcı, timeout ve sertifika bilgilerini UI'ye uygula
+            _txtServer.Text = result.Server ?? string.Empty;
+            _cmbAuthMode.SelectedIndex = result.AuthMode == SqlAuthMode.SqlAuthentication ? 1 : 0;
+            _txtSqlUser.Text = result.Username ?? string.Empty;
+            _nudTimeout.Value = Math.Clamp(result.ConnectionTimeoutSeconds, 5, 300);
+            _chkTrustCert.Checked = result.TrustServerCertificate;
+
+            // Şifreyi de ana forma aktaralım
+            if (result.AuthMode == SqlAuthMode.SqlAuthentication && !string.IsNullOrWhiteSpace(result.Password))
+            {
+                try
+                {
+                    _txtSqlPassword.Text = PasswordProtector.Unprotect(result.Password) ?? string.Empty;
+                }
+                catch
+                {
+                    _txtSqlPassword.Text = string.Empty;
+                }
+            }
+            else
+            {
+                _txtSqlPassword.Text = string.Empty;
+            }
+
+            UpdateAuthFieldsVisibility();
+
+            // Veritabanı listesini ana form üzerinden asenkron tetikleyelim
+            _ = LoadDatabaseListAsync(result);
+        }
+
         private async Task LoadDatabaseListAsync(SqlConnectionInfo connInfo)
         {
             try
@@ -375,10 +418,12 @@ namespace KoruMsSqlYedek.Win.Forms
                     var databases = await sqlService.ListDatabasesAsync(connInfo, cts.Token);
 
                     _clbDatabases.Items.Clear();
-                    foreach (var db in databases.Where(d => !d.IsSystemDb).OrderBy(d => d.Name))
+                    foreach (var db in databases.OrderBy(d => d.IsSystemDb).ThenBy(d => d.Name))
                     {
                         bool isChecked = _plan.Databases?.Contains(db.Name) ?? false;
-                        string displayText = Res.Format("PlanEdit_DbSizeFormat", db.Name, db.SizeInMb);
+                        string displayText = db.IsSystemDb
+                            ? Res.Format("PlanEdit_DbSizeFormat", db.Name + " (sistem)", db.SizeInMb)
+                            : Res.Format("PlanEdit_DbSizeFormat", db.Name, db.SizeInMb);
                         _clbDatabases.Items.Add(new DatabaseListItem(db.Name, displayText), isChecked);
                     }
                 }

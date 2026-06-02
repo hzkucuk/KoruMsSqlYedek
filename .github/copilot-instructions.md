@@ -1,6 +1,6 @@
 ﻿# Copilot Direktifi — .NET 10 WinForms
 
-**Rol:** Deneyimli WinForms (.NET 10) geliştiricisi. UI thread yönetimi, custom kontrol, GDI+, ClickOnce ve Win API uzmanı.
+**Rol:** Deneyimli WinForms (.NET 10) geliştiricisi. UI thread yönetimi, custom kontrol, GDI+, ClickOnce ve Win API uzmanı.  
 **Öncelik:** Güvenlik > Mimari > Stabilite > Performans
 
 ## Temel Kurallar
@@ -75,8 +75,31 @@ Değişiklikte: tüm implementasyonlar + tüm caller'lar güncellenmeli, build i
 | `BackupJobExecutor.cs` | 🟡 | PlanId zorunlu |
 | `ModernTheme.cs` | 🟢 | Dark+Light birlikte güncelle |
 
+### 10. WinForms Designer.cs Kontrol Ekleme Kuralı (kritik)
+Bir `Designer.cs` dosyasına yeni kontrol eklerken **4 nokta** zorunludur; biri eksik olursa kontrol ekranda görünmez veya derleme hataları oluşur:
+
+1. **Instantiation** — `InitializeComponent()` başında `_btnXxx = new Theme.ModernButton();`
+2. **Yapılandırma + Controls.Add** — Konumu, boyutu, event bağlantısı ve `_pnlXxx.Controls.Add(_btnXxx);` — **en çok unutulan adım**
+3. **Backing field** — Metodun dışında `private Theme.ModernButton _btnXxx;` — **duplikasyon olmadığını kontrol et**
+4. **Event handler** — İlgili `.cs` partial dosyasında `private void OnXxxClick(...)` tanımı mevcut olmalı
+
+> **Kontrol komutu:** `replace_string_in_file` uygulandıktan sonra ilgili satırları `get_file` ile oku ve 4 nokta tam mı doğrula. Sonra `get_errors` çalıştır, ardından `run_build`.
+
+### 11. Yeni Form/Dialog Oluşturma Kontrol Listesi
+`SqlConnectionBuilderDialog` gibi yeni bir form eklendiğinde:
+
+| # | Kontrol | Açıklama |
+|---|---------|----------|
+| 1 | **İki dosya** | `FormAdi.cs` + `FormAdi.Designer.cs` her ikisi de oluşturulmalı |
+| 2 | **partial class** | Her iki dosyada da `partial class FormAdi : ModernFormBase` |
+| 3 | **`InitializeComponent()` çağrısı** | `.cs` constructor'ında çağrılmalı |
+| 4 | **Backing field duplikasyonu yok** | Designer.cs'de her field sadece bir kez tanımlı |
+| 5 | **`Controls.Add` eksiksiz** | Her kontrol panele/forma eklenmeli |
+| 6 | **`get_errors` kontrolü** | Yeni dosya oluşturulunca hemen çalıştır |
+| 7 | **`run_build` ile doğrula** | Tüm partial class bağlantıları derleme zamanında kontrol edilir |
+
 ### Değişiklik Sonrası Kontrol Listesi
-PlanId propagate? · Collection Clear yok? · Progress tek satır? · Interface impl+caller güncel? · Event handler 5 nokta? · Buffer/UI senkron? · UI thread safe? · RichTextBox indeks doğru? · Build temiz (uyarı dahil)?
+PlanId propagate? · Collection Clear yok? · Progress tek satır? · Interface impl+caller güncel? · Event handler 5 nokta? · Buffer/UI senkron? · UI thread safe? · RichTextBox indeks doğru? · **Designer 4 nokta (instantiation + yapılandırma/Controls.Add + backing field + handler)?** · **Backing field duplikasyonu yok?** · `get_errors` temiz? · Build temiz (uyarı dahil)?
 
 ---
 
@@ -103,19 +126,22 @@ Her tamamlanan görevde:
 4. `git add -A && git commit -m "<tip>: <açıklama>" && git push origin develop`
 
 ## Release Süreci ("release derle" komutu)
-1. Versiyonu senkronize et (3 nokta)
-2. Dökümanları güncelle
-3. `dotnet build -c Release`
-4. Installer script'ini çalıştır + doğrula
-5. `git add -A && git commit -m "release: vX.Y.Z"` (develop)
-6. `git checkout master && git merge develop --no-ff -m "release: vX.Y.Z"`
-7. `git tag vX.Y.Z`
-8. `git push origin master --tags && git push origin develop`
-9. `git checkout develop`
+1. Versiyonu senkronize et (3 nokta)  
+2. Dökümanları güncelle  
+3. `dotnet build -c Release`  
+4. Build-Release.ps1 çalıştırarak installer'ı oluştur ve doğrula — bu adım atlanmamalıdır. (4. adım zorunlu.)  
+   - Örnek: PowerShell ile `.\Build-Release.ps1` veya proje içindeki ilgili script'i çalıştır.  
+   - Script tarafından üretilen installer/artifact'ları belirle.  
+   - GitHub Release için: `gh release upload <tag> <path-to-artifact>` ile artifact'ları yükle ve ardından `gh release edit <tag> --draft=false` ile draft'ı yayımla.  
+5. `git add -A && git commit -m "release: vX.Y.Z"` (develop)  
+6. `git checkout master && git merge develop --no-ff -m "release: vX.Y.Z"`  
+7. `git tag vX.Y.Z`  
+8. `git push origin master --tags && git push origin develop`  
+9. `git checkout develop`  
 10. GitHub Actions otomatik tetiklenir
 
 ## Yanıt Formatı
-1. Değişiklik özeti (1-2 cümle)
-2. Sadece değişen kod bloğu
-3. Dokümantasyon güncellemeleri
+1. Değişiklik özeti (1-2 cümle)  
+2. Sadece değişen kod bloğu  
+3. Dokümantasyon güncellemeleri  
 4. Onay noktası
