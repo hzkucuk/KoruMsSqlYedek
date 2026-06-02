@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Helpers;
+using Serilog;
 
 namespace KoruMsSqlYedek.Win.Forms
 {
@@ -365,6 +366,15 @@ namespace KoruMsSqlYedek.Win.Forms
             }
         }
 
+        private void OnBuildConnClick(object? sender, EventArgs e)
+        {
+            using var dlg = new SqlConnectionBuilderDialog();
+            dlg.LoadFromDataSource(_txtServer.Text.Trim());
+
+            if (dlg.ShowDialog(this) == DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.DataSource))
+                _txtServer.Text = dlg.DataSource;
+        }
+
         private async Task LoadDatabaseListAsync(SqlConnectionInfo connInfo)
         {
             try
@@ -375,10 +385,12 @@ namespace KoruMsSqlYedek.Win.Forms
                     var databases = await sqlService.ListDatabasesAsync(connInfo, cts.Token);
 
                     _clbDatabases.Items.Clear();
-                    foreach (var db in databases.Where(d => !d.IsSystemDb).OrderBy(d => d.Name))
+                    foreach (var db in databases.OrderBy(d => d.IsSystemDb).ThenBy(d => d.Name))
                     {
                         bool isChecked = _plan.Databases?.Contains(db.Name) ?? false;
-                        string displayText = Res.Format("PlanEdit_DbSizeFormat", db.Name, db.SizeInMb);
+                        string displayText = db.IsSystemDb
+                            ? Res.Format("PlanEdit_DbSizeFormat", db.Name + " (sistem)", db.SizeInMb)
+                            : Res.Format("PlanEdit_DbSizeFormat", db.Name, db.SizeInMb);
                         _clbDatabases.Items.Add(new DatabaseListItem(db.Name, displayText), isChecked);
                     }
                 }

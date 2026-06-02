@@ -69,6 +69,7 @@
             _nudTimeout = new KoruMsSqlYedek.Win.Theme.ModernNumericUpDown();
             _chkTrustCert = new System.Windows.Forms.CheckBox();
             _btnTestSql = new KoruMsSqlYedek.Win.Theme.ModernButton();
+            _btnBuildConn = new KoruMsSqlYedek.Win.Theme.ModernButton();
             _lblStep1SqlHeader = new System.Windows.Forms.Label();
 
             // ========== STEP 2: Kaynaklar ==========
@@ -429,9 +430,19 @@
 
             _txtServer.Location = new System.Drawing.Point(180, 167);
             _txtServer.Name = "_txtServer";
-            _txtServer.Size = new System.Drawing.Size(390, 23);
-            _toolTip.SetToolTip(_txtServer, "SQL Server sunucu adresi.\n\u00d6rnekler:\n  \u2022 localhost\n  \u2022 192.168.1.100\n  \u2022 SUNUCU\\SQLEXPRESS\n  \u2022 sunucu.domain.local,1433");
+            _txtServer.Size = new System.Drawing.Size(316, 23);
+            _toolTip.SetToolTip(_txtServer, "SQL Server DataSource adresi.\n\u00d6rnekler:\n  \u2022 localhost\n  \u2022 192.168.1.100\n  \u2022 SUNUCU\\SQLEXPRESS\n  \u2022 sunucu.domain.local,1433\nYap\u0131land\u0131r\u0131c\u0131 butonunu kullanarak kolayl\u0131kla olu\u015fturabilirsiniz.");
             _pnlStep1.Controls.Add(_txtServer);
+
+            _btnBuildConn.Text = "Yap\u0131land\u0131r...";
+            _btnBuildConn.Name = "_btnBuildConn";
+            _btnBuildConn.ButtonStyle = Theme.ModernButtonStyle.Secondary;
+            _btnBuildConn.IconSymbol = "\uE713";
+            _btnBuildConn.Size = new System.Drawing.Size(100, 26);
+            _btnBuildConn.Location = new System.Drawing.Point(502, 167);
+            _btnBuildConn.Click += OnBuildConnClick;
+            _toolTip.SetToolTip(_btnBuildConn, "Sunucu, instance ve port bilgilerini girerek\nba\u011flant\u0131 dizisini otomatik olu\u015fturur.");
+            _pnlStep1.Controls.Add(_btnBuildConn);
 
             _lblAuthMode.Text = "Kimlik Do\u011frulama:";
             _lblAuthMode.Name = "_lblAuthMode";
@@ -1214,6 +1225,7 @@
         private Theme.ModernNumericUpDown _nudTimeout;
         private System.Windows.Forms.CheckBox _chkTrustCert;
         private Theme.ModernButton _btnTestSql;
+        private Theme.ModernButton _btnBuildConn;
 
         // Step 2: Kaynaklar (DB + Dosya)
         private System.Windows.Forms.Label _lblStep2Header;

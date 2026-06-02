@@ -1,4 +1,17 @@
-﻿## [0.99.82] - 2026-05-19 — 🐛 SQL Yedekleme Zaman Aşımı & UX İyileştirmeleri
+﻿## [0.99.83] - 2026-05-20 — ✨ SQL Bağlantı Yapılandırıcı & Sistem DB Listesi
+
+### Eklenen
+- **`SqlConnectionBuilderDialog`** — Sunucu/IP, instance adı ve port kombinasyonlarından DataSource dizisi oluşturan yeni dialog. Kullanıcı "Yapılandır..." butonuna tıklayarak PlanEditForm'daki sunucu alanını görsel olarak doldurabilir.
+- **"Yapılandır..." butonu ikonu** — `_btnBuildConn` butonuna Segoe MDL2 Assets ⚙ simgesi (`\uE713`) eklendi; `IconSymbol` özelliği üzerinden render ediliyor.
+
+### Düzeltilen
+- **`SqlConnectionBuilderDialog` açılış çökmesi** — `ModernNumericUpDown`, `UserControl` türünde olduğu hâlde designer içinde `ISupportInitialize` cast'i yapılıyordu. `BeginInit`/`EndInit` satırları kaldırıldı; `InvalidCastException` giderildi.
+- **Sistem veritabanları DB listesinde gizleniyordu** — `IsSystemDb` filtresi kaldırıldı; sistem DB'leri `(sistem)` etiketi ile kullanıcı DB'lerinin altında gösteriliyor.
+
+### İyileştirilen
+- **Copilot direktifleri** — Designer.cs kontrol ekleme kuralı (4 zorunlu nokta) ve yeni form/dialog kontrol listesi `.github/copilot-instructions.md` dosyasına eklendi.
+
+## [0.99.82] - 2026-05-19 — 🐛 SQL Yedekleme Zaman Aşımı & UX İyileştirmeleri
 
 ### Düzeltilen
 - **Büyük/yoğun veritabanlarında yedekleme zaman aşımı** — `ServerConnection.StatementTimeout = 0` (sınırsız) ayarlandı. SMO varsayılan 600 sn limiti büyük DB'lerde `FailedOperationException: Yürütme Zaman Aşımı` hatasına yol açıyordu. İptal işlemi `backup.Abort()` + `CancellationToken` üzerinden çalışmaya devam eder.
