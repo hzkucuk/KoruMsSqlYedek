@@ -1,108 +1,391 @@
+#nullable enable
 using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using KoruMsSqlYedek.Core.Helpers;
+using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Win.Theme;
+using Microsoft.Data.SqlClient;
+using Serilog;
 
 namespace KoruMsSqlYedek.Win.Forms
 {
     /// <summary>
-    /// SQL Server DataSource bağlantı dizisi yapılandırıcısı.
-    /// Sunucu/IP, Instance adı ve port bilgilerinden DataSource string üretir.
+    /// Tam teşekküllü SQL Server bağlantı yapılandırıcısı.
+    /// Visual Studio "Bağlantı Ekle" dialog'uyla eşdeğer deneyim sunar:
+    /// sunucu tarama, Windows/SQL Auth, veritabanı listesi, test ve connection string önizleme.
     /// </summary>
     internal partial class SqlConnectionBuilderDialog : ModernFormBase
     {
-        /// <summary>
-        /// Dialog kapatıldıktan sonra oluşturulan DataSource değeri.
-        /// Örnek: "SUNUCU\SQLEXPRESS,1434" veya "192.168.1.10"
-        /// </summary>
-        public string DataSource { get; private set; } = string.Empty;
+        private static readonly ILogger Log = Serilog.Log.ForContext<SqlConnectionBuilderDialog>();
+        private readonly ISqlBackupService _sqlBackupService;
 
-        public SqlConnectionBuilderDialog()
+        /// <summary>
+        /// Dialog başarıyla kapatıldığında doldurulan bağlantı bilgisi.
+        /// </summary>
+        public SqlConnectionInfo? Result { get; private set; }
+
+        public SqlConnectionBuilderDialog(ISqlBackupService sqlBackupService)
         {
+            ArgumentNullException.ThrowIfNull(sqlBackupService);
+            _sqlBackupService = sqlBackupService;
+
             InitializeComponent();
+
+            // Auth mode seçenekleri
+            _cmbAuthMode.Items.Add("Windows Kimlik Doğrulama");
+            _cmbAuthMode.Items.Add("SQL Server Kimlik Doğrulama");
+            _cmbAuthMode.SelectedIndex = 0;
+
             UpdatePreview();
         }
 
         /// <summary>
-        /// Mevcut bir DataSource değerini parse ederek alanlara doldurur.
+        /// Mevcut bir <see cref="SqlConnectionInfo"/> ile dialog alanlarını önceden doldurur.
         /// </summary>
-        public void LoadFromDataSource(string dataSource)
+        public void LoadFrom(SqlConnectionInfo connInfo)
         {
-            if (string.IsNullOrWhiteSpace(dataSource))
-                return;
+            ArgumentNullException.ThrowIfNull(connInfo);
 
-            // Port ayrıştırma: son virgül sonrası sayısal ise port
-            string hostPart = dataSource;
-            int commaIndex = dataSource.LastIndexOf(',');
-            if (commaIndex >= 0 && int.TryParse(dataSource[(commaIndex + 1)..].Trim(), out int port))
+            _cmbServer.Text = connInfo.Server ?? string.Empty;
+            _cmbAuthMode.SelectedIndex = connInfo.AuthMode == SqlAuthMode.SqlAuthentication ? 1 : 0;
+            _txtUsername.Text = connInfo.Username ?? string.Empty;
+            // Şifre alanı güvenlik nedeniyle boş bırakılır
+            _nudTimeout.Value = Math.Clamp(connInfo.ConnectionTimeoutSeconds, 5, 300);
+            _chkTrustCert.Checked = connInfo.TrustServerCertificate;
+
+            UpdateCredentialVisibility();
+            UpdatePreview();
+        }
+
+        // ─── Sunucu tarama ───────────────────────────────────────────────────────
+
+        private async void OnBrowseServersClick(object? sender, EventArgs e)
+        {
+            _btnBrowseServers.Enabled = false;
+            SetStatus("Ağdaki SQL Server örnekleri taranıyor...", isError: false);
+
+            try
             {
-                if (port is >= 1 and <= 65535)
+                IReadOnlyList<string> servers = await Task.Run(DiscoverSqlServersAsync);
+
+                _cmbServer.Items.Clear();
+                foreach (string srv in servers)
+                    _cmbServer.Items.Add(srv);
+
+                if (servers.Count == 0)
                 {
-                    _chkUsePort.Checked = true;
-                    _nudPort.Value = port;
-                    hostPart = dataSource[..commaIndex].Trim();
+                    SetStatus("Ağda SQL Server örneği bulunamadı. Sunucu adını elle giriniz.", isError: true);
+                }
+                else
+                {
+                    SetStatus($"{servers.Count} sunucu bulundu.", isError: false);
+                    _cmbServer.DroppedDown = true;
                 }
             }
-
-            // Instance ayrıştırma: ters bölü sonrası
-            int backslashIndex = hostPart.IndexOf('\\');
-            if (backslashIndex >= 0)
+            catch (Exception ex)
             {
-                _txtHost.Text = hostPart[..backslashIndex].Trim();
-                _txtInstance.Text = hostPart[(backslashIndex + 1)..].Trim();
+                Log.Warning(ex, "SQL Server tarama hatası.");
+                SetStatus($"Tarama hatası: {ex.Message}", isError: true);
             }
-            else
+            finally
             {
-                _txtHost.Text = hostPart.Trim();
-                _txtInstance.Text = string.Empty;
+                _btnBrowseServers.Enabled = true;
+            }
+        }
+
+        private static List<string> DiscoverSqlServersAsync()
+        {
+            var result = new List<string>();
+
+            try
+            {
+                // SQL Browser servisi UDP 1434 portundan broadcast sorgusuna yanıt verir.
+                using var udp = new UdpClient();
+                udp.EnableBroadcast = true;
+                udp.Client.ReceiveTimeout = 3000;
+
+                byte[] request = [0x02]; // CLNT_UCAST_EX
+                IPEndPoint broadcast = new(IPAddress.Broadcast, 1434);
+                udp.Send(request, request.Length, broadcast);
+
+                while (true)
+                {
+                    try
+                    {
+                        IPEndPoint remote = new(IPAddress.Any, 0);
+                        byte[] response = udp.Receive(ref remote);
+                        string text = Encoding.ASCII.GetString(response, 3, response.Length - 3);
+
+                        foreach (string segment in text.Split(';'))
+                        {
+                            int idx = segment.IndexOf("ServerName;", StringComparison.OrdinalIgnoreCase);
+                            if (idx < 0) continue;
+
+                            string[] parts = segment.Split(';');
+                            string server = string.Empty;
+                            string instance = string.Empty;
+
+                            for (int i = 0; i < parts.Length - 1; i++)
+                            {
+                                if (parts[i].Equals("ServerName", StringComparison.OrdinalIgnoreCase))
+                                    server = parts[i + 1];
+                                else if (parts[i].Equals("InstanceName", StringComparison.OrdinalIgnoreCase))
+                                    instance = parts[i + 1];
+                            }
+
+                            if (string.IsNullOrWhiteSpace(server)) continue;
+
+                            string entry = string.IsNullOrWhiteSpace(instance) || instance.Equals("MSSQLSERVER", StringComparison.OrdinalIgnoreCase)
+                                ? server
+                                : $"{server}\\{instance}";
+
+                            if (!result.Contains(entry, StringComparer.OrdinalIgnoreCase))
+                                result.Add(entry);
+                        }
+                    }
+                    catch (SocketException)
+                    {
+                        break; // Timeout — UDP alma bitti
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "SQL Browser UDP tarama hatası.");
             }
 
+            // Yerel makineyi de ekle
+            string localHost = Environment.MachineName;
+            if (!result.Contains(localHost, StringComparer.OrdinalIgnoreCase))
+                result.Insert(0, localHost);
+
+            return result.OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        // ─── Veritabanı listesi yenile ───────────────────────────────────────────
+
+        private async void OnRefreshDatabasesClick(object? sender, EventArgs e)
+        {
+            string server = _cmbServer.Text.Trim();
+            if (string.IsNullOrWhiteSpace(server))
+            {
+                SetStatus("Önce sunucu adını giriniz.", isError: true);
+                return;
+            }
+
+            _btnRefreshDbs.Enabled = false;
+            SetStatus("Veritabanı listesi alınıyor...", isError: false);
+
+            try
+            {
+                SqlConnectionInfo connInfo = BuildCurrentConnInfo();
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(connInfo.ConnectionTimeoutSeconds));
+                List<DatabaseInfo> databases = await _sqlBackupService.ListDatabasesAsync(connInfo, cts.Token);
+
+                string? current = _cmbDatabase.Text;
+                _cmbDatabase.Items.Clear();
+                foreach (DatabaseInfo db in databases.OrderBy(d => d.IsSystemDb).ThenBy(d => d.Name))
+                    _cmbDatabase.Items.Add(db.Name);
+
+                // Seçimi koru
+                if (!string.IsNullOrWhiteSpace(current) && _cmbDatabase.Items.Contains(current))
+                    _cmbDatabase.Text = current;
+
+                SetStatus($"{databases.Count} veritabanı listelendi.", isError: false);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Veritabanı listesi alınamadı.");
+                SetStatus($"Liste alınamadı: {ex.Message}", isError: true);
+            }
+            finally
+            {
+                _btnRefreshDbs.Enabled = true;
+                UpdatePreview();
+            }
+        }
+
+        // ─── Bağlantı testi ──────────────────────────────────────────────────────
+
+        private async void OnTestConnectionClick(object? sender, EventArgs e)
+        {
+            string server = _cmbServer.Text.Trim();
+            if (string.IsNullOrWhiteSpace(server))
+            {
+                SetStatus("Sunucu adı boş olamaz.", isError: true);
+                return;
+            }
+
+            _btnTestConn.Enabled = false;
+            SetStatus("Bağlantı test ediliyor...", isError: false);
+
+            try
+            {
+                SqlConnectionInfo connInfo = BuildCurrentConnInfo();
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(connInfo.ConnectionTimeoutSeconds));
+                bool ok = await _sqlBackupService.TestConnectionAsync(connInfo, cts.Token);
+
+                if (ok)
+                {
+                    SetStatus("✔  Bağlantı başarılı!", isError: false, success: true);
+
+                    // Bağlantı başarılıysa DB listesini otomatik yükle
+                    await LoadDatabasesAsync(connInfo);
+                }
+                else
+                {
+                    SetStatus("✘  Bağlantı kurulamadı. Sunucu adı ve kimlik bilgilerini kontrol ediniz.", isError: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Bağlantı test hatası.");
+                SetStatus($"✘  Hata: {ex.Message}", isError: true);
+            }
+            finally
+            {
+                _btnTestConn.Enabled = true;
+            }
+        }
+
+        private async Task LoadDatabasesAsync(SqlConnectionInfo connInfo)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                List<DatabaseInfo> databases = await _sqlBackupService.ListDatabasesAsync(connInfo, cts.Token);
+
+                string? current = _cmbDatabase.Text;
+                _cmbDatabase.Items.Clear();
+                foreach (DatabaseInfo db in databases.OrderBy(d => d.IsSystemDb).ThenBy(d => d.Name))
+                    _cmbDatabase.Items.Add(db.Name);
+
+                if (!string.IsNullOrWhiteSpace(current) && _cmbDatabase.Items.Contains(current))
+                    _cmbDatabase.Text = current;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Veritabanı listesi yüklenemedi.");
+            }
+        }
+
+        // ─── Auth mode değişimi ──────────────────────────────────────────────────
+
+        private void OnAuthModeChanged(object? sender, EventArgs e)
+        {
+            UpdateCredentialVisibility();
             UpdatePreview();
         }
+
+        private void UpdateCredentialVisibility()
+        {
+            bool isSqlAuth = _cmbAuthMode.SelectedIndex == 1;
+            _pnlCredentials.Visible = isSqlAuth;
+        }
+
+        // ─── Alan değişimi + önizleme ─────────────────────────────────────────────
+
+        private void OnServerTextChanged(object? sender, EventArgs e) => UpdatePreview();
 
         private void OnFieldChanged(object? sender, EventArgs e) => UpdatePreview();
 
-        private void OnUsePortChanged(object? sender, EventArgs e)
+        private void UpdatePreview()
         {
-            _lblPort.Visible = _chkUsePort.Checked;
-            _nudPort.Visible = _chkUsePort.Checked;
-            UpdatePreview();
+            _txtPreview.Text = BuildConnectionStringPreview();
         }
+
+        private string BuildConnectionStringPreview()
+        {
+            string server = _cmbServer.Text.Trim();
+            if (string.IsNullOrWhiteSpace(server))
+                return string.Empty;
+
+            var builder = new SqlConnectionStringBuilder
+            {
+                DataSource = server,
+                IntegratedSecurity = _cmbAuthMode.SelectedIndex != 1,
+                TrustServerCertificate = _chkTrustCert.Checked,
+                ConnectTimeout = (int)_nudTimeout.Value
+            };
+
+            if (_cmbAuthMode.SelectedIndex == 1)
+            {
+                builder.UserID = _txtUsername.Text.Trim();
+                builder.Password = "***";
+            }
+
+            string? db = _cmbDatabase.Text.Trim();
+            if (!string.IsNullOrWhiteSpace(db))
+                builder.InitialCatalog = db;
+
+            return builder.ConnectionString;
+        }
+
+        // ─── OK ──────────────────────────────────────────────────────────────────
 
         private void OnOkClick(object? sender, EventArgs e)
         {
-            DataSource = BuildDataSource();
-            if (string.IsNullOrWhiteSpace(DataSource))
+            string server = _cmbServer.Text.Trim();
+            if (string.IsNullOrWhiteSpace(server))
             {
-                ModernMessageBox.Show(
-                    "Sunucu adı veya IP adresi boş olamaz.",
-                    "Eksik Bilgi",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                SetStatus("Sunucu adı boş olamaz.", isError: true);
                 DialogResult = DialogResult.None;
+                return;
             }
+
+            if (_cmbAuthMode.SelectedIndex == 1 && string.IsNullOrWhiteSpace(_txtUsername.Text.Trim()))
+            {
+                SetStatus("SQL kimlik doğrulama için kullanıcı adı girilmelidir.", isError: true);
+                DialogResult = DialogResult.None;
+                return;
+            }
+
+            Result = BuildCurrentConnInfo();
         }
 
-        private void UpdatePreview() => _txtPreview.Text = BuildDataSource();
+        // ─── Yardımcılar ─────────────────────────────────────────────────────────
 
-        private string BuildDataSource()
+        private SqlConnectionInfo BuildCurrentConnInfo()
         {
-            string host = _txtHost.Text.Trim();
-            if (string.IsNullOrWhiteSpace(host))
-                return string.Empty;
+            var info = new SqlConnectionInfo
+            {
+                Server = _cmbServer.Text.Trim(),
+                AuthMode = _cmbAuthMode.SelectedIndex == 1
+                    ? SqlAuthMode.SqlAuthentication
+                    : SqlAuthMode.Windows,
+                Username = _txtUsername.Text.Trim(),
+                ConnectionTimeoutSeconds = (int)_nudTimeout.Value,
+                TrustServerCertificate = _chkTrustCert.Checked
+            };
 
-            string instance = _txtInstance.Text.Trim();
+            if (_cmbAuthMode.SelectedIndex == 1 && !string.IsNullOrWhiteSpace(_txtPassword.Text))
+                info.Password = PasswordProtector.Protect(_txtPassword.Text);
 
-            // Sunucu\Instance
-            string dataSource = string.IsNullOrWhiteSpace(instance)
-                ? host
-                : $"{host}\\{instance}";
+            return info;
+        }
 
-            // Port sadece instance olmadığında anlamlıdır; instance varsa SMO protokolüyle çözülür.
-            // Ancak bazı senaryolarda instance+port birlikte kullanılabilir (named instance + statik port).
-            if (_chkUsePort.Checked)
-                dataSource += $",{(int)_nudPort.Value}";
-
-            return dataSource;
+        private void SetStatus(string message, bool isError, bool success = false)
+        {
+            _lblStatus.Text = message;
+            _lblStatus.ForeColor = isError
+                ? ModernTheme.StatusError
+                : success
+                    ? ModernTheme.StatusSuccess
+                    : ModernTheme.TextSecondary;
         }
     }
+
+
 }

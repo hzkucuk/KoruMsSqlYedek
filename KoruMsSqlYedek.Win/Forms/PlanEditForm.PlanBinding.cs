@@ -368,11 +368,28 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void OnBuildConnClick(object? sender, EventArgs e)
         {
-            using var dlg = new SqlConnectionBuilderDialog();
-            dlg.LoadFromDataSource(_txtServer.Text.Trim());
+            var current = BuildCurrentConnInfo();
 
-            if (dlg.ShowDialog(this) == DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.DataSource))
-                _txtServer.Text = dlg.DataSource;
+            using var dlg = new SqlConnectionBuilderDialog(_sqlBackupService);
+            dlg.LoadFrom(current);
+
+            if (dlg.ShowDialog(this) != DialogResult.OK || dlg.Result is null)
+                return;
+
+            SqlConnectionInfo result = dlg.Result;
+
+            // Sunucu, auth, kullanıcı, timeout ve sertifika bilgilerini UI'ye uygula
+            _txtServer.Text = result.Server ?? string.Empty;
+            _cmbAuthMode.SelectedIndex = result.AuthMode == SqlAuthMode.SqlAuthentication ? 1 : 0;
+            _txtSqlUser.Text = result.Username ?? string.Empty;
+            _nudTimeout.Value = Math.Clamp(result.ConnectionTimeoutSeconds, 5, 300);
+            _chkTrustCert.Checked = result.TrustServerCertificate;
+
+            // Şifre şifrelenmiş geldiği için sadece SQL Auth + yeni şifre varsa aktar
+            if (result.AuthMode == SqlAuthMode.SqlAuthentication && !string.IsNullOrWhiteSpace(result.Password))
+                _txtSqlPassword.Text = string.Empty; // Güvenlik: şifre alanı dialog'da * olarak gösterildi
+
+            UpdateAuthFieldsVisibility();
         }
 
         private async Task LoadDatabaseListAsync(SqlConnectionInfo connInfo)

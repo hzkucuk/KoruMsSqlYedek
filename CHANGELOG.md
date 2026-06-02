@@ -1,4 +1,15 @@
-﻿## [0.99.83] - 2026-05-20 — ✨ SQL Bağlantı Yapılandırıcı & Sistem DB Listesi
+﻿## [0.99.84] - 2026-05-20 — 🔧 Tam Teşekküllü SQL Bağlantı Yapılandırıcı (VS-Style)
+
+### Eklenen
+- **`SqlConnectionBuilderDialog` (tam yeniden yazım)** — Visual Studio "Add Connection" tarzında; sunucu tarama (SQL Browser UDP), auth modu, SQL kimlik bilgileri, veritabanı listesi yenileme, bağlantı zaman aşımı, TrustServerCertificate, bağlantı dizesi önizleme ve bağlantı testi içeren tam teşekküllü dialog.
+- **`SqlConnectionInfo` entegrasyonu** — Dialog artık ham DataSource yerine tam `SqlConnectionInfo` döndürüyor; `PlanEditForm` tüm bağlantı alanlarını (sunucu, auth, kullanıcı, timeout, sertifika) bu nesneyle dolduruyor.
+
+### Güncellenen
+- **`PlanEditForm.OnBuildConnClick`** — Yeni dialog API'sine (`ISqlBackupService`, `LoadFrom`, `Result`) göre revize edildi; tüm bağlantı alanları dialog sonucundan otomatik uygulanan.
+
+---
+
+## [0.99.83] - 2026-05-20 — ✨ SQL Bağlantı Yapılandırıcı & Sistem DB Listesi
 
 ### Eklenen
 - **`SqlConnectionBuilderDialog`** — Sunucu/IP, instance adı ve port kombinasyonlarından DataSource dizisi oluşturan yeni dialog. Kullanıcı "Yapılandır..." butonuna tıklayarak PlanEditForm'daki sunucu alanını görsel olarak doldurabilir.
