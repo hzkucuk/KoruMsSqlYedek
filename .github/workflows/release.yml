@@ -1,4 +1,4 @@
-﻿# ═══════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 # GitHub Actions — Koru MsSql Yedek Release Workflow
 # ═══════════════════════════════════════════════════════════════════
 # Tetik: vX.Y.Z tag push
@@ -49,7 +49,7 @@ jobs:
         echo "$delim"        >> "$GITHUB_OUTPUT"
 
     - name: Create GitHub Release (draft)
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: ${{ github.ref_name }}
         name: "Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}"
