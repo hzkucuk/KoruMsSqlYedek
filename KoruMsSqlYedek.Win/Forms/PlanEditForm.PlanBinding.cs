@@ -341,10 +341,10 @@ namespace KoruMsSqlYedek.Win.Forms
                     if (isConnected)
                     {
                         _connectionTested = true;
-                        Theme.ModernMessageBox.Show(Res.Get("PlanEdit_ConnSuccess"), Res.Get("PlanEdit_ConnSuccessTitle"),
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        int databaseCount = await LoadDatabaseListAsync(connInfo);
 
-                        await LoadDatabaseListAsync(connInfo);
+                        Theme.ModernMessageBox.Show(Res.Format("PlanEdit_ConnSuccessWithDbCount", databaseCount), Res.Get("PlanEdit_ConnSuccessTitle"),
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
@@ -366,7 +366,7 @@ namespace KoruMsSqlYedek.Win.Forms
             }
         }
 
-        private void OnBuildConnClick(object? sender, EventArgs e)
+        private async void OnBuildConnClick(object sender, EventArgs e)
         {
             var current = BuildCurrentConnInfo();
 
@@ -404,33 +404,36 @@ namespace KoruMsSqlYedek.Win.Forms
 
             UpdateAuthFieldsVisibility();
 
-            // Veritabanı listesini ana form üzerinden asenkron tetikleyelim
-            _ = LoadDatabaseListAsync(result);
-        }
-
-        private async Task LoadDatabaseListAsync(SqlConnectionInfo connInfo)
-        {
             try
             {
-                var sqlService = _sqlBackupService;
-                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
-                {
-                    var databases = await sqlService.ListDatabasesAsync(connInfo, cts.Token);
-
-                    _clbDatabases.Items.Clear();
-                    foreach (var db in databases.OrderBy(d => d.IsSystemDb).ThenBy(d => d.Name))
-                    {
-                        bool isChecked = _plan.Databases?.Contains(db.Name) ?? false;
-                        string displayText = db.IsSystemDb
-                            ? Res.Format("PlanEdit_DbSizeFormat", db.Name + " (sistem)", db.SizeInMb)
-                            : Res.Format("PlanEdit_DbSizeFormat", db.Name, db.SizeInMb);
-                        _clbDatabases.Items.Add(new DatabaseListItem(db.Name, displayText), isChecked);
-                    }
-                }
+                await LoadDatabaseListAsync(result);
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Veritabanı listesi yüklenemedi.");
+                Log.Warning(ex, "Bağlantı oluşturucudan sonra veritabanı listesi yüklenemedi.");
+                Theme.ModernMessageBox.Show(Res.Format("PlanEdit_DbListError", ex.Message), Res.Get("Error"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private async Task<int> LoadDatabaseListAsync(SqlConnectionInfo connInfo)
+        {
+            var sqlService = _sqlBackupService;
+            using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            {
+                var databases = await sqlService.ListDatabasesAsync(connInfo, cts.Token);
+
+                _clbDatabases.Items.Clear();
+                foreach (var db in databases.OrderBy(d => d.IsSystemDb).ThenBy(d => d.Name))
+                {
+                    bool isChecked = _plan.Databases?.Contains(db.Name) ?? false;
+                    string displayText = db.IsSystemDb
+                        ? Res.Format("PlanEdit_DbSizeFormat", db.Name + " (sistem)", db.SizeInMb)
+                        : Res.Format("PlanEdit_DbSizeFormat", db.Name, db.SizeInMb);
+                    _clbDatabases.Items.Add(new DatabaseListItem(db.Name, displayText), isChecked);
+                }
+
+                return databases.Count;
             }
         }
 

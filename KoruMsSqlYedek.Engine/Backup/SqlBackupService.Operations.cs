@@ -109,45 +109,40 @@ namespace KoruMsSqlYedek.Engine.Backup
 
             try
             {
-                using var sqlConn4 = new SqlConnection(BuildConnectionString(connectionInfo));
-                var serverConnection = new ServerConnection(sqlConn4);
-                var server = new Server(serverConnection);
+                const string query = """
+                    SELECT
+                        d.name,
+                        CAST(COALESCE(SUM(CAST(mf.size AS bigint)) * 8.0 / 1024.0, 0) AS float) AS size_mb,
+                        d.state_desc,
+                        d.recovery_model_desc,
+                        CASE WHEN d.database_id <= 4 THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS is_system_db
+                    FROM sys.databases AS d
+                    LEFT JOIN sys.master_files AS mf ON d.database_id = mf.database_id
+                    GROUP BY d.database_id, d.name, d.state_desc, d.recovery_model_desc
+                    ORDER BY CASE WHEN d.database_id <= 4 THEN 0 ELSE 1 END, d.name;
+                    """;
 
-                await Task.Run(() =>
+                await using var sqlConn4 = new SqlConnection(BuildConnectionString(connectionInfo));
+                await sqlConn4.OpenAsync(cancellationToken);
+
+                await using var cmd = new SqlCommand(query, sqlConn4)
                 {
-                    foreach (Database db in server.Databases)
+                    CommandTimeout = connectionInfo.ConnectionTimeoutSeconds
+                };
+
+                await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    databases.Add(new DatabaseInfo
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-
-                        double sizeInMb = 0;
-                        string status = "Unknown";
-                        string recoveryModel = "Unknown";
-                        string lastBackupDate = "Hiç";
-                        bool isSystemDb = false;
-
-                        try { sizeInMb = db.Size; } catch { }
-                        try { status = db.Status.ToString(); } catch { }
-                        try { recoveryModel = db.RecoveryModel.ToString(); } catch { }
-                        try
-                        {
-                            lastBackupDate = db.LastBackupDate == DateTime.MinValue
-                                ? "Hiç"
-                                : db.LastBackupDate.ToString("yyyy-MM-dd HH:mm");
-                        }
-                        catch { }
-                        try { isSystemDb = db.IsSystemObject; } catch { }
-
-                        databases.Add(new DatabaseInfo
-                        {
-                            Name = db.Name,
-                            SizeInMb = sizeInMb,
-                            Status = status,
-                            RecoveryModel = recoveryModel,
-                            LastFullBackupDate = lastBackupDate,
-                            IsSystemDb = isSystemDb
-                        });
-                    }
-                }, cancellationToken);
+                        Name = reader.GetString(0),
+                        SizeInMb = reader.GetDouble(1),
+                        Status = reader.GetString(2),
+                        RecoveryModel = reader.GetString(3),
+                        LastFullBackupDate = "Hiç",
+                        IsSystemDb = reader.GetBoolean(4)
+                    });
+                }
             }
             catch (Exception ex)
             {
