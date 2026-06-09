@@ -1,4 +1,14 @@
-﻿## [0.99.85] - 2026-06-03 — 🔧 SQL Bağlantı Yapılandırıcı Database Seçimi Sadeleştirmesi
+﻿## [0.99.86] - 2026-06-10 — 🐛 SQL Veritabanı Listesi Yenileme Güvenilirliği
+
+### Düzeltilen
+- **Yeni plan sihirbazında veritabanları listelenmiyordu** — SQL bağlantı testi başarılı görünmesine rağmen bazı sunucularda veritabanı listesi boş kalıyordu.
+- **Kök neden giderildi** — `ListDatabasesAsync` içindeki SMO `Server.Databases` bağımlılığı kaldırılarak listeleme doğrudan `sys.databases` / `sys.master_files` sorgusu ile yapılır hâle getirildi.
+- **Sessiz başarısızlık kaldırıldı** — `PlanEditForm` içinde test, yenileme ve bağlantı yapılandırıcı sonrası veritabanı listeleme hataları artık kullanıcıya görünür mesajla bildiriliyor.
+- **Bağlantı geri bildirimi iyileştirildi** — Bağlantı başarılı mesajı artık gerçekten kaç veritabanının listelendiğini gösteriyor.
+
+---
+
+## [0.99.85] - 2026-06-03 — 🔧 SQL Bağlantı Yapılandırıcı Database Seçimi Sadeleştirmesi
 
 ### Düzeltilen
 - **`SqlConnectionBuilderDialog` veritabanı alanı kaldırıldı** — Sunucu bağlantısının oluşturulması ile veritabanı seçimi rolleri netleştirildi. Veritabanı seçimi zaten wizard sayfalarında yapıldığından bu dialogdan kaldırıldı.

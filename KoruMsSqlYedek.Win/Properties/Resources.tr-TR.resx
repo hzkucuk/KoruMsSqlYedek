@@ -199,9 +199,13 @@ Bu işlem geri alınamaz.</value></data>
   <data name="PlanEdit_Testing" xml:space="preserve"><value>Test Ediliyor...</value></data>
   <data name="PlanEdit_TestBtn" xml:space="preserve"><value>🔌 Bağlantıyı Test Et</value></data>
   <data name="PlanEdit_ConnSuccess" xml:space="preserve"><value>SQL Server bağlantısı başarılı!</value></data>
+  <data name="PlanEdit_ConnSuccessWithDbCount" xml:space="preserve"><value>SQL Server bağlantısı başarılı. {0} veritabanı listelendi.</value></data>
   <data name="PlanEdit_ConnSuccessTitle" xml:space="preserve"><value>Bağlantı Testi</value></data>
   <data name="PlanEdit_ConnFailed" xml:space="preserve"><value>SQL Server bağlantısı başarısız!</value></data>
   <data name="PlanEdit_ConnError" xml:space="preserve"><value>Bağlantı testi hatası:
+
+{0}</value></data>
+  <data name="PlanEdit_DbListError" xml:space="preserve"><value>Veritabanı listesi yüklenemedi:
 
 {0}</value></data>
   <data name="PlanEdit_BrowseLocalPath" xml:space="preserve"><value>Yerel yedek dizini seçin</value></data>

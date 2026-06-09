@@ -49,11 +49,17 @@ try {
     $serviceCsprojPath = Join-Path $rootDir "KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj"
     if (Test-Path $serviceCsprojPath) {
         $svcContent = Get-Content $serviceCsprojPath -Raw
-        $svcContent = $svcContent -replace '<Version>\d+\.\d+\.\d+</Version>', "<Version>$version</Version>"
-        $svcContent = $svcContent -replace '<AssemblyVersion>\d+\.\d+\.\d+\.\d+</AssemblyVersion>', "<AssemblyVersion>$version.0</AssemblyVersion>"
-        $svcContent = $svcContent -replace '<FileVersion>\d+\.\d+\.\d+\.\d+</FileVersion>', "<FileVersion>$version.0</FileVersion>"
-        Set-Content $serviceCsprojPath $svcContent -NoNewline
-        Write-Host "  Service csproj versiyonu senkronize edildi: $version" -ForegroundColor DarkGray
+        $updatedSvcContent = $svcContent -replace '<Version>\d+\.\d+\.\d+</Version>', "<Version>$version</Version>"
+        $updatedSvcContent = $updatedSvcContent -replace '<AssemblyVersion>\d+\.\d+\.\d+\.\d+</AssemblyVersion>', "<AssemblyVersion>$version.0</AssemblyVersion>"
+        $updatedSvcContent = $updatedSvcContent -replace '<FileVersion>\d+\.\d+\.\d+\.\d+</FileVersion>', "<FileVersion>$version.0</FileVersion>"
+
+        if ($updatedSvcContent -ne $svcContent) {
+            Set-Content $serviceCsprojPath $updatedSvcContent -NoNewline
+            Write-Host "  Service csproj versiyonu senkronize edildi: $version" -ForegroundColor DarkGray
+        }
+        else {
+            Write-Host "  Service csproj versiyonu zaten senkron: $version" -ForegroundColor DarkGray
+        }
     }
 
     Write-Host "========================================" -ForegroundColor Cyan

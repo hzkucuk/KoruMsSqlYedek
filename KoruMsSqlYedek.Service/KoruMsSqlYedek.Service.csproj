@@ -1,36 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>KoruMsSqlYedek.Service</RootNamespace>
-    <AssemblyName>KoruMsSqlYedek.Service</AssemblyName>
-    <LangVersion>latest</LangVersion>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <NoWarn>$(NoWarn);NU1701</NoWarn>
-    <Version>0.99.85</Version>
-    <AssemblyVersion>0.99.85.0</AssemblyVersion>
-    <FileVersion>0.99.85.0</FileVersion>
-    <Copyright>Copyright Â© 2026 Zafer Bilgisayar</Copyright>
-    <Authors>HÃ¼zeyin KÃ¼Ã§Ã¼k</Authors>
-    <Company>Zafer Bilgisayar</Company>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<TargetFramework>net10.0-windows</TargetFramework>
+	<OutputType>Exe</OutputType>
+	<RootNamespace>KoruMsSqlYedek.Service</RootNamespace>
+	<AssemblyName>KoruMsSqlYedek.Service</AssemblyName>
+	<LangVersion>latest</LangVersion>
+	<ApplicationManifest>app.manifest</ApplicationManifest>
+	<NoWarn>$(NoWarn);NU1701</NoWarn>
+	<Version>0.99.86</Version>
+	<AssemblyVersion>0.99.86.0</AssemblyVersion>
+	<FileVersion>0.99.86.0</FileVersion>
+	<Copyright>Copyright © 2026 Zafer Bilgisayar</Copyright>
+	<Authors>Hüzeyin Küçük</Authors>
+	<Company>Zafer Bilgisayar</Company>
+	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	<SelfContained>true</SelfContained>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="9.1.0" />
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="11.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.7" />
-    <PackageReference Include="Serilog" Version="4.3.1" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+	<PackageReference Include="Autofac" Version="9.1.0" />
+	<PackageReference Include="Autofac.Extensions.DependencyInjection" Version="11.0.0" />
+	<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.7" />
+	<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.7" />
+	<PackageReference Include="Serilog" Version="4.3.1" />
+	<PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+	<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+	<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\KoruMsSqlYedek.Core\KoruMsSqlYedek.Core.csproj" />
-    <ProjectReference Include="..\KoruMsSqlYedek.Engine\KoruMsSqlYedek.Engine.csproj" />
+	<ProjectReference Include="..\KoruMsSqlYedek.Core\KoruMsSqlYedek.Core.csproj" />
+	<ProjectReference Include="..\KoruMsSqlYedek.Engine\KoruMsSqlYedek.Engine.csproj" />
   </ItemGroup>
 </Project>

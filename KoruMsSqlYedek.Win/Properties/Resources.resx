@@ -199,9 +199,13 @@ This action cannot be undone.</value></data>
   <data name="PlanEdit_Testing" xml:space="preserve"><value>Testing...</value></data>
   <data name="PlanEdit_TestBtn" xml:space="preserve"><value>🔌 Test Connection</value></data>
   <data name="PlanEdit_ConnSuccess" xml:space="preserve"><value>SQL Server connection successful!</value></data>
+  <data name="PlanEdit_ConnSuccessWithDbCount" xml:space="preserve"><value>SQL Server connection successful. {0} database(s) listed.</value></data>
   <data name="PlanEdit_ConnSuccessTitle" xml:space="preserve"><value>Connection Test</value></data>
   <data name="PlanEdit_ConnFailed" xml:space="preserve"><value>SQL Server connection failed!</value></data>
   <data name="PlanEdit_ConnError" xml:space="preserve"><value>Connection test error:
+
+{0}</value></data>
+  <data name="PlanEdit_DbListError" xml:space="preserve"><value>Database list could not be loaded:
 
 {0}</value></data>
   <data name="PlanEdit_BrowseLocalPath" xml:space="preserve"><value>Select local backup directory</value></data>

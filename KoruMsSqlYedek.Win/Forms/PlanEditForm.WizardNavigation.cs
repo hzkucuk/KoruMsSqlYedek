@@ -190,6 +190,8 @@ namespace KoruMsSqlYedek.Win.Forms
             catch (Exception ex)
             {
                 Log.Warning(ex, "Otomatik DB listesi yüklenemedi.");
+                Theme.ModernMessageBox.Show(Res.Format("PlanEdit_DbListError", ex.Message), Res.Get("Warning"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             finally
             {
@@ -233,7 +235,17 @@ namespace KoruMsSqlYedek.Win.Forms
         private async void OnRefreshDatabasesClick(object sender, EventArgs e)
         {
             var connInfo = BuildCurrentConnInfo();
-            await LoadDatabaseListAsync(connInfo);
+
+            try
+            {
+                await LoadDatabaseListAsync(connInfo);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Veritabanı yenileme başarısız oldu.");
+                Theme.ModernMessageBox.Show(Res.Format("PlanEdit_DbListError", ex.Message), Res.Get("Warning"),
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         #endregion
