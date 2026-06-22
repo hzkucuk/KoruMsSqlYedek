@@ -85,6 +85,14 @@ namespace KoruMsSqlYedek.Core.Models
         public FileBackupConfig FileBackup { get; set; }
 
         /// <summary>
+        /// Disk imajı yedekleme yapılandırması.
+        /// wbadmin ile sürücü/bölüm düzeyinde WIM imajı oluşturur.
+        /// null veya IsEnabled=false ise disk imajı yedekleme yapılmaz.
+        /// </summary>
+        [JsonProperty("diskImageBackup")]
+        public DiskImageBackupConfig DiskImageBackup { get; set; }
+
+        /// <summary>
         /// Yedekleme raporlama ayarları. Günlük/haftalık/aylık özet rapor gönderimi.
         /// </summary>
         [JsonProperty("reporting")]
@@ -158,6 +166,7 @@ namespace KoruMsSqlYedek.Core.Models
                 BackupFileType.SqlLog => RetentionScheme.SqlLog ?? Retention,
                 BackupFileType.FileBackup => RetentionScheme.FileBackup ?? Retention,
                 BackupFileType.SqlVss => RetentionScheme.SqlFull ?? Retention,
+                BackupFileType.DiskImage => RetentionScheme.FileBackup ?? Retention,
                 _ => Retention
             };
         }

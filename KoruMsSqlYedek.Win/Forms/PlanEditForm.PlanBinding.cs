@@ -210,6 +210,7 @@ namespace KoruMsSqlYedek.Win.Forms
             if (_plan.FileBackup == null)
                 _plan.FileBackup = new FileBackupConfig();
             _plan.FileBackup.IsEnabled = _chkFileBackupEnabled.Checked;
+            SaveDiskImageFromUi();
 
             // Adım 3: Zamanlama
             _plan.Strategy.Type = (BackupStrategyType)_cmbStrategy.SelectedIndex;

@@ -173,6 +173,32 @@ namespace KoruMsSqlYedek.Win
                     UpdatePlanRowStatusCustom(e.PlanId, "⚠ " + DateTime.Now.ToString("HH:mm"), Theme.ModernTheme.LogWarning);
                     break;
 
+                case BackupActivityType.DiskImageStarted:
+                    if (e.PlanId == _viewingPlanId)
+                    {
+                        _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                        _progressBar.Value = 0;
+                    }
+                    UpdatePlanRowProgress(e.PlanId, 0);
+                    break;
+
+                case BackupActivityType.DiskImageProgress:
+                    {
+                        int diskPct = Math.Clamp(e.ProgressPercent, 0, 99);
+                        if (e.PlanId == _viewingPlanId)
+                        {
+                            _progressBar.DisplayMode = Theme.ProgressBarDisplayMode.Percentage;
+                            _progressBar.Value = diskPct;
+                        }
+                        UpdatePlanRowProgress(e.PlanId, diskPct);
+                    }
+                    break;
+
+                case BackupActivityType.DiskImageCompleted:
+                    // Tamamlama/hata/iptal Completed/Failed/Cancelled case'leri tarafından ayrıca işlenir.
+                    // Burada sadece log satırı ve renk yeterli (AppendBackupLog switch'in altında çalışır).
+                    break;
+
                 case BackupActivityType.Completed:
                 case BackupActivityType.Failed:
                 case BackupActivityType.Cancelled:
@@ -265,6 +291,10 @@ namespace KoruMsSqlYedek.Win
                     isProgress = true; // Aynı dosya — mevcut satırı güncelle
                 }
             }
+            else if (e.ActivityType == BackupActivityType.DiskImageProgress)
+            {
+                isProgress = true;
+            }
             else if (e.ActivityType == BackupActivityType.StepChanged
                 && !string.IsNullOrEmpty(e.Message)
                 && e.Message.Contains("ıkıştırılıyor"))
@@ -356,6 +386,19 @@ namespace KoruMsSqlYedek.Win
                     ? Res.Format("Activity_CloudAbandoned", e.AbandonedFiles.Count, string.Join(", ", e.AbandonedFiles))
                     : Res.Format("Activity_CloudAbandonedMsg", e.Message ?? Res.Get("Activity_MaxRetryExceeded")),
 
+            BackupActivityType.DiskImageStarted
+                => !string.IsNullOrEmpty(e.Message)
+                    ? e.Message
+                    : $"Disk imajı yedekleme başlıyor: {e.DiskImageVolumePath ?? ""}",
+
+            BackupActivityType.DiskImageProgress
+                => !string.IsNullOrEmpty(e.Message) ? e.Message : $"Disk imajı oluşturuluyor... %{e.ProgressPercent}",
+
+            BackupActivityType.DiskImageCompleted
+                => e.IsSuccess
+                    ? (!string.IsNullOrEmpty(e.Message) ? e.Message : $"Disk imajı tamamlandı: {e.DiskImageVolumePath ?? ""}")
+                    : (!string.IsNullOrEmpty(e.Message) ? e.Message : $"Disk imajı başarısız: {e.DiskImageVolumePath ?? ""}"),
+
             BackupActivityType.Completed
                 => e.IsSuccess
                     ? (string.IsNullOrEmpty(e.Message)
@@ -431,6 +474,9 @@ namespace KoruMsSqlYedek.Win
             BackupActivityType.CloudUploadProgress => Theme.ModernTheme.LogProgress,
             BackupActivityType.CloudUploadCompleted => Theme.ModernTheme.LogCloud,
             BackupActivityType.CloudUploadAbandoned => Theme.ModernTheme.LogWarning,
+            BackupActivityType.DiskImageStarted    => Theme.ModernTheme.LogInfo,
+            BackupActivityType.DiskImageProgress   => Theme.ModernTheme.LogProgress,
+            BackupActivityType.DiskImageCompleted  => Theme.ModernTheme.LogInfo,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(activityType), activityType,
                 $"Unhandled BackupActivityType: {activityType}. GetLogColor güncellenmelidir.")

@@ -113,7 +113,10 @@ namespace KoruMsSqlYedek.Core.Models
         FileBackup = 3,
 
         /// <summary>VSS ek güvenlik yedeği (_VSS_*.7z).</summary>
-        SqlVss = 4
+        SqlVss = 4,
+
+        /// <summary>Disk imajı yedeği (.wim / .vhd).</summary>
+        DiskImage = 5
     }
 
     /// <summary>

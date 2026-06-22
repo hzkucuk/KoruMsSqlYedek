@@ -1,4 +1,15 @@
-﻿## [0.99.86] - 2026-06-10 — 🐛 SQL Veritabanı Listesi Yenileme Güvenilirliği
+﻿## [0.99.87] - 2026-06-11 — 💾 Disk İmajı Yedekleme Altyapısı
+
+### Eklenen
+- **Disk imajı yedekleme desteği** — `IDiskImageService` + `WbAdminDiskImageService` ile `wbadmin.exe` üzerinden WIM tabanlı sürücü/bölüm yedeği.
+- **Plan sihirbazı'na disk imajı UI'u eklendi** — Kaynaklar adımında sistem sürücülerini tara, işaretleyerek seç ve etkinleştir.
+- **Pipeline entegrasyonu** — `BackupJobExecutor` SQL + Dosya pipeline'larından sonra disk imajı pipeline'ını çalıştırıyor.
+- **UI aktivite izleme** — `DiskImageStarted`, `DiskImageProgress`, `DiskImageCompleted` event'leri ile ilerleme çubuğu ve log güncellemeleri.
+- **İptal desteği** — `wbadmin` process'i iptal durumunda `Kill(entireProcessTree: true)` ile temiz sonlandırılıyor.
+
+---
+
+## [0.99.86] - 2026-06-10 — 🐛 SQL Veritabanı Listesi Yenileme Güvenilirliği
 
 ### Düzeltilen
 - **Yeni plan sihirbazında veritabanları listelenmiyordu** — SQL bağlantı testi başarılı görünmesine rağmen bazı sunucularda veritabanı listesi boş kalıyordu.

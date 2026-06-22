@@ -42,6 +42,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
         public IBackupHistoryManager HistoryManager { get; set; }
         public BackupChainValidator ChainValidator { get; set; }
         public IBackupCancellationRegistry CancellationRegistry { get; set; }
+        public IDiskImageService DiskImageService { get; set; }
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -89,6 +90,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 bool willRunFileBackup = backupType == "FileBackup"
                     || (plan.FileBackup != null && plan.FileBackup.IsEnabled);
 
+                bool willRunDiskImage = plan.DiskImageBackup != null && plan.DiskImageBackup.IsEnabled;
+
                 int sqlDbCount = backupType == "FileBackup" ? 0 : (plan.Databases?.Count ?? 0);
 
                 bool hasCloudTargets = CloudOrchestrator != null
@@ -102,7 +105,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     ActivityType = BackupActivityType.Started,
                     TotalCount = sqlDbCount,
                     HasFileBackup = willRunFileBackup,
-                    HasCloudTargets = hasCloudTargets
+                    HasCloudTargets = hasCloudTargets,
+                    HasDiskImageBackup = willRunDiskImage
                 });
 
                 var cts = CancellationTokenSource.CreateLinkedTokenSource(
@@ -217,6 +221,21 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             var fileResult = await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
                             fileResults2 = fileResult.FileResults;
                             fileArchivePath2 = fileResult.ArchivePath;
+                        }
+
+                        // Disk imajı yedekleme — SQL ve dosya yedekten sonra çalıştır
+                        if (willRunDiskImage && backupType != "FileBackup")
+                        {
+                            try
+                            {
+                                await ExecuteDiskImagePipelineAsync(plan, correlationId, cts.Token).ConfigureAwait(false);
+                            }
+                            catch (OperationCanceledException) { throw; }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "Disk imajı pipeline hatası: Plan={PlanName}", plan.PlanName);
+                                // Disk imajı hatası diğer pipeline adımlarını durdurmaz
+                            }
                         }
 
                         // Konsolide bulut yükleme (SQL + dosya dosyaları tek seferde)

@@ -12,6 +12,9 @@ namespace KoruMsSqlYedek.Core.Events
         CloudUploadProgress,  // Upload yüzdesi güncellendi
         CloudUploadCompleted, // Bir bulut hedefine upload bitti
         CloudUploadAbandoned, // Maks deneme aşıldı, dosya terk edildi
+        DiskImageStarted,    // Disk imajı yedekleme başladı
+        DiskImageProgress,   // Disk imajı ilerleme yüzdesi güncellendi
+        DiskImageCompleted,  // Disk imajı yedekleme tamamlandı (başarılı veya başarısız)
         Completed,
         Failed,
         Cancelled
@@ -70,6 +73,15 @@ namespace KoruMsSqlYedek.Core.Events
         /// yerel adımlara (SQL, doğrulama, sıkıştırma, temizlik) göre ilerler.
         /// </summary>
         public bool HasCloudTargets { get; set; }
+
+        /// <summary>
+        /// Plan disk imajı yedekleme fazı içeriyorsa true.
+        /// İlerleme çubuğu hesabında disk imajı ağırlığı dahil edilir.
+        /// </summary>
+        public bool HasDiskImageBackup { get; set; }
+
+        /// <summary>Disk imajı yedeklemesinde işlenen sürücü yolu (örn. "C:").</summary>
+        public string DiskImageVolumePath { get; set; }
 
         /// <summary>
         /// Plan konfigürasyonundan gelen ToastEnabled değeri.

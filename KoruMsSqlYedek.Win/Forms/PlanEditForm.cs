@@ -326,7 +326,9 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             base.OnLoad(e);
             PopulateComboBoxes();
+            BuildDiskImageUi();
             LoadPlanToUi();
+            LoadDiskImageToUi();
             _connectionTested = !_isNew && _plan.Databases?.Count > 0;
             RebuildActiveSteps();
             ShowStep(0);
