@@ -19,6 +19,8 @@ namespace KoruMsSqlYedek.Win.Forms
         private CheckedListBox _clbDiskVolumes = null!;
         private Button _btnRefreshVolumes = null!;
         private GroupBox _grpDiskImage = null!;
+        private ComboBox _cmbDiskCompression = null!;
+        private Label _lblDiskCompression = null!;
 
         /// <summary>
         /// Disk İmajı GroupBox'ını Step 2 paneline ekler.
@@ -29,10 +31,10 @@ namespace KoruMsSqlYedek.Win.Forms
             // GroupBox
             _grpDiskImage = new GroupBox
             {
-                Text = "Disk İmajı Yedekleme (wbadmin)",
+                Text = "Disk İmajı Yedekleme (wimlib)",
                 Font = new Font(_pnlStep2.Font, FontStyle.Bold),
                 Dock = DockStyle.Bottom,
-                Height = 160,
+                Height = 205,
                 Padding = new Padding(8)
             };
 
@@ -74,10 +76,48 @@ namespace KoruMsSqlYedek.Win.Forms
             };
             _btnRefreshVolumes.Click += OnRefreshVolumesClick;
 
+            // Sıkıştırma seviyesi — imaj boyutunu belirleyen asıl ayar
+            _lblDiskCompression = new Label
+            {
+                Text = "Sıkıştırma:",
+                AutoSize = true,
+                Location = new Point(10, 148),
+                Font = new Font(_pnlStep2.Font, FontStyle.Regular)
+            };
+
+            _cmbDiskCompression = new ComboBox
+            {
+                Location = new Point(90, 144),
+                Size = new Size(380, 24),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font(_pnlStep2.Font, FontStyle.Regular)
+            };
+            _cmbDiskCompression.Items.AddRange(new object[]
+            {
+                new CompressionItem(DiskImageCompression.Solid, "Solid (LZMS) — en küçük dosya, en yavaş (önerilen)"),
+                new CompressionItem(DiskImageCompression.Max,   "Maksimum (LZX) — dengeli"),
+                new CompressionItem(DiskImageCompression.Fast,  "Hızlı (XPRESS) — büyük dosya, hızlı"),
+                new CompressionItem(DiskImageCompression.None,  "Sıkıştırma yok — en hızlı, en büyük")
+            });
+            _cmbDiskCompression.SelectedIndex = 0;
+
+            var lblCompressionHint = new Label
+            {
+                Text = "Solid, LZX'e göre tipik olarak %25-35 daha küçük imaj üretir; karşılığında 2-4 kat uzun sürer.\r\n" +
+                       "Solid imajlar Windows 8.1 ve üzeri gerektirir.",
+                AutoSize = true,
+                Location = new Point(10, 172),
+                ForeColor = SystemColors.GrayText,
+                Font = new Font(_pnlStep2.Font.FontFamily, _pnlStep2.Font.Size - 0.5f, FontStyle.Regular)
+            };
+
             _grpDiskImage.Controls.Add(_chkDiskImageEnabled);
             _grpDiskImage.Controls.Add(lblVolumes);
             _grpDiskImage.Controls.Add(_clbDiskVolumes);
             _grpDiskImage.Controls.Add(_btnRefreshVolumes);
+            _grpDiskImage.Controls.Add(_lblDiskCompression);
+            _grpDiskImage.Controls.Add(_cmbDiskCompression);
+            _grpDiskImage.Controls.Add(lblCompressionHint);
 
             _pnlStep2.Controls.Add(_grpDiskImage);
 
@@ -90,6 +130,8 @@ namespace KoruMsSqlYedek.Win.Forms
             bool enabled = _chkDiskImageEnabled?.Checked ?? false;
             if (_clbDiskVolumes != null) _clbDiskVolumes.Enabled = enabled;
             if (_btnRefreshVolumes != null) _btnRefreshVolumes.Enabled = enabled;
+            if (_cmbDiskCompression != null) _cmbDiskCompression.Enabled = enabled;
+            if (_lblDiskCompression != null) _lblDiskCompression.Enabled = enabled;
         }
 
         private void OnRefreshVolumesClick(object? sender, EventArgs e)
@@ -152,7 +194,29 @@ namespace KoruMsSqlYedek.Win.Forms
                 }
             }
 
+            SelectCompression(cfg?.Compression ?? DiskImageCompression.Solid);
+
             UpdateDiskImageFieldsVisibility();
+        }
+
+        /// <summary>
+        /// Kayıtlı sıkıştırma seviyesini listede seçer.
+        /// Eşleşme bulunamazsa (ileride enum'a değer eklenirse) Solid'e döner.
+        /// </summary>
+        private void SelectCompression(DiskImageCompression compression)
+        {
+            if (_cmbDiskCompression == null) return;
+
+            for (int i = 0; i < _cmbDiskCompression.Items.Count; i++)
+            {
+                if (_cmbDiskCompression.Items[i] is CompressionItem ci && ci.Value == compression)
+                {
+                    _cmbDiskCompression.SelectedIndex = i;
+                    return;
+                }
+            }
+
+            _cmbDiskCompression.SelectedIndex = 0;
         }
 
         internal void SaveDiskImageFromUi()
@@ -174,12 +238,30 @@ namespace KoruMsSqlYedek.Win.Forms
             _plan.DiskImageBackup.IsEnabled = enabled;
             _plan.DiskImageBackup.Format = DiskImageFormat.Wim;
 
+            if (_cmbDiskCompression?.SelectedItem is CompressionItem ci)
+                _plan.DiskImageBackup.Compression = ci.Value;
+
             _plan.DiskImageBackup.Sources = selectedPaths
                 .Select(p => new DiskImageSource { VolumePath = p, DisplayName = p, IsEnabled = true })
                 .ToList();
         }
 
         // ----- Helper -----
+
+        /// <summary>ComboBox öğesi — sıkıştırma seviyesini kullanıcıya görünen metinle eşler.</summary>
+        private sealed class CompressionItem
+        {
+            public DiskImageCompression Value { get; }
+            private readonly string _label;
+
+            public CompressionItem(DiskImageCompression value, string label)
+            {
+                Value = value;
+                _label = label;
+            }
+
+            public override string ToString() => _label;
+        }
 
         private sealed class VolumeItem
         {

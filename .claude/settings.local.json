@@ -48,7 +48,11 @@
       "Bash(git merge develop:*)",
       "Bash(git tag v*:*)",
       "Bash(git push origin master --tags:*)",
-      "Bash(grep -rn \"Mega\\\\|green\\\\|ForeColor.*green\" /c/Users/Hzk/source/repos/KoruMssqlYedek/KoruMsSqlYedek.Win/*.cs)"
+      "Bash(grep -rn \"Mega\\\\|green\\\\|ForeColor.*green\" /c/Users/Hzk/source/repos/KoruMssqlYedek/KoruMsSqlYedek.Win/*.cs)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(gh run *)",
+      "Bash(git log *)"
     ]
   }
 }
