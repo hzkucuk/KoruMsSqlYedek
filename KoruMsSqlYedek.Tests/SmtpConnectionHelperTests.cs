@@ -17,7 +17,7 @@ namespace KoruMsSqlYedek.Tests
                 .Should().Be(SecureSocketOptions.SslOnConnect);
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow(587)]
         [DataRow(25)]
         [DataRow(2525)]
@@ -27,7 +27,7 @@ namespace KoruMsSqlYedek.Tests
                 .Should().Be(SecureSocketOptions.StartTls);
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow(465)]
         [DataRow(587)]
         [DataRow(25)]

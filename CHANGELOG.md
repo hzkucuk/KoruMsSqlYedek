@@ -22,6 +22,7 @@
 - `KoruMsSqlYedek.Win\Properties\Resources.resx` / `Resources.tr-TR.resx` — Satır sonu düzeltmesi
 - `KoruMsSqlYedek.Tests\SmtpConnectionHelperTests.cs` — Yeni dosya
 - `Deployment\InnoSetup\KoruMsSqlYedek.iss` — MyAppVersion fallback 0.99.70 → 0.99.88 senkronize edildi
+- `KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj` — Servis versiyonu 0.99.88'e senkronize edildi
 
 ## [0.99.87] - 2026-06-11 — 💾 Disk İmajı Yedekleme Altyapısı
 
