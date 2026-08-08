@@ -1,8 +1,17 @@
-﻿# KoruMsSqlYedek — Release Build & Package Script
+﻿# KoruMsSqlYedek — Release Build & Package Script (Windows'a ozel, ALTERNATIF yol)
+#
+# ONEMLI: Asil release yolu artik GitHub Actions'tir (.github/workflows/release.yml).
+#   vX.Y.Z tag push edildiginde windows-latest runner derler, installer'i paketler
+#   ve GitHub Release'e ekler. Gelistirme macOS'ta yapildigi icin varsayilan budur.
+#   Bu script yalnizca elinizde bir Windows makine varken LOCAL installer uretmek
+#   veya CI'siz acil release almak icin kullanilir.
+#
 # Kullanım: .\Deployment\Build-Release.ps1 [-Configuration Release] [-RunTests] [-GitRelease]
 # Çıktı: releases\KoruMsSqlYedek_vX.Y.Z_Setup.exe
 # -RunTests  : testleri çalıştır (varsayılan: atla)
-# -GitRelease: build sonrası develop commit, master merge, tag, push (GitHub Actions tetiklenir)
+# -GitRelease: build sonrası develop commit, master merge, tag, push
+#              DIKKAT: tag push CI'yi de tetikler; CI release'i olusturup exe'yi ekler.
+#              Bu script'in "draft bekle + gh upload" adimi bu durumda gereksizdir.
 
 param(
     [string]$Configuration = "Release",

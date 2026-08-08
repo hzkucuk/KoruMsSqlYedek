@@ -1,11 +1,17 @@
-﻿# ═══════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════
 # GitHub Actions — Koru MsSql Yedek Release Workflow
 # ═══════════════════════════════════════════════════════════════════
-# Tetik: vX.Y.Z tag push
-# Görev: SADECE draft GitHub Release oluştur.
-# Derleme/paketleme/yükleme LOCAL'de Build-Release.ps1 ile yapılır.
-# Build-Release.ps1 "gh release upload" ile exe'yi yükler ve
-# "gh release edit --draft=false" ile yayınlar.
+# Tetik:
+#   1) vX.Y.Z tag push  → derle + paketle + GitHub Release yayinla
+#   2) workflow_dispatch → derle + paketle, setup.exe'yi artifact olarak birak
+#                          (release OLUSTURMAZ; prova/dogrulama icin)
+#
+# Derleme windows-latest runner'da yapilir. Boylece Windows makine
+# olmadan (macOS/Linux) release alinabilir.
+#
+# NOT: Inno Setup 6, windows-latest imajinda pre-installed gelir.
+#      .iss self-contained publish bekler; ayri .NET runtime redist
+#      indirmeye gerek yoktur (bkz. KoruMsSqlYedek.iss [Files]).
 # ═══════════════════════════════════════════════════════════════════
 
 name: Release
@@ -14,27 +20,110 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION_FILE: 'KoruMsSqlYedek.slnx'
+  ISCC_PATH: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
+  build-and-release:
+    runs-on: windows-latest
     steps:
 
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Extract version from tag
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    # Tag varsa tag'den, yoksa AssemblyInfo.cs'den oku (tek dogruluk kaynagi)
+    - name: Resolve version
       id: version
-      shell: bash
+      shell: pwsh
       run: |
-        ver="${{ github.ref_name }}"
-        ver="${ver#v}"
-        echo "VERSION=$ver" >> "$GITHUB_OUTPUT"
+        if ("${{ github.ref_type }}" -eq "tag") {
+          $ver = "${{ github.ref_name }}" -replace '^v', ''
+          Write-Host "Versiyon tag'den alindi: $ver"
+        }
+        else {
+          $content = Get-Content "KoruMsSqlYedek.Win\Properties\AssemblyInfo.cs" -Raw
+          if ($content -notmatch 'AssemblyVersion\("(\d+\.\d+\.\d+)\.\d+"\)') {
+            throw "AssemblyInfo.cs'den versiyon okunamadi."
+          }
+          $ver = $Matches[1]
+          Write-Host "Versiyon AssemblyInfo.cs'den alindi: $ver"
+        }
+        "VERSION=$ver" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+    - name: Restore
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+    - name: Build
+      run: dotnet build ${{ env.SOLUTION_FILE }} -c Release --no-restore
+
+    # Unit testler release kapisidir. Integration/Stress calisan SQL Server
+    # ve gercek dosya sistemi gerektirdiginden CI'da haric tutulur.
+    - name: Test (Unit)
+      run: dotnet test ${{ env.SOLUTION_FILE }} -c Release --no-build --filter "TestCategory=Unit" --logger "trx;LogFileName=test-results.trx"
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: '**/TestResults/*.trx'
+        if-no-files-found: ignore
+
+    # self-contained: hedef makinede .NET runtime kurulumu gerekmez.
+    # Native bagimliliklar (7z.dll, AlphaVSS) Engine csproj'daki Content
+    # kurallariyla otomatik kopyalanir.
+    - name: Publish Win (tray app)
+      run: dotnet publish KoruMsSqlYedek.Win\KoruMsSqlYedek.Win.csproj -c Release -o publish\win -r win-x64 --self-contained true
+
+    - name: Publish Service
+      run: dotnet publish KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj -c Release -o publish\service -r win-x64 --self-contained true
+
+    # ISCC output klasorunu kendisi yaratmaz — onceden hazirlanmali.
+    - name: Prepare releases directory
+      shell: pwsh
+      run: New-Item -ItemType Directory -Force -Path releases | Out-Null
+
+    - name: Compile installer (Inno Setup)
+      shell: pwsh
+      run: |
+        $ver    = "${{ steps.version.outputs.VERSION }}"
+        $winDir = "${{ github.workspace }}\publish\win"
+        $svcDir = "${{ github.workspace }}\publish\service"
+        if (-not (Test-Path $env:ISCC_PATH)) { throw "ISCC.exe bulunamadi: $env:ISCC_PATH" }
+        & $env:ISCC_PATH `
+            "/DMyAppVersion=$ver" `
+            "/DWinPublishDir=$winDir" `
+            "/DServicePublishDir=$svcDir" `
+            "Deployment\InnoSetup\KoruMsSqlYedek.iss"
+        if ($LASTEXITCODE -ne 0) { throw "ISCC $LASTEXITCODE kodu ile basarisiz oldu." }
+
+        $setup = "releases\KoruMsSqlYedek_v${ver}_Setup.exe"
+        if (-not (Test-Path $setup)) { throw "Installer uretilemedi: $setup" }
+        $mb = [math]::Round((Get-Item $setup).Length / 1MB, 1)
+        Write-Host "Installer hazir: $setup ($mb MB)"
+
+    # Tag olmadan calistirildiginda (prova) exe'yi artifact olarak birak
+    - name: Upload installer artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup
+        path: releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
+        if-no-files-found: error
 
     - name: Extract changelog notes
+      if: github.ref_type == 'tag'
       id: changelog
       shell: bash
       run: |
@@ -48,13 +137,15 @@ jobs:
         echo "$notes"        >> "$GITHUB_OUTPUT"
         echo "$delim"        >> "$GITHUB_OUTPUT"
 
-    - name: Create GitHub Release (draft)
+    - name: Create GitHub Release
+      if: github.ref_type == 'tag'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
         name: "Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}"
-        draft: true
+        draft: false
         prerelease: false
+        files: releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
         body: |
           ## Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}
 

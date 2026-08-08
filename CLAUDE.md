@@ -1,4 +1,4 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -8,16 +8,40 @@ KoruMsSqlYedek — SQL Server backup & cloud sync system. .NET 10 WinForms tray 
 
 ## Build & Test
 
-```bash
-dotnet build                              # Debug build
-dotnet build -c Release                   # Release build
-dotnet test                               # Run all tests
-dotnet test --filter "FullyQualifiedName~CloudProviderFactory"  # Single test class
-dotnet test --filter "TestCategory=Unit"  # Category filter
+Primary dev environment is **macOS**. All projects target `net10.0-windows`;
+`Directory.Build.props` sets `EnableWindowsTargeting` on non-Windows hosts so
+compilation works, but the produced binaries only *run* on Windows.
 
-# Full release (publish + ZIP + Inno Setup installer)
-powershell -ExecutionPolicy Bypass -File Deployment/Build-Release.ps1 -SkipTests
+| Task | macOS | Windows |
+|------|-------|---------|
+| `dotnet build` | ✅ works | ✅ |
+| `dotnet test` | ❌ needs `Microsoft.WindowsDesktop.App` runtime | ✅ |
+| Run tray app / service | ❌ WinForms is Windows-only | ✅ |
+| Build installer | ❌ needs Inno Setup (ISCC.exe) | ✅ |
+
+On macOS, tests and the installer run in CI — push a tag or trigger the
+Release workflow manually.
+
+```bash
+dotnet build                              # Debug build (works on macOS)
+dotnet build -c Release                   # Release build
+dotnet test                               # Windows only
+dotnet test --filter "TestCategory=Unit"  # Windows only — CI release gate
 ```
+
+## Release
+
+Releases are built by **GitHub Actions** (`.github/workflows/release.yml`) on a
+`windows-latest` runner: restore → build → Unit tests → publish (self-contained
+win-x64) → Inno Setup → GitHub Release with the installer attached.
+
+```bash
+git tag v0.99.88 && git push origin v0.99.88   # builds + publishes the release
+gh workflow run Release                        # dry run: installer as artifact, no release
+```
+
+`Deployment/Build-Release.ps1` is the Windows-only fallback for producing an
+installer locally; it is no longer the primary path.
 
 ## Architecture
 
@@ -39,10 +63,15 @@ KoruMsSqlYedek.Tests    → MSTest + FluentAssertions + Moq
 
 ## Version Management
 
-Version must be updated in **3 places** simultaneously:
-1. `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` → `<ApplicationVersion>`
+Version must be updated in **4 places** simultaneously:
+1. `KoruMsSqlYedek.Win/KoruMsSqlYedek.Win.csproj` → `<Version>`, `<AssemblyVersion>`, `<FileVersion>`, `<ApplicationVersion>`
 2. `KoruMsSqlYedek.Win/Properties/AssemblyInfo.cs` → `AssemblyVersion` + `AssemblyFileVersion`
-3. `Deployment/InnoSetup/KoruMsSqlYedek.iss` → `#define MyAppVersion`
+3. `KoruMsSqlYedek.Service/KoruMsSqlYedek.Service.csproj` → `<Version>`, `<AssemblyVersion>`, `<FileVersion>`
+4. `Deployment/InnoSetup/KoruMsSqlYedek.iss` → `#define MyAppVersion`
+
+⚠️ The Service csproj is **not UTF-8** (Windows-1254). `grep` treats it as binary
+and silently skips it — use `grep -a` / `LC_ALL=C sed` and verify the byte diff.
+CI reads the version from `AssemblyInfo.cs`, so that file is the source of truth.
 
 SemVer: breaking=MAJOR, feature=MINOR, fix=PATCH.
 

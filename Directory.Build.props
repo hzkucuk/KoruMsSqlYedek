@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    Tum projeler net10.0-windows hedefler. Windows disi bir makinede (macOS/Linux)
+    derleyebilmek icin SDK'nin bu hedefe izin vermesi gerekir; aksi halde
+    NETSDK1100 hatasi verir. Derleme calisir, ancak uretilen ciktilar yalnizca
+    Windows'ta CALISTIRILABILIR (WinForms + Microsoft.WindowsDesktop.App).
+  -->
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+</Project>
