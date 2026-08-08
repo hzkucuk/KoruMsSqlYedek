@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -129,6 +129,23 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             {
                 Log.Warning(ex, "Konsolide bildirim gönderilemedi: {PlanName}", plan.PlanName);
             }
+        }
+
+        /// <summary>
+        /// Retention temizliği bittiğinde UI'ya "Temizlik" adımını bildirir.
+        /// Temizlik iş akışının sonunda tek noktada çalıştığı için event de buradan atılır
+        /// (önceden ExecuteSqlBackupAsync içindeydi; çift çalıştırmaya yol açıyordu).
+        /// </summary>
+        private static void RaiseRetentionCompleted(BackupPlan plan)
+        {
+            BackupActivityHub.Raise(new BackupActivityEventArgs
+            {
+                PlanId = plan.PlanId,
+                PlanName = plan.PlanName,
+                ActivityType = BackupActivityType.StepChanged,
+                StepName = "Temizlik",
+                Message = "Eski yedek temizliği tamamlandı"
+            });
         }
 
         /// <summary>Dosya boyutunu güvenli şekilde alır.</summary>

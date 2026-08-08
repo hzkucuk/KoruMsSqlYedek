@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -30,6 +30,9 @@ namespace KoruMsSqlYedek.Tests
             BackupActivityType.CloudUploadProgress,
             BackupActivityType.CloudUploadCompleted,
             BackupActivityType.CloudUploadAbandoned,
+            BackupActivityType.DiskImageStarted,
+            BackupActivityType.DiskImageProgress,
+            BackupActivityType.DiskImageCompleted,
             BackupActivityType.Completed,
             BackupActivityType.Failed,
             BackupActivityType.Cancelled
@@ -46,11 +49,11 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
-        public void BackupActivityType_ShouldHaveExactly9Values()
+        public void BackupActivityType_ShouldHaveExactly13Values()
         {
             var allValues = Enum.GetValues(typeof(BackupActivityType)).Cast<BackupActivityType>().ToArray();
-            allValues.Should().HaveCount(10,
-                "BackupActivityType 10 değer içermeli. Yeni değer eklendiğinde bu test + 5 sorumluluk noktası güncellenmelidir.");
+            allValues.Should().HaveCount(13,
+                "BackupActivityType 13 değer içermeli. Yeni değer eklendiğinde bu test + 5 sorumluluk noktası güncellenmelidir.");
         }
 
         [TestMethod]

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -166,7 +166,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             // Retention temizliği
                             if (RetentionService != null)
                             {
-                                try { await RetentionService.CleanupAsync(plan, cts.Token); }
+                                try
+                                {
+                                    await RetentionService.CleanupAsync(plan, cts.Token);
+                                    RaiseRetentionCompleted(plan);
+                                }
                                 catch (OperationCanceledException) { throw; }
                                 catch (Exception ex) { Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName); }
                             }
@@ -276,7 +280,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         // Retention temizliği (SQL + FileBackup combined branch)
                         if (RetentionService != null)
                         {
-                            try { await RetentionService.CleanupAsync(plan, cts.Token); }
+                            try
+                            {
+                                await RetentionService.CleanupAsync(plan, cts.Token);
+                                RaiseRetentionCompleted(plan);
+                            }
                             catch (OperationCanceledException) { throw; }
                             catch (Exception ex) { Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName); }
                         }

@@ -9,6 +9,15 @@
 - **Hata mesajındaki düz metin `\n`** — resx kaçış dizisi yorumlamadığı için mesajda göründüğü gibi çıkıyordu;
   gerçek satır sonuna çevrildi (`Smtp_TestFailed`, `Smtp_TestBody`).
 
+- **Retention temizliği her SQL planında iki kez çalışıyordu** — `ExecuteSqlBackupAsync` kendi sonunda,
+  çağıran iş akışı da bulut yüklemesinden sonra `RetentionService.CleanupAsync` çağırıyordu.
+  Pipeline içindeki çağrı kaldırıldı; temizlik artık iş akışının sonunda tek sefer çalışıyor.
+  Bulut klasör süpürmesi (v0.99.81) için de doğrusu budur: yükleme bitmeden süpürülürse yeni yedek görülmez.
+  UI'daki "Temizlik" adımı `RaiseRetentionCompleted` ile korundu.
+- **Bayat koruma testleri** — v0.99.87 ile 3 yeni `BackupActivityType` (DiskImage*) eklenmiş ama
+  `BackupActivityExhaustivenessTests.KnownActivityTypes` dizisi 10 değerde kalmıştı. Üretim kodundaki
+  5 sorumluluk noktası doğruydu; yalnızca testin listesi güncellendi (10 → 13).
+
 ### Eklenen
 - `SmtpConnectionHelper` — porta göre `SecureSocketOptions` seçen ortak yardımcı sınıf ve zaman aşımı sabiti
 - `SmtpConnectionHelperTests` — port/SSL kombinasyonları için birim testleri
@@ -21,6 +30,12 @@
 - `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — Test butonu bağlantı seçenekleri
 - `KoruMsSqlYedek.Win\Properties\Resources.resx` / `Resources.tr-TR.resx` — Satır sonu düzeltmesi
 - `KoruMsSqlYedek.Tests\SmtpConnectionHelperTests.cs` — Yeni dosya
+- `KoruMsSqlYedek.Engine\Scheduling\BackupJobExecutor.SqlPipeline.cs` — Çift retention çağrısı kaldırıldı
+- `KoruMsSqlYedek.Engine\Scheduling\BackupJobExecutor.cs` — Temizlik event'i iki çağrı noktasına eklendi
+- `KoruMsSqlYedek.Engine\Scheduling\BackupJobExecutor.Helpers.cs` — `RaiseRetentionCompleted` eklendi
+- `KoruMsSqlYedek.Tests\BackupActivityExhaustivenessTests.cs` — Enum ile hizalandı (13 değer)
+- `.github\workflows\release.yml` — Installer derlemesi windows-latest runner'a alındı
+- `Directory.Build.props` — Yeni dosya: Windows dışı hostlarda `EnableWindowsTargeting`
 - `Deployment\InnoSetup\KoruMsSqlYedek.iss` — MyAppVersion fallback 0.99.70 → 0.99.88 senkronize edildi
 - `KoruMsSqlYedek.Service\KoruMsSqlYedek.Service.csproj` — Servis versiyonu 0.99.88'e senkronize edildi
 

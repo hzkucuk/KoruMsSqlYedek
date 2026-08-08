@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -292,29 +292,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     cleanupPaths.RemoveRange(cleanupSnapshot, cleanupPaths.Count - cleanupSnapshot);
             }
 
-            // 6. Retention — tüm DB'ler tamamlandıktan sonra bir kez çalıştır.
-            // Döngü içinde çalıştırılırsa prefix-paylaşan DB dosyaları erken silinebilir.
-            if (RetentionService != null)
-            {
-                try
-                {
-                    await RetentionService.CleanupAsync(plan, ct);
-
-                    BackupActivityHub.Raise(new BackupActivityEventArgs
-                    {
-                        PlanId = plan.PlanId,
-                        PlanName = plan.PlanName,
-                        ActivityType = BackupActivityType.StepChanged,
-                        StepName = "Temizlik",
-                        Message = "Eski yedek temizliği tamamlandı"
-                    });
-                }
-                catch (OperationCanceledException) { throw; }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName);
-                }
-            }
+            // 6. Retention BURADA CALISTIRILMAZ.
+            // Bu metod bulut yuklemelerini yapmaz; pendingUploads cagirana dondurulur ve
+            // yukleme orada tamamlanir. Retention bulut klasor supurmesi de yaptigindan
+            // (v0.99.81) yukleme bitmeden calistirilirsa yeni yedegi gormeden supurur.
+            // Bu yuzden temizlik, is akisinin sonunda cagiranda TEK sefer calisir.
 
             return (sqlResults, pendingUploads);
         }
