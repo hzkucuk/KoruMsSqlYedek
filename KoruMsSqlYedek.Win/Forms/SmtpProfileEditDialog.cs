@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Windows.Forms;
 using MailKit.Net.Smtp;
@@ -6,6 +6,7 @@ using MimeKit;
 using Serilog;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Engine.Notification;
 
 namespace KoruMsSqlYedek.Win.Forms
 {
@@ -158,11 +159,10 @@ namespace KoruMsSqlYedek.Win.Forms
             try
             {
                 int port = (int)_nudPort.Value;
-                var options = _chkUseSsl.Checked
-                    ? MailKit.Security.SecureSocketOptions.StartTls
-                    : MailKit.Security.SecureSocketOptions.None;
+                var options = SmtpConnectionHelper.GetSocketOptions(port, _chkUseSsl.Checked);
 
                 using var client = new SmtpClient();
+                client.Timeout = SmtpConnectionHelper.TimeoutMs;
                 client.Connect(_txtHost.Text.Trim(), port, options);
 
                 string username = _txtUsername.Text.Trim();

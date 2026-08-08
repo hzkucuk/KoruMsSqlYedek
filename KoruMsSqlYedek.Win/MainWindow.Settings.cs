@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Threading;
 using System.Windows.Forms;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Engine.Notification;
 using KoruMsSqlYedek.Win.Helpers;
 using Serilog;
 
@@ -270,9 +271,8 @@ namespace KoruMsSqlYedek.Win
                 Cursor = Cursors.WaitCursor;
 
                 using var client = new MailKit.Net.Smtp.SmtpClient();
-                var options = profile.UseSsl
-                    ? MailKit.Security.SecureSocketOptions.StartTls
-                    : MailKit.Security.SecureSocketOptions.None;
+                client.Timeout = SmtpConnectionHelper.TimeoutMs;
+                var options = SmtpConnectionHelper.GetSocketOptions(profile.Port, profile.UseSsl);
 
                 client.Connect(profile.Host, profile.Port, options);
 

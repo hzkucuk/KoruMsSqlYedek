@@ -1,4 +1,29 @@
-﻿## [0.99.87] - 2026-06-11 — 💾 Disk İmajı Yedekleme Altyapısı
+﻿## [0.99.88] - 2026-08-08 — 📧 SMTP Port 465 Bağlantı Düzeltmesi
+
+### Düzeltme
+- **SMTP 465 portunda bağlantı zaman aşımı** — SSL seçili olduğunda port farkı gözetilmeksizin daima `StartTls` kullanılıyordu.
+  465 implicit SSL (SMTPS) bekler: istemci ilk bayttan itibaren TLS el sıkışması başlatmalıdır. Düz bağlanılınca
+  sunucu yanıt vermez ve bağlantı zaman aşımına uğrar. Artık port 465 için `SslOnConnect`, 587/25 vb. için `StartTls` seçiliyor.
+  - Test e-postası ve tüm bildirim/rapor gönderimleri dahil 7 çağrı noktası etkileniyordu.
+- **20 sn bağlantı zaman aşımı** — MailKit varsayılanı 2 dakikaydı; hatalı yapılandırmada kullanıcı bu süre boyunca bekliyordu.
+- **Hata mesajındaki düz metin `\n`** — resx kaçış dizisi yorumlamadığı için mesajda göründüğü gibi çıkıyordu;
+  gerçek satır sonuna çevrildi (`Smtp_TestFailed`, `Smtp_TestBody`).
+
+### Eklenen
+- `SmtpConnectionHelper` — porta göre `SecureSocketOptions` seçen ortak yardımcı sınıf ve zaman aşımı sabiti
+- `SmtpConnectionHelperTests` — port/SSL kombinasyonları için birim testleri
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine\Notification\SmtpConnectionHelper.cs` — Yeni dosya
+- `KoruMsSqlYedek.Engine\Notification\EmailNotificationService.{Job,Sql,File,Cloud}Notification.cs` — Ortak yardımcıya geçiş
+- `KoruMsSqlYedek.Engine\Notification\ReportingService.cs` — Ortak yardımcıya geçiş
+- `KoruMsSqlYedek.Win\Forms\SmtpProfileEditDialog.cs` — Test butonu bağlantı seçenekleri
+- `KoruMsSqlYedek.Win\MainWindow.Settings.cs` — Test butonu bağlantı seçenekleri
+- `KoruMsSqlYedek.Win\Properties\Resources.resx` / `Resources.tr-TR.resx` — Satır sonu düzeltmesi
+- `KoruMsSqlYedek.Tests\SmtpConnectionHelperTests.cs` — Yeni dosya
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — MyAppVersion fallback 0.99.70 → 0.99.88 senkronize edildi
+
+## [0.99.87] - 2026-06-11 — 💾 Disk İmajı Yedekleme Altyapısı
 
 ### Eklenen
 - **Disk imajı yedekleme desteği** — `IDiskImageService` + `WbAdminDiskImageService` ile `wbadmin.exe` üzerinden WIM tabanlı sürücü/bölüm yedeği.

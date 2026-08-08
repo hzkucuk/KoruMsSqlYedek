@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -80,11 +80,11 @@ namespace KoruMsSqlYedek.Engine.Notification
 
                 using (var client = new SmtpClient())
                 {
+                    client.Timeout = SmtpConnectionHelper.TimeoutMs;
                     await client.ConnectAsync(
                         profile.Host,
                         profile.Port,
-                        profile.UseSsl ? MailKit.Security.SecureSocketOptions.StartTls
-                                       : MailKit.Security.SecureSocketOptions.None,
+                        SmtpConnectionHelper.GetSocketOptions(profile.Port, profile.UseSsl),
                         cancellationToken);
 
                     if (!string.IsNullOrEmpty(profile.Username))

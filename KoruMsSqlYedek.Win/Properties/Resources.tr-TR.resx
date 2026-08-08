@@ -1126,10 +1126,13 @@ Devre dışı kaynaklar yedekleme sırasında atlanır.</value></data>
   <data name="Smtp_HostRequired" xml:space="preserve"><value>SMTP sunucu adresi giriniz.</value></data>
   <data name="Smtp_RecipientRequired" xml:space="preserve"><value>Test e-postası için en az bir alıcı adresi giriniz.</value></data>
   <data name="Smtp_Sending" xml:space="preserve"><value>Gönderiliyor...</value></data>
-  <data name="Smtp_TestBody" xml:space="preserve"><value>Bu bir test e-postasıdır.\nProfil: {0}\nZaman: {1}</value></data>
+  <data name="Smtp_TestBody" xml:space="preserve"><value>Bu bir test e-postasıdır.
+Profil: {0}
+Zaman: {1}</value></data>
   <data name="Smtp_TestSuccess" xml:space="preserve"><value>Test e-postası başarıyla gönderildi.</value></data>
   <data name="Smtp_TestErrorTitle" xml:space="preserve"><value>SMTP Test Hatası</value></data>
-  <data name="Smtp_TestFailed" xml:space="preserve"><value>SMTP bağlantısı kurulamadı:\n{0}</value></data>
+  <data name="Smtp_TestFailed" xml:space="preserve"><value>SMTP bağlantısı kurulamadı:
+{0}</value></data>
 
   <!-- Google OAuth Durum -->
   <data name="GoogleOAuth_StatusCustom" xml:space="preserve"><value>✔ Özel kimlik bilgileri tanımlı</value></data>

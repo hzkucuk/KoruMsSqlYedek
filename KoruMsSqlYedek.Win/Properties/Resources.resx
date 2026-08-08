@@ -1136,10 +1136,13 @@ Disabled sources are skipped during backup execution.</value></data>
   <data name="Smtp_HostRequired" xml:space="preserve"><value>Please enter the SMTP server address.</value></data>
   <data name="Smtp_RecipientRequired" xml:space="preserve"><value>Please enter at least one recipient address for the test email.</value></data>
   <data name="Smtp_Sending" xml:space="preserve"><value>Sending...</value></data>
-  <data name="Smtp_TestBody" xml:space="preserve"><value>This is a test email.\nProfile: {0}\nTime: {1}</value></data>
+  <data name="Smtp_TestBody" xml:space="preserve"><value>This is a test email.
+Profile: {0}
+Time: {1}</value></data>
   <data name="Smtp_TestSuccess" xml:space="preserve"><value>Test email sent successfully.</value></data>
   <data name="Smtp_TestErrorTitle" xml:space="preserve"><value>SMTP Test Error</value></data>
-  <data name="Smtp_TestFailed" xml:space="preserve"><value>SMTP connection failed:\n{0}</value></data>
+  <data name="Smtp_TestFailed" xml:space="preserve"><value>SMTP connection failed:
+{0}</value></data>
 
   <!-- Google OAuth Status -->
   <data name="GoogleOAuth_StatusCustom" xml:space="preserve"><value>✔ Custom credentials defined</value></data>
