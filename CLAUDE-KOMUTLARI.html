@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Code Komut Rehberi — KoruMsSqlYedek</title>
+<meta name="description" content="Claude Code eğik çizgi komutlarının Türkçe rehberi, KoruMsSqlYedek projesinden gerçek örneklerle.">
+<style>
+  :root {
+    --paper:      #F5F6F5;
+    --surface:    #FFFFFF;
+    --ink:        #141A1B;
+    --ink-soft:   #465254;
+    --ink-faint:  #78878A;
+    --rule:       #DCE2E1;
+    --rule-soft:  #E9EDEC;
+    --accent:     #0E6E68;
+    --accent-ink: #0A4F4A;
+    --accent-bg:  #E4EFED;
+    --amber:      #8F5C0D;
+    --amber-bg:   #F4EADA;
+    --shadow:     0 1px 2px rgba(20, 26, 27, .05);
+
+    --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", ui-monospace, monospace;
+    --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0F1415;
+      --surface:    #161D1E;
+      --ink:        #E7EDEC;
+      --ink-soft:   #A0AFB0;
+      --ink-faint:  #6E7E7F;
+      --rule:       #263132;
+      --rule-soft:  #1D2627;
+      --accent:     #55B8AD;
+      --accent-ink: #7ACFC5;
+      --accent-bg:  #142B29;
+      --amber:      #DBA75C;
+      --amber-bg:   #2B2216;
+      --shadow:     0 1px 2px rgba(0, 0, 0, .3);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0F1415;
+    --surface:    #161D1E;
+    --ink:        #E7EDEC;
+    --ink-soft:   #A0AFB0;
+    --ink-faint:  #6E7E7F;
+    --rule:       #263132;
+    --rule-soft:  #1D2627;
+    --accent:     #55B8AD;
+    --accent-ink: #7ACFC5;
+    --accent-bg:  #142B29;
+    --amber:      #DBA75C;
+    --amber-bg:   #2B2216;
+    --shadow:     0 1px 2px rgba(0, 0, 0, .3);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4.5rem) clamp(1.1rem, 4vw, 3rem) 6rem;
+  }
+
+  /* ── Başlık ─────────────────────────────────────── */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .74rem;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2rem, 5.5vw, 3.1rem);
+    line-height: 1.08;
+    letter-spacing: -.025em;
+    font-weight: 650;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    margin: 0;
+    max-width: 64ch;
+    font-size: 1.06rem;
+    color: var(--ink-soft);
+  }
+
+  /* ── Gövde düzeni ───────────────────────────────── */
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    margin-top: 3rem;
+  }
+
+  @media (min-width: 940px) {
+    .body-grid { grid-template-columns: 190px 1fr; gap: 4rem; }
+    .toc { position: sticky; top: 2rem; align-self: start; }
+  }
+
+  .toc nav { display: flex; flex-direction: column; gap: .1rem; }
+
+  .toc-label {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 .9rem;
+  }
+
+  .toc a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: .88rem;
+    padding: .35rem 0;
+    border-bottom: 1px solid transparent;
+    transition: color .15s ease;
+  }
+  .toc a:hover { color: var(--accent); }
+  .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  main { display: flex; flex-direction: column; gap: 3.4rem; min-width: 0; }
+
+  /* ── Efsane ─────────────────────────────────────── */
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    padding: 1.3rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
+  }
+
+  .legend p { margin: 0; font-size: .92rem; color: var(--ink-soft); }
+  .legend strong { color: var(--ink); font-weight: 600; }
+
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .16rem .5rem;
+    vertical-align: .06em;
+  }
+  .badge.type-you  { background: var(--accent-bg); color: var(--accent-ink); }
+  .badge.type-auto { background: var(--amber-bg);  color: var(--amber); }
+
+  /* ── Bölümler ───────────────────────────────────── */
+  section { display: flex; flex-direction: column; gap: 0; scroll-margin-top: 1.5rem; }
+
+  h2 {
+    margin: 0 0 .3rem;
+    font-size: 1.42rem;
+    letter-spacing: -.015em;
+    font-weight: 640;
+    text-wrap: balance;
+  }
+
+  .section-note {
+    margin: 0 0 1.6rem;
+    font-size: .93rem;
+    color: var(--ink-soft);
+    max-width: 62ch;
+  }
+
+  /* ── Komut satırı ───────────────────────────────── */
+  .cmd {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--rule);
+  }
+  .cmd:last-child { border-bottom: 1px solid var(--rule); }
+
+  .cmd-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .6rem .8rem;
+  }
+
+  .cmd-name {
+    font-family: var(--mono);
+    font-size: 1.04rem;
+    font-weight: 600;
+    color: var(--accent-ink);
+    letter-spacing: -.01em;
+  }
+  .cmd-name .slash { color: var(--ink-faint); font-weight: 400; }
+
+  .cmd-args {
+    font-family: var(--mono);
+    font-size: .84rem;
+    color: var(--ink-faint);
+  }
+
+  .cmd-desc { margin: 0; max-width: 66ch; color: var(--ink-soft); }
+  .cmd-desc strong { color: var(--ink); font-weight: 600; }
+  .cmd-desc code, .legend code, .flow-step code, footer code { font-family: var(--mono); }
+
+  .example {
+    margin-top: .3rem;
+    padding: .85rem 1.1rem;
+    background: var(--surface);
+    border-left: 2px solid var(--accent);
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    overflow-x: auto;
+  }
+
+  .example-label {
+    font-family: var(--mono);
+    font-size: .66rem;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .example code {
+    font-family: var(--mono);
+    font-size: .87rem;
+    color: var(--ink);
+    white-space: pre;
+  }
+
+  .example .why {
+    font-size: .87rem;
+    color: var(--ink-soft);
+    white-space: normal;
+  }
+  .example .why code { color: var(--accent-ink); }
+
+  /* ── Akış ───────────────────────────────────────── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    counter-reset: step;
+  }
+
+  .flow-step {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr;
+    gap: 1rem;
+    padding: 1.05rem 0;
+    border-top: 1px solid var(--rule-soft);
+    align-items: baseline;
+  }
+  .flow-step:last-child { border-bottom: 1px solid var(--rule-soft); }
+
+  .flow-step::before {
+    counter-increment: step;
+    content: counter(step);
+    font-family: var(--mono);
+    font-size: .78rem;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .flow-step p { margin: 0; font-size: .93rem; color: var(--ink-soft); }
+  .flow-step code { font-size: .87rem; color: var(--accent-ink); }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--rule);
+    font-size: .85rem;
+    color: var(--ink-faint);
+    max-width: 66ch;
+  }
+  footer a { color: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow">Claude Code · KoruMsSqlYedek</p>
+    <h1>Eğik çizgi komutları: ne işe yarar, ne zaman yazılır</h1>
+    <p class="standfirst">
+      Claude Code'da <code style="font-family:var(--mono)">/</code> yazınca çıkan listenin tamamı — her biri
+      Türkçe açıklamasıyla ve KoruMsSqlYedek projesinden gerçek bir örnekle. Uydurma komut yok;
+      liste bu makinede gerçekten kurulu olanlardan çıkarıldı.
+    </p>
+  </header>
+
+  <div class="body-grid">
+
+    <aside class="toc">
+      <p class="toc-label">Bölümler</p>
+      <nav>
+        <a href="#nasil">Nasıl çalışır</a>
+        <a href="#inceleme">Kod inceleme</a>
+        <a href="#calistirma">Çalıştırma &amp; kurulum</a>
+        <a href="#otomasyon">Otomasyon</a>
+        <a href="#ortam">Ortam &amp; ayarlar</a>
+        <a href="#otomatik">Otomatik yüklenenler</a>
+        <a href="#yerlesik">Yerleşik CLI</a>
+        <a href="#akis">Günlük akış</a>
+      </nav>
+    </aside>
+
+    <main>
+
+      <!-- ── NASIL ÇALIŞIR ── -->
+      <section id="nasil">
+        <h2>Nasıl çalışır</h2>
+        <div class="legend">
+          <p>
+            <span class="badge type-you">sen yazarsın</span>
+            Listeden seçip <strong>bilerek çağırdığın</strong> komutlar. Genelde bir iş akışını
+            baştan sona yürütürler — inceleme yapar, düzeltme uygular, zamanlanmış görev kurarlar.
+          </p>
+          <p>
+            <span class="badge type-auto">Claude yükler</span>
+            Sen yazmasan da, konu geldiğinde <strong>ben kendim devreye alırım</strong>. Bunları bilmenin
+            faydası şu: bir grafik ya da rapor sayfası isteyeceksen, ilgili rehberin zaten
+            yükleneceğini bilirsin — ayrıca yazman gerekmez.
+          </p>
+          <p style="color:var(--ink-faint);font-size:.87rem">
+            Bir komutun üstüne mouse ile geldiğinde çıkan tooltip, o becerinin İngilizce tek satırlık
+            tanımıdır. Aşağıdaki açıklamalar aynı tanımların Türkçesi, ama örnekler senin projenden.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── KOD İNCELEME ── -->
+      <section id="inceleme">
+        <h2>Kod inceleme ve kalite</h2>
+        <p class="section-note">
+          En çok işine yarayacak grup bu. Üçü birbirinin yerine geçmez: biri hata arar,
+          biri sadeleştirir, biri güvenlik açığı arar.
+        </p>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>code-review</span>
+            <span class="cmd-args">[low | medium | high | max | ultra] [PR# | branch] [--comment] [--fix]</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Değişikliklerini <strong>hata avı</strong> için inceler. Seviye yükseldikçe daha geniş tarar
+            ama daha çok "belki" içerir: <em>low/medium</em> az ve yüksek güvenli bulgu,
+            <em>high/max</em> geniş kapsam, <em>ultra</em> bulutta çok ajanlı derin inceleme.
+            <code>--fix</code> bulguları doğrudan uygular,
+            <code>--comment</code> PR'a satır içi yorum bırakır.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/code-review high</code>
+            <span class="why">
+              Retention temizliğinin iki kez çalıştığı hata tam da bunun yakalayacağı türden:
+              CI'da 14 test patlayana kadar fark edilmemişti. develop'a commit atmadan önce çalıştır.
+            </span>
+          </div>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/code-review ultra 5</code>
+            <span class="why">
+              Açık duran dependabot PR #5 (actions/checkout 4→7) için derin inceleme.
+              Not: <em>ultra</em> faturalandırılır ve yalnızca sen başlatabilirsin, ben başlatamam.
+            </span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>simplify</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Değişen kodu <strong>sadeleştirir ve tekrarı temizler</strong>, sonra düzeltmeleri uygular.
+            Hata aramaz — o iş <code>/code-review</code>'un.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/simplify</code>
+            <span class="why">
+              SMTP bağlantı bloğu beş ayrı dosyada birebir kopyalanmıştı; sonunda
+              <code>SmtpConnectionHelper</code>'a çıkarıldı. Bu komut o tür tekrarı kendi bulur.
+            </span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>security-review</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Mevcut dalda bekleyen değişiklikler için <strong>güvenlik incelemesi</strong> yapar.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/security-review</code>
+            <span class="why">
+              Bu projede tam yeri var: DPAPI ile korunan SMTP/FTP şifreleri, Google Drive token'ları,
+              SQL bağlantı dizeleri ve e-postaya giden hata metinlerindeki yol sızıntısı.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── ÇALIŞTIRMA ── -->
+      <section id="calistirma">
+        <h2>Çalıştırma ve proje kurulumu</h2>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>run</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Uygulamayı <strong>gerçekten başlatır</strong> ve değişikliğin çalıştığını testle değil
+            uygulamanın kendisiyle doğrular.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/run</code>
+            <span class="why">
+              Tray uygulamasını açıp SMTP profil dialogundaki "Test" butonunu gerçekten denemek için.
+              Birim testlerin yakalayamadığı UI/dialog hataları ancak böyle çıkar.
+            </span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>init</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Projeyi tarayıp <strong>CLAUDE.md dosyasını oluşturur</strong> — mimari, build komutları,
+            kritik kurallar. Sende zaten var; yeni bir repoda ya da yapı ciddi değiştiğinde işe yarar.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/init</code>
+            <span class="why">
+              CLAUDE.md'deki "versiyon 3 yerde güncellenir" kuralı 4'e çıkmıştı (Service csproj eklendi).
+              Bu tür kaymaları toparlamak için.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── OTOMASYON ── -->
+      <section id="otomasyon">
+        <h2>Otomasyon ve zamanlama</h2>
+        <p class="section-note">
+          İkisi karıştırılır: <em>loop</em> bu oturumda tekrar eder, <em>schedule</em> sen kapattıktan
+          sonra bulutta çalışır.
+        </p>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>loop</span>
+            <span class="cmd-args">[süre] [komut veya istek]</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Bir işi <strong>belirli aralıklarla tekrar tekrar</strong> çalıştırır. Süreyi yazmazsan
+            kendim uygun aralığı seçerim. Tek seferlik işler için kullanma.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/loop 10m release workflow durumunu kontrol et</code>
+            <span class="why">
+              Az önce v0.99.88 release'ini beklerken tam olarak bu işe yarardı.
+            </span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>schedule</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            <strong>Cron ile çalışan bulut ajanları</strong> kurar, listeler, siler. Tek seferlik
+            ileri tarihli çalıştırma da yapar ("yarın 09:00'da şunu kontrol et").
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/schedule her pazartesi 09:00'da açık dependabot PR'larını
+  incele ve güvenliyse merge et</code>
+            <span class="why">
+              #4 ve #5 aylardır açık bekliyor. Bu tür bakım işleri için biçilmiş kaftan.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── ORTAM ── -->
+      <section id="ortam">
+        <h2>Ortam ve ayarlar</h2>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>fewer-permission-prompts</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Geçmiş oturumlarını tarar, <strong>sürekli izin sorduğum güvenli komutları</strong> bulur
+            ve projenin <code>.claude/settings.json</code> dosyasına izin listesi ekler.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/fewer-permission-prompts</code>
+            <span class="why">
+              Bu oturumda <code>git stash drop</code> izin engeline takıldık ve iş yavaşladı.
+              <code>dotnet build</code>, <code>gh run list</code>, <code>git status</code> gibi
+              sürekli tekrarlananları bir kez izinli yaparsan akış kesilmez.
+            </span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>update-config</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            <code>settings.json</code> ayarlarını düzenler: izinler, ortam değişkenleri ve
+            <strong>hook'lar</strong>. "Şu andan itibaren her X'te Y yap" türü otomatik davranışlar
+            ancak hook ile olur — hafızaya not düşmekle olmaz, çünkü onu ben değil program çalıştırır.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/update-config her commit sonrası dotnet build çalıştır</code>
+            <span class="why">
+              CLAUDE.md'deki "görev sonrası build doğrula" kuralını dilekçe olmaktan çıkarıp
+              gerçekten zorunlu hale getirir.
+            </span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>keybindings-help</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Klavye kısayollarını özelleştirir
+            (<code>~/.claude/keybindings.json</code>).
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/keybindings-help</code>
+            <span class="why">Gönderme tuşunu değiştirmek ya da kendi kısayol zincirini tanımlamak için.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── OTOMATİK ── -->
+      <section id="otomatik">
+        <h2>Claude'un kendi yüklediği beceriler</h2>
+        <p class="section-note">
+          Bunları yazman gerekmez — konu geçtiğinde ben açarım. Listede görünürler, o yüzden
+          ne olduklarını bilmen yeter.
+        </p>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>dataviz</span>
+            <span class="badge type-auto">Claude yükler</span>
+          </div>
+          <p class="cmd-desc">
+            Grafik, tablo, gösterge paneli üretirken <strong>renk paleti ve grafik kurallarını</strong> belirler.
+          </p>
+          <div class="example">
+            <span class="example-label">Ne zaman devreye girer</span>
+            <code>"History klasöründeki JSON'lardan aylık
+ yedek başarı grafiği çıkar"</code>
+            <span class="why">
+              <code>C:\ProgramData\KoruMsSqlYedek\History\</code> altında 28 günlük kayıt var —
+              bunlardan panel istediğinde otomatik yüklenir.
+            </span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>artifact-design</span>
+            <span class="cmd-args">· artifact-diagramming · artifact-capabilities</span>
+            <span class="badge type-auto">Claude yükler</span>
+          </div>
+          <p class="cmd-desc">
+            Paylaşılabilir web sayfası (<strong>Artifact</strong>) hazırlarken tasarım, diyagram ve
+            canlı veri yeteneklerini yöneten üç rehber. Şu an okuduğun sayfa bunlarla üretildi.
+          </p>
+          <div class="example">
+            <span class="example-label">Ne zaman devreye girer</span>
+            <code>"Bunu bir sayfa haline getir, ekibe göndereyim"</code>
+            <span class="why">
+              Sayfalar varsayılan olarak gizli oluşturulur; paylaşma kararı sende kalır.
+            </span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>claude-api</span>
+            <span class="badge type-auto">Claude yükler</span>
+          </div>
+          <p class="cmd-desc">
+            Claude API / Anthropic SDK referansı — model kimlikleri, fiyatlar, token sayımı,
+            araç kullanımı. <strong>Model konusunda ezberden cevap vermemem</strong> için var.
+          </p>
+          <div class="example">
+            <span class="example-label">Ne zaman devreye girer</span>
+            <code>"Yedek raporlarını özetleyen bir yapay zekâ
+ modülü ekleyelim mi?"</code>
+            <span class="why">Projeye LLM entegrasyonu konuşulduğu anda otomatik açılır.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── YERLEŞİK ── -->
+      <section id="yerlesik">
+        <h2>Yerleşik CLI komutları</h2>
+        <p class="section-note">
+          Bunlar beceri değil, Claude Code'un kendi komutları. Ben çalıştıramam — senin yazman gerekir.
+          <code>/model</code> yazdığında bana düz metin olarak gelmesinin sebebi buydu.
+        </p>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>model</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">Kullanılan modeli değiştirir (Opus 5, Sonnet 5, Haiku 4.5).</p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/model opus</code>
+            <span class="why">Zor mimari kararlar ve derin hata avı için Opus; rutin işlerde Sonnet yeterli.</span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>fast</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Hızlı modu açar/kapatır. <strong>Küçük modele düşmez</strong> — aynı Opus, sadece daha hızlı üretir.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/fast</code>
+            <span class="why">Uzun refactor turlarında beklemeyi kısaltır.</span>
+          </div>
+        </div>
+
+        <div class="cmd">
+          <div class="cmd-head">
+            <span class="cmd-name"><span class="slash">/</span>clear</span>
+            <span class="cmd-args">· /config · /help</span>
+            <span class="badge type-you">sen yazarsın</span>
+          </div>
+          <p class="cmd-desc">
+            Sırasıyla: sohbeti sıfırlar, ayar panelini açar, kurulu komutların canlı listesini gösterir.
+          </p>
+          <div class="example">
+            <span class="example-label">Örnek</span>
+            <code>/clear</code>
+            <span class="why">
+              Konu tamamen değiştiğinde kullan — SMTP hatasından disk imajı tasarımına geçerken
+              eski bağlamı taşımak işine yaramaz. Güncel komut listesi için <code>/help</code>.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── AKIŞ ── -->
+      <section id="akis">
+        <h2>Bu projede günlük akış</h2>
+        <p class="section-note">
+          CLAUDE.md'deki "görev sonrası" kuralıyla uyumlu, komutları sıraya koyulmuş hali.
+        </p>
+        <div class="flow">
+          <div class="flow-step">
+            <p>Değişikliği yap, sonra <code>/simplify</code> ile tekrarı temizle.</p>
+          </div>
+          <div class="flow-step">
+            <p><code>/code-review high</code> — commit'ten <em>önce</em>. Retention hatası gibi sessiz regresyonlar burada yakalanır.</p>
+          </div>
+          <div class="flow-step">
+            <p>Şifre, token veya bağlantı dizesine dokunduysan <code>/security-review</code>.</p>
+          </div>
+          <div class="flow-step">
+            <p><code>/run</code> ile uygulamayı aç, UI tarafını gerçekten dene.</p>
+          </div>
+          <div class="flow-step">
+            <p>Versiyonu 4 yerde güncelle, CHANGELOG'a yaz, develop'a commit'le, sonra <code>git tag vX.Y.Z &amp;&amp; git push origin vX.Y.Z</code> ile release'i tetikle.</p>
+          </div>
+          <div class="flow-step">
+            <p>Uzun süren CI'ı beklerken <code>/loop</code>; tekrar eden bakım işleri için <code>/schedule</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Bu rehber 9 Ağustos 2026'da, bu makinede kurulu beceri listesinden hazırlandı.
+        Yeni bir beceri eklendiğinde ya da kaldırıldığında liste değişir —
+        güncel hali her zaman <code>/help</code> ile görülebilir.
+        Markdown sürümü: <a href="CLAUDE-KOMUTLARI.md">CLAUDE-KOMUTLARI.md</a>
+      </footer>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

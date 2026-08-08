@@ -122,20 +122,29 @@ jobs:
         path: releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
         if-no-files-found: error
 
+    # pwsh kullaniliyor: bu is windows-latest'te kosuyor ve Git Bash'te
+    # uuidgen yok (v0.99.88 tag'i tam bu yuzden basarisiz oldu).
     - name: Extract changelog notes
       if: github.ref_type == 'tag'
       id: changelog
-      shell: bash
+      shell: pwsh
       run: |
-        ver="${{ steps.version.outputs.VERSION }}"
-        notes=$(awk "/^## \[$ver\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md | sed '/^[[:space:]]*$/d' | head -60)
-        if [ -z "$notes" ]; then
-          notes="Bkz: [CHANGELOG.md](https://github.com/hzkucuk/KoruMsSqlYedek/blob/master/CHANGELOG.md)"
-        fi
-        delim="NOTES_DELIM_$(uuidgen)"
-        echo "NOTES<<$delim" >> "$GITHUB_OUTPUT"
-        echo "$notes"        >> "$GITHUB_OUTPUT"
-        echo "$delim"        >> "$GITHUB_OUTPUT"
+        $ver = "${{ steps.version.outputs.VERSION }}"
+        $notes = [System.Collections.Generic.List[string]]::new()
+        $found = $false
+        foreach ($line in Get-Content CHANGELOG.md -Encoding utf8) {
+          if ($line -match "^##\s*\[$([regex]::Escape($ver))\]") { $found = $true; continue }
+          if ($found -and $line -match '^##\s*\[') { break }
+          if ($found -and $line.Trim()) { $notes.Add($line) }
+        }
+        if ($notes.Count -eq 0) {
+          $notes.Add("Bkz: [CHANGELOG.md](https://github.com/hzkucuk/KoruMsSqlYedek/blob/master/CHANGELOG.md)")
+        }
+        $body  = ($notes | Select-Object -First 60) -join "`n"
+        $delim = "NOTES_DELIM_" + [guid]::NewGuid().ToString("N")
+        "NOTES<<$delim" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        $body           | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+        $delim          | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
     - name: Create GitHub Release
       if: github.ref_type == 'tag'

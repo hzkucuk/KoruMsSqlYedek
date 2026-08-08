@@ -9,11 +9,34 @@ namespace KoruMsSqlYedek.Core.Models
     /// </summary>
     public enum DiskImageFormat
     {
-        /// <summary>Windows Image Format (.wim) — wbadmin ile oluşturulur.</summary>
+        /// <summary>Windows Image Format (.wim) — wimlib-imagex ile oluşturulur.</summary>
         Wim = 0,
 
         /// <summary>Virtual Hard Disk (.vhd) — ileride desteklenecek.</summary>
         Vhd = 1
+    }
+
+    /// <summary>
+    /// WIM imajı sıkıştırma seviyesi.
+    /// Boyut/süre takası: aşağı indikçe imaj küçülür ama oluşturma süresi uzar.
+    /// </summary>
+    public enum DiskImageCompression
+    {
+        /// <summary>Sıkıştırma yok — en hızlı, en büyük dosya.</summary>
+        None = 0,
+
+        /// <summary>XPRESS — hızlı, orta sıkıştırma.</summary>
+        Fast = 1,
+
+        /// <summary>LZX — DISM /Compress:max ile aynı seviye.</summary>
+        Max = 2,
+
+        /// <summary>
+        /// LZMS solid — varsayılan. 64 MB'lık bloklarla dosyalar arası tekrarı da yakalar;
+        /// LZX'e kıyasla tipik olarak %25-35 daha küçük, karşılığında 2-4 kat daha uzun sürer.
+        /// Yalnızca Windows 8.1+ tarafından okunabilir.
+        /// </summary>
+        Solid = 3
     }
 
     /// <summary>
@@ -49,6 +72,21 @@ namespace KoruMsSqlYedek.Core.Models
         /// <summary>İmaj formatı (varsayılan: Wim).</summary>
         [JsonProperty("format")]
         public DiskImageFormat Format { get; set; } = DiskImageFormat.Wim;
+
+        /// <summary>
+        /// Sıkıştırma seviyesi (varsayılan: Solid).
+        /// Yedek "bir kez yaz, nadiren geri yükle" profilinde olduğu için
+        /// en küçük dosyayı üreten seçenek varsayılan alınmıştır.
+        /// </summary>
+        [JsonProperty("compression")]
+        public DiskImageCompression Compression { get; set; } = DiskImageCompression.Solid;
+
+        /// <summary>
+        /// İmaj bütünlük tablosu (integrity table) yazılsın mı?
+        /// Geri yükleme öncesi bozulma tespiti sağlar; imaj boyutunu ~%0.1 artırır.
+        /// </summary>
+        [JsonProperty("writeIntegrityTable")]
+        public bool WriteIntegrityTable { get; set; } = true;
 
         /// <summary>Yedeklenecek sürücü/bölüm listesi.</summary>
         [JsonProperty("sources")]

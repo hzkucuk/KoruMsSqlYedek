@@ -55,8 +55,8 @@ namespace KoruMsSqlYedek.Engine.IoC
                 .As<IFileBackupService>()
                 .InstancePerDependency();
 
-            // Disk imajı yedekleme (wbadmin)
-            builder.RegisterType<WbAdminDiskImageService>()
+            // Disk imajı yedekleme (wimlib-imagex — LZMS solid sıkıştırma)
+            builder.RegisterType<WimlibDiskImageService>()
                 .As<IDiskImageService>()
                 .InstancePerDependency();
 

@@ -1,4 +1,53 @@
-﻿## [0.99.88] - 2026-08-08 — 📧 SMTP Port 465 Bağlantı Düzeltmesi
+﻿## [0.99.89] - 2026-08-09 — 💽 Disk İmajı: wimlib ile Sıkıştırma
+
+### Değişen
+- **Disk imajı yedekleme wbadmin'den `wimlib-imagex`'e taşındı.** wbadmin sıkıştırma yapmadan
+  VHDX üretiyordu — 200 GB'lık bir sürücü 200 GB yer kaplıyordu. wimlib LZMS *solid* sıkıştırma ile
+  aynı içeriği tipik olarak **%60-70 daha küçük** yazıyor (referans: Microsoft'un kendi
+  `install.wim` 4.0 GB → `install.esd` 2.7 GB).
+  - Varsayılan seviye `Solid`; `None` / `Fast` (XPRESS) / `Max` (LZX, DISM `/Compress:max` ile aynı) seçilebilir.
+  - Karşılığı süre: solid mod LZX'in 2-4 katı sürer. "Bir kez yaz, nadiren geri yükle" profiline uygun takas.
+  - Solid WIM'ler Windows 8.1+ gerektirir.
+- **`DiskImageFormat.Wim` artık gerçekten WIM üretiyor.** Önceki kod `Wim` diyor ama wbadmin ile
+  `WindowsImageBackup\...\*.vhdx` yazıyordu; enum ile çıktı uyuşmuyordu.
+
+### Düzeltme
+- **İmaj dosya yolu artık konsol çıktısından parse edilmiyor.** Eski `ExtractFilePath`
+  yerelleştirilmiş wbadmin metnini ayrıştırıyordu; Türkçe/İngilizce Windows'ta kırılgandı ve
+  `ImageSizeBytes` çoğu zaman 0 kalıyordu. Çıktı yolunu artık uygulama belirliyor.
+- **İlerleme çubuğu disk imajında hiç hareket etmiyordu.** wimlib ilerlemeyi satır sonu yerine
+  satır başı (`\r`) ile güncellediği için `ReadLineAsync` işlem bitene kadar hiçbir şey döndürmüyor;
+  karakter tamponlu okumaya geçildi. Aynı yüzde tekrar bildirilmiyor (UI olay yağmuru önlendi).
+- **Yarım kalan imaj dosyaları siliniyor.** Başarısız veya iptal edilen işlemden kalan `.wim`
+  geçerli görünüp geri yüklemede başarısız olabiliyordu.
+- **Release workflow tag'de çöküyordu** — `uuidgen` çağrısı Linux'a özgüydü, iş `windows-latest`'e
+  taşındığında Git Bash'te bulunamadı (`exit 127`). Adım pwsh'e çevrildi.
+  - Bu adım `if: ref_type == 'tag'` ile korunduğu için `workflow_dispatch` provası onu hiç
+    çalıştırmıyor ve hatayı gösteremiyordu. v0.99.88 tag'i bu yüzden release üretemedi.
+
+### Eklenen
+- `WimlibDiskImageService` — wimlib-imagex tabanlı `IDiskImageService` uygulaması
+- `WimlibCommandBuilder` — argüman üretimi ve exe konumu çözümlemesi (saf fonksiyonlar)
+- `WimlibCommandBuilderTests` — 17 birim testi
+- `DiskImageCompression` enum'u ve `DiskImageBackupConfig.Compression` / `WriteIntegrityTable` alanları
+- wimlib-imagex 1.14.4 (Windows x64) ikilileri `Engine\Native\wimlib\` altına gömüldü;
+  installer `recursesubdirs` ile otomatik paketliyor. Ayrı süreç olarak çağrıldığı için
+  GPLv3+ lisansı bu projeye yükümlülük doğurmaz; `COPYING*.txt` dosyaları yanında dağıtılır.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine\FileBackup\WimlibDiskImageService.cs` — Yeni dosya
+- `KoruMsSqlYedek.Engine\FileBackup\WimlibCommandBuilder.cs` — Yeni dosya
+- `KoruMsSqlYedek.Engine\FileBackup\WbAdminDiskImageService.cs` — Artık kayıtlı değil (referans olarak duruyor)
+- `KoruMsSqlYedek.Engine\IoC\EngineModule.cs` — `IDiskImageService` kaydı wimlib'e çevrildi
+- `KoruMsSqlYedek.Engine\KoruMsSqlYedek.Engine.csproj` — wimlib Content kuralı
+- `KoruMsSqlYedek.Core\Models\DiskImageModels.cs` — `DiskImageCompression` + yeni config alanları
+- `KoruMsSqlYedek.Tests\WimlibCommandBuilderTests.cs` — Yeni dosya
+- `.github\workflows\release.yml` — changelog adımı pwsh'e çevrildi
+- `CLAUDE-KOMUTLARI.md` / `.html` / `.mht` — Yeni: Claude Code komut rehberi
+
+---
+
+## [0.99.88] - 2026-08-08 — 📧 SMTP Port 465 Bağlantı Düzeltmesi
 
 ### Düzeltme
 - **SMTP 465 portunda bağlantı zaman aşımı** — SSL seçili olduğunda port farkı gözetilmeksizin daima `StartTls` kullanılıyordu.
