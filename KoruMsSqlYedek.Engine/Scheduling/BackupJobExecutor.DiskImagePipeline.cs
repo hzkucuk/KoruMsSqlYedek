@@ -22,16 +22,32 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             string correlationId,
             CancellationToken ct)
         {
-            if (DiskImageService == null)
-            {
-                Log.Error("Disk imajı yedekleme: DiskImageService null (Autofac inject başarısız). Plan={PlanName}", plan.PlanName);
-                return new List<DiskImageResult>();
-            }
-
             var config = plan.DiskImageBackup;
             if (config is null || !config.IsEnabled)
             {
                 Log.Information("Disk imajı yedekleme devre dışı. Plan={PlanName}", plan.PlanName);
+                return new List<DiskImageResult>();
+            }
+
+            // Ücretsiz sürümde Plus eklentisi bulunmadığı için servis kayıtlı olmaz.
+            // Bu bir hata değil, beklenen durumdur — plan Plus'lı bir kurulumdan gelmiş olabilir.
+            if (DiskImageService == null)
+            {
+                Log.Information(
+                    "Disk imajı yedekleme atlandı: bu özellik Plus sürümüne aittir. Plan={PlanName}",
+                    plan.PlanName);
+
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = plan.PlanId,
+                    PlanName = plan.PlanName,
+                    ActivityType = BackupActivityType.DiskImageCompleted,
+                    StepName = "Disk İmajı",
+                    HasDiskImageBackup = false,
+                    IsSuccess = false,
+                    Message = "Disk imajı yedekleme Plus sürümünde kullanılabilir — atlandı"
+                });
+
                 return new List<DiskImageResult>();
             }
 

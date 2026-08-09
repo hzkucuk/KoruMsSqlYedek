@@ -55,10 +55,10 @@ namespace KoruMsSqlYedek.Engine.IoC
                 .As<IFileBackupService>()
                 .InstancePerDependency();
 
-            // Disk imajı yedekleme (wimlib-imagex — LZMS solid sıkıştırma)
-            builder.RegisterType<WimlibDiskImageService>()
-                .As<IDiskImageService>()
-                .InstancePerDependency();
+            // Disk imajı yedekleme artık çekirdekte değil — Plus eklentisiyle gelir.
+            // Eklenti yoksa IDiskImageService kayıtsız kalır ve özellik kapalı görünür.
+            // Bkz. Plugins\PluginLoader ve KoruMsSqlYedek.Plus deposu.
+            KoruMsSqlYedek.Engine.Plugins.PluginLoader.LoadInto(builder);
 
             // Retention
             builder.RegisterType<RetentionCleanupService>()

@@ -18,9 +18,19 @@ namespace KoruMsSqlYedek.Win.Forms
         private CheckBox _chkDiskImageEnabled = null!;
         private CheckedListBox _clbDiskVolumes = null!;
         private Button _btnRefreshVolumes = null!;
+        private Button _btnAddFolder = null!;
         private GroupBox _grpDiskImage = null!;
+
+        /// <summary>
+        /// Kullanıcının elle eklediği klasörler. Sürücü taraması listeyi yeniden kurduğu için
+        /// bunlar ayrıca tutulur; aksi halde "Sürücüleri Tara" her basıldığında silinirlerdi.
+        /// </summary>
+        private readonly List<string> _customFolders = new List<string>();
         private ComboBox _cmbDiskCompression = null!;
         private Label _lblDiskCompression = null!;
+
+        /// <summary>Plus eklentisi kurulu mu? Değilse bölüm salt gösterim amaçlıdır.</summary>
+        private bool _plusInstalled;
 
         /// <summary>
         /// Disk İmajı GroupBox'ını Step 2 paneline ekler.
@@ -29,9 +39,13 @@ namespace KoruMsSqlYedek.Win.Forms
         internal void BuildDiskImageUi()
         {
             // GroupBox
+            _plusInstalled = KoruMsSqlYedek.Engine.Plugins.PlusAvailability.IsPlusInstalled();
+
             _grpDiskImage = new GroupBox
             {
-                Text = "Disk İmajı Yedekleme (wimlib)",
+                Text = _plusInstalled
+                    ? "Disk İmajı Yedekleme (wimlib)"
+                    : "Disk İmajı Yedekleme — Plus sürümü",
                 Font = new Font(_pnlStep2.Font, FontStyle.Bold),
                 Dock = DockStyle.Bottom,
                 Height = 205,
@@ -75,6 +89,19 @@ namespace KoruMsSqlYedek.Win.Forms
                 Font = new Font(_pnlStep2.Font, FontStyle.Regular)
             };
             _btnRefreshVolumes.Click += OnRefreshVolumesClick;
+
+            // Klasör ekleme — wimlib kaynak olarak herhangi bir dizini kabul eder,
+            // tüm sürücü olmak zorunda değildir. (Tek dosya desteklenmez: "Expected a directory".)
+            _btnAddFolder = new Button
+            {
+                Text = "Klasör Ekle",
+                Location = new Point(360, 104),
+                Size = new Size(110, 28),
+                Font = new Font(_pnlStep2.Font, FontStyle.Regular)
+            };
+            _btnAddFolder.Click += OnAddFolderClick;
+
+            _grpDiskImage.Controls.Add(_btnAddFolder);
 
             // Sıkıştırma seviyesi — imaj boyutunu belirleyen asıl ayar
             _lblDiskCompression = new Label
@@ -127,9 +154,22 @@ namespace KoruMsSqlYedek.Win.Forms
 
         private void UpdateDiskImageFieldsVisibility()
         {
+            // Plus kurulu değilse tüm bölüm salt gösterim: kullanılamayacak bir özellik açtırılmaz
+            if (!_plusInstalled)
+            {
+                if (_chkDiskImageEnabled != null) _chkDiskImageEnabled.Enabled = false;
+                if (_clbDiskVolumes != null) _clbDiskVolumes.Enabled = false;
+                if (_btnRefreshVolumes != null) _btnRefreshVolumes.Enabled = false;
+                if (_btnAddFolder != null) _btnAddFolder.Enabled = false;
+                if (_cmbDiskCompression != null) _cmbDiskCompression.Enabled = false;
+                if (_lblDiskCompression != null) _lblDiskCompression.Enabled = false;
+                return;
+            }
+
             bool enabled = _chkDiskImageEnabled?.Checked ?? false;
             if (_clbDiskVolumes != null) _clbDiskVolumes.Enabled = enabled;
             if (_btnRefreshVolumes != null) _btnRefreshVolumes.Enabled = enabled;
+            if (_btnAddFolder != null) _btnAddFolder.Enabled = enabled;
             if (_cmbDiskCompression != null) _cmbDiskCompression.Enabled = enabled;
             if (_lblDiskCompression != null) _lblDiskCompression.Enabled = enabled;
         }
@@ -137,6 +177,35 @@ namespace KoruMsSqlYedek.Win.Forms
         private void OnRefreshVolumesClick(object? sender, EventArgs e)
         {
             RefreshAvailableVolumes();
+        }
+
+        private void OnAddFolderClick(object? sender, EventArgs e)
+        {
+            using var dlg = new FolderBrowserDialog
+            {
+                Description = "İmajı alınacak klasörü seçin",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = false
+            };
+
+            if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+            string path = dlg.SelectedPath?.TrimEnd('\\', '/');
+            if (string.IsNullOrWhiteSpace(path)) return;
+
+            bool alreadyListed =
+                _customFolders.Contains(path, StringComparer.OrdinalIgnoreCase) ||
+                GetSelectedVolumePaths().Contains(path, StringComparer.OrdinalIgnoreCase);
+
+            if (alreadyListed)
+            {
+                Theme.ModernMessageBox.Show("Bu klasör zaten listede.", "Bilgi",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            _customFolders.Add(path);
+            _clbDiskVolumes.Items.Add(new VolumeItem(path, $"{path}  (klasör)"), true);
         }
 
         /// <summary>
@@ -160,6 +229,13 @@ namespace KoruMsSqlYedek.Win.Forms
                 string volumePath = drive.Name.TrimEnd('\\', '/');
                 _clbDiskVolumes.Items.Add(new VolumeItem(volumePath, label),
                     selected.Contains(volumePath, StringComparer.OrdinalIgnoreCase));
+            }
+
+            // Elle eklenen klasörler tarama sonrası geri konur
+            foreach (string folder in _customFolders)
+            {
+                _clbDiskVolumes.Items.Add(new VolumeItem(folder, $"{folder}  (klasör)"),
+                    selected.Contains(folder, StringComparer.OrdinalIgnoreCase));
             }
         }
 
@@ -186,6 +262,23 @@ namespace KoruMsSqlYedek.Win.Forms
 
             if (cfg?.Sources != null && cfg.Sources.Count > 0)
             {
+                // Sürücü listesinde olmayan kaynaklar elle eklenmiş klasörlerdir; geri yüklenmeli
+                var listed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < _clbDiskVolumes.Items.Count; i++)
+                {
+                    if (_clbDiskVolumes.Items[i] is VolumeItem vi)
+                        listed.Add(vi.VolumePath);
+                }
+
+                foreach (var src in cfg.Sources)
+                {
+                    if (string.IsNullOrWhiteSpace(src.VolumePath)) continue;
+                    if (listed.Contains(src.VolumePath)) continue;
+
+                    _customFolders.Add(src.VolumePath);
+                    _clbDiskVolumes.Items.Add(new VolumeItem(src.VolumePath, $"{src.VolumePath}  (klasör)"), false);
+                }
+
                 var paths = cfg.Sources.Where(s => s.IsEnabled).Select(s => s.VolumePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 for (int i = 0; i < _clbDiskVolumes.Items.Count; i++)
                 {
@@ -222,6 +315,11 @@ namespace KoruMsSqlYedek.Win.Forms
         internal void SaveDiskImageFromUi()
         {
             if (_chkDiskImageEnabled == null) return;
+
+            // Plus kurulu değilken plandaki imaj ayarlarına DOKUNULMAZ.
+            // Aksi halde Plus'lı bir kurulumda oluşturulmuş plan, ücretsiz sürümde
+            // açılıp kaydedildiğinde sürücü seçimleri ve sıkıştırma ayarı sessizce silinirdi.
+            if (!_plusInstalled) return;
 
             bool enabled = _chkDiskImageEnabled.Checked;
             var selectedPaths = GetSelectedVolumePaths();

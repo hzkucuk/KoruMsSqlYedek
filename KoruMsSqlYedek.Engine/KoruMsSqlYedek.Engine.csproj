@@ -86,16 +86,8 @@
   -->
 
   <!--
-    wimlib-imagex 1.14.4 — disk imajı yedekleme (WimlibDiskImageService).
-    Ayrı süreç olarak çalıştırılır, kod içine linklenmez: exe GPLv3+, libwim LGPLv3+
-    olduğu halde bu projeye lisans yükümlülüğü doğurmaz. COPYING*.txt dosyaları
-    dağıtım şartı olarak ikililerin yanında taşınır.
-    Aranan konum WimlibCommandBuilder.NativeSubDirectory ile eşleşmelidir.
+    Disk imajı yedekleme (wimlib) artık çekirdekte değil.
+    KoruMsSqlYedek.Plus deposunda eklenti derlemesi olarak dağıtılır ve
+    çalışma zamanında Plugins\ klasöründen yüklenir (bkz. Plugins\PluginLoader).
   -->
-  <ItemGroup>
-    <Content Include="Native\wimlib\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Native\wimlib\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Content>
-  </ItemGroup>
 </Project>

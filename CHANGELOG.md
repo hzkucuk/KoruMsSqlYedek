@@ -1,4 +1,47 @@
-﻿## [0.99.89] - 2026-08-09 — 💽 Disk İmajı: wimlib ile Sıkıştırma
+﻿## [0.99.90] - 2026-08-09 — 🧩 Açık Çekirdek: Disk İmajı Plus'a Taşındı
+
+### Değişen
+- **Disk imajı yedekleme çekirdekten çıkarıldı ve Plus sürümüne taşındı.**
+  Bu depo public ve MIT kalmaya devam eder; ücretli özellikler ayrı bir eklenti
+  derlemesi olarak dağıtılır.
+  - Ücretsiz dağıtımda `IDiskImageService` **hiç kayıtlı olmaz** — kaldırılacak bir
+    bayrak ya da atlanacak bir kontrol yoktur, kod orada değildir.
+  - `BackupJobExecutor` bunu hata değil beklenen durum olarak ele alır ve adımı
+    "Plus sürümünde kullanılabilir" diyerek atlar.
+- **Plan düzenleme ekranındaki disk imajı bölümü** Plus kurulu değilken salt gösterim
+  olarak kalır ("Disk İmajı Yedekleme — Plus sürümü").
+
+### Eklenen
+- `Plugins\PluginLoader` — uygulama dizinindeki `Plugins\` klasöründen eklenti
+  derlemelerini yükler ve Autofac modüllerini kaydeder. Bozuk bir eklenti uygulamayı düşürmez.
+- `Plugins\PlusAvailability` — arayüzün özelliği "Plus" olarak göstermesi için kontrol.
+- **Disk imajında klasör desteği** — artık yalnızca sürücüler değil, seçilen herhangi bir
+  klasör de imaj haline getirilebilir ("Klasör Ekle"). Tek dosya desteklenmez;
+  wimlib kaynak olarak dizin ister.
+
+### Düzeltme
+- **Veri kaybı önlendi:** Plus kurulu değilken plan kaydedildiğinde disk imajı ayarları
+  siliniyordu. Plus'lı bir kurulumda oluşturulmuş plan ücretsiz sürümde açılıp
+  kaydedilirse sürücü seçimleri ve sıkıştırma ayarı sessizce yok oluyordu; artık
+  bu ayarlara hiç dokunulmuyor.
+- Elle eklenen klasörler "Sürücüleri Tara" sonrası listeden siliniyordu; artık korunuyor.
+
+### Kaldırılan
+- `WimlibDiskImageService`, `WimlibCommandBuilder`, wimlib ikilileri ve 17 birim testi
+  → `KoruPlus` deposuna taşındı. v0.99.89 sürümü bu kodu içerdiği için yayından kaldırıldı.
+
+### Etkilenen Dosyalar
+- `KoruMsSqlYedek.Engine\Plugins\PluginLoader.cs` — Yeni dosya
+- `KoruMsSqlYedek.Engine\Plugins\PlusAvailability.cs` — Yeni dosya
+- `KoruMsSqlYedek.Engine\IoC\EngineModule.cs` — Sabit kayıt yerine eklenti taraması
+- `KoruMsSqlYedek.Engine\Scheduling\BackupJobExecutor.DiskImagePipeline.cs` — Servis yoksa temiz atlama
+- `KoruMsSqlYedek.Engine\KoruMsSqlYedek.Engine.csproj` — wimlib Content kuralı kaldırıldı
+- `KoruMsSqlYedek.Win\Forms\PlanEditForm.DiskImageUi.cs` — Plus kontrolü + klasör desteği
+- `KoruMsSqlYedek.Core\Models\LicenseModels.cs` — Yeni dosya (lisans altyapısı hazırlığı)
+
+---
+
+## [0.99.89] - 2026-08-09 — 💽 Disk İmajı: wimlib ile Sıkıştırma
 
 ### Değişen
 - **Disk imajı yedekleme wbadmin'den `wimlib-imagex`'e taşındı.** wbadmin sıkıştırma yapmadan

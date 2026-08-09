@@ -7,9 +7,9 @@
 	<LangVersion>latest</LangVersion>
 	<ApplicationManifest>app.manifest</ApplicationManifest>
 	<NoWarn>$(NoWarn);NU1701</NoWarn>
-	<Version>0.99.89</Version>
-	<AssemblyVersion>0.99.89.0</AssemblyVersion>
-	<FileVersion>0.99.89.0</FileVersion>
+	<Version>0.99.90</Version>
+	<AssemblyVersion>0.99.90.0</AssemblyVersion>
+	<FileVersion>0.99.90.0</FileVersion>
 	<Copyright>Copyright © 2026 Zafer Bilgisayar</Copyright>
 	<Authors>Hüzeyin Küçük</Authors>
 	<Company>Zafer Bilgisayar</Company>
