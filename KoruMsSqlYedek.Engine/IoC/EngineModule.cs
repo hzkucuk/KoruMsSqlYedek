@@ -77,8 +77,9 @@ namespace KoruMsSqlYedek.Engine.IoC
                 .As<ICloudProviderFactory>()
                 .SingleInstance();
 
+            // IPlanManager: upload sırasında öğrenilen SFTP host parmak izinin (TOFU) plana kaydedilmesi için
             builder.RegisterType<CloudUploadOrchestrator>()
-                .UsingConstructor(typeof(ICloudProviderFactory))
+                .UsingConstructor(typeof(ICloudProviderFactory), typeof(IPlanManager))
                 .As<ICloudUploadOrchestrator>()
                 .InstancePerDependency();
 

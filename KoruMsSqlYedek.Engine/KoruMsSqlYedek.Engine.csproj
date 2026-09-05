@@ -56,6 +56,11 @@
     <ProjectReference Include="..\KoruMsSqlYedek.Core\KoruMsSqlYedek.Core.csproj" />
   </ItemGroup>
 
+  <!-- Birim testleri internal yardımcılara (EscapeQuery, bağlantı dizesi, identifier escape) erişir -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="KoruMsSqlYedek.Tests" />
+  </ItemGroup>
+
   <!-- 7z.dll native library — SevenZipSharp runtime dependency -->
   <ItemGroup>
     <Content Include="Native\x64\7z.dll">

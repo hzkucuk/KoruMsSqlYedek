@@ -154,7 +154,8 @@ namespace KoruMsSqlYedek.Win.Forms
             _pnlAdvanced.AutoSize = true;
 
             // _chkTrustCert
-            _chkTrustCert.Text = "Sunucu sertifikas\u0131na g\u00fcven (TrustServerCertificate)";
+            // Baglanti her zaman sifrelidir; bu secenek yalnizca sertifika dogrulamasini atlar
+            _chkTrustCert.Text = "Sertifika do\u011frulamas\u0131n\u0131 atla (ba\u011flant\u0131 her zaman \u015fifreli)";
             _chkTrustCert.Name = "_chkTrustCert";
             _chkTrustCert.AutoSize = true;
             _chkTrustCert.Checked = true;

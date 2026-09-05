@@ -37,6 +37,10 @@ namespace KoruMsSqlYedek.Win
             // Dosyaları kopyalar + DPAPI şifrelerini LocalMachine scope'a dönüştürür
             DataMigrationHelper.MigrateIfNeeded();
 
+            // Düz metin kalmış gizli alanları (bulut şifresi, OAuth token, SMTP şifresi) DPAPI ile koru
+            // Idempotent — her açılışta çalışır, zaten korumalı değerlere dokunmaz
+            DataMigrationHelper.ProtectPlaintextSecrets();
+
             bool createdNew;
             using (var mutex = new Mutex(true, MutexName, out createdNew))
             {

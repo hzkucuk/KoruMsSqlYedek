@@ -41,12 +41,9 @@ namespace KoruMsSqlYedek.Engine.Backup
                     DataSource = connectionInfo.Server,
                     IntegratedSecurity = true,
                     InitialCatalog = "master",
-                    ConnectTimeout = connectionInfo.ConnectionTimeoutSeconds,
-                    TrustServerCertificate = connectionInfo.TrustServerCertificate,
-                    Encrypt = connectionInfo.TrustServerCertificate
-                        ? SqlConnectionEncryptOption.Optional
-                        : SqlConnectionEncryptOption.Mandatory
+                    ConnectTimeout = connectionInfo.ConnectionTimeoutSeconds
                 };
+                ApplyEncryptionSettings(builder, connectionInfo);
 
                 using var conn = new SqlConnection(builder.ConnectionString);
                 conn.Open();
@@ -73,16 +70,19 @@ namespace KoruMsSqlYedek.Engine.Backup
                 using var checkCmd = new SqlCommand(checkLoginSql, conn);
                 int loginExists = (int)checkCmd.ExecuteScalar();
 
+                // Köşeli parantez içindeki identifier'da ']' karakteri ']]' olarak escape edilmeli
+                string bracketedIdentity = EscapeBracketIdentifier(currentIdentity);
+
                 if (loginExists == 0)
                 {
-                    string createSql = $"CREATE LOGIN [{currentIdentity}] FROM WINDOWS";
+                    string createSql = $"CREATE LOGIN [{bracketedIdentity}] FROM WINDOWS";
                     using var createCmd = new SqlCommand(createSql, conn);
                     createCmd.ExecuteNonQuery();
                     Log.Information("SQL Server login oluşturuldu: {Identity}", currentIdentity);
                 }
 
                 // sysadmin rolüne ekle
-                string grantSql = $"ALTER SERVER ROLE [sysadmin] ADD MEMBER [{currentIdentity}]";
+                string grantSql = $"ALTER SERVER ROLE [sysadmin] ADD MEMBER [{bracketedIdentity}]";
                 using var grantCmd = new SqlCommand(grantSql, conn);
                 grantCmd.ExecuteNonQuery();
                 Log.Information("{Identity} hesabına sysadmin rolü verildi.", currentIdentity);
@@ -222,17 +222,98 @@ namespace KoruMsSqlYedek.Engine.Backup
 
         #endregion
 
+        #region Connection String & Identifier Helpers
+
+        /// <summary>
+        /// TrustServerCertificate=true iken uzak sunucu için yalnızca bir kez uyarı loglamak amacıyla
+        /// uyarılan sunucu adlarını tutar.
+        /// </summary>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _trustCertWarnedServers
+            = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Bağlantı şifreleme ayarlarını uygular. Bağlantı HER ZAMAN şifrelidir (Encrypt=Mandatory);
+        /// TrustServerCertificate yalnızca sunucu sertifikasının doğrulanıp doğrulanmayacağını belirler.
+        /// Uzak bir sunucuya sertifika doğrulaması olmadan bağlanılıyorsa sunucu başına bir kez uyarı loglar.
+        /// </summary>
+        internal static void ApplyEncryptionSettings(SqlConnectionStringBuilder builder, SqlConnInfo connectionInfo)
+        {
+            builder.Encrypt = SqlConnectionEncryptOption.Mandatory;
+            builder.TrustServerCertificate = connectionInfo.TrustServerCertificate;
+
+            if (connectionInfo.TrustServerCertificate
+                && !IsLocalServer(connectionInfo.Server)
+                && _trustCertWarnedServers.TryAdd(connectionInfo.Server ?? string.Empty, 0))
+            {
+                Log.Warning(
+                    "SQL bağlantısı şifreli ancak sunucu sertifikası doğrulanmıyor (TrustServerCertificate=true) " +
+                    "ve sunucu yerel değil: {Server}. MITM riskini azaltmak için sunucuya geçerli bir " +
+                    "CA sertifikası kurup bu seçeneği kapatmanız önerilir.",
+                    connectionInfo.Server);
+            }
+        }
+
+        /// <summary>
+        /// Sunucu adının yerel makineyi gösterip göstermediğini belirler:
+        /// localhost, 127.0.0.1, ::1, ".", "(local)", makine adı — instance adı ve port dikkate alınmaz.
+        /// </summary>
+        internal static bool IsLocalServer(string dataSource)
+        {
+            if (string.IsNullOrWhiteSpace(dataSource))
+                return true;
+
+            string host = dataSource.Trim();
+
+            // "tcp:" / "np:" gibi protokol önekleri
+            int colon = host.IndexOf(':');
+            if (colon > 0 && colon <= 3)
+                host = host.Substring(colon + 1);
+
+            // Instance adı (SERVER\INSTANCE) ve port (SERVER,1433) ayrımı
+            int sep = host.IndexOfAny(new[] { '\\', ',' });
+            if (sep >= 0)
+                host = host.Substring(0, sep);
+
+            host = host.Trim();
+            if (host.Length == 0)
+                return true;
+
+            if (host == "." ||
+                string.Equals(host, "(local)", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase) ||
+                host == "127.0.0.1" || host == "::1")
+                return true;
+
+            string machine = Environment.MachineName;
+            if (string.Equals(host, machine, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // FQDN biçimi: MACHINE.domain.local
+            int dot = host.IndexOf('.');
+            if (dot > 0 && string.Equals(host.Substring(0, dot), machine, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Köşeli parantez ([...]) içinde kullanılacak T-SQL identifier'ında ']' karakterini ']]' olarak escape eder.
+        /// </summary>
+        internal static string EscapeBracketIdentifier(string identifier)
+        {
+            return identifier?.Replace("]", "]]");
+        }
+
+        #endregion
+
         private string BuildConnectionString(SqlConnInfo connectionInfo)
         {
             var builder = new SqlConnectionStringBuilder
             {
                 DataSource = connectionInfo.Server,
-                ConnectTimeout = connectionInfo.ConnectionTimeoutSeconds,
-                TrustServerCertificate = connectionInfo.TrustServerCertificate,
-                Encrypt = connectionInfo.TrustServerCertificate
-                    ? SqlConnectionEncryptOption.Optional
-                    : SqlConnectionEncryptOption.Mandatory
+                ConnectTimeout = connectionInfo.ConnectionTimeoutSeconds
             };
+            ApplyEncryptionSettings(builder, connectionInfo);
 
             if (connectionInfo.AuthMode == SqlAuthMode.Windows)
             {

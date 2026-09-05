@@ -172,7 +172,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
             Log.Information("Bekleyen {Count} upload işlemi bulundu, devam ettiriliyor...", pendingStates.Count);
             int recovered = 0;
-            var abandonedFiles = new List<(string FileName, string Provider, int Attempts, string Error)>();
+            // PlanId/PlanName state kaydından gelir; plan bazlı event fırlatmak için taşınır
+            var abandonedFiles = new List<(string PlanId, string PlanName, string FileName, string Provider, int Attempts, string Error)>();
 
             foreach (var state in pendingStates)
             {
@@ -185,7 +186,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         "Recovery: Maks deneme aşıldı ({Attempts}/{Max}), vazgeçiliyor: {Provider} — {File}",
                         state.AttemptCount, MaxRecoveryAttempts, state.ProviderType, state.RemoteFileName);
 
-                    abandonedFiles.Add((state.RemoteFileName, state.ProviderType.ToString(),
+                    abandonedFiles.Add((state.PlanId, state.PlanName, state.RemoteFileName, state.ProviderType.ToString(),
                         state.AttemptCount, $"Maks deneme sayısı aşıldı ({state.AttemptCount})"));
 
                     _stateManager.Delete(state.StateId);
@@ -236,7 +237,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         // Toplam deneme aşıldıysa vazgeç
                         if (state.AttemptCount >= MaxRecoveryAttempts)
                         {
-                            abandonedFiles.Add((state.RemoteFileName, state.ProviderType.ToString(),
+                            abandonedFiles.Add((state.PlanId, state.PlanName, state.RemoteFileName, state.ProviderType.ToString(),
                                 state.AttemptCount, result.ErrorMessage));
                             _stateManager.Delete(state.StateId);
 
@@ -254,17 +255,26 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 }
             }
 
-            // Terk edilen dosyalar için bildirim fırlat
+            // Terk edilen dosyalar için plan bazında bildirim fırlat (her event PlanId taşır)
             if (abandonedFiles.Count > 0)
             {
-                BackupActivityHub.Raise(new BackupActivityEventArgs
+                foreach (var group in abandonedFiles.GroupBy(f => f.PlanId ?? string.Empty))
                 {
-                    ActivityType = BackupActivityType.CloudUploadAbandoned,
-                    Message = $"{abandonedFiles.Count} dosyanın bulut yüklemesi kalıcı olarak başarısız oldu",
-                    AbandonedFiles = abandonedFiles
-                        .Select(f => $"{f.FileName} ({f.Provider}, {f.Attempts} deneme): {f.Error}")
-                        .ToList()
-                });
+                    var files = group.ToList();
+                    string planId = string.IsNullOrEmpty(group.Key) ? null : group.Key;
+                    string planName = files.Select(f => f.PlanName).FirstOrDefault(n => !string.IsNullOrEmpty(n));
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = planId,
+                        PlanName = planName,
+                        ActivityType = BackupActivityType.CloudUploadAbandoned,
+                        Message = $"{files.Count} dosyanın bulut yüklemesi kalıcı olarak başarısız oldu",
+                        AbandonedFiles = files
+                            .Select(f => $"{f.FileName} ({f.Provider}, {f.Attempts} deneme): {f.Error}")
+                            .ToList()
+                    });
+                }
             }
 
             return recovered;

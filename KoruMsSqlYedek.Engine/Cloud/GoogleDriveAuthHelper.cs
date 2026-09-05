@@ -288,7 +288,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>
         /// Token saklamayan IDataStore implementasyonu.
-        /// Etkileşimli auth sırasında kullanılır; token CloudTargetConfig'de DPAPI ile saklanır.
+        /// Etkileşimli auth sırasında kullanılır; token, çağıran taraf (CloudTargetEditDialog) tarafından
+        /// PasswordProtector ile DPAPI korumalı olarak CloudTargetConfig.OAuthTokenJson'a yazılır.
+        /// Eski düz JSON kayıtlar DataMigrationHelper.ProtectPlaintextSecrets ile korunur.
         /// </summary>
         private class NullDataStore : IDataStore
         {

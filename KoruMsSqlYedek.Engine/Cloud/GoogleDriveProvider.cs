@@ -165,10 +165,14 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
         /// <summary>
         /// Google Drive API sorgu string'inde özel karakterleri escape eder.
+        /// Önce ters bölü (\ → \\), sonra tek tırnak (' → \') escape edilir;
+        /// sıra ters olursa tırnak için eklenen ters bölü tekrar escape edilirdi.
         /// </summary>
-        private static string EscapeQuery(string value)
+        internal static string EscapeQuery(string value)
         {
-            return value?.Replace("'", "\\'");
+            return value?
+                .Replace("\\", "\\\\")
+                .Replace("'", "\\'");
         }
 
         /// <summary>
