@@ -416,6 +416,9 @@ Language change requires application restart.</value></data>
   <data name="Update_SilentFailed" xml:space="preserve"><value>Silent update failed: {0}. Falling back to manual update.</value></data>
   <data name="Update_SilentRestart" xml:space="preserve"><value>Update Installed</value></data>
   <data name="Update_SilentRestartMessage" xml:space="preserve"><value>v{0} has been installed silently. Restart the application to apply changes.</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>Update cancelled.</value></data>
+  <data name="Update_ChecksumMissing" xml:space="preserve"><value>No SHA-256 checksum was published for this update. For security reasons the installer will not be run.</value></data>
+  <data name="Update_VerifyFailed" xml:space="preserve"><value>The downloaded installer failed SHA-256 verification. The file was deleted and the update was aborted.</value></data>
   <data name="Settings_AutoSilentUpdate" xml:space="preserve"><value>Install updates silently in the background</value></data>
 
   <!-- ===== MainWindow — Log Viewer Controls ===== -->

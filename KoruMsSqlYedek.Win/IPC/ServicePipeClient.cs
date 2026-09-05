@@ -74,13 +74,26 @@ namespace KoruMsSqlYedek.Win.IPC
         }
 
         /// <summary>
-        /// Self-update installer'ı servise gönderir (UAC'sız kurulum için).
-        /// Servis SYSTEM yetkileriyle installer'ı çalıştırır.
+        /// Servise self-update komutu gönderir. Tray dosya yolu göndermez;
+        /// servis installer'ı verilen URL'den kendisi indirir, SHA-256 ve boyutunu
+        /// doğrular ve ancak ondan sonra SYSTEM yetkileriyle çalıştırır.
         /// </summary>
-        /// <param name="installerPath">Tray app'in indirdiği installer dosyasının tam yolu.</param>
-        public async Task SendInstallSelfUpdateAsync(string installerPath)
+        /// <param name="version">Hedef sürüm (ör. "0.99.91").</param>
+        /// <param name="downloadUrl">Installer URL'i (https, GitHub hostları).</param>
+        /// <param name="sha256">Beklenen SHA-256 (hex). Boş olamaz.</param>
+        /// <param name="sizeBytes">Beklenen dosya boyutu; 0 ise servis boyut kontrolü yapmaz.</param>
+        public async Task SendInstallSelfUpdateAsync(string version, string downloadUrl, string sha256, long sizeBytes)
         {
-            var cmd = new InstallSelfUpdateCommand { InstallerPath = installerPath };
+            ArgumentException.ThrowIfNullOrWhiteSpace(downloadUrl);
+            ArgumentException.ThrowIfNullOrWhiteSpace(sha256);
+
+            var cmd = new InstallSelfUpdateCommand
+            {
+                Version           = version,
+                DownloadUrl       = downloadUrl,
+                ExpectedSha256    = sha256,
+                ExpectedSizeBytes = sizeBytes
+            };
             await SendAsync(cmd);
         }
 
@@ -98,8 +111,11 @@ namespace KoruMsSqlYedek.Win.IPC
             {
                 try
                 {
+                    // Identification: servis çağıranın kimliğini (SID/grup) okuyabilsin,
+                    // ancak bizim adımıza işlem yapamasın.
                     var pipe = new NamedPipeClientStream(
-                        ".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+                        ".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous,
+                        System.Security.Principal.TokenImpersonationLevel.Identification);
 
                     await pipe.ConnectAsync(3000, ct);
 

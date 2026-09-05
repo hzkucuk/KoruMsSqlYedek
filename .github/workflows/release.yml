@@ -114,12 +114,27 @@ jobs:
         $mb = [math]::Round((Get-Item $setup).Length / 1MB, 1)
         Write-Host "Installer hazir: $setup ($mb MB)"
 
+    # Installer SHA-256'si: uygulama self-update sirasinda bu dosyayi indirip
+    # installer'i dogrular. Format sha256sum ile ayni: "<hex>  <dosya>" (iki bosluk).
+    - name: Compute installer SHA-256
+      shell: pwsh
+      run: |
+        $ver   = "${{ steps.version.outputs.VERSION }}"
+        $name  = "KoruMsSqlYedek_v${ver}_Setup.exe"
+        $setup = "releases\$name"
+        $hash  = (Get-FileHash -Path $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+        $line  = "$hash  $name"
+        [System.IO.File]::WriteAllText("$setup.sha256", $line + "`n", [System.Text.UTF8Encoding]::new($false))
+        Write-Host "SHA-256: $line"
+
     # Tag olmadan calistirildiginda (prova) exe'yi artifact olarak birak
     - name: Upload installer artifact
       uses: actions/upload-artifact@v4
       with:
         name: KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup
-        path: releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
+        path: |
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe.sha256
         if-no-files-found: error
 
     # pwsh kullaniliyor: bu is windows-latest'te kosuyor ve Git Bash'te
@@ -154,7 +169,9 @@ jobs:
         name: "Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}"
         draft: false
         prerelease: false
-        files: releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
+        files: |
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe
+          releases/KoruMsSqlYedek_v${{ steps.version.outputs.VERSION }}_Setup.exe.sha256
         body: |
           ## Koru MsSql Yedek v${{ steps.version.outputs.VERSION }}
 

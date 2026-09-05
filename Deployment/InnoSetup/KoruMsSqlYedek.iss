@@ -144,19 +144,27 @@ Name: "{group}\{#MyAppName} Kaldır"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Dirs]
-; %ProgramData%\KoruMsSqlYedek — hem Tray hem Service tarafından erişilir
-; Users grubuna Modify izni verilir (Tray kullanıcı bağlamında yazabilsin)
-Name: "{commonappdata}\KoruMsSqlYedek"; Permissions: users-modify
-Name: "{commonappdata}\KoruMsSqlYedek\Plans"; Permissions: users-modify
-Name: "{commonappdata}\KoruMsSqlYedek\Config"; Permissions: users-modify
-Name: "{commonappdata}\KoruMsSqlYedek\Logs"; Permissions: users-modify
-Name: "{commonappdata}\KoruMsSqlYedek\UploadState"; Permissions: users-modify
-
-[Registry]
-; Windows başlangıcında çalıştır (isteğe bağlı)
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#MyAppName}"; ValueData: """{app}\{#MyAppExeName}"""; Flags: uninsdeletevalue; Tasks: startup
+; %ProgramData%\KoruMsSqlYedek — hem Tray hem Service tarafından erişilir.
+; GÜVENLİK: Users grubuna yazma izni VERİLMEZ. Tray requireAdministrator ile
+; yükseltilmiş çalışır; erişim [Run] bölümünde icacls ile SYSTEM + Administrators
+; olarak kilitlenir (Updates: servisin doğruladığı installer'ların indirildiği yer).
+Name: "{commonappdata}\KoruMsSqlYedek"
+Name: "{commonappdata}\KoruMsSqlYedek\Plans"
+Name: "{commonappdata}\KoruMsSqlYedek\Config"
+Name: "{commonappdata}\KoruMsSqlYedek\Logs"
+Name: "{commonappdata}\KoruMsSqlYedek\UploadState"
+Name: "{commonappdata}\KoruMsSqlYedek\Updates"
 
 [Run]
+; GÜVENLİK: Veri kökünü kilitle — kalıtımı kes, yalnızca SYSTEM (S-1-5-18) ve
+; Administrators (S-1-5-32-544) tam yetki. SID kullanılır (yerel ayardan bağımsız).
+Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek"" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F /T /C /Q"; StatusMsg: "Veri dizini izinleri ayarlanıyor..."; Flags: runhidden waituntilterminated
+; Windows başlangıcında çalıştır (isteğe bağlı). Tray requireAdministrator olduğundan
+; HKCU\Run işe yaramaz — en yüksek ayrıcalıklı ONLOGON zamanlanmış görev kullanılır.
+; Görev adı tray uygulamasındaki ile aynı olmalı: "KoruMsSqlYedek Tray"
+Filename: "schtasks.exe"; Parameters: "/Create /TN ""KoruMsSqlYedek Tray"" /SC ONLOGON /RL HIGHEST /TR """"{app}\{#MyAppExeName}"""" /F"; Components: trayapp; Tasks: startup; Flags: runhidden waituntilterminated
+; Başlangıç görevi seçilmediyse eski kurulumdan kalan görevi kaldır
+Filename: "schtasks.exe"; Parameters: "/Delete /TN ""KoruMsSqlYedek Tray"" /F"; Components: trayapp; Tasks: not startup; Flags: runhidden waituntilterminated
 ; Kurulum sonrası service kur ve başlat (sc.exe ile — exe CLI komut desteklemiyor)
 Filename: "sc.exe"; Parameters: "create {#MyServiceName} binPath= ""{app}\Service\{#MyServiceExeName}"" start= auto"; StatusMsg: "{cm:ServiceInstall}"; Components: service; Flags: runhidden waituntilterminated
 ; Service hesabını LocalSystem yap — VSS (Volume Shadow Copy) yetkisi için zorunlu
@@ -173,6 +181,8 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 Filename: "{app}\{#MyAppExeName}"; Components: trayapp; Flags: shellexec nowait skipifdoesntexist skipifnotsilent runasoriginaluser; Check: ShouldPostInstallLaunch
 
 [UninstallRun]
+; Başlangıç zamanlanmış görevini kaldır (yoksa hata döner, görmezden gelinir)
+Filename: "schtasks.exe"; Parameters: "/Delete /TN ""KoruMsSqlYedek Tray"" /F"; RunOnceId: "DeleteStartupTask"; Flags: runhidden waituntilterminated
 ; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)
 Filename: "sc.exe"; Parameters: "stop {#MyServiceName}"; RunOnceId: "StopService"; Components: service; Flags: runhidden waituntilterminated
 ; Servisin durmasını bekle

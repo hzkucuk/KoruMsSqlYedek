@@ -406,6 +406,9 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Update_SilentFailed" xml:space="preserve"><value>Sessiz güncelleme başarısız: {0}. Manuel güncellemeye geçiliyor.</value></data>
   <data name="Update_SilentRestart" xml:space="preserve"><value>Güncelleme Kuruldu</value></data>
   <data name="Update_SilentRestartMessage" xml:space="preserve"><value>v{0} sessiz olarak kuruldu. Değişiklikleri uygulamak için uygulamayı yeniden başlatın.</value></data>
+  <data name="Update_Cancelled" xml:space="preserve"><value>Güncelleme iptal edildi.</value></data>
+  <data name="Update_ChecksumMissing" xml:space="preserve"><value>Bu güncelleme için SHA-256 doğrulama bilgisi yayınlanmamış. Güvenlik nedeniyle kurulum yapılmadı.</value></data>
+  <data name="Update_VerifyFailed" xml:space="preserve"><value>İndirilen installer SHA-256 doğrulamasından geçemedi. Dosya silindi, güncelleme iptal edildi.</value></data>
   <data name="Settings_AutoSilentUpdate" xml:space="preserve"><value>Güncellemeleri arka planda sessiz olarak kur</value></data>
 
   <!-- ===== MainWindow — Log Viewer Controls ===== -->
