@@ -49,6 +49,12 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// <summary>Installer dosya boyutu (byte).</summary>
         public long FileSizeBytes { get; set; }
 
+        /// <summary>
+        /// Installer'ın beklenen SHA-256 özeti (hex). Release'deki
+        /// <c>*.sha256</c> varlığından okunur; yoksa null ve kurulum reddedilir.
+        /// </summary>
+        public string Sha256 { get; set; }
+
         /// <summary>Release yayınlanma tarihi.</summary>
         public DateTime PublishedAt { get; set; }
 

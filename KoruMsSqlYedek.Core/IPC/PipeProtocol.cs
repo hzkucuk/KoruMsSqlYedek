@@ -62,16 +62,30 @@ namespace KoruMsSqlYedek.Core.IPC
     }
 
     /// <summary>
-    /// Self-update installer'ını servis üzerinden çalıştır (UAC'sız).
-    /// Tray app installer'ı indirir, yolunu bu komutla servise gönderir.
+    /// Self-update installer'ını servis üzerinden kur.
+    /// GÜVENLİK: Tray artık dosya yolu göndermez. Servis installer'ı kendisi,
+    /// yalnızca SYSTEM/Administrators erişimli bir dizine indirir, SHA-256'sını
+    /// release'deki beklenen değerle doğrular ve ancak ondan sonra çalıştırır.
     /// </summary>
     public class InstallSelfUpdateCommand : PipeMessage
     {
         public InstallSelfUpdateCommand() { Type = PipeMessageType.InstallSelfUpdate; }
 
-        /// <summary>İndirilen installer dosyasının tam yolu.</summary>
-        [JsonProperty("installerPath")]
-        public string InstallerPath { get; set; }
+        /// <summary>Hedef sürüm (ör. "0.99.91").</summary>
+        [JsonProperty("version")]
+        public string Version { get; set; }
+
+        /// <summary>Installer indirme URL'i (yalnızca https ve GitHub hostları kabul edilir).</summary>
+        [JsonProperty("downloadUrl")]
+        public string DownloadUrl { get; set; }
+
+        /// <summary>Installer'ın beklenen SHA-256 özeti (hex, büyük/küçük harf duyarsız).</summary>
+        [JsonProperty("expectedSha256")]
+        public string ExpectedSha256 { get; set; }
+
+        /// <summary>Beklenen dosya boyutu (byte); 0 ise kontrol edilmez.</summary>
+        [JsonProperty("expectedSizeBytes")]
+        public long ExpectedSizeBytes { get; set; }
     }
 
     // ── Olaylar (Service → Tray) ─────────────────────────────────────────────
