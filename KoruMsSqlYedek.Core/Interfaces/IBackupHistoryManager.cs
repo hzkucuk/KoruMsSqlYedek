@@ -13,12 +13,24 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// <summary>
         /// Yedekleme sonucunu geçmişe kaydeder.
         /// </summary>
-        void SaveResult(BackupResult result);
+        /// <returns>
+        /// Kayıt diske yazıldıysa true; yazılamadıysa false.
+        /// Retention bu kayıtlara dayanarak dosya sildiğinden, false dönen bir çalıştırmada
+        /// temizlik ATLANMALIDIR (aksi halde bu çalıştırmanın dosyaları "sahipsiz" görünür).
+        /// </returns>
+        bool SaveResult(BackupResult result);
 
         /// <summary>
-        /// Belirtilen plan'ın yedekleme geçmişini döndürür.
+        /// Belirtilen plan'ın yedekleme geçmişini döndürür (en yeni önce, en fazla maxRecords).
         /// </summary>
         List<BackupResult> GetHistoryByPlan(string planId, int maxRecords = 50);
+
+        /// <summary>
+        /// Belirtilen plan'ın TÜM yedekleme geçmişini döndürür (üst sınır yok).
+        /// Retention kararları bu metodu kullanmalıdır: sınırlı liste, sık çalışan planlarda
+        /// eski ama hâlâ diskte duran dosyaların korumasını düşürür.
+        /// </summary>
+        List<BackupResult> GetAllHistoryByPlan(string planId);
 
         /// <summary>
         /// Tüm planların son yedekleme sonuçlarını döndürür.

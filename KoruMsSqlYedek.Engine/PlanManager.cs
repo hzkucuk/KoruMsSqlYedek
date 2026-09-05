@@ -233,12 +233,80 @@ namespace KoruMsSqlYedek.Engine
                     errors.Add("SQL yedekleme için en az Full cron zamanlaması gerekli.");
             }
 
+            // Retention kontrolleri (eski tek politika + tür bazlı şema)
+            ValidateRetentionPolicy(plan.Retention, "Retention", errors);
+            if (plan.RetentionScheme != null)
+            {
+                ValidateRetentionPolicy(plan.RetentionScheme.SqlFull, "SqlFull", errors);
+                ValidateRetentionPolicy(plan.RetentionScheme.SqlDifferential, "SqlDifferential", errors);
+                ValidateRetentionPolicy(plan.RetentionScheme.SqlLog, "SqlLog", errors);
+                ValidateRetentionPolicy(plan.RetentionScheme.FileBackup, "FileBackup", errors);
+            }
+
+            // Aynı yerel dizini paylaşan etkin planlar: retention ve zincir kontrolü
+            // dosya adı desenine göre çalıştığından planlar birbirinin dosyasını görebilir.
+            if (plan.IsEnabled && !string.IsNullOrWhiteSpace(plan.LocalPath))
+            {
+                try
+                {
+                    string thisPath = NormalizeDirectoryPath(plan.LocalPath);
+                    foreach (var other in GetAllPlans())
+                    {
+                        if (other == null || other.PlanId == plan.PlanId || !other.IsEnabled)
+                            continue;
+                        if (string.IsNullOrWhiteSpace(other.LocalPath))
+                            continue;
+
+                        if (string.Equals(thisPath, NormalizeDirectoryPath(other.LocalPath), StringComparison.OrdinalIgnoreCase))
+                        {
+                            errors.Add(
+                                $"Yerel yedek dizini '{plan.LocalPath}' etkin başka bir planla ({other.PlanName}) paylaşılıyor; " +
+                                "planların dosyaları birbirine karışabilir, ayrı dizin kullanılması önerilir.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Plan dizin çakışma kontrolü yapılamadı: {PlanName}", plan.PlanName);
+                }
+            }
+
             if (errors.Count > 0)
             {
                 string allErrors = string.Join("; ", errors);
                 Log.Warning("Plan doğrulama uyarıları: {PlanName} — {Errors}", plan.PlanName, allErrors);
                 // Uyarı olarak logla, kaydetmeyi engelleme (kullanıcı draft olarak kaydedebilir)
             }
+        }
+
+        /// <summary>
+        /// Tek bir retention politikasını denetler:
+        /// KeepLastN &lt; 1 → 1'e sabitlenir (uyarı), DeleteOlderThanDays &lt; 1 yaş bazlı modda → uyarı.
+        /// </summary>
+        private static void ValidateRetentionPolicy(RetentionPolicy policy, string label, List<string> errors)
+        {
+            if (policy == null)
+                return;
+
+            bool usesCount = policy.Type == RetentionPolicyType.KeepLastN || policy.Type == RetentionPolicyType.Both;
+            bool usesAge = policy.Type == RetentionPolicyType.DeleteOlderThanDays || policy.Type == RetentionPolicyType.Both;
+
+            if (usesCount && policy.KeepLastN < 1)
+            {
+                errors.Add($"{label}: KeepLastN={policy.KeepLastN} geçersiz, 1 olarak düzeltildi (en az bir yedek her zaman korunur).");
+                policy.KeepLastN = 1;
+            }
+
+            if (usesAge && policy.DeleteOlderThanDays < 1)
+            {
+                errors.Add($"{label}: DeleteOlderThanDays={policy.DeleteOlderThanDays} geçersiz; yaş bazlı silme çalışma sırasında atlanacak.");
+            }
+        }
+
+        private static string NormalizeDirectoryPath(string path)
+        {
+            string full = Path.GetFullPath(path.Trim());
+            return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
         #endregion

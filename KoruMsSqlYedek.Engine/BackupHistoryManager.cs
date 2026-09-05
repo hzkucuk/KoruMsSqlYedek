@@ -47,10 +47,10 @@ namespace KoruMsSqlYedek.Engine
             Directory.CreateDirectory(_historyDirectory);
         }
 
-        public void SaveResult(BackupResult result)
+        public bool SaveResult(BackupResult result)
         {
             if (result == null)
-                return;
+                return false;
 
             try
             {
@@ -68,10 +68,13 @@ namespace KoruMsSqlYedek.Engine
                 Log.Debug(
                     "Yedek geçmişi kaydedildi: {CorrelationId} — {Database} ({Status})",
                     result.CorrelationId, result.DatabaseName, result.Status);
+                return true;
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Yedek geçmişi kaydedilemedi: {CorrelationId}", result.CorrelationId);
+                // Hata yutulmaz, çağırana bildirilir: retention bu kayıtlara göre dosya siler.
+                Log.Error(ex, "Yedek geçmişi kaydedilemedi: {CorrelationId}", result.CorrelationId);
+                return false;
             }
         }
 
@@ -81,6 +84,14 @@ namespace KoruMsSqlYedek.Engine
                 .Where(r => r.PlanId == planId)
                 .OrderByDescending(r => r.StartedAt)
                 .Take(maxRecords)
+                .ToList();
+        }
+
+        public List<BackupResult> GetAllHistoryByPlan(string planId)
+        {
+            return GetAllRecords()
+                .Where(r => r.PlanId == planId)
+                .OrderByDescending(r => r.StartedAt)
                 .ToList();
         }
 

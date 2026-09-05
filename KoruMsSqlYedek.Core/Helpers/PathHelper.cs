@@ -129,23 +129,60 @@ namespace KoruMsSqlYedek.Core.Helpers
         }
 
         /// <summary>
+        /// Dosya adının bir bileşenini (örn. veritabanı adı) dosya sistemi için güvenli hale getirir.
+        /// Geçersiz dosya adı karakterleri, joker karakterler ('*', '?') ve ".." dizileri '_' ile
+        /// değiştirilir; böylece "..\" gibi dizin kaçışları ve bozuk arama desenleri engellenir.
+        /// Yedek dosya adı üreten ve bu adları arayan (retention, zincir kontrolü) tüm kodlar
+        /// AYNI dönüşümü kullanmalıdır; aksi halde üretilen dosya ile arama deseni eşleşmez.
+        /// </summary>
+        public static string SanitizeFileNameComponent(string component)
+        {
+            if (string.IsNullOrEmpty(component))
+                return "_";
+
+            var invalid = new System.Collections.Generic.HashSet<char>(Path.GetInvalidFileNameChars())
+            {
+                '*', '?', '/', '\\', ':'
+            };
+
+            var sb = new System.Text.StringBuilder(component.Length);
+            foreach (char c in component)
+                sb.Append(invalid.Contains(c) ? '_' : c);
+
+            string result = sb.ToString();
+
+            // ".." dizilerini (ve daha uzun nokta zincirlerini) tek '_' karakterine indir
+            while (result.Contains(".."))
+                result = result.Replace("..", "_");
+
+            // Tamamen boşluk/nokta kalan adlar Windows'ta geçersizdir
+            result = result.Trim();
+            if (result.Length == 0 || result.Trim('.').Length == 0)
+                return "_";
+
+            return result;
+        }
+
+        /// <summary>
         /// Yedek dosyası için benzersiz ad üretir.
         /// Örnek: MIKRO_V16_DEMO_Full_20250115_020000.bak
+        /// Veritabanı adı <see cref="SanitizeFileNameComponent"/> ile temizlenir.
         /// </summary>
         public static string GenerateBackupFileName(string databaseName, string backupType)
         {
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            return $"{databaseName}_{backupType}_{timestamp}.bak";
+            return $"{SanitizeFileNameComponent(databaseName)}_{backupType}_{timestamp}.bak";
         }
 
         /// <summary>
         /// Sıkıştırılmış arşiv dosyası için ad üretir.
         /// Örnek: MIKRO_V16_DEMO_Full_20250115_020000.7z
+        /// Veritabanı adı <see cref="SanitizeFileNameComponent"/> ile temizlenir.
         /// </summary>
         public static string GenerateArchiveFileName(string databaseName, string backupType)
         {
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            return $"{databaseName}_{backupType}_{timestamp}.7z";
+            return $"{SanitizeFileNameComponent(databaseName)}_{backupType}_{timestamp}.7z";
         }
     }
 }

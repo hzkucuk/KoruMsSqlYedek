@@ -144,9 +144,10 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                 plan, null, fileArchivePath, cts.Token);
 
                             // Dosya arşivi için history kaydı (retention + cloud senkron için şart)
+                            bool fileHistorySaveFailed = false;
                             if (!string.IsNullOrEmpty(fileArchivePath))
                             {
-                                SaveHistory(new BackupResult
+                                fileHistorySaveFailed = !SaveHistory(new BackupResult
                                 {
                                     CorrelationId = correlationId,
                                     PlanId = plan.PlanId,
@@ -163,17 +164,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                 });
                             }
 
-                            // Retention temizliği
-                            if (RetentionService != null)
-                            {
-                                try
-                                {
-                                    await RetentionService.CleanupAsync(plan, cts.Token);
-                                    RaiseRetentionCompleted(plan);
-                                }
-                                catch (OperationCanceledException) { throw; }
-                                catch (Exception ex) { Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName); }
-                            }
+                            // Retention temizliği (geçmiş kaydı başarısızsa atlanır)
+                            await RunRetentionAsync(plan, fileHistorySaveFailed, cts.Token);
 
                             await EmptyTrashIfNeededAsync(plan, cts.Token);
                             cleanupPaths.Clear();
@@ -247,16 +239,20 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             plan, sqlPendingUploads, fileArchivePath2, cts.Token);
 
                         // Tüm SQL sonuçlarını history'e kaydet (cloud sonuçları UploadAllPendingAsync içinde atandı)
+                        bool historySaveFailed = false;
                         if (sqlResults != null)
                         {
                             foreach (var sqlResult in sqlResults)
-                                SaveHistory(sqlResult);
+                            {
+                                if (!SaveHistory(sqlResult))
+                                    historySaveFailed = true;
+                            }
                         }
 
                         // Dosya arşivi için history kaydı (retention + cloud senkron için şart)
                         if (!string.IsNullOrEmpty(fileArchivePath2))
                         {
-                            SaveHistory(new BackupResult
+                            historySaveFailed |= !SaveHistory(new BackupResult
                             {
                                 CorrelationId = correlationId,
                                 PlanId = plan.PlanId,
@@ -277,17 +273,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         bool anyFileFailed = fileResults2 != null && fileResults2.Any(r => r.Status != BackupResultStatus.Success);
                         bool overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed;
 
-                        // Retention temizliği (SQL + FileBackup combined branch)
-                        if (RetentionService != null)
-                        {
-                            try
-                            {
-                                await RetentionService.CleanupAsync(plan, cts.Token);
-                                RaiseRetentionCompleted(plan);
-                            }
-                            catch (OperationCanceledException) { throw; }
-                            catch (Exception ex) { Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName); }
-                        }
+                        // Retention temizliği (SQL + FileBackup combined branch; geçmiş kaydı başarısızsa atlanır)
+                        await RunRetentionAsync(plan, historySaveFailed, cts.Token);
 
                         await EmptyTrashIfNeededAsync(plan, cts.Token);
                         cleanupPaths.Clear();
