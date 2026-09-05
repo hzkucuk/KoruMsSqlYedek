@@ -159,6 +159,13 @@ try {
             if (Test-Path $setupFile) {
                 $setupSize = (Get-Item $setupFile).Length / 1MB
                 Write-Host "  Setup: $setupFile ($([math]::Round($setupSize, 1)) MB)" -ForegroundColor DarkGray
+
+                # SHA-256 dosyasi (sha256sum formati: "<hex>  <dosya>") — self-update dogrulamasi icin
+                $setupName = Split-Path $setupFile -Leaf
+                $setupHash = (Get-FileHash -Path $setupFile -Algorithm SHA256).Hash.ToLowerInvariant()
+                $shaFile   = "$setupFile.sha256"
+                [System.IO.File]::WriteAllText($shaFile, "$setupHash  $setupName`n", [System.Text.UTF8Encoding]::new($false))
+                Write-Host "  SHA-256: $setupHash -> $shaFile" -ForegroundColor DarkGray
             }
         } else {
             Write-Warning "Inno Setup derleme basarisiz oldu (LASTEXITCODE=$LASTEXITCODE). Devam ediliyor."
@@ -222,7 +229,13 @@ try {
 
             if ($releaseReady) {
                 Write-Host "[GitHub] Setup.exe yukleniyor: $setupFile" -ForegroundColor Cyan
-                gh release upload "v$version" $setupFile --clobber
+                $shaFile = "$setupFile.sha256"
+                if (Test-Path $shaFile) {
+                    gh release upload "v$version" $setupFile $shaFile --clobber
+                } else {
+                    Write-Warning "SHA-256 dosyasi bulunamadi ($shaFile) — self-update dogrulamasi calismayacak."
+                    gh release upload "v$version" $setupFile --clobber
+                }
                 if ($LASTEXITCODE -eq 0) {
                     # Draft'i yayinla
                     gh release edit "v$version" --draft=false
