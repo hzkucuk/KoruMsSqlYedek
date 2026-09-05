@@ -27,7 +27,9 @@ namespace KoruMsSqlYedek.Core.Models
         public int ConnectionTimeoutSeconds { get; set; } = 30;
 
         /// <summary>
-        /// Self-signed sertifikalı SQL Server bağlantıları için sertifika doğrulamasını atlar.
+        /// Sunucu sertifikası doğrulamasını atlar (self-signed sertifikalı SQL Server örnekleri için).
+        /// Bağlantı bu değerden bağımsız olarak HER ZAMAN şifrelidir (Encrypt=Mandatory);
+        /// bu bayrak yalnızca sertifika zincirinin doğrulanıp doğrulanmayacağını belirler.
         /// Yerel ve güvenilir ağ sunucuları için varsayılan true.
         /// </summary>
         [JsonProperty("trustServerCertificate")]

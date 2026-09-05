@@ -28,6 +28,15 @@ namespace KoruMsSqlYedek.Engine.Cloud
         private readonly Dictionary<CloudProviderType, ICloudProvider> _providers;
         private readonly ICloudProviderFactory _factory;
         private readonly UploadStateManager _stateManager;
+        private readonly IPlanManager _planManager;
+
+        /// <summary>
+        /// Bir bulut hedefinin yapılandırması upload sırasında değiştiğinde (ör. SFTP TOFU parmak izi
+        /// ilk bağlantıda öğrenildiğinde) fırlatılır. Parametreler: planId (null olabilir), orijinal hedef config.
+        /// Orkestratöre IPlanManager verilmişse plan dosyası zaten kaydedilmiştir; bu event yalnızca
+        /// bellekteki plan nesnesini elinde tutan çağıranı bilgilendirmek içindir.
+        /// </summary>
+        public event Action<string, CloudTargetConfig> TargetConfigChanged;
 
         /// <summary>
         /// Doğrudan provider listesi ile oluşturur (geriye uyumluluk).
@@ -36,6 +45,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
         {
             _providers = providers.ToDictionary(p => p.ProviderType);
             _factory = null;
+            _planManager = null;
             _stateManager = new UploadStateManager();
         }
 
@@ -43,8 +53,18 @@ namespace KoruMsSqlYedek.Engine.Cloud
         /// Factory pattern ile oluşturur. Provider'lar ihtiyaç anında yaratılır.
         /// </summary>
         public CloudUploadOrchestrator(ICloudProviderFactory factory)
+            : this(factory, null)
+        {
+        }
+
+        /// <summary>
+        /// Factory + plan yöneticisi ile oluşturur (DI). Plan yöneticisi verilirse upload sırasında
+        /// öğrenilen SFTP parmak izi doğrudan plan dosyasına kaydedilir.
+        /// </summary>
+        public CloudUploadOrchestrator(ICloudProviderFactory factory, IPlanManager planManager)
         {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+            _planManager = planManager;
             _providers = new Dictionary<CloudProviderType, ICloudProvider>();
             _stateManager = new UploadStateManager();
         }
@@ -113,6 +133,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 {
                     stateRecord = new UploadStateRecord
                     {
+                        PlanId = planId,
                         PlanName = planName,
                         LocalFilePath = localFilePath,
                         RemoteFileName = remoteFileName,
@@ -180,8 +201,17 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     progress?.Report(pct);
                 });
 
-                var result = await UploadWithRetryAsync(
-                    localFilePath, remoteFileName, effectiveTarget, hubProgress, cancellationToken, stateRecord);
+                CloudUploadResult result;
+                try
+                {
+                    result = await UploadWithRetryAsync(
+                        localFilePath, remoteFileName, effectiveTarget, hubProgress, cancellationToken, stateRecord);
+                }
+                finally
+                {
+                    // TOFU: ilk bağlantıda öğrenilen SFTP parmak izini orijinal config'e ve plana yaz
+                    PersistLearnedHostFingerprint(target, effectiveTarget, planId);
+                }
                 results.Add(result);
 
                 // Upload tamamlandıktan sonra %100 ilerleme eventi fırlat
@@ -341,6 +371,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                     {
                         stateRecord = new UploadStateRecord
                         {
+                            PlanId = planId,
                             PlanName = planName,
                             LocalFilePath = localFilePath,
                             RemoteFileName = remoteFileName,
@@ -404,9 +435,18 @@ namespace KoruMsSqlYedek.Engine.Cloud
                         });
                     });
 
-                    var result = await UploadWithRetryAsync(
-                        localFilePath, remoteFileName, effectiveTarget, hubProgress,
-                        cancellationToken, stateRecord);
+                    CloudUploadResult result;
+                    try
+                    {
+                        result = await UploadWithRetryAsync(
+                            localFilePath, remoteFileName, effectiveTarget, hubProgress,
+                            cancellationToken, stateRecord);
+                    }
+                    finally
+                    {
+                        // TOFU: ilk bağlantıda öğrenilen SFTP parmak izini orijinal config'e ve plana yaz
+                        PersistLearnedHostFingerprint(target, effectiveTarget, planId);
+                    }
                     fileResults.Add(result);
 
                     targetCompleted++;
@@ -472,6 +512,75 @@ namespace KoruMsSqlYedek.Engine.Cloud
             }
 
             return allResults;
+        }
+
+        /// <summary>
+        /// SFTP TOFU: provider'ın ilk bağlantıda öğrendiği host parmak izi, upload'a verilen
+        /// (sığ kopya olabilen) config üzerinde kalır. Bu metod parmak izini orijinal hedef config'e
+        /// kopyalar, <see cref="TargetConfigChanged"/> event'ini fırlatır ve IPlanManager mevcutsa
+        /// planı diskten yükleyip eşleşen hedefe yazarak kaydeder.
+        /// </summary>
+        internal void PersistLearnedHostFingerprint(
+            CloudTargetConfig original, CloudTargetConfig effective, string planId)
+        {
+            try
+            {
+                if (original == null || effective == null) return;
+                if (effective.Type != CloudProviderType.Sftp) return;
+                if (string.IsNullOrEmpty(effective.SftpHostFingerprint)) return;
+                if (string.Equals(original.SftpHostFingerprint, effective.SftpHostFingerprint, StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                original.SftpHostFingerprint = effective.SftpHostFingerprint;
+                Log.Information(
+                    "SFTP host parmak izi hedef yapılandırmasına yazıldı: {Target} ({Host}) — SHA256:{Fingerprint}",
+                    original.DisplayName, original.Host, original.SftpHostFingerprint);
+
+                try
+                {
+                    TargetConfigChanged?.Invoke(planId, original);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "TargetConfigChanged aboneliğinde hata");
+                }
+
+                if (_planManager == null || string.IsNullOrEmpty(planId))
+                {
+                    Log.Debug("SFTP parmak izi plana kaydedilemedi — plan yöneticisi veya PlanId yok (PlanId={PlanId})", planId);
+                    return;
+                }
+
+                var plan = _planManager.GetPlanById(planId);
+                if (plan?.CloudTargets == null)
+                {
+                    Log.Warning("SFTP parmak izi kaydı için plan bulunamadı: {PlanId}", planId);
+                    return;
+                }
+
+                bool changed = false;
+                foreach (var t in plan.CloudTargets)
+                {
+                    if (t.Type != CloudProviderType.Sftp) continue;
+                    if (!string.Equals(t.Host, original.Host, StringComparison.OrdinalIgnoreCase)) continue;
+                    if ((t.Port ?? 22) != (original.Port ?? 22)) continue;
+                    if (!string.Equals(t.Username, original.Username, StringComparison.Ordinal)) continue;
+                    if (string.Equals(t.SftpHostFingerprint, original.SftpHostFingerprint, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    t.SftpHostFingerprint = original.SftpHostFingerprint;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    _planManager.SavePlan(plan);
+                    Log.Information("SFTP host parmak izi plan dosyasına kaydedildi: {PlanId}", planId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "SFTP host parmak izi kalıcı hale getirilemedi (PlanId={PlanId})", planId);
+            }
         }
 
         /// <summary>

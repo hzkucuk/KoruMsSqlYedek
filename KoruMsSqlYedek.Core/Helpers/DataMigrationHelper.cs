@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -59,6 +60,147 @@ namespace KoruMsSqlYedek.Core.Helpers
             {
                 Log.Error(ex, "Veri migrasyonu sırasında hata oluştu.");
             }
+        }
+
+        /// <summary>
+        /// Plan ve AppSettings dosyalarında düz metin kalmış gizli alanları DPAPI ile korur.
+        /// Her Tray açılışında çalıştırılır; idempotent — zaten korumalı değerlere dokunmaz.
+        /// Kapsam: bulut hedefi <c>password</c>, <c>oauthClientSecret</c>, <c>oauthTokenJson</c>
+        /// (düz JSON, '{' ile başlar), SMTP profil şifreleri ve eski tekil SMTP şifresi.
+        /// </summary>
+        public static void ProtectPlaintextSecrets()
+        {
+            ProtectPlaintextSecretsInPlans(PathHelper.PlansDirectory);
+            ProtectPlaintextSecretsInAppSettings(Path.Combine(PathHelper.ConfigDirectory, "appsettings.json"));
+        }
+
+        /// <summary>
+        /// Verilen dizindeki plan JSON dosyalarında düz metin gizli alanları korur.
+        /// Test edilebilirlik için dizin parametre olarak alınır.
+        /// </summary>
+        public static void ProtectPlaintextSecretsInPlans(string plansDir)
+        {
+            if (string.IsNullOrEmpty(plansDir) || !Directory.Exists(plansDir))
+                return;
+
+            foreach (string planFile in Directory.GetFiles(plansDir, "*.json"))
+            {
+                try
+                {
+                    JObject plan = JObject.Parse(File.ReadAllText(planFile));
+                    bool modified = false;
+
+                    modified |= ProtectField(plan, "sqlConnection.password");
+                    modified |= ProtectField(plan, "compression.archivePassword");
+                    modified |= ProtectField(plan, "notifications.smtpPassword");
+
+                    if (plan["cloudTargets"] is JArray cloudTargets)
+                    {
+                        foreach (JObject target in cloudTargets.OfType<JObject>())
+                        {
+                            modified |= ProtectFieldDirect(target, "password");
+                            modified |= ProtectFieldDirect(target, "oauthClientSecret");
+                            modified |= ProtectOAuthTokenJson(target);
+                        }
+                    }
+
+                    if (modified)
+                    {
+                        File.WriteAllText(planFile, plan.ToString(Formatting.Indented));
+                        Log.Information(
+                            "Düz metin gizli alanlar DPAPI ile korundu: {PlanFile}",
+                            Path.GetFileName(planFile));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Plan dosyasında düz metin koruma yapılamadı: {PlanFile}", Path.GetFileName(planFile));
+                }
+            }
+        }
+
+        /// <summary>
+        /// AppSettings JSON dosyasındaki düz metin SMTP şifrelerini ve OAuth client secret'ı korur.
+        /// </summary>
+        public static void ProtectPlaintextSecretsInAppSettings(string settingsFile)
+        {
+            if (string.IsNullOrEmpty(settingsFile) || !File.Exists(settingsFile))
+                return;
+
+            try
+            {
+                JObject settings = JObject.Parse(File.ReadAllText(settingsFile));
+                bool modified = false;
+
+                modified |= ProtectField(settings, "googleOAuthClientSecret");
+
+                if (settings["smtpProfiles"] is JArray profiles)
+                {
+                    foreach (JObject profile in profiles.OfType<JObject>())
+                        modified |= ProtectFieldDirect(profile, "password");
+                }
+
+                modified |= ProtectField(settings, "smtp.password");
+
+                if (modified)
+                {
+                    File.WriteAllText(settingsFile, settings.ToString(Formatting.Indented));
+                    Log.Information("AppSettings düz metin gizli alanları DPAPI ile korundu.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "AppSettings düz metin koruma yapılamadı.");
+            }
+        }
+
+        /// <summary>
+        /// Google OAuth token JSON'u düz metin ise (ör. '{' ile başlıyorsa) DPAPI ile korur.
+        /// </summary>
+        private static bool ProtectOAuthTokenJson(JObject target)
+        {
+            string value = target["oauthTokenJson"]?.Value<string>();
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            if (!value.TrimStart().StartsWith("{", StringComparison.Ordinal))
+                return false;
+
+            target["oauthTokenJson"] = PasswordProtector.Protect(value);
+            return true;
+        }
+
+        /// <summary>
+        /// Nokta-ayrılmış yollu alan düz metin ise DPAPI ile korur.
+        /// </summary>
+        private static bool ProtectField(JObject root, string dottedPath)
+        {
+            string[] parts = dottedPath.Split('.');
+            JToken current = root;
+
+            for (int i = 0; i < parts.Length - 1; i++)
+            {
+                current = current[parts[i]];
+                if (current is null) return false;
+            }
+
+            return ProtectFieldDirect(current as JObject, parts[^1]);
+        }
+
+        /// <summary>
+        /// Doğrudan JObject üzerindeki alan düz metin ise DPAPI ile korur.
+        /// Başka bir bağlamda korunmuş (başlığı DPAPI olan) değerler tekrar şifrelenmez.
+        /// </summary>
+        private static bool ProtectFieldDirect(JObject obj, string fieldName)
+        {
+            if (obj is null) return false;
+
+            string value = obj[fieldName]?.Value<string>();
+            if (string.IsNullOrEmpty(value) || PasswordProtector.LooksProtected(value))
+                return false;
+
+            obj[fieldName] = PasswordProtector.Protect(value);
+            return true;
         }
 
         /// <summary>

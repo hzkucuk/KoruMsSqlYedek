@@ -97,6 +97,16 @@ namespace KoruMsSqlYedek.Win
                             Res.Get("Toast_BackupCancelledTitle"),
                             Res.Format("Toast_BackupCancelledMessage", e.PlanName));
                     break;
+
+                case BackupActivityType.CloudUploadAbandoned:
+                    // Recovery sırasında kalıcı olarak başarısız olan yüklemeler — tray animasyonu yok, yalnızca uyarı
+                    if (e.ToastEnabled)
+                        Theme.ModernToast.Warning(
+                            Res.Get("Toast_CloudAbandonedTitle"),
+                            Res.Format("Toast_CloudAbandonedMessage",
+                                string.IsNullOrEmpty(e.PlanName) ? Res.Get("Tray_Tooltip") : e.PlanName,
+                                e.AbandonedFiles?.Count ?? 0));
+                    break;
             }
         }
 

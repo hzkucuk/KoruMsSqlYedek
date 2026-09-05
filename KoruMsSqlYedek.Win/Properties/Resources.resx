@@ -503,7 +503,7 @@ If you forget your password, you can reset it using the security question.</valu
   <data name="PlanEdit_SqlUser" xml:space="preserve"><value>Username:</value></data>
   <data name="PlanEdit_SqlPassword" xml:space="preserve"><value>Password:</value></data>
   <data name="PlanEdit_Timeout" xml:space="preserve"><value>Timeout (sec):</value></data>
-  <data name="PlanEdit_TrustCert" xml:space="preserve"><value>Trust Certificate</value></data>
+  <data name="PlanEdit_TrustCert" xml:space="preserve"><value>Skip certificate validation (connection always encrypted)</value></data>
   <data name="PlanEdit_TestSql" xml:space="preserve"><value>Test Connection</value></data>
   <data name="PlanEdit_Step2Header" xml:space="preserve"><value>③ Databases to Backup</value></data>
   <data name="PlanEdit_Step2Hint" xml:space="preserve"><value>Databases are listed automatically when SQL connection is successful.</value></data>
@@ -593,9 +593,10 @@ Example: sa, backupuser</value></data>
 not saved as plain text.</value></data>
   <data name="PlanEdit_Tip_Timeout" xml:space="preserve"><value>Connection timeout (seconds).
 Default: 30 sec. Increase if network is slow.</value></data>
-  <data name="PlanEdit_Tip_TrustCert" xml:space="preserve"><value>Check this for local or test servers
-using self-signed SSL certificates.
-If unchecked, a valid CA certificate is required.</value></data>
+  <data name="PlanEdit_Tip_TrustCert" xml:space="preserve"><value>The connection is ALWAYS encrypted (TLS).
+This option only skips server certificate validation —
+check it for local or test servers using self-signed certificates.
+If unchecked, a certificate issued by a trusted CA is required.</value></data>
   <data name="PlanEdit_Tip_TestSql" xml:space="preserve"><value>Tests SQL Server connection with entered credentials.
 If successful, databases are listed automatically.</value></data>
   <data name="PlanEdit_Tip_SelectAll" xml:space="preserve"><value>Selects or deselects all databases in the list.</value></data>
@@ -1060,6 +1061,21 @@ Disabled sources are skipped during backup execution.</value></data>
   <data name="Activity_BackupStarted" xml:space="preserve"><value>[{0}] Backup started.</value></data>
   <data name="Activity_DbProcessing" xml:space="preserve"><value>{0} ({1}/{2}) processing.</value></data>
   <data name="Activity_Step" xml:space="preserve"><value>Step: {0}</value></data>
+  <data name="Toast_CloudAbandonedTitle" xml:space="preserve"><value>Cloud Upload Abandoned</value></data>
+  <data name="Toast_CloudAbandonedMessage" xml:space="preserve"><value>{0} — {1} file(s) could not be uploaded after the maximum number of attempts.</value></data>
+  <data name="CloudTarget_SftpFingerprint" xml:space="preserve"><value>Host fingerprint:</value></data>
+  <data name="CloudTarget_SftpFingerprintNone" xml:space="preserve"><value>(not learned yet — saved on first connection)</value></data>
+  <data name="CloudTarget_ResetFingerprint" xml:space="preserve"><value>Reset fingerprint</value></data>
+  <data name="CloudTarget_TestConnection" xml:space="preserve"><value>Test connection</value></data>
+  <data name="CloudTarget_TestConnectionOk" xml:space="preserve"><value>Connection successful.</value></data>
+  <data name="CloudTarget_TestConnectionFail" xml:space="preserve"><value>Connection failed. Check host, port and credentials.</value></data>
+  <data name="CloudTarget_TestConnectionTitle" xml:space="preserve"><value>Connection Test</value></data>
+  <data name="Tip_Cloud_SftpFingerprint" xml:space="preserve"><value>SHA-256 fingerprint of the SFTP server host key (trust-on-first-use).
+Learned automatically on the first connection; later connections are rejected if the key changes.</value></data>
+  <data name="Tip_Cloud_ResetFingerprint" xml:space="preserve"><value>Clears the stored fingerprint. Use only after the server key was legitimately replaced.
+The next connection will learn and store the new fingerprint.</value></data>
+  <data name="Tip_Cloud_TestConnection" xml:space="preserve"><value>Connects to the FTP/SFTP server with the entered settings.
+For SFTP the host fingerprint is learned and stored on the first successful test.</value></data>
   <data name="Activity_CloudAbandoned" xml:space="preserve"><value>⚠ Cloud upload abandoned ({0} files): {1}</value></data>
   <data name="Activity_CloudAbandonedMsg" xml:space="preserve"><value>⚠ Cloud upload abandoned: {0}</value></data>
   <data name="Activity_MaxRetryExceeded" xml:space="preserve"><value>Max retry exceeded</value></data>

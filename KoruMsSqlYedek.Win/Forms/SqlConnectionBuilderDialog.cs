@@ -28,6 +28,7 @@ namespace KoruMsSqlYedek.Win.Forms
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<SqlConnectionBuilderDialog>();
         private readonly ISqlBackupService _sqlBackupService;
+        private readonly ToolTip _toolTipTrustCert;
 
         /// <summary>
         /// Dialog başarıyla kapatıldığında doldurulan bağlantı bilgisi.
@@ -40,6 +41,10 @@ namespace KoruMsSqlYedek.Win.Forms
             _sqlBackupService = sqlBackupService;
 
             InitializeComponent();
+
+            // TrustServerCertificate yalnızca sertifika doğrulamasını atlar; bağlantı her zaman şifrelidir
+            _toolTipTrustCert = new ToolTip();
+            _toolTipTrustCert.SetToolTip(_chkTrustCert, Helpers.Res.Get("PlanEdit_Tip_TrustCert"));
 
             // Auth mode seçenekleri
             _cmbAuthMode.Items.Add("Windows Kimlik Doğrulama");

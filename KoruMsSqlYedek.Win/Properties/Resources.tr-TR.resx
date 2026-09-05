@@ -493,7 +493,7 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="PlanEdit_SqlUser" xml:space="preserve"><value>Kullanıcı Adı:</value></data>
   <data name="PlanEdit_SqlPassword" xml:space="preserve"><value>Şifre:</value></data>
   <data name="PlanEdit_Timeout" xml:space="preserve"><value>Zaman Aşımı (sn):</value></data>
-  <data name="PlanEdit_TrustCert" xml:space="preserve"><value>Sertifikaya Güven</value></data>
+  <data name="PlanEdit_TrustCert" xml:space="preserve"><value>Sertifika doğrulamasını atla (bağlantı her zaman şifreli)</value></data>
   <data name="PlanEdit_TestSql" xml:space="preserve"><value>Bağlantıyı Sına</value></data>
   <data name="PlanEdit_Step2Header" xml:space="preserve"><value>③ Yedeklenecek Veritabanları</value></data>
   <data name="PlanEdit_Step2Hint" xml:space="preserve"><value>SQL bağlantısı başarılıysa veritabanları otomatik listelenir.</value></data>
@@ -583,9 +583,10 @@ SQL Server: Kullanıcı adı ve şifre gerekir.</value></data>
 düz metin olarak kaydedilmez.</value></data>
   <data name="PlanEdit_Tip_Timeout" xml:space="preserve"><value>Sunucuya bağlanma süresi (saniye).
 Varsayılan: 30 sn. Ağ yavaşsa artırın.</value></data>
-  <data name="PlanEdit_Tip_TrustCert" xml:space="preserve"><value>Yerel veya test sunucularında self-signed
-SSL sertifikası kullanılıyorsa işaretleyin.
-Kapalıysa geçerli CA sertifikası gerekir.</value></data>
+  <data name="PlanEdit_Tip_TrustCert" xml:space="preserve"><value>Bağlantı HER ZAMAN şifrelidir (TLS).
+Bu seçenek yalnızca sunucu sertifikası doğrulamasını atlar —
+self-signed sertifikalı yerel/test sunucuları için işaretleyin.
+Kapalıysa güvenilir bir CA tarafından verilmiş sertifika gerekir.</value></data>
   <data name="PlanEdit_Tip_TestSql" xml:space="preserve"><value>Girdiğiniz bilgilerle SQL Server bağlantısını test eder.
 Başarılıysa veritabanları otomatik listelenir.</value></data>
   <data name="PlanEdit_Tip_SelectAll" xml:space="preserve"><value>Listedeki tüm veritabanlarını seçer veya seçimi kaldırır.</value></data>
@@ -1050,6 +1051,21 @@ Devre dışı kaynaklar yedekleme sırasında atlanır.</value></data>
   <data name="Activity_BackupStarted" xml:space="preserve"><value>[{0}] Yedekleme başladı.</value></data>
   <data name="Activity_DbProcessing" xml:space="preserve"><value>{0} ({1}/{2}) işleniyor.</value></data>
   <data name="Activity_Step" xml:space="preserve"><value>Adım: {0}</value></data>
+  <data name="Toast_CloudAbandonedTitle" xml:space="preserve"><value>Bulut Yükleme Terk Edildi</value></data>
+  <data name="Toast_CloudAbandonedMessage" xml:space="preserve"><value>{0} — {1} dosya maksimum deneme sayısına ulaşıldığı için yüklenemedi.</value></data>
+  <data name="CloudTarget_SftpFingerprint" xml:space="preserve"><value>Sunucu parmak izi:</value></data>
+  <data name="CloudTarget_SftpFingerprintNone" xml:space="preserve"><value>(henüz öğrenilmedi — ilk bağlantıda kaydedilir)</value></data>
+  <data name="CloudTarget_ResetFingerprint" xml:space="preserve"><value>Parmak izini sıfırla</value></data>
+  <data name="CloudTarget_TestConnection" xml:space="preserve"><value>Bağlantıyı test et</value></data>
+  <data name="CloudTarget_TestConnectionOk" xml:space="preserve"><value>Bağlantı başarılı.</value></data>
+  <data name="CloudTarget_TestConnectionFail" xml:space="preserve"><value>Bağlantı kurulamadı. Sunucu, port ve kimlik bilgilerini kontrol edin.</value></data>
+  <data name="CloudTarget_TestConnectionTitle" xml:space="preserve"><value>Bağlantı Testi</value></data>
+  <data name="Tip_Cloud_SftpFingerprint" xml:space="preserve"><value>SFTP sunucusunun host key SHA-256 parmak izi (ilk bağlantıda güven).
+İlk bağlantıda otomatik öğrenilir; anahtar değişirse sonraki bağlantılar reddedilir.</value></data>
+  <data name="Tip_Cloud_ResetFingerprint" xml:space="preserve"><value>Kayıtlı parmak izini temizler. Yalnızca sunucu anahtarı meşru biçimde değiştirildiyse kullanın.
+Bir sonraki bağlantıda yeni parmak izi öğrenilip kaydedilir.</value></data>
+  <data name="Tip_Cloud_TestConnection" xml:space="preserve"><value>Girilen ayarlarla FTP/SFTP sunucusuna bağlanır.
+SFTP için ilk başarılı testte sunucu parmak izi öğrenilip kaydedilir.</value></data>
   <data name="Activity_CloudAbandoned" xml:space="preserve"><value>⚠ Bulut yükleme terk edildi ({0} dosya): {1}</value></data>
   <data name="Activity_CloudAbandonedMsg" xml:space="preserve"><value>⚠ Bulut yükleme terk edildi: {0}</value></data>
   <data name="Activity_MaxRetryExceeded" xml:space="preserve"><value>Maksimum deneme aşıldı</value></data>

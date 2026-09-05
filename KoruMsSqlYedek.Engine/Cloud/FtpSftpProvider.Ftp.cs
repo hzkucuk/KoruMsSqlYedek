@@ -120,29 +120,45 @@ namespace KoruMsSqlYedek.Engine.Cloud
             AsyncFtpClient client, string localFilePath, string remotePath,
             CancellationToken cancellationToken)
         {
+            FtpHash remoteHash;
             try
             {
-                FtpHash remoteHash = await client.GetChecksum(remotePath, FtpHashAlgorithm.MD5, cancellationToken);
-                if (remoteHash != null && remoteHash.IsValid)
-                {
-                    string localHash = ComputeLocalMd5(localFilePath);
-                    if (!string.Equals(localHash, remoteHash.Value, StringComparison.OrdinalIgnoreCase))
-                    {
-                        Log.Warning(
-                            "Checksum uyuşmazlığı: local={LocalHash}, remote={RemoteHash}, file={File}",
-                            localHash, remoteHash.Value, remotePath);
-                    }
-                    else
-                    {
-                        Log.Debug("Checksum doğrulama başarılı: {File}", remotePath);
-                    }
-                }
+                remoteHash = await client.GetChecksum(remotePath, FtpHashAlgorithm.MD5, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                // Bazı FTP sunucuları checksum desteklemez — uyarı olarak logla
+                // Bazı FTP sunucuları checksum desteklemez — bu bir hata değildir, atla
                 Log.Debug(ex, "FTP checksum doğrulama atlandı (sunucu desteklemiyor olabilir)");
+                return;
             }
+
+            if (remoteHash == null || !remoteHash.IsValid)
+            {
+                Log.Debug("FTP sunucusu geçerli checksum döndürmedi, doğrulama atlandı: {File}", remotePath);
+                return;
+            }
+
+            string localHash = ComputeLocalMd5(localFilePath);
+            if (!string.Equals(localHash, remoteHash.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                // Uzak dosya bozuk/eksik — upload başarısız sayılır, orkestratör yeniden dener
+                Log.Warning(
+                    "Checksum uyuşmazlığı: local={LocalHash}, remote={RemoteHash}, file={File}",
+                    localHash, remoteHash.Value, remotePath);
+
+                // Bozuk uzak dosyayı sil; aksi halde retry "Resume" modunda bozuk dosyanın üzerine devam eder
+                try { await client.DeleteFile(remotePath, cancellationToken); }
+                catch (Exception delEx) { Log.Debug(delEx, "Bozuk uzak dosya silinemedi: {File}", remotePath); }
+
+                throw new InvalidOperationException(
+                    $"Checksum uyuşmazlığı: yerel MD5 {localHash}, uzak MD5 {remoteHash.Value} — {remotePath}");
+            }
+
+            Log.Debug("Checksum doğrulama başarılı: {File}", remotePath);
         }
     }
 }
