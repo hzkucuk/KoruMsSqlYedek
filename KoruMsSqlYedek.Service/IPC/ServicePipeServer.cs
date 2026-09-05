@@ -13,6 +13,8 @@ using Serilog;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.IPC;
+using KoruMsSqlYedek.Engine.Update;
+using KoruMsSqlYedek.Service.Security;
 using KoruMsSqlYedek.Service.SelfUpdate;
 
 namespace KoruMsSqlYedek.Service.IPC
@@ -90,22 +92,17 @@ namespace KoruMsSqlYedek.Service.IPC
                 NamedPipeServerStream pipe = null;
                 try
                 {
+                    // GÜVENLİK: Pipe'a yalnızca SYSTEM ve BUILTIN\Administrators bağlanabilir.
+                    // Tray uygulaması requireAdministrator ile yükseltilmiş çalışır; sıradan
+                    // kullanıcılar ManualBackup/CancelBackup/InstallSelfUpdate gönderemez.
                     var pipeSecurity = new PipeSecurity();
-                    pipeSecurity.AddAccessRule(new PipeAccessRule(
-                        new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
-                        PipeAccessRights.ReadWrite,
-                        AccessControlType.Allow));
                     pipeSecurity.AddAccessRule(new PipeAccessRule(
                         new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
                         PipeAccessRights.FullControl,
                         AccessControlType.Allow));
                     pipeSecurity.AddAccessRule(new PipeAccessRule(
                         new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
-                        PipeAccessRights.FullControl,
-                        AccessControlType.Allow));
-                    pipeSecurity.AddAccessRule(new PipeAccessRule(
-                        WindowsIdentity.GetCurrent().User!,
-                        PipeAccessRights.FullControl,
+                        PipeAccessRights.ReadWrite | PipeAccessRights.Synchronize,
                         AccessControlType.Allow));
 
                     pipe = NamedPipeServerStreamAcl.Create(
@@ -118,6 +115,15 @@ namespace KoruMsSqlYedek.Service.IPC
                         pipeSecurity);
 
                     await pipe.WaitForConnectionAsync(ct);
+
+                    // Derinlemesine savunma: ACL'den bağımsız olarak istemci kimliğini doğrula.
+                    // Hiçbir komut bu kontrolden önce işlenmez.
+                    if (!IsClientAuthorized(pipe))
+                    {
+                        pipe.Dispose();
+                        pipe = null;
+                        continue;
+                    }
 
                     var clientId = Guid.NewGuid();
                     _clients[clientId] = pipe;
@@ -154,6 +160,54 @@ namespace KoruMsSqlYedek.Service.IPC
                     await Task.Delay(2000, ct).ConfigureAwait(false);
                 }
             }
+        }
+
+        // ── İstemci kimlik doğrulama ─────────────────────────────────────────
+
+        /// <summary>
+        /// Bağlanan istemcinin SYSTEM veya BUILTIN\Administrators üyesi olduğunu doğrular.
+        /// RunAsClient (ImpersonateNamedPipeClient) istemcinin Identification seviyesinde
+        /// bağlanmasıyla da çalışır — WindowsIdentity.GetCurrent() için yeterlidir.
+        /// Kimlik alınamazsa bağlantı reddedilir (fail-closed).
+        /// </summary>
+        private static bool IsClientAuthorized(NamedPipeServerStream pipe)
+        {
+            string userName = "(bilinmiyor)";
+            bool authorized = false;
+
+            try
+            {
+                pipe.RunAsClient(() =>
+                {
+                    using var identity = WindowsIdentity.GetCurrent();
+                    userName = identity.Name;
+
+                    if (identity.IsSystem)
+                    {
+                        authorized = true;
+                        return;
+                    }
+
+                    var principal = new WindowsPrincipal(identity);
+                    authorized = principal.IsInRole(WindowsBuiltInRole.Administrator);
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Pipe istemci kimliği alınamadı — bağlantı reddedildi.");
+                return false;
+            }
+
+            if (!authorized)
+            {
+                Log.Warning(
+                    "Yetkisiz pipe istemcisi reddedildi: {User} (SYSTEM veya Administrators değil)",
+                    userName);
+                return false;
+            }
+
+            Log.Debug("Pipe istemcisi yetkili: {User}", userName);
+            return true;
         }
 
         // ── İstemci okuma döngüsü ────────────────────────────────────────────
@@ -240,9 +294,11 @@ namespace KoruMsSqlYedek.Service.IPC
                 case PipeMessageType.InstallSelfUpdate:
                 {
                     var cmd = (InstallSelfUpdateCommand)message;
-                    Log.Information("Self-update installer komutu alındı: {Path}", cmd.InstallerPath);
+                    Log.Information(
+                        "Self-update komutu alındı: Sürüm={Version}, URL={Url}",
+                        cmd.Version, cmd.DownloadUrl);
                     // Arka planda çalıştır — pipe yanıtı HandleInstallSelfUpdateAsync içinde gönderilir
-                    _ = Task.Run(() => HandleInstallSelfUpdateAsync(clientId, pipe, cmd.InstallerPath, ct), ct);
+                    _ = Task.Run(() => HandleInstallSelfUpdateAsync(clientId, pipe, cmd, ct), ct);
                     break;
                 }
 
@@ -255,45 +311,98 @@ namespace KoruMsSqlYedek.Service.IPC
         // ── Self-Update ─────────────────────────────────────────────────────
 
         /// <summary>
-        /// Tray app'in indirdiği self-update installer'ını SYSTEM yetkileriyle (UAC'sız) çalıştırır.
-        /// 1. Installer yolunu doğrula
-        /// 2. Restart flag yaz (installer sonrası tray app yeniden başlatılacak)
-        /// 3. Pipe üzerinden yanıt gönder (tray app kapanacak)
-        /// 4. Installer'ı SYSTEM olarak sessiz modda çalıştır
-        /// 5. Tray app'i kullanıcı oturumunda yeniden başlat
+        /// Self-update installer'ını SYSTEM yetkileriyle (UAC'sız) indirir, doğrular ve çalıştırır.
+        /// GÜVENLİK: Tray'den gelen dosya yoluna asla güvenilmez — servis installer'ı kendisi,
+        /// yalnızca SYSTEM/Administrators erişimli Updates dizinine indirir ve SHA-256'sını doğrular.
+        /// 1. Komutu doğrula (sürüm, https+GitHub URL, 64 hex SHA-256)
+        /// 2. Updates dizinini kısıtlı ACL ile hazırla, eski *.exe'leri sil
+        /// 3. İndir, SHA-256 (+ boyut) doğrula — uyuşmazsa dosyayı sil ve reddet
+        /// 4. Restart flag yaz (installer sonrası tray app yeniden başlatılacak)
+        /// 5. Pipe üzerinden yanıt gönder (tray app kapanacak)
+        /// 6. Installer'ı SYSTEM olarak sessiz modda çalıştır
+        /// 7. Tray app'i kullanıcı oturumunda yeniden başlat
         /// </summary>
         private async Task HandleInstallSelfUpdateAsync(
             Guid clientId, NamedPipeServerStream pipe,
-            string installerPath, CancellationToken ct)
+            InstallSelfUpdateCommand cmd, CancellationToken ct)
         {
             var selfUpdate = new SelfUpdateHandler();
+            string installerPath = null;
+
+            async Task RejectAsync(string reason)
+            {
+                Log.Warning("Self-update reddedildi: {Reason}", reason);
+                TryDeleteFile(installerPath);
+                await SendResponseToClientAsync(clientId, pipe,
+                    new InstallSelfUpdateResponseMessage { Success = false, Message = reason }, ct);
+            }
 
             try
             {
-                // 1. Installer yolunu doğrula
-                if (string.IsNullOrWhiteSpace(installerPath) || !File.Exists(installerPath))
+                // 1. Komut alanlarını doğrula
+                if (!Version.TryParse(cmd?.Version, out var targetVersion))
                 {
-                    Log.Error("Self-update installer bulunamadı: {Path}", installerPath);
-                    await SendResponseToClientAsync(clientId, pipe,
-                        new InstallSelfUpdateResponseMessage
-                        {
-                            Success = false,
-                            Message = $"Installer dosyası bulunamadı: {installerPath}"
-                        }, ct);
+                    await RejectAsync($"Geçersiz sürüm bilgisi: '{cmd?.Version}'");
                     return;
                 }
 
-                Log.Information("Self-update installer başlatılıyor: {Path}", installerPath);
+                if (!InstallerVerifier.IsAllowedDownloadUrl(cmd.DownloadUrl))
+                {
+                    await RejectAsync("İndirme URL'i izin verilen listede değil (yalnızca https ve GitHub hostları kabul edilir).");
+                    return;
+                }
 
-                // 2. Tray app yolunu belirle
+                if (!InstallerVerifier.IsValidSha256Hex(cmd.ExpectedSha256))
+                {
+                    await RejectAsync("Beklenen SHA-256 özeti eksik veya geçersiz (64 hex karakter olmalı).");
+                    return;
+                }
+
+                // 2. Kısıtlı Updates dizinini hazırla (varsa ACL yeniden uygulanır) ve eski installer'ları sil
+                string updatesDir = DirectoryAcl.UpdatesDirectory;
+                DirectoryAcl.EnsureRestrictedDirectory(updatesDir);
+
+                foreach (string stale in Directory.GetFiles(updatesDir, "*.exe"))
+                    TryDeleteFile(stale);
+
+                installerPath = Path.Combine(
+                    updatesDir, $"KoruMsSqlYedek_v{targetVersion.ToString(3)}_Setup.exe");
+
+                // 3. İndir ve doğrula
+                Log.Information("Self-update installer indiriliyor: {Url} → {Path}", cmd.DownloadUrl, installerPath);
+                await InstallerVerifier.DownloadToFileAsync(cmd.DownloadUrl, installerPath, ct);
+
+                var fileInfo = new FileInfo(installerPath);
+                if (cmd.ExpectedSizeBytes > 0 && fileInfo.Length != cmd.ExpectedSizeBytes)
+                {
+                    await RejectAsync(
+                        $"Installer boyutu beklenenden farklı (beklenen {cmd.ExpectedSizeBytes} B, indirilen {fileInfo.Length} B).");
+                    return;
+                }
+
+                string actualSha256 = await InstallerVerifier.ComputeSha256HexAsync(installerPath, ct);
+                if (!InstallerVerifier.Sha256Matches(actualSha256, cmd.ExpectedSha256))
+                {
+                    Log.Warning(
+                        "Self-update SHA-256 uyuşmazlığı: beklenen={Expected}, hesaplanan={Actual}",
+                        cmd.ExpectedSha256, actualSha256);
+                    await RejectAsync("Installer SHA-256 özeti beklenen değerle uyuşmuyor — dosya silindi.");
+                    return;
+                }
+
+                Log.Information(
+                    "Self-update installer doğrulandı (SHA-256 eşleşti, {Size} B): {Path}",
+                    fileInfo.Length, installerPath);
+
+                // 4. Tray app yolunu belirle
                 string serviceDir = AppContext.BaseDirectory;
                 string trayAppPath = Path.GetFullPath(
                     Path.Combine(serviceDir, "..", "KoruMsSqlYedek.Win.exe"));
 
-                // 3. Restart flag dosyasını yaz
+                // 5. Restart flag dosyasını yaz
                 await selfUpdate.WriteFlagAsync(trayAppPath, ct);
 
-                // 4. Başarı yanıtını gönder — tray app kapanacak
+                // 6. Başarı yanıtını gönder — tray app kapanacak
                 await SendResponseToClientAsync(clientId, pipe,
                     new InstallSelfUpdateResponseMessage
                     {
@@ -301,10 +410,10 @@ namespace KoruMsSqlYedek.Service.IPC
                         Message = "Self-update başlatılıyor, uygulama yeniden başlatılacak."
                     }, ct);
 
-                // 5. Tray app'in kapanmasını bekle (file lock'lar serbest kalsın)
+                // 7. Tray app'in kapanmasını bekle (file lock'lar serbest kalsın)
                 await Task.Delay(3000, ct).ConfigureAwait(false);
 
-                // 6. Installer'ı başlat — SYSTEM olarak UAC gerekmez
+                // 8. Doğrulanmış installer'ı başlat — SYSTEM olarak UAC gerekmez
                 //    /VERYSILENT: kullanıcıya hiçbir diyalog gösterme
                 //    /SUPPRESSMSGBOXES: hata mesajlarını da gösterme
                 //    /SP-: "Bu programı kurmak istiyor musunuz?" sorusunu atla
@@ -339,13 +448,14 @@ namespace KoruMsSqlYedek.Service.IPC
 
                 Log.Information("Self-update installer başarıyla tamamlandı.");
 
-                // 7. Tray app'i kullanıcı oturumunda yeniden başlat
+                // 9. Tray app'i kullanıcı oturumunda yeniden başlat
                 selfUpdate.LaunchTrayAppInUserSession(trayAppPath);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 Log.Error(ex, "Self-update hatası.");
                 selfUpdate.TryDeleteRestartFlag();
+                TryDeleteFile(installerPath);
 
                 try
                 {
@@ -360,6 +470,24 @@ namespace KoruMsSqlYedek.Service.IPC
                     }
                 }
                 catch { /* Pipe zaten kopmuş olabilir */ }
+            }
+        }
+
+        /// <summary>Dosyayı siler; yoksa veya silinemezse sessizce loglar.</summary>
+        private static void TryDeleteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    Log.Debug("Dosya silindi: {Path}", path);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Dosya silinemedi: {Path}", path);
             }
         }
 

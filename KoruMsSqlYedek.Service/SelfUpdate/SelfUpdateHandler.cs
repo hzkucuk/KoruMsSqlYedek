@@ -3,37 +3,50 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using KoruMsSqlYedek.Service.Security;
 
 namespace KoruMsSqlYedek.Service.SelfUpdate
 {
     /// <summary>
     /// Self-update sonrası tray uygulamasının yeniden başlatılmasını koordine eder.
     /// Restart flag dosyası ile installer → servis arası iletişim sağlar.
-    /// Flag dosyası: %ProgramData%\KoruMsSqlYedek\pending_restart.flag
-    /// İçerik: yeniden başlatılacak tray exe yolu.
+    /// Flag dosyası: %ProgramData%\KoruMsSqlYedek\Updates\pending_restart.flag
+    /// (Updates dizini yalnızca SYSTEM + Administrators erişimlidir.)
+    /// GÜVENLİK: Flag yalnızca bir işaretçidir — içeriğine asla güvenilmez.
+    /// Başlatılacak tray exe yolu her zaman kurulum düzeninden hesaplanır
+    /// ({app}\Service\ → {app}\KoruMsSqlYedek.Win.exe).
     /// </summary>
     internal sealed class SelfUpdateHandler
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<SelfUpdateHandler>();
 
-        private static readonly string FlagDirectory =
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "KoruMsSqlYedek");
+        private const string TrayExeName = "KoruMsSqlYedek.Win.exe";
 
-        private static readonly string RestartFlagPath =
-            Path.Combine(FlagDirectory, "pending_restart.flag");
+        private static string FlagDirectory => DirectoryAcl.UpdatesDirectory;
+
+        private static string RestartFlagPath => Path.Combine(FlagDirectory, "pending_restart.flag");
 
         /// <summary>
-        /// Restart flag dosyasını oluşturur.
-        /// İçeriğe tray app yolunu yazar — servis startup'ta bu yolu okuyup tray'i başlatır.
+        /// Kurulum düzeninden tray exe yolunu hesaplar: servis dizininin bir üstü.
+        /// </summary>
+        public static string GetTrayAppPath()
+        {
+            return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", TrayExeName));
+        }
+
+        /// <summary>
+        /// Restart flag dosyasını kısıtlı Updates dizininde oluşturur.
+        /// İçerik yalnızca bilgi amaçlıdır (zaman damgası); okunurken kullanılmaz.
         /// </summary>
         public async Task WriteFlagAsync(string trayAppPath, CancellationToken ct)
         {
             try
             {
-                Directory.CreateDirectory(FlagDirectory);
-                await File.WriteAllTextAsync(RestartFlagPath, trayAppPath, ct)
+                DirectoryAcl.EnsureRestrictedDirectory(FlagDirectory);
+                await File.WriteAllTextAsync(
+                        RestartFlagPath,
+                        $"{DateTime.UtcNow:O} {trayAppPath}",
+                        ct)
                     .ConfigureAwait(false);
                 Log.Information("Restart flag yazıldı: {FlagPath}", RestartFlagPath);
             }
@@ -47,7 +60,8 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
         /// <summary>
         /// Servis başlangıcında bekleyen tray app restart'ı kontrol eder.
         /// Installer sonrası servis yeniden başladığında flag varsa tray'i kullanıcı oturumunda başlatır.
-        /// Retry: 3 deneme (1s, 3s, 5s) — installer dosyaları kopyalıyor olabilir.
+        /// Flag içeriği okunmaz; exe yolu kurulum düzeninden hesaplanır ve mevcut olması zorunludur.
+        /// Exe henüz yoksa installer bitene kadar bekler (maks 5 dk, 10s aralık).
         /// </summary>
         public async Task CheckPendingAppRestartAsync(CancellationToken ct)
         {
@@ -56,25 +70,7 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
 
             Log.Information("Pending restart flag bulundu: {FlagPath}", RestartFlagPath);
 
-            string trayAppPath;
-            try
-            {
-                trayAppPath = (await File.ReadAllTextAsync(RestartFlagPath, ct)
-                    .ConfigureAwait(false)).Trim();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Restart flag okunamadı.");
-                TryDeleteRestartFlag();
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(trayAppPath))
-            {
-                Log.Warning("Restart flag boş — tray app yolu yok.");
-                TryDeleteRestartFlag();
-                return;
-            }
+            string trayAppPath = GetTrayAppPath();
 
             // Exe'nin mevcut olmasını bekle — installer bitene kadar (maks 5 dk, 10s aralık)
             const int maxWaitMs = 5 * 60 * 1000;
@@ -104,15 +100,17 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
         /// <summary>
         /// Tray uygulamasını aktif kullanıcının masaüstü oturumunda başlatır.
         /// UserSessionLauncher (CreateProcessAsUser) kullanır.
+        /// Yol verilmezse kurulum düzeninden hesaplanır; dosya yoksa başlatılmaz.
         /// </summary>
         public void LaunchTrayAppInUserSession(string trayAppPath)
         {
             if (string.IsNullOrWhiteSpace(trayAppPath))
+                trayAppPath = GetTrayAppPath();
+
+            if (!File.Exists(trayAppPath))
             {
-                // Fallback: servis dizininden bir üst klasördeki exe'yi dene
-                string serviceDir = AppContext.BaseDirectory;
-                trayAppPath = Path.GetFullPath(
-                    Path.Combine(serviceDir, "..", "KoruMsSqlYedek.Win.exe"));
+                Log.Error("Tray uygulaması bulunamadı, başlatılmadı: {Path}", trayAppPath);
+                return;
             }
 
             Log.Information("Tray uygulaması kullanıcı oturumunda başlatılıyor: {Path}", trayAppPath);

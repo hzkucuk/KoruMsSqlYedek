@@ -48,6 +48,7 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
         private static bool TryCreateProcessAsUser(string exePath, string arguments = null)
         {
             nint userToken = nint.Zero;
+            nint linkedToken = nint.Zero;
             nint duplicateToken = nint.Zero;
             nint environment = nint.Zero;
             nint cmdLinePtr = nint.Zero;
@@ -76,8 +77,24 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
                     return false;
                 }
 
-                // 3. Token'ı çoğalt (Primary token gerekli)
-                if (!DuplicateTokenEx(userToken, MAXIMUM_ALLOWED, nint.Zero,
+                // 3. Tray uygulaması requireAdministrator ile çalışır: WTSQueryUserToken'ın
+                //    verdiği filtrelenmiş (UAC) token ile CreateProcessAsUser
+                //    ERROR_ELEVATION_REQUIRED (740) verir. Bağlı yükseltilmiş token'ı
+                //    (TokenLinkedToken) al; yoksa (UAC kapalı / yönetici olmayan kullanıcı)
+                //    orijinal token ile devam et.
+                nint sourceToken = userToken;
+                if (TryGetLinkedToken(userToken, out linkedToken))
+                {
+                    sourceToken = linkedToken;
+                    Log.Information("Bağlı yükseltilmiş token (TokenLinkedToken) kullanılıyor.");
+                }
+                else
+                {
+                    Log.Information("Bağlı yükseltilmiş token yok — oturumun orijinal token'ı kullanılıyor.");
+                }
+
+                // 4. Token'ı çoğalt (Primary token gerekli)
+                if (!DuplicateTokenEx(sourceToken, TOKEN_ALL_ACCESS, nint.Zero,
                         SecurityImpersonationLevel.SecurityImpersonation,
                         TokenType.TokenPrimary, out duplicateToken))
                 {
@@ -159,7 +176,46 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
                 if (cmdLinePtr != nint.Zero) Marshal.FreeHGlobal(cmdLinePtr);
                 if (environment != nint.Zero) DestroyEnvironmentBlock(environment);
                 if (duplicateToken != nint.Zero) CloseHandle(duplicateToken);
+                if (linkedToken != nint.Zero) CloseHandle(linkedToken);
                 if (userToken != nint.Zero) CloseHandle(userToken);
+            }
+        }
+
+        /// <summary>
+        /// GetTokenInformation(TokenLinkedToken) ile filtrelenmiş UAC token'ının
+        /// bağlı yükseltilmiş eşini alır. UAC kapalıysa veya kullanıcı yönetici değilse
+        /// (ERROR_NO_SUCH_LOGON_SESSION 1312 / ERROR_NOT_FOUND 1168) false döner.
+        /// </summary>
+        private static bool TryGetLinkedToken(nint token, out nint linkedToken)
+        {
+            linkedToken = nint.Zero;
+            nint buffer = nint.Zero;
+
+            try
+            {
+                int size = nint.Size;
+                buffer = Marshal.AllocHGlobal(size);
+
+                if (!GetTokenInformation(token, TokenInformationClass.TokenLinkedToken,
+                        buffer, (uint)size, out _))
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    Log.Debug("GetTokenInformation(TokenLinkedToken) başarısız. Win32: {Error}", error);
+                    return false;
+                }
+
+                // TOKEN_LINKED_TOKEN { HANDLE LinkedToken; }
+                linkedToken = Marshal.ReadIntPtr(buffer);
+                return linkedToken != nint.Zero;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Bağlı token alınırken hata.");
+                return false;
+            }
+            finally
+            {
+                if (buffer != nint.Zero) Marshal.FreeHGlobal(buffer);
             }
         }
 
@@ -193,7 +249,7 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
 
         private const uint CREATE_UNICODE_ENVIRONMENT = 0x00000400;
         private const uint CREATE_NEW_CONSOLE = 0x00000010;
-        private const uint MAXIMUM_ALLOWED = 0x02000000;
+        private const uint TOKEN_ALL_ACCESS = 0x000F01FF;
         private const int STARTF_USESHOWWINDOW = 0x00000001;
         private const short SW_SHOWNORMAL = 1;
 
@@ -205,6 +261,11 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
         private enum TokenType
         {
             TokenPrimary = 1
+        }
+
+        private enum TokenInformationClass
+        {
+            TokenLinkedToken = 19
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -255,6 +316,15 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
             SecurityImpersonationLevel impersonationLevel,
             TokenType tokenType,
             out nint phNewToken);
+
+        [LibraryImport("advapi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool GetTokenInformation(
+            nint tokenHandle,
+            TokenInformationClass tokenInformationClass,
+            nint tokenInformation,
+            uint tokenInformationLength,
+            out uint returnLength);
 
         [LibraryImport("advapi32.dll", EntryPoint = "CreateProcessAsUserW", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

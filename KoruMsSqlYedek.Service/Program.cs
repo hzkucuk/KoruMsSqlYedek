@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Service.IoC;
+using KoruMsSqlYedek.Service.Security;
 
 namespace KoruMsSqlYedek.Service
 {
@@ -27,6 +28,12 @@ namespace KoruMsSqlYedek.Service
                     retainedFileCountLimit: 30,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
+
+            // Veri dizinlerini (Plans, Logs, Config, UploadState, History, Updates) yalnızca
+            // SYSTEM + Administrators erişebilecek şekilde kilitle — manuel/taşınabilir kurulumda
+            // installer ACL uygulamamış olsa bile sıradan kullanıcılar plan/log/güncelleme
+            // dosyalarını değiştiremesin.
+            DirectoryAcl.EnsureAppDataDirectoriesRestricted();
 
             try
             {

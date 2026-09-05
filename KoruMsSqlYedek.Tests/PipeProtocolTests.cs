@@ -59,6 +59,29 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
+        public void Serialize_InstallSelfUpdateCommand_RoundtripPreservesAllFields()
+        {
+            var original = new InstallSelfUpdateCommand
+            {
+                Version = "0.99.91",
+                DownloadUrl = "https://github.com/hzkucuk/KoruMsSqlYedek/releases/download/v0.99.91/KoruMsSqlYedek_v0.99.91_Setup.exe",
+                ExpectedSha256 = new string('a', 64),
+                ExpectedSizeBytes = 123_456_789
+            };
+
+            string json = PipeSerializer.Serialize(original);
+            var deserialized = PipeSerializer.Deserialize(json) as InstallSelfUpdateCommand;
+
+            deserialized.Should().NotBeNull();
+            deserialized.Type.Should().Be(PipeMessageType.InstallSelfUpdate);
+            deserialized.Version.Should().Be("0.99.91");
+            deserialized.DownloadUrl.Should().Be(original.DownloadUrl);
+            deserialized.ExpectedSha256.Should().Be(original.ExpectedSha256);
+            deserialized.ExpectedSizeBytes.Should().Be(123_456_789);
+            json.Should().NotContain("installerPath");
+        }
+
+        [TestMethod]
         public void Serialize_BackupActivityMessage_RoundtripPreservesAllFields()
         {
             var original = new BackupActivityMessage
