@@ -32,17 +32,62 @@ namespace KoruMsSqlYedek.Engine.Backup
                     () => restore.SqlVerify(server),
                     cancellationToken);
 
-                Log.Information(
-                    "Yedek doğrulama {Result}: {FilePath}",
-                    isValid ? "başarılı" : "başarısız",
-                    backupFilePath);
+                if (isValid)
+                {
+                    Log.Information("Yedek doğrulama başarılı: {FilePath}", backupFilePath);
+                }
+                else
+                {
+                    // RESTORE VERIFYONLY çalıştı ve dosyayı GEÇERSİZ buldu (bozuk/eksik yedek)
+                    Log.Error("Yedek doğrulama başarısız — RESTORE VERIFYONLY olumsuz sonuç verdi: {FilePath}",
+                        backupFilePath);
+                }
 
                 return isValid;
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
-                Log.Error(ex, "Yedek doğrulama hatası: {FilePath}", backupFilePath);
+                // Doğrulama hiç ÇALIŞTIRILAMADI (bağlantı, yetki, dosya erişimi vb.).
+                // Bozuk yedek ile aynı şekilde "doğrulanmamış" kabul edilir (fail-closed);
+                // istisna ayrıntısı burada loglanır ki iki durum log üzerinden ayırt edilebilsin.
+                Log.Error(ex, "Yedek doğrulama çalıştırılamadı (doğrulama sonucu bilinmiyor): {FilePath}",
+                    backupFilePath);
                 return false;
+            }
+        }
+
+        public async Task<string> ReadBackupDatabaseNameAsync(
+            SqlConnInfo connectionInfo,
+            string backupFilePath,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var sqlConn = new SqlConnection(BuildConnectionString(connectionInfo));
+                var serverConnection = new ServerConnection(sqlConn);
+                var server = new Server(serverConnection);
+
+                var restore = new Restore();
+                restore.Devices.AddDevice(backupFilePath, DeviceType.File);
+
+                string dbName = await Task.Run(() =>
+                {
+                    var header = restore.ReadBackupHeader(server);
+                    if (header == null || header.Rows.Count == 0 || !header.Columns.Contains("DatabaseName"))
+                        return null;
+                    return header.Rows[0]["DatabaseName"] as string;
+                }, cancellationToken);
+
+                Log.Information("Yedek başlığı okundu: {FilePath} → DatabaseName={Database}",
+                    backupFilePath, dbName ?? "(boş)");
+                return string.IsNullOrWhiteSpace(dbName) ? null : dbName;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Yedek başlığı okunamadı: {FilePath}", backupFilePath);
+                return null;
             }
         }
 
@@ -52,24 +97,41 @@ namespace KoruMsSqlYedek.Engine.Backup
             string backupFilePath,
             bool createPreRestoreBackup,
             IProgress<int> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string safetyBackupDirectory = null)
         {
             try
             {
                 if (createPreRestoreBackup)
                 {
-                    Log.Information("Restore öncesi güvenlik yedeği alınıyor: {Database}", databaseName);
-                    string safetyDir = Path.Combine(
-                        Path.GetDirectoryName(backupFilePath),
-                        "PreRestore");
+                    // Güvenlik yedeği KALICI bir dizine yazılmalı. backupFilePath geçici bir
+                    // arşiv çıkarma dizininde olabilir (RestoreDialog .7z'yi %TEMP%'e açar ve
+                    // işlem sonunda siler); bu yüzden çağıran açıkça kalıcı bir dizin verir.
+                    string safetyDir = !string.IsNullOrWhiteSpace(safetyBackupDirectory)
+                        ? safetyBackupDirectory
+                        : Path.Combine(Path.GetDirectoryName(backupFilePath) ?? string.Empty, "PreRestore");
 
-                    await BackupDatabaseAsync(
+                    Log.Information("Restore öncesi güvenlik yedeği alınıyor: {Database} → {Dir}",
+                        databaseName, safetyDir);
+
+                    var safetyResult = await BackupDatabaseAsync(
                         connectionInfo,
                         databaseName,
                         SqlBackupType.Full,
                         safetyDir,
                         null,
                         cancellationToken);
+
+                    if (safetyResult == null || safetyResult.Status != BackupResultStatus.Success)
+                    {
+                        // Güvenlik yedeği alınamadıysa mevcut DB'nin üzerine yazmak geri dönüşsüz olur.
+                        Log.Error(
+                            "Restore iptal edildi: güvenlik yedeği alınamadı — {Database} ({Error})",
+                            databaseName, safetyResult?.ErrorMessage ?? "bilinmeyen hata");
+                        return false;
+                    }
+
+                    Log.Information("Güvenlik yedeği alındı: {File}", safetyResult.BackupFilePath);
                 }
 
                 using var sqlConn3 = new SqlConnection(BuildConnectionString(connectionInfo));

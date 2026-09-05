@@ -40,12 +40,28 @@ namespace KoruMsSqlYedek.Core.Interfaces
         /// Veritabanını yedek dosyasından geri yükler.
         /// Restore öncesi hedef DB'nin otomatik yedeği alınır.
         /// </summary>
+        /// <param name="safetyBackupDirectory">
+        /// Restore öncesi güvenlik yedeğinin yazılacağı dizin. Kalıcı bir konum olmalıdır
+        /// (ör. kullanıcının seçtiği ORİJİNAL yedek dosyasının dizini altındaki "PreRestore");
+        /// geçici bir arşiv çıkarma dizini ASLA verilmemelidir, çünkü işlem sonunda silinir.
+        /// null ise backupFilePath'in dizini altındaki "PreRestore" kullanılır.
+        /// </param>
         Task<bool> RestoreDatabaseAsync(
             SqlConnectionInfo connection,
             string databaseName,
             string backupFilePath,
             bool createPreRestoreBackup,
             IProgress<int> progress,
+            CancellationToken cancellationToken,
+            string safetyBackupDirectory = null);
+
+        /// <summary>
+        /// Yedek dosyasının başlığını (RESTORE HEADERONLY) okuyup içindeki veritabanı adını döndürür.
+        /// Okunamazsa null döner (çağıran, dosya adından çıkarım gibi bir yedek yola başvurabilir).
+        /// </summary>
+        Task<string> ReadBackupDatabaseNameAsync(
+            SqlConnectionInfo connection,
+            string backupFilePath,
             CancellationToken cancellationToken);
 
         /// <summary>

@@ -103,15 +103,63 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             return $"%{ratio:F1}";
         }
 
-        private void SaveHistory(BackupResult result)
+        /// <summary>
+        /// Sonucu geçmişe kaydeder. HistoryManager yoksa true döner (kaydedilecek yer yok, retention
+        /// zaten geçmişe bakamaz); kayıt başarısız olursa false döner ve çağıran bu çalıştırma için
+        /// retention'ı ATLAMALIDIR — aksi halde bu çalıştırmanın dosyaları geçmişte görünmez ve
+        /// bulut koruması/sahiplik kontrolü yanlış karar verir.
+        /// </summary>
+        private bool SaveHistory(BackupResult result)
         {
+            if (HistoryManager == null)
+                return true;
+
             try
             {
-                HistoryManager?.SaveResult(result);
+                return HistoryManager.SaveResult(result);
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Yedek geçmişi kaydedilemedi: {CorrelationId}", result.CorrelationId);
+                Log.Error(ex, "Yedek geçmişi kaydedilemedi: {CorrelationId}", result?.CorrelationId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Retention temizliğini çalıştırır. Geçmiş kaydı bu çalıştırmada başarısız olduysa
+        /// temizlik güvenlik gereği atlanır (fail-safe) ve Error loglanır.
+        /// </summary>
+        private async Task RunRetentionAsync(BackupPlan plan, bool historySaveFailed, CancellationToken ct)
+        {
+            if (RetentionService == null)
+                return;
+
+            if (historySaveFailed)
+            {
+                Log.Error(
+                    "Retention temizliği ATLANDI: yedek geçmişi bu çalıştırmada kaydedilemedi, " +
+                    "dosya sahipliği doğrulanamaz. Plan={PlanName}", plan.PlanName);
+
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = plan.PlanId,
+                    PlanName = plan.PlanName,
+                    ActivityType = BackupActivityType.StepChanged,
+                    StepName = "Temizlik",
+                    Message = "Eski yedek temizliği atlandı: yedek geçmişi kaydedilemedi (güvenlik modu)"
+                });
+                return;
+            }
+
+            try
+            {
+                await RetentionService.CleanupAsync(plan, ct);
+                RaiseRetentionCompleted(plan);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Retention temizliği hatası: Plan={PlanName}", plan.PlanName);
             }
         }
 

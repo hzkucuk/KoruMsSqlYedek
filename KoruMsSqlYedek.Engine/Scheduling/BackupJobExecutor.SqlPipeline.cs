@@ -149,9 +149,31 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             : $"Yedek doğrulama başarısız ✕: {Path.GetFileName(result.BackupFilePath)}"
                     });
 
-                    if (result.VerifyResult == false)
+                    if (result.VerifyResult != true)
                     {
-                        Log.Error("Yedek doğrulama başarısız: {Database}", dbName);
+                        // Fail-closed: doğrulanamayan yedek (bozuk VEYA doğrulama çalıştırılamadı)
+                        // başarılı sayılmaz. Sıkıştırma ve bulut yükleme bu DB için atlanır;
+                        // Status=Failed olduğundan overallSuccess=false olur ve e-posta hata gösterir.
+                        result.Status = BackupResultStatus.Failed;
+                        result.ErrorMessage =
+                            $"Yedek doğrulama (RESTORE VERIFYONLY) başarısız: {Path.GetFileName(result.BackupFilePath)}. " +
+                            "Yedek dosyası bozuk olabilir veya doğrulama çalıştırılamadı; dosya sıkıştırılmadı ve buluta gönderilmedi.";
+
+                        Log.Error("Yedek doğrulama başarısız, veritabanı başarısız sayıldı: {Database} — {File}",
+                            dbName, result.BackupFilePath);
+
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            DatabaseName = dbName,
+                            ActivityType = BackupActivityType.StepChanged,
+                            StepName = "Doğrulama",
+                            Message = $"Yedekleme başarısız: {dbName} — {result.ErrorMessage}"
+                        });
+
+                        sqlResults.Add(result);
+                        continue;
                     }
                 }
 
