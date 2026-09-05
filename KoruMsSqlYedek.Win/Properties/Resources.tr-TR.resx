@@ -367,6 +367,12 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Restore_VerifyFail" xml:space="preserve"><value>Doğrulama başarısız. Yedek dosyası bozuk olabilir.</value></data>
   <data name="Restore_Confirm" xml:space="preserve"><value>'{0}' veritabanı geri yüklensin mi? Bu işlem mevcut veritabanının üzerine yazacaktır.</value></data>
   <data name="Restore_ConfirmTitle" xml:space="preserve"><value>Geri Yüklemeyi Onayla</value></data>
+  <data name="Restore_SafetyBackupDir" xml:space="preserve"><value>Geri yükleme öncesi güvenlik yedeği dizini: {0}</value></data>
+  <data name="Restore_SystemDbBlocked" xml:space="preserve"><value>'{0}' bir SQL Server sistem veritabanıdır, bu ekrandan geri yüklenemez.</value></data>
+  <data name="Restore_NameMismatchTitle" xml:space="preserve"><value>Hedef Veritabanı Eşleşmiyor</value></data>
+  <data name="Restore_NameMismatch" xml:space="preserve"><value>Yedek '{0}' veritabanına ait, ancak '{1}' veritabanına geri yüklüyorsunuz.
+
+'{1}' veritabanının ÜZERİNE '{0}' içeriği yazılacak. Devam edilsin mi?</value></data>
   <data name="Restore_Success" xml:space="preserve"><value>Geri yükleme başarıyla tamamlandı.</value></data>
   <data name="Restore_Failed" xml:space="preserve"><value>Geri yükleme başarısız. Ayrıntılar için logu kontrol edin.</value></data>
   <data name="Restore_NoHistory" xml:space="preserve"><value>Bu plan için yedek kaydı bulunamadı.</value></data>

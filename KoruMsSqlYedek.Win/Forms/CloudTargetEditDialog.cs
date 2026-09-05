@@ -325,7 +325,10 @@ namespace KoruMsSqlYedek.Win.Forms
                 string tokenJson = await GoogleDriveAuthHelper.AuthorizeInteractiveAsync(
                     System.Threading.CancellationToken.None);
 
-                _target.OAuthTokenJson = tokenJson;
+                // GÜVENLİK: token JSON'ı refresh_token içerir ve plan dosyasına yazılır.
+                // Düz metin saklanmamalı — diğer sırlar gibi DPAPI ile korunur.
+                // (GoogleDriveAuthHelper.DecryptIfNeeded okuma tarafında her iki biçimi de kabul eder.)
+                _target.OAuthTokenJson = Core.Helpers.PasswordProtector.Protect(tokenJson);
 
                 // Eski per-target credential kalıntılarını temizle
                 _target.OAuthClientId = null;

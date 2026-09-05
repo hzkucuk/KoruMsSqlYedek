@@ -1,4 +1,135 @@
-﻿## [0.99.90] - 2026-08-09 — 🧩 Açık Çekirdek: Disk İmajı Plus'a Taşındı
+﻿## [0.99.91] - 2026-09-06 — 🔒 Güvenlik Sürümü: Yerel Yetki Yükseltme Zinciri Kapatıldı
+
+> Bu sürüm tüm projeyi kapsayan bir güvenlik incelemesinin sonucudur. Yerel bir
+> kullanıcının SYSTEM yetkisi elde etmesine izin veren dört ayrı yol kapatıldı.
+> **Kurulumdan sonra tray uygulaması yönetici olarak çalışır ve veri dizini
+> yalnızca SYSTEM + Administrators erişimine kapatılır.** Aşağıdaki "Kırılan
+> davranışlar" bölümünü okumadan yükseltmeyin.
+
+### Güvenlik — Kritik
+
+- **Named pipe artık kimlik doğruluyor.** Servis pipe'ı `Authenticated Users`
+  grubuna okuma/yazma veriyordu ve `InstallSelfUpdate` komutu, gönderilen dosya
+  yolunu yalnızca `File.Exists` kontrolünden geçirip LocalSystem olarak
+  çalıştırıyordu. Yetkisiz herhangi bir yerel kullanıcı tek bir JSON satırıyla
+  SYSTEM olarak kod çalıştırabiliyordu. Pipe ACL'i SYSTEM + Administrators'a
+  daraltıldı ve her komut öncesi `RunAsClient` ile çağıranın kimliği doğrulanıyor.
+- **Self-update artık dosya yolu kabul etmiyor.** `InstallSelfUpdateCommand`
+  sürüm, indirme adresi ve beklenen SHA-256 taşır. Installer'ı servis kendisi,
+  yalnızca SYSTEM + Administrators erişimli `Updates\` dizinine indirir, özetini
+  doğrular ve ancak ondan sonra çalıştırır. Doğrulama başarısızsa dosya silinir.
+- **`pending_restart.flag` içeriğine artık güvenilmiyor.** Bayrak dosyası
+  ProgramData kökünden kısıtlı `Updates\` dizinine taşındı; başlatılacak tray
+  yolu bayraktan okunmak yerine kurulum düzeninden hesaplanıyor. Önceden bir
+  kullanıcı buraya kendi exe'sini yazıp konsolda oturum açmış bir yöneticinin
+  oturumunda çalıştırabiliyordu.
+- **Plan ve ayar dizinleri kullanıcı yazımına kapatıldı.** `Plans`, `Config`,
+  `Logs`, `UploadState` dizinlerindeki `users-modify` izni kaldırıldı; kurulum
+  `icacls` ile veri kökünü SYSTEM + Administrators'a kilitliyor. Önceden standart
+  bir kullanıcı plan dosyasını düzenleyip SYSTEM servisine `SAM`/`SYSTEM`
+  kayıt kovanlarını VSS ile kendi klasörüne kopyalatabiliyordu.
+- **Güncelleme installer'ı imza/özet doğrulaması olmadan çalıştırılmıyor.**
+  İndirme adresinin şeması ve sunucusu doğrulanıyor (yalnızca HTTPS ve GitHub
+  hostları); release'e `*.sha256` varlığı eklendi ve özet eşleşmezse kurulum
+  reddediliyor. Yükseltilmiş yoldaki indirme sabit `%TEMP%\KoruUpdate` yerine
+  rastgele adlı bir dizine yapılıyor.
+
+### Güvenlik — Yüksek ve orta
+
+- **Google refresh token artık düz metin saklanmıyor.** Bulut hedefi
+  yetkilendirmesinde token JSON'ı DPAPI ile korunarak yazılıyor; mevcut düz metin
+  tokenlar ve korunmamış parolalar açılışta tek seferlik göçle korumaya alınıyor.
+- **SFTP host anahtarı artık kalıcı.** İlk bağlantıda öğrenilen parmak izi
+  orijinal hedef yapılandırmasına ve plan dosyasına yazılıyor. Önceden parmak izi
+  hiç kaydedilmediği için her bağlantı "ilk bağlantı" sayılıyor ve herhangi bir
+  host anahtarı kabul ediliyordu; ortadaki adam saldırısı dalı hiç çalışmıyordu.
+- **SQL bağlantıları her zaman şifreli.** `TrustServerCertificate` bayrağı
+  şifrelemeyi `Optional`a düşürüyordu; artık `Encrypt` daima `Mandatory` ve bayrak
+  yalnızca sertifika doğrulamasını atlıyor. Arayüzdeki açıklama buna göre
+  güncellendi.
+- **E-posta bildirimleri iç yolları sızdırmıyor.** Görev logu satırları ve UNC
+  uzak dosya yolları, hata mesajlarıyla aynı temizleyiciden geçiriliyor.
+- `CREATE LOGIN [..]` ve `ALTER SERVER ROLE ... ADD MEMBER [..]` ifadelerinde
+  köşeli parantez tanımlayıcısı `]]` ile kaçırılıyor.
+- Google Drive sorgu kaçırması ters eğik çizgiyi de işliyor.
+
+### Veri kaybı düzeltmeleri
+
+- **Retention artık yalnızca kendi dosyalarını siliyor.** Silme adayları dizin
+  taramasından değil, planın kendi geçmişinden doğrulanan sahiplik kümesinden
+  seçiliyor. Aynı klasörü paylaşan iki plan birbirinin, henüz buluta gönderilmemiş
+  yedeklerini siliyordu.
+- **Bulut süpürme "geçmişte kaydı yok → sil" davranışı kaldırıldı.** Aynı Drive
+  klasörünü paylaşan ikinci bir makinenin ya da elle yüklenmiş dosyaların kalıcı
+  olarak silinmesine yol açıyordu.
+- **Geçmiş kaydı yazılamazsa retention atlanıyor.** Sahiplik bilgisi olmadan dosya
+  silinmiyor; `SaveResult` artık başarı durumunu döndürüyor.
+- **Bulut koruması 500 kayıt penceresiyle sınırlı değil.** Yoğun planlarda
+  yüklemesi başarısız olan bir dosya pencereden düşüp bulut kopyası olmadan
+  siliniyordu.
+- **`RESTORE VERIFYONLY` hatası artık işi başarısız yapıyor.** Önceden bozuk bir
+  yedek sıkıştırılıp yükleniyor, "tamamlandı" e-postası gönderiliyor ve retention
+  son sağlam yedeği döndürüyordu.
+- **Geri yükleme öncesi güvenlik yedeği artık silinmiyor.** `.7z` geri yüklemede
+  yedek, geçici çıkarma dizinine yazılıp işlem biter bitmez yok ediliyordu; artık
+  kullanıcının seçtiği orijinal dosyanın yanına yazılıyor.
+- **Yanlış veritabanına geri yükleme koruması.** Hedef ad yedeğin ait olduğu
+  veritabanından farklıysa ikinci onay isteniyor; sistem veritabanlarına geri
+  yükleme engellendi.
+- **`KeepLastN = 0` artık tüm yedekleri silmiyor;** en az bir yedek her zaman
+  korunuyor ve `DeleteOlderThanDays = 0` yaş bazlı silmeyi atlıyor.
+- **Veritabanı adı dosya adına süzülerek giriyor.** Geçersiz karakterler, joker
+  karakterler ve `..` temizleniyor; aynı temizleyici retention deseninde de
+  kullanılıyor.
+
+### Düzeltme
+
+- `CloudUploadAbandoned` olayı plan başına ve `PlanId` taşıyarak fırlatılıyor.
+  Önceden "bulut yüklemesi kalıcı olarak başarısız" uyarısı o an görüntülenen
+  plana yazılıyor ya da tamamen kayboluyordu.
+- FTP yüklemesinde MD5 uyuşmazlığı artık yüklemeyi başarısız sayıyor; önceden
+  yalnızca uyarı loglanıp yükleme başarılı bildiriliyordu.
+- Korumasız (düz metin) parolalar açılışta yeniden korumaya alınıyor.
+
+### Kırılan davranışlar
+
+- **Tray uygulaması artık yönetici hakkı istiyor** (`requireAdministrator`).
+  Windows başlangıcında çalıştırma bu yüzden `HKCU\...\Run` kaydından zamanlanmış
+  göreve (`schtasks`, ONLOGON, en yüksek ayrıcalık) taşındı.
+- **Veri dizini artık standart kullanıcılar tarafından düzenlenemez.** Plan ve
+  ayar dosyalarını elle düzenleyen betikler yönetici olarak çalışmalıdır.
+- **Servis ve tray birlikte yükseltilmelidir.** `InstallSelfUpdate` pipe komutunun
+  biçimi değişti; eski tray ile yeni servis bu komutta anlaşamaz.
+- **Güncelleme, yayınlanan `*.sha256` dosyasını gerektirir.** Özet varlığı
+  bulunmayan bir release'e otomatik güncelleme yapılmaz.
+
+### Etkilenen Dosyalar
+
+- `KoruMsSqlYedek.Service\IPC\ServicePipeServer.cs` — Pipe ACL, çağıran kimliği, doğrulanmış kurulum
+- `KoruMsSqlYedek.Service\SelfUpdate\SelfUpdateHandler.cs` — Bayrak kısıtlı dizine taşındı, yol hesaplanıyor
+- `KoruMsSqlYedek.Service\SelfUpdate\UserSessionLauncher.cs` — Yükseltilmiş bağlı token ile başlatma
+- `KoruMsSqlYedek.Service\Security\DirectoryAcl.cs` — Yeni dosya: veri dizini ACL sertleştirme
+- `KoruMsSqlYedek.Engine\Update\InstallerVerifier.cs` — Yeni dosya: URL izin listesi, SHA-256
+- `KoruMsSqlYedek.Engine\Update\UpdateChecker.cs` — Adres doğrulama, `.sha256` varlığı
+- `KoruMsSqlYedek.Core\IPC\PipeProtocol.cs` — `InstallSelfUpdateCommand` yeniden tasarlandı
+- `KoruMsSqlYedek.Core\Helpers\PasswordProtector.cs` — Koruma tespiti
+- `KoruMsSqlYedek.Core\Helpers\DataMigrationHelper.cs` — Token ve parola göçü
+- `KoruMsSqlYedek.Core\Helpers\PathHelper.cs` — `SanitizeFileNameComponent`
+- `KoruMsSqlYedek.Engine\Retention\RetentionCleanupService.cs` — Sahiplik kapsamı, güvenli sınırlar
+- `KoruMsSqlYedek.Engine\BackupHistoryManager.cs` — `SaveResult` sonuç döndürür, sınırsız geçmiş
+- `KoruMsSqlYedek.Engine\Scheduling\BackupJobExecutor*.cs` — Doğrulama hatası işi düşürür
+- `KoruMsSqlYedek.Engine\Cloud\CloudUploadOrchestrator*.cs` — Parmak izi kalıcılığı, plan bazlı olay
+- `KoruMsSqlYedek.Engine\Cloud\FtpSftpProvider*.cs` — Checksum hatası, host anahtarı
+- `KoruMsSqlYedek.Engine\Notification\EmailNotificationService.JobNotification.cs` — Log temizleme
+- `KoruMsSqlYedek.Win\app.manifest` — `requireAdministrator`
+- `KoruMsSqlYedek.Win\Forms\RestoreDialog.cs` — Güvenlik yedeği dizini, hedef DB koruması
+- `KoruMsSqlYedek.Win\Forms\CloudTargetEditDialog.cs` — Token DPAPI ile korunur
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — `users-modify` kaldırıldı, `icacls`, zamanlanmış görev
+- `.github\workflows\release.yml` — Release'e SHA-256 varlığı eklendi
+
+---
+
+## [0.99.90] - 2026-08-09 — 🧩 Açık Çekirdek: Disk İmajı Plus'a Taşındı
 
 ### Değişen
 - **Disk imajı yedekleme çekirdekten çıkarıldı ve Plus sürümüne taşındı.**

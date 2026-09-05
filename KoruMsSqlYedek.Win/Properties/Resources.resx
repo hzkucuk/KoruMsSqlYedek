@@ -367,6 +367,12 @@ Language change requires application restart.</value></data>
   <data name="Restore_VerifyFail" xml:space="preserve"><value>Verification failed. Backup file may be corrupt.</value></data>
   <data name="Restore_Confirm" xml:space="preserve"><value>Restore the database '{0}'? This operation will overwrite the existing database.</value></data>
   <data name="Restore_ConfirmTitle" xml:space="preserve"><value>Confirm Restore</value></data>
+  <data name="Restore_SafetyBackupDir" xml:space="preserve"><value>Pre-restore safety backup directory: {0}</value></data>
+  <data name="Restore_SystemDbBlocked" xml:space="preserve"><value>'{0}' is a SQL Server system database and cannot be restored from this dialog.</value></data>
+  <data name="Restore_NameMismatchTitle" xml:space="preserve"><value>Target Database Does Not Match</value></data>
+  <data name="Restore_NameMismatch" xml:space="preserve"><value>The backup belongs to the database '{0}', but you are restoring into '{1}'.
+
+'{1}' will be OVERWRITTEN with the contents of '{0}'. Continue?</value></data>
   <data name="Restore_Success" xml:space="preserve"><value>Restore completed successfully.</value></data>
   <data name="Restore_Failed" xml:space="preserve"><value>Restore failed. Check the log for details.</value></data>
   <data name="Restore_NoHistory" xml:space="preserve"><value>No backup records found for this plan.</value></data>

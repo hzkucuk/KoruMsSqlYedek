@@ -233,6 +233,20 @@ namespace KoruMsSqlYedek.Win.Forms
                 return;
             }
 
+            // Sistem veritabanları bu ekrandan geri yüklenemez (WITH REPLACE ile
+            // örneği kullanılamaz hale getirebilir; tek kullanıcı modu gerektirir).
+            if (IsSystemDatabase(targetDb))
+            {
+                AppendLog(Res.Format("Restore_SystemDbBlocked", targetDb));
+                Theme.ModernMessageBox.Show(
+                    Res.Format("Restore_SystemDbBlocked", targetDb),
+                    Res.Get("Restore_ConfirmTitle"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                _txtTargetDb.Focus();
+                return;
+            }
+
             var confirm = Theme.ModernMessageBox.Show(
                 Res.Format("Restore_Confirm", targetDb),
                 Res.Get("Restore_ConfirmTitle"),
@@ -242,6 +256,24 @@ namespace KoruMsSqlYedek.Win.Forms
 
             if (confirm != DialogResult.Yes)
                 return;
+
+            // Geri yükleme WITH REPLACE ile çalışır. Hedef adı yedeğin ait olduğu
+            // veritabanından farklıysa (yazım hatası, önceki geri yüklemeden kalan ad)
+            // yanlış bir üretim veritabanının üzerine yazılabilir; ikinci onay istenir.
+            string sourceDb = _selectedResult.DatabaseName;
+            if (!string.IsNullOrWhiteSpace(sourceDb) &&
+                !string.Equals(sourceDb.Trim(), targetDb, StringComparison.OrdinalIgnoreCase))
+            {
+                var mismatch = Theme.ModernMessageBox.Show(
+                    Res.Format("Restore_NameMismatch", sourceDb.Trim(), targetDb),
+                    Res.Get("Restore_NameMismatchTitle"),
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2);
+
+                if (mismatch != DialogResult.Yes)
+                    return;
+            }
 
             SetBusy(true);
             _progressBar.Value = 0;
@@ -289,13 +321,24 @@ namespace KoruMsSqlYedek.Win.Forms
                     _progressBar.Value = 0;
                 }
 
+                // Geri yükleme öncesi güvenlik yedeği, kullanıcının seçtiği ORİJİNAL dosyanın
+                // yanına yazılır. .7z geri yüklemede restoreFilePath geçici çıkarma dizinindedir
+                // ve finally bloğu o dizini siler; güvenlik yedeği oraya yazılırsa restore biter
+                // bitmez yok olurdu.
+                string safetyDir = Path.Combine(
+                    Path.GetDirectoryName(filePath) ?? string.Empty, "PreRestore");
+
+                if (_chkPreBackup.Checked)
+                    AppendLog(Res.Format("Restore_SafetyBackupDir", safetyDir));
+
                 bool ok = await _sqlService.RestoreDatabaseAsync(
                     _plan.SqlConnection,
                     targetDb,
                     restoreFilePath,
                     _chkPreBackup.Checked,
                     progress,
-                    _cts.Token);
+                    _cts.Token,
+                    safetyDir);
 
                 _progressBar.Value = ok ? 100 : 0;
                 AppendLog(ok ? Res.Get("Restore_Success") : Res.Get("Restore_Failed"));
@@ -367,6 +410,22 @@ namespace KoruMsSqlYedek.Win.Forms
         {
             string line = $"[{DateTime.Now:HH:mm:ss}] {message}";
             _txtLog.AppendText(line + Environment.NewLine);
+        }
+
+        /// <summary>
+        /// SQL Server sistem veritabanı mı? Bu ekrandan geri yüklenmeleri engellenir.
+        /// </summary>
+        internal static bool IsSystemDatabase(string databaseName)
+        {
+            if (string.IsNullOrWhiteSpace(databaseName))
+                return false;
+
+            string name = databaseName.Trim().Trim('[', ']');
+            return name.Equals("master", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("model", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("msdb", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("tempdb", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("distribution", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void CleanupTempDirectory(string tempDir)

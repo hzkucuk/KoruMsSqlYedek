@@ -60,6 +60,21 @@ namespace KoruMsSqlYedek.Tests
                 CancellationRegistry = _mockCancellationRegistry.Object
             };
 
+            // Varsayılan: geçmiş kaydı başarılı.
+            // SaveResult false dönerse retention güvenlik gereği atlanır (sahiplik
+            // bilgisi olmadan dosya silinmez), bu yüzden mock'un varsayılan false
+            // değeri testlerin çoğunda yanlış davranışı ölçerdi.
+            _mockHistoryManager.Setup(h => h.SaveResult(It.IsAny<BackupResult>())).Returns(true);
+
+            // Varsayılan: yedek doğrulaması başarılı.
+            // VerifyResult false ise ilgili veritabanı başarısız sayılır ve
+            // sıkıştırma/yükleme yapılmaz; doğrulama hatasını ölçen testler
+            // bu kurulumu kendi içinde ezer.
+            _mockSqlBackup.Setup(s => s.VerifyBackupAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
             // JobExecutionContext mock
             _mockJobContext = new Mock<IJobExecutionContext>();
             var jobDataMap = new JobDataMap();

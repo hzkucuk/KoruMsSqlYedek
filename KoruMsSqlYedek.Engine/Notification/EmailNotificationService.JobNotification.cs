@@ -265,7 +265,10 @@ namespace KoruMsSqlYedek.Engine.Notification
 
                 foreach (string logLine in data.LogLines)
                 {
-                    tmpl.WriteRawHtml($"      {EmailTemplateBuilder.Encode(logLine)}<br/>");
+                    // GÜVENLİK: log satırları ham exception mesajı içerebilir (tam dosya
+                    // yolları, sunucu/UNC adları, yığın izleri). E-posta dış bir posta
+                    // kutusuna gidebileceği için ErrorMessage ile aynı temizlikten geçirilir.
+                    tmpl.WriteRawHtml($"      {EmailTemplateBuilder.Encode(SanitizeForEmail(logLine))}<br/>");
                 }
 
                 tmpl.WriteRawHtml("    </div>");
@@ -287,8 +290,9 @@ namespace KoruMsSqlYedek.Engine.Notification
                 string statusIcon = cloud.IsSuccess ? "✓" : "✗";
                 string color = EmailTemplateBuilder.GetStatusColor(cloud.IsSuccess);
 
+                // UNC hedeflerinde RemoteFilePath tam \\sunucu\pay\... yoludur; temizlenmeden gönderilmez
                 string remotePath = cloud.IsSuccess && !string.IsNullOrEmpty(cloud.RemoteFilePath)
-                    ? EmailTemplateBuilder.Encode(cloud.RemoteFilePath)
+                    ? EmailTemplateBuilder.Encode(SanitizeForEmail(cloud.RemoteFilePath))
                     : "-";
 
                 string detail;

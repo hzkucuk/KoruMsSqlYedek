@@ -39,7 +39,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_KeepLastN_DeletesOldFiles()
         {
-            // Arrange — 5 dosya oluþtur, KeepLastN=3
+            // Arrange ï¿½ 5 dosya oluï¿½tur, KeepLastN=3
             for (int i = 0; i < 5; i++)
             {
                 string file = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
@@ -60,7 +60,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — 3 dosya kalmalý
+            // Assert ï¿½ 3 dosya kalmalï¿½
             var remaining = Directory.GetFiles(_testDir, "TestDB_Full_*.bak");
             remaining.Should().HaveCount(3);
         }
@@ -68,7 +68,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_DeleteOlderThanDays_DeletesExpired()
         {
-            // Arrange — eski ve yeni dosyalar
+            // Arrange ï¿½ eski ve yeni dosyalar
             string oldFile = CreateBackupFile("TestDB_Full_20240101_020000.bak");
             File.SetCreationTime(oldFile, DateTime.Now.AddDays(-100));
 
@@ -89,7 +89,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — eski dosya silinmeli, yeni dosya kalmalý
+            // Assert ï¿½ eski dosya silinmeli, yeni dosya kalmalï¿½
             File.Exists(oldFile).Should().BeFalse();
             File.Exists(recentFile).Should().BeTrue();
         }
@@ -97,7 +97,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_BothPolicy_AppliesBothRules()
         {
-            // Arrange — 6 dosya, KeepLastN=4, DeleteOlderThanDays=20
+            // Arrange ï¿½ 6 dosya, KeepLastN=4, DeleteOlderThanDays=20
             for (int i = 0; i < 6; i++)
             {
                 string file = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
@@ -119,7 +119,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — hem count hem age bazlý temizlik yapýlmýþ olmalý
+            // Assert ï¿½ hem count hem age bazlï¿½ temizlik yapï¿½lmï¿½ï¿½ olmalï¿½
             var remaining = Directory.GetFiles(_testDir, "TestDB_Full_*.bak");
             remaining.Length.Should().BeLessThanOrEqualTo(4);
         }
@@ -140,7 +140,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — dosya hâlâ orada
+            // Assert ï¿½ dosya hï¿½lï¿½ orada
             Directory.GetFiles(_testDir, "*.bak").Should().HaveCount(1);
         }
 
@@ -154,7 +154,7 @@ namespace KoruMsSqlYedek.Tests
                 Retention = new RetentionPolicy { Type = RetentionPolicyType.KeepLastN, KeepLastN = 1 }
             };
 
-            // Act — exception fýrlatmamalý
+            // Act ï¿½ exception fï¿½rlatmamalï¿½
             Func<Task> act = () => _service.CleanupAsync(plan, CancellationToken.None);
             await act.Should().NotThrowAsync();
         }
@@ -162,7 +162,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_Also_Handles_7zFiles()
         {
-            // Arrange — .bak ve .7z dosyalarý birlikte
+            // Arrange ï¿½ .bak ve .7z dosyalarï¿½ birlikte
             string bakFile = CreateBackupFile("TestDB_Full_20240101_020000.bak");
             File.SetCreationTime(bakFile, DateTime.Now.AddDays(-100));
 
@@ -186,7 +186,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — eski .bak ve .7z silinmeli
+            // Assert ï¿½ eski .bak ve .7z silinmeli
             File.Exists(bakFile).Should().BeFalse();
             File.Exists(archiveFile).Should().BeFalse();
             File.Exists(recentBak).Should().BeTrue();
@@ -219,7 +219,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_MultipleDBs_CleansEachSeparately()
         {
-            // Arrange — 2 DB, her biri 3 dosya
+            // Arrange ï¿½ 2 DB, her biri 3 dosya
             for (int i = 0; i < 3; i++)
             {
                 string fileA = CreateBackupFile($"DB_A_Full_2025010{i + 1}_020000.bak");
@@ -243,7 +243,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — her DB'den 2 dosya kalmalý
+            // Assert ï¿½ her DB'den 2 dosya kalmalï¿½
             Directory.GetFiles(_testDir, "DB_A_*.bak").Should().HaveCount(2);
             Directory.GetFiles(_testDir, "DB_B_*.bak").Should().HaveCount(2);
         }
@@ -251,7 +251,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_FileBackupArchives_KeepLastN_DeletesOldArchives()
         {
-            // Arrange — 5 dosya arþivi, KeepLastN=2
+            // Arrange ï¿½ 5 dosya arï¿½ivi, KeepLastN=2
             for (int i = 0; i < 5; i++)
             {
                 string file = CreateBackupFile($"Files_2025010{i + 1}_020000.7z");
@@ -273,7 +273,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — 2 dosya arþivi kalmalý
+            // Assert ï¿½ 2 dosya arï¿½ivi kalmalï¿½
             var remaining = Directory.GetFiles(_testDir, "Files_*.7z");
             remaining.Should().HaveCount(2);
         }
@@ -304,14 +304,14 @@ namespace KoruMsSqlYedek.Tests
             await _service.CleanupAsync(plan, CancellationToken.None);
 
             // Assert
-            File.Exists(oldArchive).Should().BeFalse("eski arþiv silinmeli");
-            File.Exists(recentArchive).Should().BeTrue("yeni arþiv kalmalý");
+            File.Exists(oldArchive).Should().BeFalse("eski arï¿½iv silinmeli");
+            File.Exists(recentArchive).Should().BeTrue("yeni arï¿½iv kalmalï¿½");
         }
 
         [TestMethod]
         public async Task CleanupAsync_FileBackupDisabled_DoesNotCleanArchives()
         {
-            // Arrange — arþivler var ama FileBackup devre dýþý
+            // Arrange ï¿½ arï¿½ivler var ama FileBackup devre dï¿½ï¿½ï¿½
             string archive = CreateBackupFile("Files_20240101_020000.7z");
             File.SetCreationTime(archive, DateTime.Now.AddDays(-100));
 
@@ -330,14 +330,14 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — dosya arþivi silinmemeli (FileBackup devre dýþý)
+            // Assert ï¿½ dosya arï¿½ivi silinmemeli (FileBackup devre dï¿½ï¿½ï¿½)
             File.Exists(archive).Should().BeTrue();
         }
 
         [TestMethod]
         public async Task CleanupAsync_FileBackupNull_DoesNotCleanArchives()
         {
-            // Arrange — FileBackup null
+            // Arrange ï¿½ FileBackup null
             string archive = CreateBackupFile("Files_20240101_020000.7z");
             File.SetCreationTime(archive, DateTime.Now.AddDays(-100));
 
@@ -363,7 +363,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_MixedDbAndFileArchives_CleansBothIndependently()
         {
-            // Arrange — hem DB dosyalarý hem dosya arþivleri
+            // Arrange ï¿½ hem DB dosyalarï¿½ hem dosya arï¿½ivleri
             for (int i = 0; i < 4; i++)
             {
                 string dbFile = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
@@ -388,7 +388,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — her ikisinden de 2'þer dosya kalmalý
+            // Assert ï¿½ her ikisinden de 2'ï¿½er dosya kalmalï¿½
             Directory.GetFiles(_testDir, "TestDB_*.bak").Should().HaveCount(2);
             Directory.GetFiles(_testDir, "Files_*.7z").Should().HaveCount(2);
         }
@@ -431,9 +431,9 @@ namespace KoruMsSqlYedek.Tests
             await service.CleanupAsync(plan, CancellationToken.None);
 
             // Assert
-            File.Exists(today).Should().BeTrue("bugünkü arþiv korunmalý");
-            File.Exists(yesterday).Should().BeTrue("dünkü arþiv korunmalý");
-            File.Exists(old).Should().BeFalse("30 gün önceki arþiv silinmeli");
+            File.Exists(today).Should().BeTrue("bugï¿½nkï¿½ arï¿½iv korunmalï¿½");
+            File.Exists(yesterday).Should().BeTrue("dï¿½nkï¿½ arï¿½iv korunmalï¿½");
+            File.Exists(old).Should().BeFalse("30 gï¿½n ï¿½nceki arï¿½iv silinmeli");
         }
 
         // === RetentionScheme (per-type) testleri ===
@@ -441,7 +441,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_RetentionScheme_FullAndDiffKeptSeparately()
         {
-            // Arrange — 5 Full + 5 Diff dosyasý; scheme: Full×2, Diff×3
+            // Arrange ï¿½ 5 Full + 5 Diff dosyasï¿½; scheme: Fullï¿½2, Diffï¿½3
             for (int i = 0; i < 5; i++)
             {
                 string full = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
@@ -468,7 +468,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — Full'dan 2, Diff'den 3 kalmalý (birbirini etkilemez)
+            // Assert ï¿½ Full'dan 2, Diff'den 3 kalmalï¿½ (birbirini etkilemez)
             Directory.GetFiles(_testDir, "TestDB_Full_*.bak").Should().HaveCount(2);
             Directory.GetFiles(_testDir, "TestDB_Differential_*.bak").Should().HaveCount(3);
         }
@@ -476,7 +476,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_RetentionScheme_LogFilesIndependent()
         {
-            // Arrange — 10 Log dosyasý; scheme: Log×4
+            // Arrange ï¿½ 10 Log dosyasï¿½; scheme: Logï¿½4
             for (int i = 0; i < 10; i++)
             {
                 string log = CreateBackupFile($"TestDB_Log_20250101_0{i:D2}0000.bak");
@@ -500,14 +500,14 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — sadece Log'lardan 4 kalmalý
+            // Assert ï¿½ sadece Log'lardan 4 kalmalï¿½
             Directory.GetFiles(_testDir, "TestDB_Log_*.bak").Should().HaveCount(4);
         }
 
         [TestMethod]
         public async Task CleanupAsync_RetentionScheme_FileBackupUsesCorrectPolicy()
         {
-            // Arrange — 6 Files arþivi; scheme: FileBackup×2
+            // Arrange ï¿½ 6 Files arï¿½ivi; scheme: FileBackupï¿½2
             for (int i = 0; i < 6; i++)
             {
                 string archive = CreateBackupFile($"Files_2025010{i + 1}_020000.7z");
@@ -539,7 +539,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_StandardTemplate_AppliesToAllTypes()
         {
-            // Arrange — Standard þablon baz alýnýp limitler küçültülür
+            // Arrange ï¿½ Standard ï¿½ablon baz alï¿½nï¿½p limitler kï¿½ï¿½ï¿½ltï¿½lï¿½r
             var scheme = RetentionTemplates.Standard;
             scheme.SqlFull.KeepLastN = 2;
             scheme.SqlDifferential.KeepLastN = 3;
@@ -572,7 +572,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — her tip kendi limitine göre temizlenmeli
+            // Assert ï¿½ her tip kendi limitine gï¿½re temizlenmeli
             Directory.GetFiles(_testDir, "TestDB_Full_*.bak").Should().HaveCount(2);
             Directory.GetFiles(_testDir, "TestDB_Differential_*.bak").Should().HaveCount(3);
             Directory.GetFiles(_testDir, "TestDB_Log_*.bak").Should().HaveCount(4);
@@ -582,7 +582,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_NullRetentionScheme_FallsBackToRetention()
         {
-            // Arrange — scheme null, eski Retention alaný fallback yapmalý
+            // Arrange ï¿½ scheme null, eski Retention alanï¿½ fallback yapmalï¿½
             for (int i = 0; i < 5; i++)
             {
                 string full = CreateBackupFile($"TestDB_Full_2025010{i + 1}_020000.bak");
@@ -600,7 +600,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             await _service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — eski Retention fallback ile 3 dosya kalmalý
+            // Assert ï¿½ eski Retention fallback ile 3 dosya kalmalï¿½
             Directory.GetFiles(_testDir, "TestDB_Full_*.bak").Should().HaveCount(3);
         }
 
@@ -675,8 +675,8 @@ namespace KoruMsSqlYedek.Tests
     }
 
     /// <summary>
-    /// GFS (Grandfather-Father-Son) retention politikasý unit testleri.
-    /// BuildGfsProtectedSet internal static metodu üzerinden test edilir.
+    /// GFS (Grandfather-Father-Son) retention politikasï¿½ unit testleri.
+    /// BuildGfsProtectedSet internal static metodu ï¿½zerinden test edilir.
     /// </summary>
     [TestClass]
     [TestCategory("Unit")]
@@ -701,7 +701,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public void BuildGfsProtectedSet_Daily_ProtectsOneBestPerDay()
         {
-            // Arrange — 3 gün, her gün 2 dosya (büyük ve küçük)
+            // Arrange ï¿½ 3 gï¿½n, her gï¿½n 2 dosya (bï¿½yï¿½k ve kï¿½ï¿½ï¿½k)
             var files = new List<FileInfo>();
             for (int d = 0; d < 3; d++)
             {
@@ -718,7 +718,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
 
-            // Assert — her günden büyük dosya korunmalý (3 dosya)
+            // Assert ï¿½ her gï¿½nden bï¿½yï¿½k dosya korunmalï¿½ (3 dosya)
             protectedSet.Should().HaveCount(3);
             foreach (var file in files.Where(f => f.Name.Contains("big")))
             {
@@ -729,7 +729,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public void BuildGfsProtectedSet_Weekly_ProtectsOneBestPerWeek()
         {
-            // Arrange — 3 hafta, her haftadan 1 dosya
+            // Arrange ï¿½ 3 hafta, her haftadan 1 dosya
             var files = new List<FileInfo>();
             for (int w = 0; w < 3; w++)
             {
@@ -744,14 +744,14 @@ namespace KoruMsSqlYedek.Tests
             // Act
             var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
 
-            // Assert — 2 hafta korunmalý
+            // Assert ï¿½ 2 hafta korunmalï¿½
             protectedSet.Should().HaveCount(2);
         }
 
         [TestMethod]
         public void BuildGfsProtectedSet_Monthly_ProtectsOneBestPerMonth()
         {
-            // Arrange — 4 ay, her aydan 1 dosya
+            // Arrange ï¿½ 4 ay, her aydan 1 dosya
             var files = new List<FileInfo>();
             for (int m = 0; m < 4; m++)
             {
@@ -766,14 +766,14 @@ namespace KoruMsSqlYedek.Tests
             // Act
             var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
 
-            // Assert — 3 ay korunmalý
+            // Assert ï¿½ 3 ay korunmalï¿½
             protectedSet.Should().HaveCount(3);
         }
 
         [TestMethod]
         public void BuildGfsProtectedSet_Yearly_ProtectsOneBestPerYear()
         {
-            // Arrange — 3 yýl, her yýldan 1 dosya
+            // Arrange ï¿½ 3 yï¿½l, her yï¿½ldan 1 dosya
             var files = new List<FileInfo>();
             for (int y = 0; y < 3; y++)
             {
@@ -788,17 +788,17 @@ namespace KoruMsSqlYedek.Tests
             // Act
             var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
 
-            // Assert — 2 yýl korunmalý
+            // Assert ï¿½ 2 yï¿½l korunmalï¿½
             protectedSet.Should().HaveCount(2);
         }
 
         [TestMethod]
         public void BuildGfsProtectedSet_CombinedGfs_UnionOfAllPeriods()
         {
-            // Arrange — çoklu dosya: günlük, haftalýk ve aylýk koruma çakýþabilir
+            // Arrange ï¿½ ï¿½oklu dosya: gï¿½nlï¿½k, haftalï¿½k ve aylï¿½k koruma ï¿½akï¿½ï¿½abilir
             var files = new List<FileInfo>();
 
-            // Son 7 gün — her gün 1 dosya
+            // Son 7 gï¿½n ï¿½ her gï¿½n 1 dosya
             for (int d = 0; d < 7; d++)
             {
                 DateTime day = DateTime.Now.Date.AddDays(-d);
@@ -806,7 +806,7 @@ namespace KoruMsSqlYedek.Tests
                 files.Add(new FileInfo(file));
             }
 
-            // 30 gün önce — aylýk yedek
+            // 30 gï¿½n ï¿½nce ï¿½ aylï¿½k yedek
             string monthAgo = CreateFileWithDate("DB_Full_month.bak", DateTime.Now.Date.AddDays(-30), 500);
             files.Add(new FileInfo(monthAgo));
 
@@ -822,7 +822,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
 
-            // Assert — en az günlük 3 + aylýk dosya korunmalý (bazýlarý çakýþabilir)
+            // Assert ï¿½ en az gï¿½nlï¿½k 3 + aylï¿½k dosya korunmalï¿½ (bazï¿½larï¿½ ï¿½akï¿½ï¿½abilir)
             protectedSet.Count.Should().BeGreaterThanOrEqualTo(3);
             protectedSet.Should().Contain(monthAgo);
         }
@@ -830,7 +830,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public void BuildGfsProtectedSet_SelectsLargestFilePerPeriod()
         {
-            // Arrange — ayný gün 3 dosya, farklý boyutlar
+            // Arrange ï¿½ aynï¿½ gï¿½n 3 dosya, farklï¿½ boyutlar
             DateTime today = DateTime.Now.Date;
             string small = CreateFileWithDate("DB_Full_s.bak", today, 100);
             string medium = CreateFileWithDate("DB_Full_m.bak", today.AddHours(1), 300);
@@ -844,7 +844,7 @@ namespace KoruMsSqlYedek.Tests
             // Act
             var protectedSet = RetentionCleanupService.BuildGfsProtectedSet(files, policy);
 
-            // Assert — en büyük dosya seçilmeli
+            // Assert ï¿½ en bï¿½yï¿½k dosya seï¿½ilmeli
             protectedSet.Should().HaveCount(1);
             protectedSet.Should().Contain(large);
         }
@@ -876,7 +876,7 @@ namespace KoruMsSqlYedek.Tests
         [TestMethod]
         public async Task CleanupAsync_GfsPolicy_DeletesUnprotectedFiles()
         {
-            // Arrange — 5 dosya: bugün, dün, 10 gün önce, 40 gün önce, 100 gün önce
+            // Arrange ï¿½ 5 dosya: bugï¿½n, dï¿½n, 10 gï¿½n ï¿½nce, 40 gï¿½n ï¿½nce, 100 gï¿½n ï¿½nce
             var mockHistory = new Mock<IBackupHistoryManager>();
             var service = new RetentionCleanupService(mockHistory.Object);
 
@@ -900,15 +900,27 @@ namespace KoruMsSqlYedek.Tests
                 }
             };
 
+            // Retention yalnÄ±zca bu planÄ±n geÃ§miÅŸinde kaydÄ± olan dosyalarÄ± siler
+            // (sahiplik kapsamÄ±). BeÅŸ dosya da bu plana ait olarak kaydedilir.
+            mockHistory.Setup(h => h.GetAllHistoryByPlan(plan.PlanId)).Returns(
+                new List<BackupResult>
+                {
+                    new() { PlanId = plan.PlanId, BackupFilePath = today },
+                    new() { PlanId = plan.PlanId, BackupFilePath = yesterday },
+                    new() { PlanId = plan.PlanId, BackupFilePath = tenDays },
+                    new() { PlanId = plan.PlanId, BackupFilePath = fortyDays },
+                    new() { PlanId = plan.PlanId, BackupFilePath = hundredDays }
+                });
+
             // Act
             await service.CleanupAsync(plan, CancellationToken.None);
 
-            // Assert — sadece son 2 günün yedekleri korunmalý, eski olanlar silinmeli
-            File.Exists(today).Should().BeTrue("bugünkü dosya korunmalý");
-            File.Exists(yesterday).Should().BeTrue("dünkü dosya korunmalý");
-            File.Exists(tenDays).Should().BeFalse("10 gün önceki dosya silinmeli");
-            File.Exists(fortyDays).Should().BeFalse("40 gün önceki dosya silinmeli");
-            File.Exists(hundredDays).Should().BeFalse("100 gün önceki dosya silinmeli");
+            // Assert ï¿½ sadece son 2 gï¿½nï¿½n yedekleri korunmalï¿½, eski olanlar silinmeli
+            File.Exists(today).Should().BeTrue("bugï¿½nkï¿½ dosya korunmalï¿½");
+            File.Exists(yesterday).Should().BeTrue("dï¿½nkï¿½ dosya korunmalï¿½");
+            File.Exists(tenDays).Should().BeFalse("10 gï¿½n ï¿½nceki dosya silinmeli");
+            File.Exists(fortyDays).Should().BeFalse("40 gï¿½n ï¿½nceki dosya silinmeli");
+            File.Exists(hundredDays).Should().BeFalse("100 gï¿½n ï¿½nceki dosya silinmeli");
         }
 
         private string CreateFileWithDate(string fileName, DateTime creationTime, int sizeBytes)
