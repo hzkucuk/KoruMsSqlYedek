@@ -367,6 +367,16 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Restore_VerifyFail" xml:space="preserve"><value>Doğrulama başarısız. Yedek dosyası bozuk olabilir.</value></data>
   <data name="Restore_Confirm" xml:space="preserve"><value>'{0}' veritabanı geri yüklensin mi? Bu işlem mevcut veritabanının üzerine yazacaktır.</value></data>
   <data name="Restore_ConfirmTitle" xml:space="preserve"><value>Geri Yüklemeyi Onayla</value></data>
+  <data name="Elevation_Title" xml:space="preserve"><value>Yönetici Hakkı Gerekli</value></data>
+  <data name="Elevation_Failed" xml:space="preserve"><value>Yönetici olarak yeniden başlatılamadı: {0}</value></data>
+  <data name="PlanEdit_NeedsAdmin" xml:space="preserve"><value>Yedekleme planları korumalı bir klasörde saklanır ve yalnızca yöneticiler değiştirebilir; çünkü arka planda çalışan servis bu dosyalara göre iş yapar.
+
+Görüntüleme ve izleme yönetici hakkı olmadan çalışır; yalnızca düzenleme yönetici ister.
+
+Uygulama şimdi yönetici olarak yeniden başlatılsın mı?</value></data>
+  <data name="Settings_NeedsAdmin" xml:space="preserve"><value>Ayarlar korumalı bir klasörde saklanır ve yalnızca yöneticiler değiştirebilir.
+
+Uygulama şimdi yönetici olarak yeniden başlatılsın mı?</value></data>
   <data name="Restore_SafetyBackupDir" xml:space="preserve"><value>Geri yükleme öncesi güvenlik yedeği dizini: {0}</value></data>
   <data name="Restore_SystemDbBlocked" xml:space="preserve"><value>'{0}' bir SQL Server sistem veritabanıdır, bu ekrandan geri yüklenemez.</value></data>
   <data name="Restore_NameMismatchTitle" xml:space="preserve"><value>Hedef Veritabanı Eşleşmiyor</value></data>

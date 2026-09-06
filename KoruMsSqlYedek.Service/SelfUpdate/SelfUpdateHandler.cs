@@ -42,7 +42,7 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
         {
             try
             {
-                DirectoryAcl.EnsureRestrictedDirectory(FlagDirectory);
+                DirectoryAcl.EnsureDirectory(FlagDirectory, DirectoryAcl.UsersAccess.None);
                 await File.WriteAllTextAsync(
                         RestartFlagPath,
                         $"{DateTime.UtcNow:O} {trayAppPath}",

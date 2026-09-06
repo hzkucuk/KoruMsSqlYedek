@@ -312,6 +312,13 @@ namespace KoruMsSqlYedek.Win.Forms
                 DialogResult = DialogResult.OK;
                 Close();
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                // Plan dizini güvenlik gereği yalnızca yöneticiler tarafından yazılabilir
+                // (SYSTEM servisi bu dosyalara göre iş yapar). Düzenleme için yükseltme gerekir.
+                Log.Warning(ex, "Plan kaydedilemedi — yetki yok: {PlanId}", _plan.PlanId);
+                Helpers.ElevationHelper.OfferRestartElevated(this, Res.Get("PlanEdit_NeedsAdmin"));
+            }
             catch (Exception ex)
             {
                 Log.Error(ex, "Plan kaydedilirken hata: {PlanId}", _plan.PlanId);

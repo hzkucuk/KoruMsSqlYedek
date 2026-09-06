@@ -92,9 +92,11 @@ namespace KoruMsSqlYedek.Service.IPC
                 NamedPipeServerStream pipe = null;
                 try
                 {
-                    // GÜVENLİK: Pipe'a yalnızca SYSTEM ve BUILTIN\Administrators bağlanabilir.
-                    // Tray uygulaması requireAdministrator ile yükseltilmiş çalışır; sıradan
-                    // kullanıcılar ManualBackup/CancelBackup/InstallSelfUpdate gönderemez.
+                    // GÜVENLİK: Bağlantı herkese açık, yetki KOMUT BAZINDA verilir.
+                    // Tray yükseltilmemiş (asInvoker) çalışır ve durum/etkinlik akışını
+                    // izleyebilmelidir; aksi halde sıradan kullanıcıda arayüz servise hiç
+                    // bağlanamaz. Durumu değiştiren komutlar (ManualBackup, CancelBackup,
+                    // InstallSelfUpdate) IsCommandAuthorized ile yönetici şartına bağlıdır.
                     var pipeSecurity = new PipeSecurity();
                     pipeSecurity.AddAccessRule(new PipeAccessRule(
                         new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
@@ -102,6 +104,10 @@ namespace KoruMsSqlYedek.Service.IPC
                         AccessControlType.Allow));
                     pipeSecurity.AddAccessRule(new PipeAccessRule(
                         new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
+                        PipeAccessRights.FullControl,
+                        AccessControlType.Allow));
+                    pipeSecurity.AddAccessRule(new PipeAccessRule(
+                        new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null),
                         PipeAccessRights.ReadWrite | PipeAccessRights.Synchronize,
                         AccessControlType.Allow));
 
@@ -115,15 +121,6 @@ namespace KoruMsSqlYedek.Service.IPC
                         pipeSecurity);
 
                     await pipe.WaitForConnectionAsync(ct);
-
-                    // Derinlemesine savunma: ACL'den bağımsız olarak istemci kimliğini doğrula.
-                    // Hiçbir komut bu kontrolden önce işlenmez.
-                    if (!IsClientAuthorized(pipe))
-                    {
-                        pipe.Dispose();
-                        pipe = null;
-                        continue;
-                    }
 
                     var clientId = Guid.NewGuid();
                     _clients[clientId] = pipe;
@@ -165,13 +162,27 @@ namespace KoruMsSqlYedek.Service.IPC
         // ── İstemci kimlik doğrulama ─────────────────────────────────────────
 
         /// <summary>
-        /// Bağlanan istemcinin SYSTEM veya BUILTIN\Administrators üyesi olduğunu doğrular.
-        /// RunAsClient (ImpersonateNamedPipeClient) istemcinin Identification seviyesinde
-        /// bağlanmasıyla da çalışır — WindowsIdentity.GetCurrent() için yeterlidir.
-        /// Kimlik alınamazsa bağlantı reddedilir (fail-closed).
+        /// Ayrıcalık gerektiren komutlar. Bunlar servisin durumunu değiştirir ya da
+        /// kod çalıştırır; yalnızca SYSTEM veya BUILTIN\Administrators gönderebilir.
+        /// Listede olmayan komutlar (durum sorgusu, etkinlik aboneliği) herkese açıktır.
         /// </summary>
-        private static bool IsClientAuthorized(NamedPipeServerStream pipe)
+        private static readonly HashSet<string> PrivilegedCommands = new(StringComparer.Ordinal)
         {
+            PipeMessageType.ManualBackup,
+            PipeMessageType.CancelBackup,
+            PipeMessageType.InstallSelfUpdate
+        };
+
+        /// <summary>
+        /// Komutu gönderen istemcinin bu komutu çalıştırmaya yetkili olduğunu doğrular.
+        /// Yükseltilmemiş bir tray durum izleyebilir ama yedek tetikleyemez/iptal edemez
+        /// ve kurulum başlatamaz. Kimlik alınamazsa ayrıcalıklı komut reddedilir (fail-closed).
+        /// </summary>
+        private static bool IsCommandAuthorized(NamedPipeServerStream pipe, string messageType)
+        {
+            if (!PrivilegedCommands.Contains(messageType))
+                return true;
+
             string userName = "(bilinmiyor)";
             bool authorized = false;
 
@@ -194,19 +205,18 @@ namespace KoruMsSqlYedek.Service.IPC
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Pipe istemci kimliği alınamadı — bağlantı reddedildi.");
+                Log.Warning(ex, "Pipe istemci kimliği alınamadı — {Command} reddedildi.", messageType);
                 return false;
             }
 
             if (!authorized)
             {
                 Log.Warning(
-                    "Yetkisiz pipe istemcisi reddedildi: {User} (SYSTEM veya Administrators değil)",
-                    userName);
+                    "Yetkisiz komut reddedildi: {Command} — {User} (SYSTEM veya Administrators değil)",
+                    messageType, userName);
                 return false;
             }
 
-            Log.Debug("Pipe istemcisi yetkili: {User}", userName);
             return true;
         }
 
@@ -251,6 +261,10 @@ namespace KoruMsSqlYedek.Service.IPC
         private async Task HandleCommandAsync(
             Guid clientId, PipeMessage message, NamedPipeServerStream pipe, CancellationToken ct)
         {
+            // GÜVENLİK: ayrıcalıklı komutlar işlenmeden önce çağıranın kimliği doğrulanır.
+            if (!IsCommandAuthorized(pipe, message.Type))
+                return;
+
             switch (message.Type)
             {
                 case PipeMessageType.ManualBackup:
@@ -360,7 +374,7 @@ namespace KoruMsSqlYedek.Service.IPC
 
                 // 2. Kısıtlı Updates dizinini hazırla (varsa ACL yeniden uygulanır) ve eski installer'ları sil
                 string updatesDir = DirectoryAcl.UpdatesDirectory;
-                DirectoryAcl.EnsureRestrictedDirectory(updatesDir);
+                DirectoryAcl.EnsureDirectory(updatesDir, DirectoryAcl.UsersAccess.None);
 
                 foreach (string stale in Directory.GetFiles(updatesDir, "*.exe"))
                     TryDeleteFile(stale);

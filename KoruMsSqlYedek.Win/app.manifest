@@ -11,7 +11,7 @@
           olarak ulaşabilir. Windows başlangıcı için HKCU\Run yerine
           "KoruMsSqlYedek Tray" zamanlanmış görevi (RL HIGHEST) kullanılır.
         -->
-        <requestedExecutionLevel level="requireAdministrator" uiAccess="false"/>
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
       </requestedPrivileges>
     </security>
   </trustInfo>

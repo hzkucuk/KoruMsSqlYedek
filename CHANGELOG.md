@@ -1,4 +1,69 @@
-﻿## [0.99.91] - 2026-09-06 — 🔒 Güvenlik Sürümü: Yerel Yetki Yükseltme Zinciri Kapatıldı
+﻿## [0.99.92] - 2026-09-06 — 🚑 Acil Düzeltme: v0.99.91 Yükseltilmemiş Kullanıcıyı Kilitliyordu
+
+> **v0.99.91 kuran herkes bu sürüme geçmelidir.** v0.99.91, tray uygulamasının
+> yönetici olarak çalıştığını varsayan iki kilit getirmişti; yükseltilmemiş bir
+> oturumda **planlar hiç görünmüyor ve servise bağlanılamıyordu**. Bu sürüm hem
+> davranışı düzeltir hem de v0.99.91'in diskte bıraktığı izinleri onarır.
+> Veri kaybı yaşanmadı — plan dosyaları her zaman diskte durdu, yalnızca
+> okunamıyordu.
+
+### Düzeltme — v0.99.91 gerilemesi
+
+- **Planlar yeniden görünüyor.** v0.99.91 installer'ı veri dizinine
+  `icacls /inheritance:r /grant:r` uygulayıp **Users grubunu tamamen siliyordu**;
+  yükseltilmemiş tray `%ProgramData%\KoruMsSqlYedek\Plans` içeriğini okuyamıyor,
+  plan listesi boş geliyordu. Artık Users tüm ağaçta **okuma** hakkına sahip.
+  Bu sürümün installer'ı izinleri yeniden yazdığı için bozulan kurulumları
+  **kendiliğinden onarır**.
+- **Servis bağlantısı yeniden çalışıyor.** Pipe ACL'i SYSTEM + Administrators'a
+  indirilmiş ve bağlantı anında kimlik doğrulaması eklenmişti; yükseltilmemiş tray
+  (ya da yönetici olmayan operatör) hiç bağlanamıyordu. Yetkilendirme artık
+  **bağlantı bazında değil komut bazında**: durum ve etkinlik akışı herkese açık,
+  yalnızca `ManualBackup`, `CancelBackup` ve `InstallSelfUpdate` yönetici ister.
+- **Servis her açılışta izinleri geri kilitlemiyor.** `DirectoryAcl` başlangıçta
+  kısıtlayıcı ACL'i yeniden uyguluyordu; elle yapılan düzeltme ilk servis
+  yeniden başlatmasında geri alınıyordu. Artık dizin bazında doğru düzeyi uygular.
+- **Tray yeniden `asInvoker`.** v0.99.91'de `requireAdministrator` yapılmıştı.
+  Bunun iki yan etkisi vardı: yönetici olmayan operatör uygulamayı hiç açamıyordu
+  ve servis, tray'i kullanıcı oturumunda başlatırken filtrelenmiş token kullandığı
+  için başlatma hata 740 ile düşebiliyordu.
+- **Başlangıçta otomatik çalıştırma `HKCU\Run`'a döndü.** v0.99.91 bunu
+  `/RL HIGHEST` ONLOGON zamanlanmış görevine taşımıştı; tray yükseltilmediği için
+  artık gerekmiyor. Installer, önceki sürümden kalan **"KoruMsSqlYedek Tray"
+  görevini kaldırır**.
+
+### Değişen — izin şeması
+
+Veri dizini artık tek tip değil, dosyanın işlevine göre ayrılıyor:
+
+| Dizin | SYSTEM / Administrators | Users |
+|---|---|---|
+| `Plans`, `Config` | Tam yetki | **Salt okunur** |
+| `Updates` | Tam yetki | Erişim yok |
+| `Logs`, `UploadState`, `History`, `WebView2` | Tam yetki | Değiştirme |
+
+Böylece v0.99.91'in asıl güvenlik kazanımı korunuyor: servisin üzerinde iş yaptığı
+plan ve ayar dosyaları sıradan kullanıcı tarafından **değiştirilemiyor** (yerel
+yetki yükseltme yolu kapalı kalıyor), ama **okunabildiği** için arayüz çalışıyor.
+
+- **Plan düzenlemek artık yönetici gerektiriyor.** Görüntüleme, izleme ve log
+  okuma yönetici istemez. Kaydetme sırasında yetki hatası alınırsa arayüz bunu
+  açıkça anlatır ve tek tıkla **yönetici olarak yeniden başlatma** önerir
+  (yeni `ElevationHelper`).
+
+### Etkilenen Dosyalar
+
+- `KoruMsSqlYedek.Service\IPC\ServicePipeServer.cs` — Komut bazlı yetkilendirme, pipe erişimi açıldı
+- `KoruMsSqlYedek.Service\Security\DirectoryAcl.cs` — Dizin bazlı Users erişim düzeyi
+- `KoruMsSqlYedek.Service\SelfUpdate\SelfUpdateHandler.cs` — Yeni ACL API'si
+- `KoruMsSqlYedek.Win\app.manifest` — `asInvoker`
+- `KoruMsSqlYedek.Win\Helpers\ElevationHelper.cs` — Yeni dosya: yükseltme teklifi
+- `KoruMsSqlYedek.Win\Forms\PlanEditForm.PlanBinding.cs` — Yetki hatasına özel akış
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — İzin şeması, `HKCU\Run` geri, artakalan görev temizliği
+
+---
+
+## [0.99.91] - 2026-09-06 — 🔒 Güvenlik Sürümü: Yerel Yetki Yükseltme Zinciri Kapatıldı
 
 > Bu sürüm tüm projeyi kapsayan bir güvenlik incelemesinin sonucudur. Yerel bir
 > kullanıcının SYSTEM yetkisi elde etmesine izin veren dört ayrı yol kapatıldı.
