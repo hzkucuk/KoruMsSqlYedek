@@ -9,7 +9,7 @@ namespace KoruMsSqlYedek.Core.Helpers
 {
     /// <summary>
     /// v0.75.1 → v0.76.0 migrasyon yardımcısı.
-    /// Eski %APPDATA% konumundaki verileri %ProgramData% altına taşır ve
+    /// Eski %APPDATA% konumundaki verileri ortak veri dizinine taşır ve
     /// DPAPI şifrelerini CurrentUser → LocalMachine scope'a dönüştürür.
     /// Bu sınıf yalnızca Tray uygulaması (kullanıcı bağlamında) tarafından çalıştırılmalıdır;
     /// çünkü CurrentUser scope şifrelerini yalnızca orijinal kullanıcı çözebilir.

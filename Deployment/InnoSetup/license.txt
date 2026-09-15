@@ -55,8 +55,9 @@ hizmetlerine senkronize etmek amacıyla kullanılmaktadır.
 Yazılımın servis bileşeni LocalSystem hesabı altında çalışır ve
 yedekleme planlarında tanımlanan veritabanlarına, dosyalara ve
 dizinlere bu yetkiyle erişir. Plan ve ayar dosyaları, yükseltilmemiş
-oturumdan da düzenlenebilmesi için %ProgramData%\KoruMsSqlYedek
-altında Users grubuna yazma izniyle tutulur.
+oturumdan da düzenlenebilmesi için kurulum dizinindeki Data klasöründe
+(örn. C:\Program Files\Koru MsSql Yedek\Data) Users grubuna yazma
+izniyle tutulur.
 
   a) Yazılımın kurulu olduğu sistemde hangi Windows hesaplarının
      oturum açabileceği, plan ve ayar dosyalarına kimlerin

@@ -1,4 +1,49 @@
-﻿## [0.99.94] - 2026-09-15 — 🔧 ACL Onarımı: `/reset` Tabanlı Script ve Installer Sertleştirmesi
+﻿## [0.99.95] - 2026-09-15 — 📁 Tüm Veri Kurulum Dizininde: `%ProgramData%` Terk Edildi
+
+> v0.99.91–v0.99.94 arasındaki ACL düzeltmelerine rağmen sahada tray hâlâ
+> `%ProgramData%\KoruMsSqlYedek` dosyalarını okuyamıyordu. Katman katman
+> onarmak yerine veri kökü kurulum dizinine taşındı; her şey tek klasörde.
+
+### Değişiklik
+
+- **Veri kökü artık `{Kurulum}\Data\`** (varsayılan `C:\Program Files\Koru MsSql
+  Yedek\Data\`): `Plans`, `Config`, `Logs`, `UploadState`, `History`, `Updates`
+  hepsi bu klasörün altında. `PathHelper` kökü çalışan exe'nin konumundan
+  türetir; servis `{Kurulum}\Service\` altında olduğundan bir üst dizine çıkar.
+  `HistoryDirectory` ve `UpdatesDirectory` `PathHelper`'a taşındı.
+- **Installer eski verileri kopyalıyor.** `{app}\Data` oluşturulup Users:Modify
+  verilir verilmez (`[Dirs] AfterInstall`, yani `[Files]`/`[Run]` öncesinde)
+  `%ProgramData%\KoruMsSqlYedek` içeriği `robocopy /B` ile `Data` altına alınır.
+  Kopyalamadan **önce** eski dizinde `takeown` + `icacls Administrators:F`
+  çalışır — önceki sürümlerin kilitleri yüzünden yönetici bile okuyamıyordu,
+  izin onarılmadan kopyalama bile olmuyordu. Hedefte zaten var olan dosyalara
+  dokunulmaz (`/XC /XN /XO`), eski dizin silinmez.
+- **ACL zinciri kaldırıldı.** Installer'daki `takeown` / `icacls /reset` /
+  `/inheritance:r` / dizin dizin `/grant` satırları gitti; yalnızca `Data`
+  köküne `Permissions: users-modify` ve `Updates`'e SYSTEM+Administrators kilidi
+  kaldı. Servis de artık ağacın tamamına ACL yazmıyor: kökte Users:Modify
+  girdisi eksikse **ekliyor** (mevcut girdilere dokunmadan) ve `Updates`'i
+  kilitliyor (`DirectoryAcl.EnsureDataRootWritableByUsers`).
+- **Çalışma zamanı yedeği:** installer adımı atlanmışsa tray ve servis açılışta
+  `PathHelper.MigrateProgramDataToInstallDir()` ile eski verileri kopyalar
+  (yeni konumda plan varsa hiçbir şey yapmaz).
+- Kaldırmada `Data` klasörü yerinde bırakılır.
+
+### Etkilenen Dosyalar
+
+- `KoruMsSqlYedek.Core\Helpers\PathHelper.cs` — `InstallRoot`, `{Kurulum}\Data` kökü, `MigrateProgramDataToInstallDir`
+- `KoruMsSqlYedek.Service\Security\DirectoryAcl.cs` — yalnızca kök Users:Modify + Updates kilidi
+- `KoruMsSqlYedek.Service\Program.cs`, `KoruMsSqlYedek.Win\Program.cs` — açılışta eski veri kopyalama
+- `KoruMsSqlYedek.Win\Forms\PasswordDialog.cs` — config yolu `PathHelper.ConfigDirectory`
+- `KoruMsSqlYedek.Engine\BackupHistoryManager.cs` — `PathHelper.HistoryDirectory`
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — `[Dirs] {app}\Data`, `MigrateLegacyProgramData`, ACL zinciri kaldırıldı
+- `Deployment\Repair-DataDirAcl.ps1` — varsayılan yol `{Kurulum}\Data`
+- `README.md`, `docs\PRD.md`, `license.txt`, `CLAUDE.md` — veri yolu belgeleri
+- Sürüm 0.99.95 (Win csproj, AssemblyInfo, Service csproj, iss, README rozeti)
+
+---
+
+## [0.99.94] - 2026-09-15 — 🔧 ACL Onarımı: `/reset` Tabanlı Script ve Installer Sertleştirmesi
 
 > v0.99.93 ile gelen `Repair-DataDirAcl.ps1`, bir sahada çalıştırıldıktan sonra
 > tray'in `History` dosyalarını okuyamadığı bildirildi (`UnauthorizedAccessException`).

@@ -1,18 +1,19 @@
 <#
 .SYNOPSIS
-    %ProgramData%\KoruMsSqlYedek veri dizininin izinlerini onarır.
+    Uygulama veri dizininin ({Kurulum}\Data) izinlerini onarır.
 
 .DESCRIPTION
-    v0.99.91 / v0.99.92 kurulumları Plans ve Config dizinlerini Users için salt
-    okunur (ya da tamamen erişimsiz) bırakmış olabilir. Bu script tüm ağacı
-    v0.99.93 şemasına getirir:
+    v0.99.95'ten itibaren tüm veri kurulum dizininin altındaki Data klasöründedir
+    (varsayılan: C:\Program Files\Koru MsSql Yedek\Data). Eski sürümlerin
+    %ProgramData%\KoruMsSqlYedek dizini için -Path ile o yolu verin.
+    Bu script tüm ağacı şu şemaya getirir:
 
         SYSTEM, Administrators  -> Tam yetki
         Users                   -> Değiştirme (Modify)   [tüm ağaç]
         Users                   -> Erişim yok            [yalnızca Updates]
 
     Yöntem: önce `icacls /reset /T` ile ağaçtaki her dosya ve klasör
-    ProgramData'dan kalıtımla gelen varsayılan ACL'e döndürülür (elle eklenmiş
+    üst dizinden kalıtımla gelen varsayılan ACL'e döndürülür (elle eklenmiş
     ya da önceki sürümden kalan tüm açık/yasak girdiler silinir), sonra Users'a
     Modify verilir ve Updates'ten Users kaldırılır. Servis açılışta aynı şemayı
     yeniden uygular; bu script servisi beklemeden onarım yapmak içindir.
@@ -22,7 +23,8 @@
     Users girdisiyle okunur/yazılır. Bu yüzden Users:Modify ŞARTTIR.
 
 .PARAMETER Path
-    Veri dizini. Varsayılan: $env:ProgramData\KoruMsSqlYedek
+    Veri dizini. Varsayılan: $env:ProgramFiles\Koru MsSql Yedek\Data
+    (v0.99.94 ve öncesi için: $env:ProgramData\KoruMsSqlYedek)
 
 .PARAMETER WhatIf
     Hiçbir şey değiştirmez, yalnızca mevcut durumu ve çalıştırılacak
@@ -35,7 +37,7 @@
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string]$Path = (Join-Path $env:ProgramData 'KoruMsSqlYedek')
+    [string]$Path = (Join-Path $env:ProgramFiles 'Koru MsSql Yedek\Data')
 )
 
 # Yerel komutların (icacls/takeown) stderr çıktısı PowerShell 5.1'de
@@ -106,7 +108,7 @@ Show-Acl $Path '(kök)'
 foreach ($n in 'Plans', 'Config', 'History', 'Updates') { Show-Acl (Join-Path $Path $n) $n }
 
 Write-Host "`nHedef şema:" -ForegroundColor Cyan
-Write-Host "  SYSTEM / Administrators : Tam yetki (ProgramData kalıtımı)"
+Write-Host "  SYSTEM / Administrators : Tam yetki (üst dizin kalıtımı)"
 Write-Host "  Users                   : Değiştirme (tüm ağaç)"
 Write-Host "  Users                   : Erişim yok  -> $($NoAccessDirs -join ', ')"
 Write-Host ""

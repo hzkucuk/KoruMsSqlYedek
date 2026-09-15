@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.94"
+  #define MyAppVersion "0.99.95"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -144,22 +144,23 @@ Name: "{group}\{#MyAppName} Kaldır"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Dirs]
-; %ProgramData%\KoruMsSqlYedek — hem Tray hem Service tarafından erişilir.
-; İZİNLER (bkz. [Run] icacls): Users grubu tüm ağaçta OKUYABİLİR, böylece
-; yükseltilmemiş tray planları listeleyip logları görebilir. Tray asInvoker
-; çalıştığı ve plan/ayar dosyalarını doğrudan yazdığı için Plans, Config, Logs,
-; UploadState, History ve WebView2 dizinlerine Users için Modify verilir.
-; Yalnızca Updates (doğrulanmış installer'lar) Users için salt okunur kalır.
-; v0.99.92'de Plans/Config salt okunur yapılmıştı; UAC filtreli token'lı
-; yönetici bile plan oluşturamıyordu (v0.99.93'te geri alındı).
-Name: "{commonappdata}\KoruMsSqlYedek"
-Name: "{commonappdata}\KoruMsSqlYedek\Plans"
-Name: "{commonappdata}\KoruMsSqlYedek\Config"
-Name: "{commonappdata}\KoruMsSqlYedek\Logs"
-Name: "{commonappdata}\KoruMsSqlYedek\UploadState"
-Name: "{commonappdata}\KoruMsSqlYedek\History"
-Name: "{commonappdata}\KoruMsSqlYedek\WebView2"
-Name: "{commonappdata}\KoruMsSqlYedek\Updates"
+; v0.99.95+: TÜM veri kurulum dizininin altında tek klasörde: {app}\Data
+; (Plans, Config, Logs, UploadState, History, Updates). %ProgramData% artık kullanılmıyor.
+; Users'a Modify verilir (kalıtımlı) — tray yükseltilmeden (asInvoker) çalışır ve
+; plan/ayar/log dosyalarını doğrudan yazar. Başka hiçbir ACL işlemi yapılmaz;
+; v0.99.91–v0.99.94'teki kalıtım kesme / /reset zincirleri tray'i defalarca kilitledi.
+; AfterInstall: dizin ve izni hazır olur olmaz eski %ProgramData% verileri buraya
+; kopyalanır (bkz. [Code] MigrateLegacyProgramData) — [Files] ve [Run] öncesinde.
+Name: "{app}\Data"; Permissions: users-modify; AfterInstall: MigrateLegacyProgramData
+Name: "{app}\Data\Plans"
+Name: "{app}\Data\Config"
+Name: "{app}\Data\Logs"
+Name: "{app}\Data\UploadState"
+Name: "{app}\Data\History"
+Name: "{app}\Data\WebView2"
+; Updates: doğrulanmış installer'lar ve restart bayrağı — Users'ın işi yok
+; (kilit [Run] icacls satırında; servis açılışta da aynı kilidi uygular).
+Name: "{app}\Data\Updates"
 
 [Registry]
 ; Windows başlangıcında otomatik çalıştır (isteğe bağlı).
@@ -169,30 +170,11 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "{#MyAppName}"; Flags: deletevalue uninsdeletevalue; Tasks: not startup
 
 [Run]
-; GÜVENLİK: Veri kökünü kilitle — kalıtımı kes; SYSTEM (S-1-5-18) ve Administrators
-; (S-1-5-32-544) tam yetki, Users (S-1-5-32-545) yalnızca okuma/çalıştırma.
-; Users'ın okuma hakkı ŞART: yükseltilmemiş tray planları ve logları buradan okur.
-; SID kullanılır (yerel ayardan bağımsız). Bu satır v0.99.91'de Users'ı tamamen
-; silen kilidi de onarır (yükseltmede yeniden uygulanır).
-; Önce sahipliği Administrators'a al: önceki sürümlerde başka hesapça oluşturulmuş
-; ya da ACL'i bozulmuş dosyalarda icacls WRITE_DAC alamayıp atlayabiliyor (/C).
-Filename: "takeown.exe"; Parameters: "/F ""{commonappdata}\KoruMsSqlYedek"" /A /R /D Y"; StatusMsg: "Veri dizini sahipliği alınıyor..."; Flags: runhidden waituntilterminated
-; /reset: ağaçtaki her öğenin açık girdilerini (elle eklenenler, Deny'lar, önceki
-; sürümlerin kilitleri) siler ve kalıtımı açar — sonraki satırlar temiz zemine yazar.
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek"" /reset /T /C /Q"; StatusMsg: "Veri dizini izinleri sıfırlanıyor..."; Flags: runhidden waituntilterminated
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek"" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F *S-1-5-32-545:(OI)(CI)RX /T /C /Q"; StatusMsg: "Veri dizini izinleri ayarlanıyor..."; Flags: runhidden waituntilterminated
-; Tray'in yazdığı dizinlere Users için Modify ver: plan/ayar dosyaları (tray
-; yükseltilmeden oluşturur/düzenler) ve çalışma çıktıları (log, durum, geçmiş).
-; Bu satırlar v0.99.92'nin Plans/Config'i salt okunur bırakan kurulumunu da onarır.
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Plans"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Config"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Logs"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\UploadState"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\History"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\WebView2"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
-; Updates: doğrulanmış installer'lar ve restart bayrağı — Users'ın işi yok.
-; (Servis de açılışta aynı düzeyi uygular; burada yapmak kurulumu tutarlı kılar.)
-Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Updates"" /remove *S-1-5-32-545 /T /C /Q"; Flags: runhidden waituntilterminated
+; Veri dizini izinleri: {app}\Data köküne [Dirs] ile Users:Modify verildi; kopyalanan
+; ve sonradan oluşturulan her dosya bunu kalıtımla alır. Burada yalnızca Updates
+; kilitlenir: kalıtım kesilir, SYSTEM (S-1-5-18) + Administrators (S-1-5-32-544).
+; SID kullanılır (yerel ayardan bağımsız).
+Filename: "icacls.exe"; Parameters: """{app}\Data\Updates"" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F /C /Q"; Flags: runhidden waituntilterminated
 ; v0.99.91'den kalan ONLOGON zamanlanmış görevi kaldır — tray artık asInvoker
 ; çalıştığı için başlangıç yeniden HKCU\Run ile yapılır (bkz. [Registry]).
 Filename: "schtasks.exe"; Parameters: "/Delete /TN ""KoruMsSqlYedek Tray"" /F"; Flags: runhidden waituntilterminated
@@ -255,6 +237,51 @@ begin
   // Self-contained deployment: .NET runtime uygulama içinde gömülüdür.
   // Ayrı runtime kurulumu gerekmez.
   DotNetNeeded := False;
+end;
+
+// Eski %ProgramData%\KoruMsSqlYedek verilerini {app}\Data altına kopyalar (v0.99.95 geçişi).
+// [Dirs] AfterInstall'dan çağrılır: Data dizini ve Users:Modify izni hazırdır,
+// [Files] / [Run] henüz çalışmamıştır (servis ve tray başlamadan veri yerinde olur).
+//   1) İZİN ONARIMI ŞART: önceki sürümlerin ACL kilitleri yüzünden yönetici bile
+//      okuyamayabiliyor; takeown ile sahiplik, icacls ile Administrators:F verilir.
+//      (/D harfi arayüz diline bağlı: İngilizce Y, Türkçe E — ikisi de denenir.)
+//   2) robocopy /B — backup semantiği, ACL'i hâlâ bozuk dosyaları da okur.
+//      /XC /XN /XO — hedefte zaten var olan dosyalara dokunmaz (yeniden kurulum güvenli).
+//   3) Kopyalanan ağaca Users:Modify açıkça yazılır; kaynaktan taşınan açık girdiler
+//      değil, hedef şeması geçerli olur.
+// Eski dizin silinmez; kullanıcı doğruladıktan sonra elle kaldırabilir.
+procedure MigrateLegacyProgramData();
+var
+  LegacyDir, DataDir: String;
+  ResultCode: Integer;
+begin
+  LegacyDir := ExpandConstant('{commonappdata}\KoruMsSqlYedek');
+  DataDir := ExpandConstant('{app}\Data');
+
+  if not DirExists(LegacyDir) then
+  begin
+    Log('Eski ProgramData veri dizini yok, gecis atlaniyor: ' + LegacyDir);
+    Exit;
+  end;
+
+  Log('Eski veri dizini bulundu, izinler onariliyor: ' + LegacyDir);
+  Exec(ExpandConstant('{sys}\takeown.exe'), '/F "' + LegacyDir + '" /A /R /D Y', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Log('takeown (/D Y) cikis kodu: ' + IntToStr(ResultCode));
+  Exec(ExpandConstant('{sys}\takeown.exe'), '/F "' + LegacyDir + '" /A /R /D E', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Log('takeown (/D E) cikis kodu: ' + IntToStr(ResultCode));
+  Exec(ExpandConstant('{sys}\icacls.exe'), '"' + LegacyDir + '" /grant *S-1-5-32-544:(OI)(CI)F /T /C /Q', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Log('icacls (Administrators:F) cikis kodu: ' + IntToStr(ResultCode));
+
+  Log('Veriler kopyalaniyor: ' + LegacyDir + ' -> ' + DataDir);
+  Exec(ExpandConstant('{sys}\robocopy.exe'), '"' + LegacyDir + '" "' + DataDir + '" /E /B /XC /XN /XO /R:1 /W:1 /NP /NFL /NDL', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  // robocopy: 0-7 basari (bit maskesi), >= 8 hata
+  if ResultCode >= 8 then
+    Log('UYARI: robocopy hata bildirdi (kod ' + IntToStr(ResultCode) + '); bazi dosyalar kopyalanamamis olabilir.')
+  else
+    Log('robocopy tamamlandi (kod ' + IntToStr(ResultCode) + ').');
+
+  Exec(ExpandConstant('{sys}\icacls.exe'), '"' + DataDir + '" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Log('Data izinleri (Users:Modify) uygulandi, cikis kodu: ' + IntToStr(ResultCode));
 end;
 
 // Dosyalar kopyalandıktan sonra, asıl kurulum öncesi .NET Runtime kur

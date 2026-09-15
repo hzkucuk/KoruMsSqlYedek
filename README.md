@@ -1,6 +1,6 @@
 # KoruMsSqlYedek
 
-![Version](https://img.shields.io/badge/version-0.99.94-blue)
+![Version](https://img.shields.io/badge/version-0.99.95-blue)
 
 **SQL Server Yedekleme & Bulut Senkronizasyon Sistemi**
 
@@ -52,7 +52,7 @@ KoruMsSqlYedek.sln
 └── KoruMsSqlYedek.Tests      # Unit testler (MSTest)
 ```
 
-**Veri yolu:** Tüm paylaşılan veriler (planlar, ayarlar, upload state, loglar) `%ProgramData%\KoruMsSqlYedek\` altında saklanır. Bu sayede hem Tray uygulaması (kullanıcı bağlamı) hem Windows Service (LocalSystem) aynı verilere erişir.
+**Veri yolu:** Tüm veriler (planlar, ayarlar, loglar, upload state, geçmiş, güncellemeler) kurulum dizininin altındaki tek klasörde saklanır: `C:\Program Files\Koru MsSql Yedek\Data\`. Hem Tray uygulaması (kullanıcı bağlamı) hem Windows Service (LocalSystem) aynı klasörü kullanır; installer `Data` köküne Users:Modify verir. v0.99.94 ve öncesindeki `%ProgramData%\KoruMsSqlYedek\` verileri kurulumda otomatik kopyalanır.
 
 ---
 

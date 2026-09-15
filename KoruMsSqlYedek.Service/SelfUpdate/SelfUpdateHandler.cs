@@ -10,7 +10,7 @@ namespace KoruMsSqlYedek.Service.SelfUpdate
     /// <summary>
     /// Self-update sonrası tray uygulamasının yeniden başlatılmasını koordine eder.
     /// Restart flag dosyası ile installer → servis arası iletişim sağlar.
-    /// Flag dosyası: %ProgramData%\KoruMsSqlYedek\Updates\pending_restart.flag
+    /// Flag dosyası: {Kurulum}\Data\Updates\pending_restart.flag
     /// (Updates dizini yalnızca SYSTEM + Administrators erişimlidir.)
     /// GÜVENLİK: Flag yalnızca bir işaretçidir — içeriğine asla güvenilmez.
     /// Başlatılacak tray exe yolu her zaman kurulum düzeninden hesaplanır

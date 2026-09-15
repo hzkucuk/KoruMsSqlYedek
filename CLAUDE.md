@@ -58,7 +58,7 @@ KoruMsSqlYedek.Tests    → MSTest + FluentAssertions + Moq
 - Engine providers implement `ICloudProvider` interface, created via `CloudProviderFactory`
 - `BackupJobExecutor` orchestrates the full pipeline: SQL backup → compress → upload → retention → notify
 - `CloudUploadOrchestrator` handles multi-target upload with retry and recovery
-- Plans stored as JSON in `%ProgramData%\KoruMsSqlYedek\Plans\`
+- All data (Plans, Config, Logs, UploadState, History, Updates) lives in `{InstallDir}\Data\` (e.g. `C:\Program Files\Koru MsSql Yedek\Data\`); `PathHelper` derives the root from the running exe (Service exe is one level down). `%ProgramData%\KoruMsSqlYedek` is legacy (≤ v0.99.94) — the installer copies it into `Data` after repairing its ACL. Never re-introduce tree-wide ACL rewrites; only `Data` root gets Users:Modify and `Updates` is locked.
 - Quartz.NET cron scheduling via `QuartzSchedulerService`
 
 ## Version Management

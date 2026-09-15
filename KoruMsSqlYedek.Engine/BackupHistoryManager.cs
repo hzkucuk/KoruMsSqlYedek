@@ -18,7 +18,7 @@ namespace KoruMsSqlYedek.Engine
     public class BackupHistoryManager : IBackupHistoryManager
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<BackupHistoryManager>();
-        private static readonly string DefaultHistoryDirectory = Path.Combine(PathHelper.AppDataDirectory, "History");
+        private static readonly string DefaultHistoryDirectory = PathHelper.HistoryDirectory;
         private static readonly object FileLock = new object();
 
         private readonly string _historyDirectory;

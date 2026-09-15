@@ -1,21 +1,38 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace KoruMsSqlYedek.Core.Helpers
 {
     /// <summary>
     /// Uygulama dizin yolları yardımcı sınıfı.
-    /// Paylaşılan veriler (planlar, ayarlar, upload state) %ProgramData% altında tutulur
-    /// böylece hem Tray (kullanıcı) hem Windows Service (LocalSystem) aynı verilere erişir.
-    /// Log dosyaları da ortak dizinde saklanır.
+    /// Tüm veriler (planlar, ayarlar, loglar, upload state, geçmiş, güncellemeler)
+    /// kurulum dizininin altındaki tek bir <c>Data</c> klasöründe tutulur:
+    /// <c>{Kurulum}\Data\</c>. Tray <c>{Kurulum}\</c>, servis <c>{Kurulum}\Service\</c>
+    /// altından çalıştığı için kök, çalışan exe'nin konumundan türetilir.
     /// </summary>
     public static class PathHelper
     {
+        /// <summary>Veri klasörünün adı (kurulum dizininin altında).</summary>
+        public const string DataFolderName = "Data";
+
         /// <summary>
-        /// Ortak uygulama verileri kök dizini: %ProgramData%\KoruMsSqlYedek\
+        /// Kurulum kök dizini. Servis exe'si <c>{Kurulum}\Service\</c> altında
+        /// olduğundan, dizin adı "Service" ise bir üst dizine çıkılır.
+        /// </summary>
+        public static string InstallRoot { get; } = ResolveInstallRoot();
+
+        /// <summary>
+        /// Uygulama verileri kök dizini: <c>{Kurulum}\Data\</c>
         /// Hem Tray hem Service tarafından erişilir.
         /// </summary>
-        private static readonly string AppDataRoot = Path.Combine(
+        private static readonly string AppDataRoot = Path.Combine(InstallRoot, DataFolderName);
+
+        /// <summary>
+        /// Eski konum: %ProgramData%\KoruMsSqlYedek (v0.76.0 – v0.99.94).
+        /// Installer kurulumda buradaki verileri <c>Data</c> altına kopyalar;
+        /// <see cref="MigrateProgramDataToInstallDir"/> çalışma zamanı yedeğidir.
+        /// </summary>
+        public static string LegacyProgramDataRoot { get; } = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "KoruMsSqlYedek");
 
@@ -32,19 +49,37 @@ namespace KoruMsSqlYedek.Core.Helpers
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "MikroSqlDbYedek");
 
-        /// <summary>Plan JSON dosyaları dizini: %ProgramData%\KoruMsSqlYedek\Plans\</summary>
+        private static string ResolveInstallRoot()
+        {
+            string baseDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(Path.GetFileName(baseDir), "Service", StringComparison.OrdinalIgnoreCase))
+            {
+                string parent = Path.GetDirectoryName(baseDir);
+                if (!string.IsNullOrEmpty(parent))
+                    return parent;
+            }
+            return baseDir;
+        }
+
+        /// <summary>Plan JSON dosyaları dizini: {Kurulum}\Data\Plans\</summary>
         public static string PlansDirectory => Path.Combine(AppDataRoot, "Plans");
 
-        /// <summary>Log dosyaları dizini: %ProgramData%\KoruMsSqlYedek\Logs\</summary>
+        /// <summary>Log dosyaları dizini: {Kurulum}\Data\Logs\</summary>
         public static string LogsDirectory => Path.Combine(AppDataRoot, "Logs");
 
-        /// <summary>Genel ayarlar dizini: %ProgramData%\KoruMsSqlYedek\Config\</summary>
+        /// <summary>Genel ayarlar dizini: {Kurulum}\Data\Config\</summary>
         public static string ConfigDirectory => Path.Combine(AppDataRoot, "Config");
 
-        /// <summary>Yarıda kalan upload durumları: %ProgramData%\KoruMsSqlYedek\UploadState\</summary>
+        /// <summary>Yarıda kalan upload durumları: {Kurulum}\Data\UploadState\</summary>
         public static string UploadStateDirectory => Path.Combine(AppDataRoot, "UploadState");
 
-        /// <summary>Uygulama verileri kök dizini: %ProgramData%\KoruMsSqlYedek\</summary>
+        /// <summary>Yedek geçmişi dizini: {Kurulum}\Data\History\</summary>
+        public static string HistoryDirectory => Path.Combine(AppDataRoot, "History");
+
+        /// <summary>Self-update installer'ları ve restart bayrağı: {Kurulum}\Data\Updates\</summary>
+        public static string UpdatesDirectory => Path.Combine(AppDataRoot, "Updates");
+
+        /// <summary>Uygulama verileri kök dizini: {Kurulum}\Data\</summary>
         public static string AppDataDirectory => AppDataRoot;
 
         /// <summary>
@@ -56,6 +91,63 @@ namespace KoruMsSqlYedek.Core.Helpers
             Directory.CreateDirectory(LogsDirectory);
             Directory.CreateDirectory(ConfigDirectory);
             Directory.CreateDirectory(UploadStateDirectory);
+            Directory.CreateDirectory(HistoryDirectory);
+        }
+
+        /// <summary>
+        /// Eski %ProgramData%\KoruMsSqlYedek konumundaki verileri <c>{Kurulum}\Data</c>
+        /// altına kopyalar. Asıl kopyalama installer tarafından yapılır; bu metot
+        /// installer adımı atlanmışsa (elle kurulum, eski installer) çalışma zamanı yedeğidir.
+        /// Yeni konumda zaten plan varsa hiçbir şey yapmaz; var olan dosyaların üzerine yazmaz.
+        /// </summary>
+        /// <returns>En az bir dosya kopyalandıysa true.</returns>
+        public static bool MigrateProgramDataToInstallDir()
+        {
+            if (!Directory.Exists(LegacyProgramDataRoot))
+                return false;
+
+            if (string.Equals(
+                    Path.GetFullPath(LegacyProgramDataRoot).TrimEnd(Path.DirectorySeparatorChar),
+                    Path.GetFullPath(AppDataRoot).TrimEnd(Path.DirectorySeparatorChar),
+                    StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (Directory.Exists(PlansDirectory) && Directory.GetFiles(PlansDirectory, "*.json").Length > 0)
+                return false;
+
+            EnsureDirectoriesExist();
+            return CopyTree(LegacyProgramDataRoot, AppDataRoot);
+        }
+
+        /// <summary>
+        /// Kaynak ağacı hedefe kopyalar; var olan dosyaların üzerine yazmaz.
+        /// Tek tek dosya hataları (erişim, kilit) yutulur — kalan dosyalar kopyalanmaya devam eder.
+        /// </summary>
+        private static bool CopyTree(string sourceRoot, string targetRoot)
+        {
+            bool copiedAny = false;
+
+            foreach (string sourceDir in Directory.GetDirectories(sourceRoot, "*", SearchOption.AllDirectories))
+            {
+                try { Directory.CreateDirectory(Path.Combine(targetRoot, Path.GetRelativePath(sourceRoot, sourceDir))); }
+                catch { /* alt dizin oluşturulamazsa dosyaları da atlanır */ }
+            }
+
+            foreach (string sourceFile in Directory.GetFiles(sourceRoot, "*", SearchOption.AllDirectories))
+            {
+                string targetFile = Path.Combine(targetRoot, Path.GetRelativePath(sourceRoot, sourceFile));
+                if (File.Exists(targetFile))
+                    continue;
+
+                try
+                {
+                    File.Copy(sourceFile, targetFile);
+                    copiedAny = true;
+                }
+                catch { /* erişilemeyen/kilitli dosya — atla */ }
+            }
+
+            return copiedAny;
         }
 
         /// <summary>
@@ -85,7 +177,7 @@ namespace KoruMsSqlYedek.Core.Helpers
         }
 
         /// <summary>
-        /// Eski kullanıcı %APPDATA% konumundaki verileri %ProgramData% altına kopyalar.
+        /// Eski kullanıcı %APPDATA% konumundaki verileri ortak veri dizinine kopyalar.
         /// DPAPI şifre migrasyonu için <see cref="DataMigrationHelper"/> kullanılır;
         /// bu metot sadece dosya kopyalama yapar.
         /// Yalnızca eski konum mevcutsa ve yeni konumda plan yoksa çalışır.

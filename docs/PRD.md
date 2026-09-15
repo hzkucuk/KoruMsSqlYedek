@@ -54,7 +54,7 @@
                     │  (MSTest, 56+)     │
                     └───────────────────┘
 
-Veri Dizini: %ProgramData%\KoruMsSqlYedek\
+Veri Dizini: {Kurulum}\Data\ (C:\Program Files\Koru MsSql Yedek\Data\)
 (Planlar, ayarlar, upload state, loglar — Tray & Service ortak erişim)
 ```
 

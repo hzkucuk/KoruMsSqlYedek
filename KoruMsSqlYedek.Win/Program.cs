@@ -24,8 +24,11 @@ namespace KoruMsSqlYedek.Win
         [STAThread]
         static void Main()
         {
-            // Dizinleri oluştur (%ProgramData%\KoruMsSqlYedek\...)
+            // Dizinleri oluştur ({Kurulum}\Data\...)
             PathHelper.EnsureDirectoriesExist();
+
+            // Eski %ProgramData% verilerini Data altına al (installer atlamışsa; v0.99.95+)
+            try { PathHelper.MigrateProgramDataToInstallDir(); } catch { /* loglama henüz hazır değil */ }
 
             // Serilog yapılandırması (dizinler hazır olduktan sonra)
             ConfigureLogging();
@@ -33,7 +36,7 @@ namespace KoruMsSqlYedek.Win
             // Eski AppData klasöründen (MikroSqlDbYedek → KoruMsSqlYedek) migrasyon
             PathHelper.MigrateLegacyAppName();
 
-            // %APPDATA% → %ProgramData% migrasyon (v0.76.0+)
+            // %APPDATA% → ortak veri dizini migrasyon (v0.76.0+)
             // Dosyaları kopyalar + DPAPI şifrelerini LocalMachine scope'a dönüştürür
             DataMigrationHelper.MigrateIfNeeded();
 

@@ -9,11 +9,12 @@ using KoruMsSqlYedek.Core.Helpers;
 namespace KoruMsSqlYedek.Service.Security
 {
     /// <summary>
-    /// %ProgramData%\KoruMsSqlYedek altındaki dizinler için kısıtlı ACL yardımcıları.
-    /// Kalıtım kapatılır; SYSTEM ve BUILTIN\Administrators tam yetki alır, Users ise
-    /// dizin işlevine göre Modify/ReadOnly/None alır. Böylece kurulum programı ACL
-    /// uygulamamış olsa bile (manuel/taşınabilir kurulum) güncelleme dizini sıradan
-    /// kullanıcılara kapalı kalır.
+    /// {Kurulum}\Data altındaki dizinler için ACL yardımcıları.
+    /// v0.99.95'ten itibaren ağacın tamamına dokunulmaz: veri kökü installer
+    /// tarafından Users:Modify ile oluşturulur, servis yalnızca bu girdinin
+    /// yerinde olduğunu doğrular (elle kurulum için) ve <c>Updates</c> dizinini
+    /// SYSTEM + Administrators'a kilitler. Kalıtımı kesip her alt dizine ayrı
+    /// ACL yazan eski yaklaşım (v0.99.91–v0.99.94) tray'i defalarca kilitledi.
     /// </summary>
     [SupportedOSPlatform("windows")]
     internal static class DirectoryAcl
@@ -21,10 +22,10 @@ namespace KoruMsSqlYedek.Service.Security
         private static readonly ILogger Log = Serilog.Log.ForContext(typeof(DirectoryAcl));
 
         /// <summary>Self-update installer'larının ve restart flag'inin tutulduğu dizin.</summary>
-        public static string UpdatesDirectory => Path.Combine(PathHelper.AppDataDirectory, "Updates");
+        public static string UpdatesDirectory => PathHelper.UpdatesDirectory;
 
         /// <summary>Yedek geçmişi dizini (BackupHistoryManager varsayılanı ile aynı).</summary>
-        public static string HistoryDirectory => Path.Combine(PathHelper.AppDataDirectory, "History");
+        public static string HistoryDirectory => PathHelper.HistoryDirectory;
 
         /// <summary>Users grubuna verilecek erişim düzeyi.</summary>
         public enum UsersAccess
@@ -39,33 +40,25 @@ namespace KoruMsSqlYedek.Service.Security
             Modify
         }
 
+        private const InheritanceFlags Inherit = InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
+
         /// <summary>
         /// SYSTEM + Administrators FullControl, kalıtım kapalı; Users için
         /// <paramref name="usersAccess"/> düzeyinde ACE eklenir.
+        /// Yalnızca <c>Updates</c> gibi tek başına kilitlenecek dizinler için kullanılır.
         /// </summary>
-        /// <remarks>
-        /// Users'a okuma hakkı vermek ŞARTTIR: tray uygulaması yükseltilmeden
-        /// (asInvoker) çalışır ve planları/logları doğrudan diskten okur. v0.99.91'de
-        /// Users tamamen kaldırılmış, bu yüzden sıradan kullanıcıda planlar hiç
-        /// görünmemişti. v0.99.92'de Plans/Config salt okunur yapılmıştı; bu da
-        /// yükseltilmemiş tray'de plan oluşturmayı/düzenlemeyi ve ayar kaydetmeyi
-        /// engelledi (UAC filtreli token'da Administrators etkin değildir). v0.99.93'ten
-        /// itibaren Plans/Config yeniden Modify; yalnızca Updates Users'a kapalı kalır.
-        /// </remarks>
         public static DirectorySecurity CreateSecurity(UsersAccess usersAccess)
         {
             var security = new DirectorySecurity();
             security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
 
-            const InheritanceFlags inherit = InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
-
             security.AddAccessRule(new FileSystemAccessRule(
                 new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null),
-                FileSystemRights.FullControl, inherit, PropagationFlags.None, AccessControlType.Allow));
+                FileSystemRights.FullControl, Inherit, PropagationFlags.None, AccessControlType.Allow));
 
             security.AddAccessRule(new FileSystemAccessRule(
                 new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null),
-                FileSystemRights.FullControl, inherit, PropagationFlags.None, AccessControlType.Allow));
+                FileSystemRights.FullControl, Inherit, PropagationFlags.None, AccessControlType.Allow));
 
             if (usersAccess != UsersAccess.None)
             {
@@ -75,7 +68,7 @@ namespace KoruMsSqlYedek.Service.Security
 
                 security.AddAccessRule(new FileSystemAccessRule(
                     new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
-                    rights, inherit, PropagationFlags.None, AccessControlType.Allow));
+                    rights, Inherit, PropagationFlags.None, AccessControlType.Allow));
             }
 
             return security;
@@ -102,48 +95,62 @@ namespace KoruMsSqlYedek.Service.Security
         }
 
         /// <summary>
-        /// Servis başlangıcında uygulama veri dizinlerini doğru ACL ile oluşturur / düzeltir.
-        /// Hatalar loglanır; servis başlangıcını engellemez.
+        /// Veri köküne (<c>{Kurulum}\Data</c>) Users:Modify girdisini EKLER — mevcut
+        /// girdilere ve kalıtıma dokunmaz. Installer bunu zaten yapar; elle/taşınabilir
+        /// kurulumda Program Files altındaki varsayılan (Users: salt okunur) yükseltilmemiş
+        /// tray'in plan yazmasını engellerdi.
+        /// </summary>
+        public static void EnsureDataRootWritableByUsers()
+        {
+            string root = PathHelper.AppDataDirectory;
+            var dir = new DirectoryInfo(root);
+            dir.Create();
+
+            var security = dir.GetAccessControl();
+            var users = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+
+            foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
+            {
+                if (rule.IdentityReference == users
+                    && rule.AccessControlType == AccessControlType.Allow
+                    && (rule.FileSystemRights & FileSystemRights.Modify) == FileSystemRights.Modify
+                    && (rule.InheritanceFlags & Inherit) == Inherit)
+                {
+                    Log.Debug("Veri kökünde Users:Modify zaten var: {Path}", root);
+                    return;
+                }
+            }
+
+            security.AddAccessRule(new FileSystemAccessRule(
+                users, FileSystemRights.Modify, Inherit, PropagationFlags.None, AccessControlType.Allow));
+            dir.SetAccessControl(security);
+            Log.Information("Veri köküne Users:Modify eklendi: {Path}", root);
+        }
+
+        /// <summary>
+        /// Servis başlangıcında veri dizini ACL'ini doğrular: kök Users için yazılabilir,
+        /// <c>Updates</c> yalnızca SYSTEM + Administrators. Hatalar loglanır; servis
+        /// başlangıcını engellemez.
         /// </summary>
         public static void EnsureAppDataDirectoriesRestricted()
         {
-            // Plan ve ayar dosyaları: yükseltilmemiş tray bunları oluşturur/düzenler,
-            // bu yüzden Users Modify almalı. v0.99.92'deki salt okunur düzey UAC
-            // filtreli token'lı yöneticiyi de kilitliyordu (plan oluşturulamıyordu).
-            (string Path, UsersAccess Access)[] directories =
-            {
-                (PathHelper.PlansDirectory, UsersAccess.Modify),
-                (PathHelper.ConfigDirectory, UsersAccess.Modify),
-
-                // Doğrulanmış installer'ların indiği yer — Users'ın işi yok.
-                (UpdatesDirectory, UsersAccess.None),
-
-                // Çalışma çıktıları: tray de yedek çalıştırıp log yazabilmeli.
-                (PathHelper.LogsDirectory, UsersAccess.Modify),
-                (PathHelper.UploadStateDirectory, UsersAccess.Modify),
-                (HistoryDirectory, UsersAccess.Modify)
-            };
-
-            // Kök dizin: Users okuyabilmeli ki alt dizinlere erişebilsin.
             try
             {
-                EnsureDirectory(PathHelper.AppDataDirectory, UsersAccess.ReadOnly);
+                EnsureDataRootWritableByUsers();
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Kök veri dizini ACL'i uygulanamadı: {Path}", PathHelper.AppDataDirectory);
+                Log.Warning(ex, "Veri kökü ACL'i doğrulanamadı: {Path}", PathHelper.AppDataDirectory);
             }
 
-            foreach (var (path, access) in directories)
+            // Doğrulanmış installer'ların indiği yer — Users'ın işi yok.
+            try
             {
-                try
-                {
-                    EnsureDirectory(path, access);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Dizin ACL'i uygulanamadı: {Path}", path);
-                }
+                EnsureDirectory(UpdatesDirectory, UsersAccess.None);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Updates dizini ACL'i uygulanamadı: {Path}", UpdatesDirectory);
             }
         }
     }

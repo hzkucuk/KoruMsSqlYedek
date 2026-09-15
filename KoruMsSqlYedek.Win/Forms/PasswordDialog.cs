@@ -114,8 +114,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 string.IsNullOrEmpty(_settings.SecurityAnswerHash))
             {
                 string configPath = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                    "KoruMsSqlYedek", "Config", "appsettings.json");
+                    PathHelper.ConfigDirectory, "appsettings.json");
 
                 var result = ModernMessageBox.Show(
                     "Güvenlik sorusu tanımlanmamış. Şifre sıfırlanamaz.\n\n" +

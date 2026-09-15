@@ -15,8 +15,12 @@ namespace KoruMsSqlYedek.Service
     {
         static async Task Main(string[] args)
         {
-            // Uygulama dizinlerini oluştur
+            // Uygulama dizinlerini oluştur ({Kurulum}\Data\...)
             PathHelper.EnsureDirectoriesExist();
+
+            // Eski %ProgramData% verilerini Data altına al (installer atlamışsa; v0.99.95+).
+            // Servis LocalSystem olduğundan ACL'i bozuk eski dosyaları da okuyabilir.
+            try { PathHelper.MigrateProgramDataToInstallDir(); } catch { /* loglama henüz hazır değil */ }
 
             // Serilog yapılandırması (bootstrap logger)
             Log.Logger = new LoggerConfiguration()
@@ -29,10 +33,9 @@ namespace KoruMsSqlYedek.Service
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
 
-            // Veri dizinlerini (Plans, Logs, Config, UploadState, History, Updates) yalnızca
-            // SYSTEM + Administrators erişebilecek şekilde kilitle — manuel/taşınabilir kurulumda
-            // installer ACL uygulamamış olsa bile sıradan kullanıcılar plan/log/güncelleme
-            // dosyalarını değiştiremesin.
+            // Veri kökü Users için yazılabilir olsun (tray asInvoker çalışır); yalnızca
+            // Updates dizini SYSTEM + Administrators ile sınırlı kalsın. Ağacın geri
+            // kalanının ACL'ine dokunulmaz.
             DirectoryAcl.EnsureAppDataDirectoriesRestricted();
 
             try
