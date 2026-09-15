@@ -174,6 +174,9 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 ; Users'ın okuma hakkı ŞART: yükseltilmemiş tray planları ve logları buradan okur.
 ; SID kullanılır (yerel ayardan bağımsız). Bu satır v0.99.91'de Users'ı tamamen
 ; silen kilidi de onarır (yükseltmede yeniden uygulanır).
+; Önce sahipliği Administrators'a al: önceki sürümlerde başka hesapça oluşturulmuş
+; ya da ACL'i bozulmuş dosyalarda icacls WRITE_DAC alamayıp atlayabiliyor (/C).
+Filename: "takeown.exe"; Parameters: "/F ""{commonappdata}\KoruMsSqlYedek"" /A /R /D Y"; StatusMsg: "Veri dizini sahipliği alınıyor..."; Flags: runhidden waituntilterminated
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek"" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F *S-1-5-32-545:(OI)(CI)RX /T /C /Q"; StatusMsg: "Veri dizini izinleri ayarlanıyor..."; Flags: runhidden waituntilterminated
 ; Tray'in yazdığı dizinlere Users için Modify ver: plan/ayar dosyaları (tray
 ; yükseltilmeden oluşturur/düzenler) ve çalışma çıktıları (log, durum, geçmiş).
@@ -184,6 +187,9 @@ Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Logs"" /gr
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\UploadState"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\History"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\WebView2"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
+; Updates: doğrulanmış installer'lar ve restart bayrağı — Users'ın işi yok.
+; (Servis de açılışta aynı düzeyi uygular; burada yapmak kurulumu tutarlı kılar.)
+Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Updates"" /remove *S-1-5-32-545 /T /C /Q"; Flags: runhidden waituntilterminated
 ; v0.99.91'den kalan ONLOGON zamanlanmış görevi kaldır — tray artık asInvoker
 ; çalıştığı için başlangıç yeniden HKCU\Run ile yapılır (bkz. [Registry]).
 Filename: "schtasks.exe"; Parameters: "/Delete /TN ""KoruMsSqlYedek Tray"" /F"; Flags: runhidden waituntilterminated

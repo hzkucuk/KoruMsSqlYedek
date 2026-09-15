@@ -13,6 +13,11 @@
   `Config` dizinleri Users için `Modify` düzeyine döndü (v0.99.90 davranışı).
   Bu sürümün installer'ı iki dizine `icacls` ile Modify uyguladığı için
   v0.99.92 kurulumlarındaki izinler kendiliğinden onarılır.
+- **Installer tüm veri ağacının izinlerini baştan yazıyor.** ACL uygulamadan
+  önce `takeown /A /R` ile sahiplik Administrators'a alınır; böylece başka
+  hesapça oluşturulmuş ya da ACL'i bozulmuş dosyalar da onarılır. `Updates`
+  dizininden Users artık kurulumda kaldırılıyor (önceden yalnızca servis açılışta
+  yapıyordu).
 - **Servis artık elle yapılan düzeltmeyi geri almıyor.** `DirectoryAcl`
   başlangıçta `Plans`/`Config` için Modify uyguluyor; önceki sürümde her servis
   yeniden başlatmasında salt okunur düzeye geri çekiyordu.
@@ -50,6 +55,7 @@ SHA-256 doğrulaması, komut bazlı pipe yetkilendirmesi) v0.99.91'deki gibi kor
 - `Deployment\InnoSetup\license.txt` — Yeni §2 Sistem Güvenliği ve Erişim Yönetimi (eski §2/§3 → §3/§4)
 - `Deployment\InnoSetup\disclaimer.txt` — Yönetici Yetkisi maddesine erişim sorumluluğu uyarısı
 - `KoruMsSqlYedek.Win\Properties\Resources.resx` / `Resources.tr-TR.resx` — `PlanEdit_NeedsAdmin`, `Settings_NeedsAdmin`
+- `Deployment\Repair-DataDirAcl.ps1` — Yeni: veri dizini izinlerini elle onaran script (`-WhatIf` destekler); installer çalıştırmadan v0.99.91/92 kurulumlarını düzeltmek için
 - Sürüm 0.99.93 (Win csproj, AssemblyInfo, Service csproj, iss, README rozeti)
 
 ---
