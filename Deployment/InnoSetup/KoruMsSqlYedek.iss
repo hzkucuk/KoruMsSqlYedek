@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.93"
+  #define MyAppVersion "0.99.94"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -177,6 +177,9 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 ; Önce sahipliği Administrators'a al: önceki sürümlerde başka hesapça oluşturulmuş
 ; ya da ACL'i bozulmuş dosyalarda icacls WRITE_DAC alamayıp atlayabiliyor (/C).
 Filename: "takeown.exe"; Parameters: "/F ""{commonappdata}\KoruMsSqlYedek"" /A /R /D Y"; StatusMsg: "Veri dizini sahipliği alınıyor..."; Flags: runhidden waituntilterminated
+; /reset: ağaçtaki her öğenin açık girdilerini (elle eklenenler, Deny'lar, önceki
+; sürümlerin kilitleri) siler ve kalıtımı açar — sonraki satırlar temiz zemine yazar.
+Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek"" /reset /T /C /Q"; StatusMsg: "Veri dizini izinleri sıfırlanıyor..."; Flags: runhidden waituntilterminated
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek"" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F *S-1-5-32-545:(OI)(CI)RX /T /C /Q"; StatusMsg: "Veri dizini izinleri ayarlanıyor..."; Flags: runhidden waituntilterminated
 ; Tray'in yazdığı dizinlere Users için Modify ver: plan/ayar dosyaları (tray
 ; yükseltilmeden oluşturur/düzenler) ve çalışma çıktıları (log, durum, geçmiş).

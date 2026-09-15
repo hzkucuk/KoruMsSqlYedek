@@ -1,4 +1,33 @@
-﻿## [0.99.93] - 2026-09-15 — 🔧 Plans/Config Yeniden Yazılabilir: Plan Oluşturma Düzeltildi
+﻿## [0.99.94] - 2026-09-15 — 🔧 ACL Onarımı: `/reset` Tabanlı Script ve Installer Sertleştirmesi
+
+> v0.99.93 ile gelen `Repair-DataDirAcl.ps1`, bir sahada çalıştırıldıktan sonra
+> tray'in `History` dosyalarını okuyamadığı bildirildi (`UnauthorizedAccessException`).
+> `icacls /reset /T` + `Users:(OI)(CI)M` ile elle onarım işe yaradı; script ve
+> installer artık bu yöntemi kullanıyor.
+
+### Düzeltme
+
+- **`Repair-DataDirAcl.ps1` yeniden yazıldı.** Kalıtımı kesip girdileri tek tek
+  yazmak yerine `icacls /reset /T` ile ağaç ProgramData'nın varsayılan ACL'ine
+  döndürülüyor, ardından tüm ağaca `Users:Modify` veriliyor ve `Updates`
+  dizininde kalıtım kesilip Users kaldırılıyor. Yerel komut hataları
+  PowerShell 5.1'de betiği yarıda kesmiyor; çıkış kodu kontrol edilip
+  özetleniyor. `takeown /D` harfi arayüz diline bağlı olduğundan `Y` ve `E`
+  sırayla deneniyor, ikisi de olmazsa uyarıyla devam ediliyor. Kilitli bir
+  test ağacında doğrulandı: Users girdisi hiç olmayan dosyalar `Users:(M)` aldı.
+- **Installer önce `icacls /reset /T` çalıştırıyor.** Önceki sürümlerin
+  kilitleri, elle eklenmiş girdiler ve olası Deny kayıtları temizlendikten sonra
+  şema uygulanıyor; böylece yükseltme her kurulumdaki izinleri temiz zemine yazar.
+
+### Etkilenen Dosyalar
+
+- `Deployment\Repair-DataDirAcl.ps1` — `/reset` tabanlı onarım, PS 5.1 uyumlu hata yönetimi
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — `icacls /reset /T` adımı
+- Sürüm 0.99.94 (Win csproj, AssemblyInfo, Service csproj, iss, README rozeti)
+
+---
+
+## [0.99.93] - 2026-09-15 — 🔧 Plans/Config Yeniden Yazılabilir: Plan Oluşturma Düzeltildi
 
 > v0.99.92, `Plans` ve `Config` dizinlerini Users için **salt okunur** bırakmıştı.
 > Tray `asInvoker` çalıştığı için yönetici hesabı bile UAC filtreli token'la
