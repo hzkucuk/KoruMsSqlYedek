@@ -1,4 +1,60 @@
-﻿## [0.99.92] - 2026-09-06 — 🚑 Acil Düzeltme: v0.99.91 Yükseltilmemiş Kullanıcıyı Kilitliyordu
+﻿## [0.99.93] - 2026-09-15 — 🔧 Plans/Config Yeniden Yazılabilir: Plan Oluşturma Düzeltildi
+
+> v0.99.92, `Plans` ve `Config` dizinlerini Users için **salt okunur** bırakmıştı.
+> Tray `asInvoker` çalıştığı için yönetici hesabı bile UAC filtreli token'la
+> bu dizinlere yazamıyor; **yeni plan oluşturulamıyor, plan düzenlenemiyor ve
+> ayarlar kaydedilemiyordu**. Elle kalıtımı açmak da işe yaramıyordu: servis her
+> açılışta ACL'i yeniden kilitliyordu. Bu sürüm iki dizini yeniden yazılabilir
+> yapar ve bozulan kurulumları installer ile onarır.
+
+### Düzeltme — v0.99.92 gerilemesi
+
+- **Plan oluşturma/düzenleme ve ayar kaydetme yeniden çalışıyor.** `Plans` ve
+  `Config` dizinleri Users için `Modify` düzeyine döndü (v0.99.90 davranışı).
+  Bu sürümün installer'ı iki dizine `icacls` ile Modify uyguladığı için
+  v0.99.92 kurulumlarındaki izinler kendiliğinden onarılır.
+- **Servis artık elle yapılan düzeltmeyi geri almıyor.** `DirectoryAcl`
+  başlangıçta `Plans`/`Config` için Modify uyguluyor; önceki sürümde her servis
+  yeniden başlatmasında salt okunur düzeye geri çekiyordu.
+- **Yükseltme diyaloğu metni güncellendi.** `PlanEdit_NeedsAdmin` /
+  `Settings_NeedsAdmin` artık "yalnızca yöneticiler değiştirebilir" demiyor;
+  yazma izninin reddedildiğini ve yeniden kurulumun izinleri onardığını
+  açıklıyor. Diyalog yalnızca ACL'in dışarıdan kısıtlandığı durumlarda çıkar.
+
+### Değişen — izin şeması
+
+| Dizin | SYSTEM / Administrators | Users |
+|---|---|---|
+| `Plans`, `Config`, `Logs`, `UploadState`, `History`, `WebView2` | Tam yetki | **Değiştirme** |
+| `Updates` | Tam yetki | Erişim yok |
+
+Kabul edilen risk: sisteme oturum açabilen standart bir kullanıcı plan dosyasını
+düzenleyerek servisin (LocalSystem) yetkisiyle dosya kopyalatabilir. Bu, yazılımın
+kurulu olduğu sisteme kimlerin erişebileceğini yöneten kişinin sorumluluğundadır;
+lisans sözleşmesine bu yönde madde eklendi. Self-update zinciri (`Updates` dizini,
+SHA-256 doğrulaması, komut bazlı pipe yetkilendirmesi) v0.99.91'deki gibi korunuyor.
+
+### Lisans
+
+- **Lisans sözleşmesine "Sistem Güvenliği ve Erişim Yönetimi" maddesi eklendi**
+  (`license.txt` §2). Sistemde kimlerin oturum açabileceği, plan/ayar dosyalarına
+  kimlerin erişebileceği ve bu izinlerin kısıtlanması sistem yöneticisinin kararı
+  ve sorumluluğundadır; yetkisiz kullanıcı erişiminden doğan zararlardan
+  geliştirici sorumlu tutulamaz. `disclaimer.txt` "Yönetici Yetkisi" maddesine
+  aynı yönde kısa uyarı eklendi.
+
+### Etkilenen Dosyalar
+
+- `KoruMsSqlYedek.Service\Security\DirectoryAcl.cs` — Plans/Config → `UsersAccess.Modify`
+- `Deployment\InnoSetup\KoruMsSqlYedek.iss` — Plans/Config için `icacls` Modify satırları, açıklamalar
+- `Deployment\InnoSetup\license.txt` — Yeni §2 Sistem Güvenliği ve Erişim Yönetimi (eski §2/§3 → §3/§4)
+- `Deployment\InnoSetup\disclaimer.txt` — Yönetici Yetkisi maddesine erişim sorumluluğu uyarısı
+- `KoruMsSqlYedek.Win\Properties\Resources.resx` / `Resources.tr-TR.resx` — `PlanEdit_NeedsAdmin`, `Settings_NeedsAdmin`
+- Sürüm 0.99.93 (Win csproj, AssemblyInfo, Service csproj, iss, README rozeti)
+
+---
+
+## [0.99.92] - 2026-09-06 — 🚑 Acil Düzeltme: v0.99.91 Yükseltilmemiş Kullanıcıyı Kilitliyordu
 
 > **v0.99.91 kuran herkes bu sürüme geçmelidir.** v0.99.91, tray uygulamasının
 > yönetici olarak çalıştığını varsayan iki kilit getirmişti; yükseltilmemiş bir

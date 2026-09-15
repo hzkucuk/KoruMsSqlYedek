@@ -369,12 +369,12 @@ Language change requires application restart.</value></data>
   <data name="Restore_ConfirmTitle" xml:space="preserve"><value>Confirm Restore</value></data>
   <data name="Elevation_Title" xml:space="preserve"><value>Administrator Rights Required</value></data>
   <data name="Elevation_Failed" xml:space="preserve"><value>Could not restart as administrator: {0}</value></data>
-  <data name="PlanEdit_NeedsAdmin" xml:space="preserve"><value>Backup plans are stored in a protected folder that only administrators can modify, because the background service acts on these files.
+  <data name="PlanEdit_NeedsAdmin" xml:space="preserve"><value>The plan could not be saved: write access to the plan folder was denied.
 
-Viewing and monitoring work without administrator rights; only editing requires them.
+Normally this folder is writable by every user. Its permissions may have been restricted by a previous version or by the system administrator; reinstalling repairs them.
 
 Restart the application as administrator now?</value></data>
-  <data name="Settings_NeedsAdmin" xml:space="preserve"><value>Settings are stored in a protected folder that only administrators can modify.
+  <data name="Settings_NeedsAdmin" xml:space="preserve"><value>Settings could not be saved: write access to the settings folder was denied.
 
 Restart the application as administrator now?</value></data>
   <data name="Restore_SafetyBackupDir" xml:space="preserve"><value>Pre-restore safety backup directory: {0}</value></data>

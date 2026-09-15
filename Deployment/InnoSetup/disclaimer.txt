@@ -44,6 +44,9 @@ Bu yazılımı kurmadan önce lütfen aşağıdaki uyarıları dikkatle okuyun.
    Windows Service bileşeni, sistem düzeyinde çalışır ve kurulumu
    yönetici (Administrator) yetkisi gerektirir. Service, LocalSystem
    hesabı altında çalışarak VSS (Volume Shadow Copy) erişimi sağlar.
+   Plan ve ayar dosyaları sistemdeki tüm kullanıcılar tarafından
+   düzenlenebilir; bu dosyalara kimlerin erişebileceğini belirlemek
+   ve gerekirse kısıtlamak sistem yöneticisinin sorumluluğundadır.
 
 7. GÜNCELLEME BİLDİRİMİ
    Yazılım güncellemeleri, mevcut ayarlarınızı ve planlarınızı

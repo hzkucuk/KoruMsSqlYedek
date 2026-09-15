@@ -369,12 +369,12 @@ Dil değişikliği uygulamanın yeniden başlatılmasını gerektirir.</value></
   <data name="Restore_ConfirmTitle" xml:space="preserve"><value>Geri Yüklemeyi Onayla</value></data>
   <data name="Elevation_Title" xml:space="preserve"><value>Yönetici Hakkı Gerekli</value></data>
   <data name="Elevation_Failed" xml:space="preserve"><value>Yönetici olarak yeniden başlatılamadı: {0}</value></data>
-  <data name="PlanEdit_NeedsAdmin" xml:space="preserve"><value>Yedekleme planları korumalı bir klasörde saklanır ve yalnızca yöneticiler değiştirebilir; çünkü arka planda çalışan servis bu dosyalara göre iş yapar.
+  <data name="PlanEdit_NeedsAdmin" xml:space="preserve"><value>Plan kaydedilemedi: plan klasörüne yazma izni reddedildi.
 
-Görüntüleme ve izleme yönetici hakkı olmadan çalışır; yalnızca düzenleme yönetici ister.
+Bu klasör normalde tüm kullanıcılar tarafından yazılabilir. İzinler önceki bir sürüm ya da sistem yöneticisi tarafından kısıtlanmış olabilir; yeniden kurulum izinleri onarır.
 
 Uygulama şimdi yönetici olarak yeniden başlatılsın mı?</value></data>
-  <data name="Settings_NeedsAdmin" xml:space="preserve"><value>Ayarlar korumalı bir klasörde saklanır ve yalnızca yöneticiler değiştirebilir.
+  <data name="Settings_NeedsAdmin" xml:space="preserve"><value>Ayarlar kaydedilemedi: ayar klasörüne yazma izni reddedildi.
 
 Uygulama şimdi yönetici olarak yeniden başlatılsın mı?</value></data>
   <data name="Restore_SafetyBackupDir" xml:space="preserve"><value>Geri yükleme öncesi güvenlik yedeği dizini: {0}</value></data>

@@ -50,7 +50,32 @@ hizmetlerine senkronize etmek amacıyla kullanılmaktadır.
      yedeklerin doğruluğunu test etmekle yükümlüdür.
 
 
-2. ÜÇÜNCÜ TARAF BİLEŞENLER
+2. SİSTEM GÜVENLİĞİ VE ERİŞİM YÖNETİMİ
+----------------------------------------
+Yazılımın servis bileşeni LocalSystem hesabı altında çalışır ve
+yedekleme planlarında tanımlanan veritabanlarına, dosyalara ve
+dizinlere bu yetkiyle erişir. Plan ve ayar dosyaları, yükseltilmemiş
+oturumdan da düzenlenebilmesi için %ProgramData%\KoruMsSqlYedek
+altında Users grubuna yazma izniyle tutulur.
+
+  a) Yazılımın kurulu olduğu sistemde hangi Windows hesaplarının
+     oturum açabileceği, plan ve ayar dosyalarına kimlerin
+     erişebileceği ve bu izinlerin kısıtlanıp kısıtlanmayacağı
+     tamamen sistem yöneticisinin kararı ve sorumluluğundadır.
+  b) Sisteme erişimi olan bir kullanıcının yedekleme planlarını
+     değiştirerek servisin yetkisiyle veri okumasına veya
+     kopyalamasına yol açan her türlü sonuçtan sistemi yöneten
+     kişi ya da kurum sorumludur.
+  c) Paylaşımlı veya çok kullanıcılı sistemlerde plan ve ayar
+     dizinlerinin erişim izinlerini daraltmak, yazılımı yalnızca
+     yetkili hesaplarla kullanmak ve düzenli olarak denetlemek
+     sistem yöneticisinin yükümlülüğündedir.
+  d) Geliştirici, sistem erişim izinlerinin yanlış yapılandırılması
+     veya yetkisiz kullanıcı erişimi nedeniyle oluşan hiçbir
+     zarardan sorumlu tutulamaz.
+
+
+3. ÜÇÜNCÜ TARAF BİLEŞENLER
 ----------------------------
 Yazılım, açık kaynak üçüncü taraf kütüphaneler içerebilir. Bu
 kütüphaneler kendi lisans koşullarına tabidir. Üçüncü taraf
@@ -58,7 +83,7 @@ lisansları hakkında bilgi için yazılımın GitHub deposunu ziyaret edin:
 https://github.com/hzkucuk/KoruMsSqlYedek
 
 
-3. GARANTİ REDDİ (TÜRKÇE AÇIKLAMA)
+4. GARANTİ REDDİ (TÜRKÇE AÇIKLAMA)
 ------------------------------------
 YAZILIM "OLDUĞU GİBİ" ("AS IS") SUNULMAKTADIR. GELİŞTİRİCİ, YAZILIMIN
 BELİRLİ BİR AMACA UYGUNLUĞU, KESİNTİSİZ ÇALIŞACAĞI, HATASIZ OLDUĞU

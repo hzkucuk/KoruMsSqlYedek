@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.92"
+  #define MyAppVersion "0.99.93"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -145,11 +145,13 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Dirs]
 ; %ProgramData%\KoruMsSqlYedek — hem Tray hem Service tarafından erişilir.
-; GÜVENLİK (bkz. [Run] icacls): Users grubu tüm ağaçta OKUYABİLİR, böylece
-; yükseltilmemiş tray planları listeleyip logları görebilir. Servisin üzerinde
-; iş yaptığı dosyalar (Plans, Config, Updates) Users için SALT OKUNUR kalır —
-; düzenleme yönetici gerektirir. Çalışma sırasında yazılan dizinlere
-; (Logs, UploadState, History, WebView2) Users için Modify verilir.
+; İZİNLER (bkz. [Run] icacls): Users grubu tüm ağaçta OKUYABİLİR, böylece
+; yükseltilmemiş tray planları listeleyip logları görebilir. Tray asInvoker
+; çalıştığı ve plan/ayar dosyalarını doğrudan yazdığı için Plans, Config, Logs,
+; UploadState, History ve WebView2 dizinlerine Users için Modify verilir.
+; Yalnızca Updates (doğrulanmış installer'lar) Users için salt okunur kalır.
+; v0.99.92'de Plans/Config salt okunur yapılmıştı; UAC filtreli token'lı
+; yönetici bile plan oluşturamıyordu (v0.99.93'te geri alındı).
 Name: "{commonappdata}\KoruMsSqlYedek"
 Name: "{commonappdata}\KoruMsSqlYedek\Plans"
 Name: "{commonappdata}\KoruMsSqlYedek\Config"
@@ -173,8 +175,11 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 ; SID kullanılır (yerel ayardan bağımsız). Bu satır v0.99.91'de Users'ı tamamen
 ; silen kilidi de onarır (yükseltmede yeniden uygulanır).
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek"" /inheritance:r /grant:r *S-1-5-18:(OI)(CI)F *S-1-5-32-544:(OI)(CI)F *S-1-5-32-545:(OI)(CI)RX /T /C /Q"; StatusMsg: "Veri dizini izinleri ayarlanıyor..."; Flags: runhidden waituntilterminated
-; Çalışma sırasında yazılan dizinlere Users için Modify ver. Bunlar servisin
-; üzerinde karar verdiği dosyalar değildir; tray de yedek çalıştırıp log yazabilmeli.
+; Tray'in yazdığı dizinlere Users için Modify ver: plan/ayar dosyaları (tray
+; yükseltilmeden oluşturur/düzenler) ve çalışma çıktıları (log, durum, geçmiş).
+; Bu satırlar v0.99.92'nin Plans/Config'i salt okunur bırakan kurulumunu da onarır.
+Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Plans"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
+Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Config"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\Logs"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\UploadState"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated
 Filename: "icacls.exe"; Parameters: """{commonappdata}\KoruMsSqlYedek\History"" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q"; Flags: runhidden waituntilterminated

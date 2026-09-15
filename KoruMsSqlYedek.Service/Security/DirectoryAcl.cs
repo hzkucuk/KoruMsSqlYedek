@@ -10,9 +10,10 @@ namespace KoruMsSqlYedek.Service.Security
 {
     /// <summary>
     /// %ProgramData%\KoruMsSqlYedek altındaki dizinler için kısıtlı ACL yardımcıları.
-    /// Kalıtım kapatılır; yalnızca SYSTEM ve BUILTIN\Administrators tam yetki alır.
-    /// Böylece kurulum programı ACL uygulamamış olsa bile (manuel/taşınabilir kurulum)
-    /// plan, config, log ve güncelleme dosyaları sıradan kullanıcılar tarafından değiştirilemez.
+    /// Kalıtım kapatılır; SYSTEM ve BUILTIN\Administrators tam yetki alır, Users ise
+    /// dizin işlevine göre Modify/ReadOnly/None alır. Böylece kurulum programı ACL
+    /// uygulamamış olsa bile (manuel/taşınabilir kurulum) güncelleme dizini sıradan
+    /// kullanıcılara kapalı kalır.
     /// </summary>
     [SupportedOSPlatform("windows")]
     internal static class DirectoryAcl
@@ -46,8 +47,10 @@ namespace KoruMsSqlYedek.Service.Security
         /// Users'a okuma hakkı vermek ŞARTTIR: tray uygulaması yükseltilmeden
         /// (asInvoker) çalışır ve planları/logları doğrudan diskten okur. v0.99.91'de
         /// Users tamamen kaldırılmış, bu yüzden sıradan kullanıcıda planlar hiç
-        /// görünmemişti. Yazma hakkı ise yalnızca servisin karar girdisi olmayan
-        /// dizinlere verilir; Plans/Config salt okunur kalır (kurcalamaya karşı).
+        /// görünmemişti. v0.99.92'de Plans/Config salt okunur yapılmıştı; bu da
+        /// yükseltilmemiş tray'de plan oluşturmayı/düzenlemeyi ve ayar kaydetmeyi
+        /// engelledi (UAC filtreli token'da Administrators etkin değildir). v0.99.93'ten
+        /// itibaren Plans/Config yeniden Modify; yalnızca Updates Users'a kapalı kalır.
         /// </remarks>
         public static DirectorySecurity CreateSecurity(UsersAccess usersAccess)
         {
@@ -104,11 +107,13 @@ namespace KoruMsSqlYedek.Service.Security
         /// </summary>
         public static void EnsureAppDataDirectoriesRestricted()
         {
-            // Servisin üzerinde karar verdiği girdiler: Users okur, yazamaz.
+            // Plan ve ayar dosyaları: yükseltilmemiş tray bunları oluşturur/düzenler,
+            // bu yüzden Users Modify almalı. v0.99.92'deki salt okunur düzey UAC
+            // filtreli token'lı yöneticiyi de kilitliyordu (plan oluşturulamıyordu).
             (string Path, UsersAccess Access)[] directories =
             {
-                (PathHelper.PlansDirectory, UsersAccess.ReadOnly),
-                (PathHelper.ConfigDirectory, UsersAccess.ReadOnly),
+                (PathHelper.PlansDirectory, UsersAccess.Modify),
+                (PathHelper.ConfigDirectory, UsersAccess.Modify),
 
                 // Doğrulanmış installer'ların indiği yer — Users'ın işi yok.
                 (UpdatesDirectory, UsersAccess.None),
