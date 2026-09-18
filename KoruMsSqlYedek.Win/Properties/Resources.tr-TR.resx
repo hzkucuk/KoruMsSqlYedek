@@ -703,6 +703,9 @@ Boş bırakılırsa bildirim e-postası kullanılır.</value></data>
   <data name="Smtp_Host" xml:space="preserve"><value>SMTP Sunucu:</value></data>
   <data name="Smtp_Port" xml:space="preserve"><value>Port:</value></data>
   <data name="Smtp_UseSsl" xml:space="preserve"><value>SSL/TLS Kullan</value></data>
+  <data name="Smtp_IgnoreCertErrors" xml:space="preserve"><value>Sertifika hatalarını yoksay</value></data>
+  <data name="Smtp_CertificateHint" xml:space="preserve"><value>Sunucunun SSL sertifikası doğrulanamadı (self-signed, süresi dolmuş ya da farklı bir sunucu adına düzenlenmiş — paylaşımlı hosting posta sunucularında sık görülür).
+Bu sunucuya güveniyorsanız SMTP profilinde "Sertifika hatalarını yoksay" seçeneğini açıp tekrar deneyin.</value></data>
   <data name="Smtp_Username" xml:space="preserve"><value>Kullanıcı Adı:</value></data>
   <data name="Smtp_Password" xml:space="preserve"><value>Şifre:</value></data>
   <data name="Smtp_SenderEmail" xml:space="preserve"><value>Gönderici E-posta:</value></data>
@@ -939,6 +942,10 @@ Yaygın portlar: 587 (STARTTLS), 465 (SSL), 25 (şifresiz).
   <data name="Tip_Smtp_UseSsl" xml:space="preserve"><value>SMTP bağlantısı için SSL/TLS şifrelemesi kullanın.
 Güvenlik için kesinlikle önerilir.
 Modern e-posta sağlayıcılarının çoğu tarafından zorunludur.</value></data>
+  <data name="Tip_Smtp_IgnoreCertErrors" xml:space="preserve"><value>Sunucu sertifikası doğrulanamasa bile kabul et
+(self-signed, süresi dolmuş ya da sunucu adı uyuşmazlığı).
+Yalnızca güvendiğiniz sunucular için açın — bu bağlantıda
+araya girme (man-in-the-middle) korumasını devre dışı bırakır.</value></data>
   <data name="Tip_Smtp_Username" xml:space="preserve"><value>SMTP kimlik doğrulama için e-posta hesabı kullanıcı adı.
 Genellikle tam e-posta adresinizdir.
 Örnek: yedek@ornek.com</value></data>

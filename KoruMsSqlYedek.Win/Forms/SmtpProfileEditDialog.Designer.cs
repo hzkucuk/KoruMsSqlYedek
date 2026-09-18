@@ -24,6 +24,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblPort = new System.Windows.Forms.Label();
             _nudPort = new Theme.ModernNumericUpDown();
             _chkUseSsl = new Theme.ModernCheckBox();
+            _chkIgnoreCertErrors = new Theme.ModernCheckBox();
             _lblUsername = new System.Windows.Forms.Label();
             _txtUsername = new System.Windows.Forms.TextBox();
             _lblPassword = new System.Windows.Forms.Label();
@@ -102,9 +103,14 @@ namespace KoruMsSqlYedek.Win.Forms
             _chkUseSsl.Text = "SSL/TLS Kullan";
             _chkUseSsl.AutoSize = true;
             _chkUseSsl.Checked = true;
-            _chkUseSsl.Margin = new System.Windows.Forms.Padding(0, 4, 0, 0);
+            _chkUseSsl.Margin = new System.Windows.Forms.Padding(0, 4, 12, 0);
+            _chkIgnoreCertErrors.Text = "Sertifika hatalarını yoksay";
+            _chkIgnoreCertErrors.AutoSize = true;
+            _chkIgnoreCertErrors.Checked = false;
+            _chkIgnoreCertErrors.Margin = new System.Windows.Forms.Padding(0, 4, 0, 0);
             _pnlPortRow.Controls.Add(_nudPort);
             _pnlPortRow.Controls.Add(_chkUseSsl);
+            _pnlPortRow.Controls.Add(_chkIgnoreCertErrors);
             _tlpMain.Controls.Add(_lblPort, 0, 2);
             _tlpMain.Controls.Add(_pnlPortRow, 1, 2);
 
@@ -217,6 +223,7 @@ namespace KoruMsSqlYedek.Win.Forms
         private System.Windows.Forms.Label _lblPort;
         private Theme.ModernNumericUpDown _nudPort;
         private Theme.ModernCheckBox _chkUseSsl;
+        private Theme.ModernCheckBox _chkIgnoreCertErrors;
         private System.Windows.Forms.Label _lblUsername;
         private System.Windows.Forms.TextBox _txtUsername;
         private System.Windows.Forms.Label _lblPassword;

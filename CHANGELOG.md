@@ -1,4 +1,34 @@
-﻿## [0.99.95] - 2026-09-15 — 📁 Tüm Veri Kurulum Dizininde: `%ProgramData%` Terk Edildi
+﻿## [0.99.96] - 2026-09-18 — 📧 SMTP: Sertifika Hatalarını Yoksay Seçeneği
+
+> Sahada "mail test gönder" şu hatayla düşüyordu: *"An error occurred while
+> attempting to establish an SSL or TLS connection. The server's SSL certificate
+> could not be validated"*. Paylaşımlı hosting posta sunucularında sertifika
+> genellikle hosting firmasının adına düzenlenmiştir; `mail.musteri.com`'a
+> bağlanınca ad uyuşmazlığı çıkar. Kodda buna izin veren hiçbir seçenek yoktu.
+
+### Eklendi
+
+- **SMTP profiline "Sertifika hatalarını yoksay" seçeneği**
+  (`SmtpProfile.IgnoreCertificateErrors`, JSON `ignoreCertificateErrors`,
+  varsayılan `false`). Açıkken self-signed / süresi dolmuş / ad uyuşmazlığı
+  olan sunucu sertifikası kabul edilir. Profil bazlıdır; eski profiller
+  değişmeden çalışır.
+- Seçenek 7 bağlantı noktasının tamamında etkili: profil test butonu, ayarlar
+  test butonu, 4 bildirim türü (iş/SQL/dosya/bulut) ve periyodik rapor.
+  Hepsi artık `SmtpConnectionHelper.Configure(client, ignore)` üzerinden
+  zaman aşımı + sertifika politikasını tek yerden alır.
+- Test hatası sertifika kaynaklıysa (`SslHandshakeException` /
+  `AuthenticationException`) hata kutusuna yönlendirici ipucu eklenir:
+  sunucuya güveniyorsanız seçeneği açıp tekrar deneyin.
+- Tooltip seçeneğin MITM korumasını kaldırdığını açıkça söyler.
+
+### Test
+
+- `SmtpConnectionHelperTests`: Configure varsayılanı callback'i `null` bırakır,
+  açıkken ad uyuşmazlığını kabul eder, tekrar kapatınca callback temizlenir;
+  `IsCertificateError` iç içe `SslHandshakeException`'ı yakalar.
+
+## [0.99.95] - 2026-09-15 — 📁 Tüm Veri Kurulum Dizininde: `%ProgramData%` Terk Edildi
 
 > v0.99.91–v0.99.94 arasındaki ACL düzeltmelerine rağmen sahada tray hâlâ
 > `%ProgramData%\KoruMsSqlYedek` dosyalarını okuyamıyordu. Katman katman

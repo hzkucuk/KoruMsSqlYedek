@@ -713,6 +713,9 @@ If left empty, notification email is used.</value></data>
   <data name="Smtp_Host" xml:space="preserve"><value>SMTP Server:</value></data>
   <data name="Smtp_Port" xml:space="preserve"><value>Port:</value></data>
   <data name="Smtp_UseSsl" xml:space="preserve"><value>Use SSL/TLS</value></data>
+  <data name="Smtp_IgnoreCertErrors" xml:space="preserve"><value>Ignore certificate errors</value></data>
+  <data name="Smtp_CertificateHint" xml:space="preserve"><value>The server's SSL certificate could not be validated (self-signed, expired, or issued for a different host name — common with shared hosting mail servers).
+If you trust this server, enable "Ignore certificate errors" in the SMTP profile and try again.</value></data>
   <data name="Smtp_Username" xml:space="preserve"><value>Username:</value></data>
   <data name="Smtp_Password" xml:space="preserve"><value>Password:</value></data>
   <data name="Smtp_SenderEmail" xml:space="preserve"><value>Sender Email:</value></data>
@@ -949,6 +952,10 @@ Recommended: 587 with SSL enabled.</value></data>
   <data name="Tip_Smtp_UseSsl" xml:space="preserve"><value>Use SSL/TLS encryption for the SMTP connection.
 Highly recommended for security.
 Required by most modern email providers.</value></data>
+  <data name="Tip_Smtp_IgnoreCertErrors" xml:space="preserve"><value>Accept the server certificate even if it cannot be validated
+(self-signed, expired, or host name mismatch).
+Only enable for servers you trust — it disables protection against
+man-in-the-middle attacks on this connection.</value></data>
   <data name="Tip_Smtp_Username" xml:space="preserve"><value>Email account username for SMTP authentication.
 Usually your full email address.
 Example: backup@example.com</value></data>

@@ -80,7 +80,7 @@ namespace KoruMsSqlYedek.Engine.Notification
 
                 using (var client = new SmtpClient())
                 {
-                    client.Timeout = SmtpConnectionHelper.TimeoutMs;
+                    SmtpConnectionHelper.Configure(client, profile.IgnoreCertificateErrors);
                     await client.ConnectAsync(
                         profile.Host,
                         profile.Port,

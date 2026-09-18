@@ -271,7 +271,7 @@ namespace KoruMsSqlYedek.Win
                 Cursor = Cursors.WaitCursor;
 
                 using var client = new MailKit.Net.Smtp.SmtpClient();
-                client.Timeout = SmtpConnectionHelper.TimeoutMs;
+                SmtpConnectionHelper.Configure(client, profile.IgnoreCertificateErrors);
                 var options = SmtpConnectionHelper.GetSocketOptions(profile.Port, profile.UseSsl);
 
                 client.Connect(profile.Host, profile.Port, options);
@@ -309,7 +309,10 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
-                Theme.ModernMessageBox.Show(Res.Format("Settings_SmtpTestError", SanitizeErrorMessage(ex.Message)),
+                string detail = SanitizeErrorMessage(ex.Message);
+                if (SmtpConnectionHelper.IsCertificateError(ex))
+                    detail += Environment.NewLine + Environment.NewLine + Res.Get("Smtp_CertificateHint");
+                Theme.ModernMessageBox.Show(Res.Format("Settings_SmtpTestError", detail),
                     Res.Get("Settings_SmtpTestErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally

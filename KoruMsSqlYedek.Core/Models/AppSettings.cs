@@ -134,6 +134,13 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("useSsl")]
         public bool UseSsl { get; set; } = true;
 
+        /// <summary>
+        /// Sunucu sertifikası doğrulanamadığında (self-signed, sunucu adıyla uyuşmayan sertifika vb.)
+        /// bağlantıya yine de izin ver. Yalnızca güvenilen iç ağ / hosting sunucuları için açılmalıdır.
+        /// </summary>
+        [JsonProperty("ignoreCertificateErrors")]
+        public bool IgnoreCertificateErrors { get; set; } = false;
+
         [JsonProperty("username")]
         public string Username { get; set; }
 

@@ -48,6 +48,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblDisplayName.Text = Helpers.Res.Get("Smtp_DisplayName");
             _lblHost.Text = Helpers.Res.Get("Smtp_Host");
             _chkUseSsl.Text = Helpers.Res.Get("Smtp_UseSsl");
+            _chkIgnoreCertErrors.Text = Helpers.Res.Get("Smtp_IgnoreCertErrors");
             _lblUsername.Text = Helpers.Res.Get("Smtp_Username");
             _lblPassword.Text = Helpers.Res.Get("Smtp_Password");
             _lblSenderEmail.Text = Helpers.Res.Get("Smtp_SenderEmail");
@@ -62,6 +63,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _toolTip.SetToolTip(_txtHost, Helpers.Res.Get("Tip_Smtp_Host"));
             _toolTip.SetToolTip(_nudPort, Helpers.Res.Get("Tip_Smtp_Port"));
             _toolTip.SetToolTip(_chkUseSsl, Helpers.Res.Get("Tip_Smtp_UseSsl"));
+            _toolTip.SetToolTip(_chkIgnoreCertErrors, Helpers.Res.Get("Tip_Smtp_IgnoreCertErrors"));
             _toolTip.SetToolTip(_txtUsername, Helpers.Res.Get("Tip_Smtp_Username"));
             _toolTip.SetToolTip(_txtPassword, Helpers.Res.Get("Tip_Smtp_Password"));
             _toolTip.SetToolTip(_txtSenderEmail, Helpers.Res.Get("Tip_Smtp_SenderEmail"));
@@ -82,6 +84,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _txtHost.Text = _profile.Host ?? "";
             _nudPort.Value = Math.Min(Math.Max(_profile.Port, 1), 65535);
             _chkUseSsl.Checked = _profile.UseSsl;
+            _chkIgnoreCertErrors.Checked = _profile.IgnoreCertificateErrors;
             _txtUsername.Text = _profile.Username ?? "";
             _txtPassword.Text = "";
             _txtSenderEmail.Text = _profile.SenderEmail ?? "";
@@ -112,6 +115,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _profile.Host = _txtHost.Text.Trim();
             _profile.Port = (int)_nudPort.Value;
             _profile.UseSsl = _chkUseSsl.Checked;
+            _profile.IgnoreCertificateErrors = _chkIgnoreCertErrors.Checked;
             _profile.Username = _txtUsername.Text.Trim();
             _profile.SenderEmail = _txtSenderEmail.Text.Trim();
             _profile.SenderDisplayName = _txtSenderName.Text.Trim();
@@ -162,7 +166,7 @@ namespace KoruMsSqlYedek.Win.Forms
                 var options = SmtpConnectionHelper.GetSocketOptions(port, _chkUseSsl.Checked);
 
                 using var client = new SmtpClient();
-                client.Timeout = SmtpConnectionHelper.TimeoutMs;
+                SmtpConnectionHelper.Configure(client, _chkIgnoreCertErrors.Checked);
                 client.Connect(_txtHost.Text.Trim(), port, options);
 
                 string username = _txtUsername.Text.Trim();
@@ -196,6 +200,8 @@ namespace KoruMsSqlYedek.Win.Forms
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
                 string safeMessage = ex.Message.Length > 200 ? ex.Message[..200] + "..." : ex.Message;
+                if (SmtpConnectionHelper.IsCertificateError(ex))
+                    safeMessage += Environment.NewLine + Environment.NewLine + Helpers.Res.Get("Smtp_CertificateHint");
                 Theme.ModernMessageBox.Show(Helpers.Res.Format("Smtp_TestFailed", safeMessage), Helpers.Res.Get("Smtp_TestErrorTitle"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
