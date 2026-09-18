@@ -199,8 +199,10 @@ namespace KoruMsSqlYedek.Win.Forms
             catch (Exception ex)
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
-                string safeMessage = ex.Message.Length > 200 ? ex.Message[..200] + "..." : ex.Message;
-                if (SmtpConnectionHelper.IsCertificateError(ex))
+                // Sertifika hatasında MailKit'in mesajı asıl nedeni madde madde yazar; kesilmez.
+                bool certError = SmtpConnectionHelper.IsCertificateError(ex);
+                string safeMessage = !certError && ex.Message.Length > 200 ? ex.Message[..200] + "..." : ex.Message;
+                if (certError)
                     safeMessage += Environment.NewLine + Environment.NewLine + Helpers.Res.Get("Smtp_CertificateHint");
                 Theme.ModernMessageBox.Show(Helpers.Res.Format("Smtp_TestFailed", safeMessage), Helpers.Res.Get("Smtp_TestErrorTitle"),
                     MessageBoxButtons.OK, MessageBoxIcon.Error);

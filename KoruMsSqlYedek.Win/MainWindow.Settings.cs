@@ -309,9 +309,11 @@ namespace KoruMsSqlYedek.Win
             catch (Exception ex)
             {
                 Log.Warning(ex, "SMTP test e-postası gönderilemedi.");
-                string detail = SanitizeErrorMessage(ex.Message);
-                if (SmtpConnectionHelper.IsCertificateError(ex))
-                    detail += Environment.NewLine + Environment.NewLine + Res.Get("Smtp_CertificateHint");
+                // Sertifika hatasında MailKit'in mesajı asıl nedeni (iptal durumu bilinmiyor, zincir eksik,
+                // ad uyuşmazlığı...) madde madde yazar; kesilirse teşhis edilemez, bu yüzden tam gösterilir.
+                string detail = SmtpConnectionHelper.IsCertificateError(ex)
+                    ? ex.Message + Environment.NewLine + Environment.NewLine + Res.Get("Smtp_CertificateHint")
+                    : SanitizeErrorMessage(ex.Message);
                 Theme.ModernMessageBox.Show(Res.Format("Settings_SmtpTestError", detail),
                     Res.Get("Settings_SmtpTestErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
