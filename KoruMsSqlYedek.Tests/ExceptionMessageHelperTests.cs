@@ -83,6 +83,16 @@ namespace KoruMsSqlYedek.Tests
                 new BadImageFormatException("bad", ClaimsAssembly)).Should().BeFalse();
         }
 
+        [TestMethod]
+        public void IsRestartableLoadException_ShortNameFromAssemblyLoad_IsRestartable()
+        {
+            // Açılış ön yüklemesi Assembly.Load(kısa ad) kullanır: FileName'de Version= olmayabilir
+            var ex = new FileNotFoundException(string.Empty, "System.Security.Claims");
+
+            ExceptionMessageHelper.IsRestartableLoadException(ex).Should().BeTrue();
+            ExceptionMessageHelper.IsRestartableLoadException(new BadImageFormatException("bad")).Should().BeFalse();
+        }
+
         // ── Genel mesaj seçimi ───────────────────────────────────────────────
 
         [TestMethod]

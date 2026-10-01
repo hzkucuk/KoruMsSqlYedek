@@ -28,16 +28,20 @@ namespace KoruMsSqlYedek.Core.Helpers
 
         private static int _failureReported;
 
-        /// <summary>Bir derleme yükleme hatası raporlandığında bir kez tetiklenir (derleme adı ile).</summary>
+        /// <summary>
+        /// Yeniden başlatmanın çözebileceği her derleme yükleme hatasında tetiklenir (derleme adı ile).
+        /// Her raporda tetiklenir — abone o an çalışan planı "etkilenen" olarak kaydedebilsin;
+        /// yeniden başlatmanın tek seferliğini abone (RuntimeRestartGuard) sağlar.
+        /// </summary>
         public static event Action<string> AssemblyLoadFailed;
 
         /// <summary>Bu süreçte derleme yükleme hatası görüldü mü?</summary>
         public static bool HasAssemblyLoadFailure => Volatile.Read(ref _failureReported) != 0;
 
         /// <summary>
-        /// Exception zincirinde derleme yükleme hatası varsa raporlar. Olay yalnızca ilk seferde ve
-        /// yalnızca yeniden başlatmanın çözebileceği hatalarda tetiklenir (sürüm uyuşmazlığı /
-        /// bozuk imaj için yeniden başlatma işe yaramaz, yalnızca kurulum onarımı).
+        /// Exception zincirinde derleme yükleme hatası varsa raporlar. Olay yalnızca yeniden
+        /// başlatmanın çözebileceği hatalarda tetiklenir (sürüm uyuşmazlığı / bozuk imaj için
+        /// yeniden başlatma işe yaramaz, yalnızca kurulum onarımı).
         /// </summary>
         /// <returns>Zincirde derleme yükleme hatası varsa true.</returns>
         public static bool ReportAssemblyLoadFailure(Exception ex)
@@ -45,23 +49,23 @@ namespace KoruMsSqlYedek.Core.Helpers
             string assembly = ExceptionMessageHelper.GetFailedAssemblyName(ex);
             if (assembly == null) return false;
 
+            Volatile.Write(ref _failureReported, 1);
+
             if (!ExceptionMessageHelper.IsRestartableAssemblyFailure(ex))
                 return true;
 
-            if (Interlocked.Exchange(ref _failureReported, 1) == 0)
-            {
-                try { AssemblyLoadFailed?.Invoke(assembly); }
-                catch { /* abone hatası çağıranı etkilememeli */ }
-            }
+            try { AssemblyLoadFailed?.Invoke(assembly); }
+            catch { /* abone hatası çağıranı etkilememeli */ }
             return true;
         }
 
         /// <summary>
-        /// Kritik derlemeleri zorla yükler. Yüklenemeyenlerin adı ve hata mesajı döner (boş liste = sağlıklı).
+        /// Kritik derlemeleri zorla yükler. Yüklenemeyenlerin adı, hata mesajı ve yeniden
+        /// başlatmanın çözüp çözemeyeceği döner (boş liste = sağlıklı).
         /// </summary>
-        public static IReadOnlyList<(string Assembly, string Error)> PreloadCriticalAssemblies()
+        public static IReadOnlyList<(string Assembly, string Error, bool Restartable)> PreloadCriticalAssemblies()
         {
-            var failures = new List<(string, string)>();
+            var failures = new List<(string, string, bool)>();
             foreach (string name in CriticalAssemblies)
             {
                 try
@@ -70,7 +74,9 @@ namespace KoruMsSqlYedek.Core.Helpers
                 }
                 catch (Exception ex)
                 {
-                    failures.Add((name, ExceptionMessageHelper.Describe(ex)));
+                    Volatile.Write(ref _failureReported, 1);
+                    failures.Add((name, ExceptionMessageHelper.Describe(ex),
+                        ExceptionMessageHelper.IsRestartableLoadException(ex)));
                 }
             }
             return failures;

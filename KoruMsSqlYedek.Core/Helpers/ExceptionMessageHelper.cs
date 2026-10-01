@@ -81,11 +81,18 @@ namespace KoruMsSqlYedek.Core.Helpers
         /// uyuşmazlığı (0x80131040) ve bozuk imaj hayır — onları yalnızca kurulum onarımı çözer.
         /// </summary>
         public static bool IsRestartableAssemblyFailure(Exception ex)
+            => IsRestartableLoadException(FindAssemblyLoadException(ex));
+
+        /// <summary>
+        /// Tek bir yükleme exception'ı (zincir aranmaz, FileName biçimi aranmaz) yeni süreçte
+        /// düzelebilir mi? Assembly.Load(ad) çağrısında FileName yalnızca kısa ad olabilir.
+        /// </summary>
+        public static bool IsRestartableLoadException(Exception ex)
         {
             const int SharingViolation = unchecked((int)0x80070020);
             const int LockViolation = unchecked((int)0x80070021);
 
-            return FindAssemblyLoadException(ex) switch
+            return ex switch
             {
                 FileNotFoundException => true,
                 FileLoadException fle => fle.HResult == SharingViolation || fle.HResult == LockViolation,

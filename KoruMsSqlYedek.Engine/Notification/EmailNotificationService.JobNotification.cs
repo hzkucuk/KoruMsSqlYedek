@@ -222,7 +222,7 @@ namespace KoruMsSqlYedek.Engine.Notification
                 else if (!string.IsNullOrEmpty(data.FileArchiveError))
                     // Kaynaklar kopyalandı ama arşiv yok: özet tabloda açıkça kırmızı göster
                     tmpl.WriteTableRow("Arşiv Dosyası",
-                        "✗ Oluşturulamadı — " + EmailTemplateBuilder.Encode(SanitizeForEmail(data.FileArchiveError)),
+                        "✗ Oluşturulamadı — " + SanitizeForEmail(data.FileArchiveError),
                         EmailTemplateBuilder.GetFailureColor());
 
                 if (data.FileArchiveSizeBytes > 0)
@@ -275,7 +275,7 @@ namespace KoruMsSqlYedek.Engine.Notification
                     // GÜVENLİK: log satırları ham exception mesajı içerebilir (tam dosya
                     // yolları, sunucu/UNC adları, yığın izleri). E-posta dış bir posta
                     // kutusuna gidebileceği için ErrorMessage ile aynı temizlikten geçirilir.
-                    tmpl.WriteRawHtml($"      {EmailTemplateBuilder.Encode(SanitizeForEmail(logLine))}<br/>");
+                    tmpl.WriteRawHtml($"      {SanitizeForEmail(logLine)}<br/>");
                 }
 
                 tmpl.WriteRawHtml("    </div>");
@@ -299,7 +299,7 @@ namespace KoruMsSqlYedek.Engine.Notification
 
                 // UNC hedeflerinde RemoteFilePath tam \\sunucu\pay\... yoludur; temizlenmeden gönderilmez
                 string remotePath = cloud.IsSuccess && !string.IsNullOrEmpty(cloud.RemoteFilePath)
-                    ? EmailTemplateBuilder.Encode(SanitizeForEmail(cloud.RemoteFilePath))
+                    ? SanitizeForEmail(cloud.RemoteFilePath)
                     : "-";
 
                 string detail;

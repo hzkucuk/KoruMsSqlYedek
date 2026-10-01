@@ -35,6 +35,13 @@
 - Önceki çalıştırmadan kalan ara `Files` klasörü yeni kopya öncesi temizlenir
   (kaynakta silinmiş eski dosyalar arşive girmez).
 - İş "çalışıyor" kaydı bildirim e-postası ve Failed olayı gönderilene kadar tutulur.
+- Yeniden başlatma beklerken düşen diğer planlar da hata anında kaydedilir ve yeni
+  süreçte yeniden çalıştırılır; kalıcı hatada (ör. karantinadaki DLL) bir olay boyunca
+  en fazla 2 yeniden çalıştırma yapılır (saatlik Full yedek döngüsü olmaz).
+- Açılışta yalnızca yeniden başlatmanın çözebileceği hatalar yeniden başlatma tetikler;
+  sürüm uyuşmazlığı / bozuk dosyada "kurulumu onarın" loglanır.
+- **E-postada Türkçe karakterler** (`ü` → `&#252;`) görev logu ve bulut yolu satırlarında
+  çift HTML kodlama yüzünden bozuk görünüyordu; düzeltildi.
 
 ### Installer
 
