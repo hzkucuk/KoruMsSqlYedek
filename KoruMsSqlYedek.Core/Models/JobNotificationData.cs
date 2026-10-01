@@ -39,6 +39,9 @@ namespace KoruMsSqlYedek.Core.Models
         /// <summary>Dosya yedekleme arşiv dosya adı.</summary>
         public string FileArchiveFileName { get; set; }
 
+        /// <summary>Dosya arşivi oluşturulamadıysa (sıkıştırma/doğrulama hatası) sebebi; aksi halde null.</summary>
+        public string FileArchiveError { get; set; }
+
         /// <summary>Dosya yedekleme arşiv boyutu (byte).</summary>
         public long FileArchiveSizeBytes { get; set; }
 

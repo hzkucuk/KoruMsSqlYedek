@@ -72,6 +72,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     {
                         int fileCount = 0;
                         try { fileCount = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories).Length; } catch { }
+                        FileBackup.FileBackupService.ClearReadOnlyRecursive(path);
                         Directory.Delete(path, recursive: true);
                         Log.Information(
                             "İptal/hata temizliği: Klasör silindi — {Dir} ({FileCount} dosya), Plan={PlanId}",
@@ -82,6 +83,23 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 {
                     Log.Warning(ex, "İptal/hata temizliği başarısız: {Path}", path);
                 }
+            }
+        }
+
+        /// <summary>Dosyayı sessizce siler (yarım arşiv temizliği için).</summary>
+        private static void TryDeleteFile(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                {
+                    File.Delete(path);
+                    Log.Information("Yarım kalan dosya silindi: {File}", path);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Yarım kalan dosya silinemedi: {File}", path);
             }
         }
 
@@ -380,7 +398,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             BackupActivityType.CloudUploadStarted
                 => null,
             BackupActivityType.CloudUploadCompleted
-                => null,
+                => e.IsSuccess
+                    ? null
+                    : $"✕ Bulut yükleme başarısız: {e.CloudFileName} → {e.CloudTargetName} — {(string.IsNullOrWhiteSpace(e.Message) ? "?" : e.Message)}",
             BackupActivityType.CloudUploadAbandoned
                 => e.AbandonedFiles is { Count: > 0 }
                     ? $"⚠ Bulut yükleme terk edildi ({e.AbandonedFiles.Count} dosya)"

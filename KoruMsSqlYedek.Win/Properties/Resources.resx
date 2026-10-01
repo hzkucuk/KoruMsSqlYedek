@@ -1101,6 +1101,7 @@ The next connection will learn and store the new fingerprint.</value></data>
 For SFTP the host fingerprint is learned and stored on the first successful test.</value></data>
   <data name="Activity_CloudAbandoned" xml:space="preserve"><value>⚠ Cloud upload abandoned ({0} files): {1}</value></data>
   <data name="Activity_CloudAbandonedMsg" xml:space="preserve"><value>⚠ Cloud upload abandoned: {0}</value></data>
+  <data name="Activity_CloudUploadFailed" xml:space="preserve"><value>✕ Cloud upload failed: {0} → {1} — {2}</value></data>
   <data name="Activity_MaxRetryExceeded" xml:space="preserve"><value>Max retry exceeded</value></data>
   <data name="Activity_BackupCompleted" xml:space="preserve"><value>[{0}] Backup completed. ✓</value></data>
   <data name="Activity_BackupCompletedMsg" xml:space="preserve"><value>[{0}] Backup completed. ✓ {1}.</value></data>

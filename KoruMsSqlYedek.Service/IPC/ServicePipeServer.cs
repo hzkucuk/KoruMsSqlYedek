@@ -433,11 +433,15 @@ namespace KoruMsSqlYedek.Service.IPC
                 //    /SP-: "Bu programı kurmak istiyor musunuz?" sorusunu atla
                 //    /CLOSEAPPLICATIONS: açık dosyaları kapat
                 //    /NOPOSTLAUNCH=1: [Run] bölümünde tray app başlatmasını engelle (biz başlatacağız)
+                //    /LOG: installer servisi durdurduğu için çıkış kodu burada gözlenemeyebilir;
+                //          yarım kalan kurulum sahada bu logdan teşhis edilir.
+                string setupLog = Path.Combine(Core.Helpers.PathHelper.LogsDirectory, $"setup-{DateTime.Now:yyyyMMdd_HHmmss}.log");
+                Log.Information("Installer logu: {SetupLog}", setupLog);
                 using var process = System.Diagnostics.Process.Start(
                     new System.Diagnostics.ProcessStartInfo
                     {
                         FileName = installerPath,
-                        Arguments = "/VERYSILENT /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOPOSTLAUNCH=1",
+                        Arguments = $"/VERYSILENT /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOPOSTLAUNCH=1 /LOG=\"{setupLog}\"",
                         UseShellExecute = false,
                         CreateNoWindow = true
                     });

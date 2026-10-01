@@ -9,6 +9,7 @@ using Serilog;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
 using KoruMsSqlYedek.Core.Constants;
+using KoruMsSqlYedek.Core.Helpers;
 
 namespace KoruMsSqlYedek.Engine.Cloud
 {
@@ -105,7 +106,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
             catch (Exception ex)
             {
                 result.IsSuccess = false;
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ExceptionMessageHelper.Describe(ex);
                 Log.Error(ex, "Upload başarısız: {Provider} — {File}", DisplayName, localFilePath);
             }
 

@@ -7,6 +7,7 @@ using Serilog;
 using KoruMsSqlYedek.Core.Events;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Core.Helpers;
 
 namespace KoruMsSqlYedek.Engine.Cloud
 {
@@ -132,6 +133,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 }
                 catch (Exception ex)
                 {
+                    RuntimeHealth.ReportAssemblyLoadFailure(ex);
                     Log.Warning(
                         ex,
                         "Bulut upload deneme {Attempt}/{Max} başarısız: {Provider}",
@@ -145,7 +147,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                             ProviderType = target.Type,
                             DisplayName = target.DisplayName,
                             IsSuccess = false,
-                            ErrorMessage = ex.Message,
+                            ErrorMessage = ExceptionMessageHelper.Describe(ex),
                             RetryCount = attempt
                         };
                 }

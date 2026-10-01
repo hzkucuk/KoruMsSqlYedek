@@ -7,6 +7,7 @@ using Google.Apis.Drive.v3;
 using Google.Apis.Upload;
 using Serilog;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Core.Helpers;
 
 using GoogleFile = Google.Apis.Drive.v3.Data.File;
 
@@ -76,7 +77,8 @@ namespace KoruMsSqlYedek.Engine.Cloud
             catch (Exception ex)
             {
                 result.IsSuccess = false;
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ExceptionMessageHelper.Describe(ex);
+                RuntimeHealth.ReportAssemblyLoadFailure(ex);
                 Log.Error(ex, "Google Drive upload başarısız: {FileName}", remoteFileName);
             }
 

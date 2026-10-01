@@ -1,4 +1,57 @@
-﻿## [0.99.96] - 2026-09-18 — 📧 SMTP: Sertifika Hatalarını Yoksay Seçeneği
+﻿## [0.99.97] - 2026-10-01 — 🩺 Servis Kendini Onarır, Yarım Arşiv Yüklenmez, Hata Sebebi Görünür
+
+> Bir müşteri PC'sinde üç gece üst üste 17 SQL veritabanının tamamı saniyesinde
+> başarısız oldu, Google Drive yüklemesi düştü, ekranda ise yalnızca
+> `Yedekleme başarısız: X — ` (boş sebep) ve `0/1 başarılı` görünüyordu. Servis
+> logunda `FileNotFoundException: System.Security.Claims` vardı; oysa dosya diskte
+> sağlamdı (hash resmi .NET 10.0.12 paketiyle aynı, ACL normal). Sebep: CLR bir
+> derlemeyi yükleyemeyince bu sonucu **süreç ömrü boyunca önbelleğe alır**; geçici
+> bir açılış engeli servisi günlerce kilitliyordu. Aynı inceleme bir gece sıkıştırma
+> %70'te hata verdiğinde yarım `.7z`'nin buluta gönderilip başarılı sayıldığını da
+> ortaya çıkardı. Değişiklikler iki ajan takımının çapraz çürütmeli incelemesinden geçti.
+
+### Düzeltildi
+
+- **Servis derleme yükleme hatasında kendini yeniden başlatır.** Açılışta kritik
+  derlemeler (Claims, Principal.Windows, Net.Security, Cryptography, Net.Http)
+  önceden yüklenir; hata 22:00'da değil açılışta görünür. Çalışırken
+  `FileNotFoundException` (veya paylaşım ihlali) raporlanırsa çalışan yedekler bitince
+  süreç `FailFast` ile sonlandırılır, SCM kurtarma kuralı servisi yeniden başlatır.
+  Döngü koruması: iki yeniden başlatma arası en az 1 saat — istek atlanmaz, ertelenir.
+  Yarıda kalan planlar yeni süreçte hemen yeniden çalıştırılır (gecenin yedeği kaybolmaz).
+  Sürüm uyuşmazlığı / bozuk imaj yeniden başlatma tetiklemez (yalnızca kurulum onarımı çözer).
+- **Yarım dosya arşivi artık buluta yüklenmez ve başarılı sayılmaz.** Sıkıştırma hatası
+  yutulup yalnızca `File.Exists` kontrol ediliyordu. Artık açık başarı bayrağı tutulur,
+  `VerifyAfterBackup` açıksa arşiv CRC ile doğrulanır, yarım dosya silinir, hata ekrana
+  ve e-postaya düşer, iş başarısız sayılır (History/retention yanıltılmaz).
+- **Hata sebebi her yerde görünür.** Yeni `ExceptionMessageHelper.Describe`: sarmalayıcı
+  mesajları ("see inner exception") atlar, boş mesajlı derleme hatasında DLL adını yazar.
+  SQL, Google Drive, FTP/SFTP, UNC, dosya yedeği, disk imajı ve iş seviyesi hataları bunu kullanır.
+- **Bulut yükleme hatasının sebebi** ekranda kırmızı satır ve e-posta logunda gösterilir
+  (önceden yalnızca `0/1 başarılı`).
+- **E-postada arşiv hatası** özet tabloda kırmızı "Arşiv Dosyası: ✗ Oluşturulamadı — sebep" olarak görünür.
+- **Salt okunur kaynak dosyalar** (ör. Mikro `.SNO`) hedefte salt okunur kalıp sonraki
+  gece üzerine yazılamıyor ve ara `Files` klasörü silinemiyordu; öznitelik temizlenir.
+- Önceki çalıştırmadan kalan ara `Files` klasörü yeni kopya öncesi temizlenir
+  (kaynakta silinmiş eski dosyalar arşive girmez).
+- İş "çalışıyor" kaydı bildirim e-postası ve Failed olayı gönderilene kadar tutulur.
+
+### Installer
+
+- `sc config binPath=` her kurulumda yazılır (kayıtlı servis eski dizinde kalmaz).
+- `sc failure` kurtarma kuralı: süreç beklenmedik sonlanırsa 1/1/5 dk sonra yeniden başlat.
+- Güncelleme ve kaldırmada servis **gerçekten durana kadar** beklenir (en fazla 120 sn,
+  sonra `taskkill`); önceden `sc stop` + 2 sn uyku dosyaları karışık sürümde bırakabiliyordu.
+- `SetupMutex` (aynı anda iki installer çalışmaz), `SetupLogging=yes` ve sessiz
+  güncellemelerde `/LOG` → `{Kurulum}\Data\Logs\setup-*.log`.
+
+### Test
+
+- `ExceptionMessageHelperTests`: boş mesajlı derleme hatası, sarmalayıcı atlama, düz dosya
+  bulunamadı yanlış pozitif değil, sürüm uyuşmazlığı mesajı korunur, yeniden başlatılabilirlik,
+  AggregateException; `GetRunningPlanIds` anlık görüntü.
+
+## [0.99.96] - 2026-09-18 — 📧 SMTP: Sertifika Hatalarını Yoksay Seçeneği
 
 > Sahada "mail test gönder" şu hatayla düşüyordu: *"An error occurred while
 > attempting to establish an SSL or TLS connection. The server's SSL certificate

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Serilog;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Core.Helpers;
 
 namespace KoruMsSqlYedek.Engine.FileBackup
 {
@@ -206,7 +207,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             catch (Exception ex)
             {
                 result.Status = BackupResultStatus.Failed;
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ExceptionMessageHelper.Describe(ex);
                 Log.Error(ex, "Disk imajı yedekleme hatası. Kaynak: {Volume}", source.VolumePath);
                 throw;
             }

@@ -11,7 +11,7 @@
 ; === TANIMLAMALAR ===
 #define MyAppName "Koru MsSql Yedek"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.99.96"
+  #define MyAppVersion "0.99.97"
 #endif
 #define MyAppPublisher "Zafer Bilgisayar"
 #define MyAppURL "https://github.com/hzkucuk/KoruMsSqlYedek"
@@ -70,6 +70,10 @@ CloseApplicationsFilter=*.exe
 RestartApplications=yes
 ; Sessiz modda karşılama sayfasını atla
 DisableWelcomePage=yes
+; Aynı anda iki installer çalışmasın (tray fallback + servis self-update yarışı)
+SetupMutex=KoruMsSqlYedekSetup,Global\KoruMsSqlYedekSetup
+; /LOG verilmese de kurulum logu %TEMP%\Setup Log *.txt altına yazılır (saha teşhisi)
+SetupLogging=yes
 ; Versiyon bilgisi
 VersionInfoVersion={#MyAppVersion}.0
 VersionInfoCompany=Zafer Bilgisayar
@@ -180,8 +184,14 @@ Filename: "icacls.exe"; Parameters: """{app}\Data\Updates"" /inheritance:r /gran
 Filename: "schtasks.exe"; Parameters: "/Delete /TN ""KoruMsSqlYedek Tray"" /F"; Flags: runhidden waituntilterminated
 ; Kurulum sonrası service kur ve başlat (sc.exe ile — exe CLI komut desteklemiyor)
 Filename: "sc.exe"; Parameters: "create {#MyServiceName} binPath= ""{app}\Service\{#MyServiceExeName}"" start= auto"; StatusMsg: "{cm:ServiceInstall}"; Components: service; Flags: runhidden waituntilterminated
-; Service hesabını LocalSystem yap — VSS (Volume Shadow Copy) yetkisi için zorunlu
-Filename: "sc.exe"; Parameters: "config {#MyServiceName} obj= ""LocalSystem"""; Components: service; Flags: runhidden waituntilterminated
+; Service hesabını LocalSystem yap — VSS (Volume Shadow Copy) yetkisi için zorunlu.
+; binPath her kurulumda yeniden yazılır: servis zaten kayıtlıysa yukarıdaki create
+; sessizce başarısız olur ve eski bir dizinden kayıtlı servis o dizinde kalırdı.
+Filename: "sc.exe"; Parameters: "config {#MyServiceName} binPath= ""{app}\Service\{#MyServiceExeName}"" start= auto obj= ""LocalSystem"""; Components: service; Flags: runhidden waituntilterminated
+; Kurtarma: süreç beklenmedik sonlanırsa yeniden başlat. Servis, .NET derleme yükleme
+; hatasında (CLR hatayı süreç boyunca önbelleğe alır) kendini bilinçli olarak sonlandırır;
+; yeni süreç bu kural ile kalkar. Son eylem sonraki tüm hatalarda tekrarlanır.
+Filename: "sc.exe"; Parameters: "failure {#MyServiceName} reset= 86400 actions= restart/60000/restart/60000/restart/300000"; Components: service; Flags: runhidden waituntilterminated
 ; Service açıklaması
 Filename: "sc.exe"; Parameters: "description {#MyServiceName} ""Koru MsSql Yedek — SQL Server Yedekleme & Bulut Senkronizasyon Servisi"""; Components: service; Flags: runhidden waituntilterminated
 ; Servisi başlat
@@ -196,10 +206,8 @@ Filename: "{app}\{#MyAppExeName}"; Components: trayapp; Flags: shellexec nowait 
 [UninstallRun]
 ; Başlangıç zamanlanmış görevini kaldır (yoksa hata döner, görmezden gelinir)
 Filename: "schtasks.exe"; Parameters: "/Delete /TN ""KoruMsSqlYedek Tray"" /F"; RunOnceId: "DeleteStartupTask"; Flags: runhidden waituntilterminated
-; Kaldırma öncesi service durdur ve kaldır (sc.exe ile)
-Filename: "sc.exe"; Parameters: "stop {#MyServiceName}"; RunOnceId: "StopService"; Components: service; Flags: runhidden waituntilterminated
-; Servisin durmasını bekle
-Filename: "cmd.exe"; Parameters: "/c timeout /t 3 /nobreak >nul"; RunOnceId: "WaitServiceStop"; Components: service; Flags: runhidden waituntilterminated
+; Servis CurUninstallStepChanged(usUninstall) içinde durdurulur ve gerçekten durana kadar
+; beklenir (StopServiceAndWait); burada yalnızca kaydı silinir.
 Filename: "sc.exe"; Parameters: "delete {#MyServiceName}"; RunOnceId: "UninstallService"; Components: service; Flags: runhidden waituntilterminated
 
 [UninstallDelete]
@@ -294,6 +302,43 @@ begin
   Log('Self-contained deployment: .NET runtime kurulumu atlanıyor.');
 end;
 
+// Servis süreci hâlâ çalışıyor mu? (RUNNING / STOP_PENDING / START_PENDING / PAUSED)
+// Servis kayıtlı değilse sc query hata verir, findstr eşleşmez → False.
+function IsServiceAlive(): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := Exec(ExpandConstant('{cmd}'),
+    '/c sc.exe query {#MyServiceName} | findstr /I "RUNNING PENDING PAUSED"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
+// Servisi durdurur ve GERÇEKTEN durana kadar bekler. sc stop asenkrondur; çalışan bir
+// yedek varken servis Quartz işlerini bitirene kadar açık kalır. Süre aşılırsa süreç
+// zorla sonlandırılır — aksi halde kilitli dosyalar eski sürümde kalır ve
+// {app}\Service karışık sürümle kalır.
+procedure StopServiceAndWait();
+var
+  ResultCode, Waited: Integer;
+begin
+  Exec('sc.exe', 'stop {#MyServiceName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Waited := 0;
+  while IsServiceAlive() and (Waited < 120) do
+  begin
+    Sleep(1000);
+    Waited := Waited + 1;
+  end;
+
+  if IsServiceAlive() then
+  begin
+    Log('Servis 120 sn icinde durmadi, surec zorla sonlandiriliyor.');
+    Exec('taskkill', '/F /IM {#MyServiceExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Sleep(2000);
+  end
+  else
+    Log('Servis durdu (' + IntToStr(Waited) + ' sn).');
+end;
+
 // Güncelleme öncesi servisi durdur ve tray uygulamasını kapat
 procedure CurStepChanged(CurStep: TSetupStep);
 var
@@ -301,8 +346,8 @@ var
 begin
   if CurStep = ssInstall then
   begin
-    // Çalışan servisi durdur (güncelleme öncesi dosya kilidi önleme)
-    Exec('sc.exe', 'stop {#MyServiceName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    // Çalışan servisi durdur ve gerçekten durmasını bekle (dosya kilidi önleme)
+    StopServiceAndWait();
     // Tray uygulamasını kapat — ana penceresi olmadığı için InnoSetup'un
     // CloseApplications mekanizması tray app'ı algılayamaz. taskkill zorunlu.
     Exec('taskkill', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
@@ -347,6 +392,10 @@ var
 begin
   if CurUninstallStep = usUninstall then
   begin
+    // Servisi durdur ve gerçekten durana kadar bekle — aksi halde sc delete servisi
+    // "silinmek üzere işaretli" bırakır ve {app}\Service dosyaları kilitli kalır.
+    // ([UninstallRun] bu adımdan sonra çalışır ve yalnızca sc delete yapar.)
+    StopServiceAndWait();
     Exec('taskkill', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Sleep(500);
   end;

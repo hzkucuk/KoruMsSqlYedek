@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Serilog;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Core.Helpers;
 
 namespace KoruMsSqlYedek.Engine.FileBackup
 {
@@ -147,6 +148,9 @@ namespace KoruMsSqlYedek.Engine.FileBackup
 
                         bool copied = false;
 
+                        // Önceki çalıştırmadan kalan salt okunur hedef üzerine yazmayı engeller
+                        ClearReadOnly(destFile);
+
                         // VSS ile kopyalama dene
                         if (useVss && snapshotId.HasValue)
                         {
@@ -162,6 +166,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
 
                         if (copied)
                         {
+                            ClearReadOnly(destFile);
                             result.FilesCopied++;
                             var fi = new FileInfo(destFile);
                             result.TotalSizeBytes += fi.Length;
@@ -189,7 +194,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                         result.FailedFiles.Add(new FailedFileInfo
                         {
                             FilePath = sourceFile,
-                            ErrorMessage = ex.Message
+                            ErrorMessage = ExceptionMessageHelper.Describe(ex)
                         });
                         Log.Warning(ex, "Dosya kopyalanamadı: {File}", sourceFile);
                     }
@@ -226,7 +231,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             catch (Exception ex)
             {
                 result.Status = BackupResultStatus.Failed;
-                result.ErrorMessage = ex.Message;
+                result.ErrorMessage = ExceptionMessageHelper.Describe(ex);
                 result.CompletedAt = DateTime.UtcNow;
                 Log.Error(ex, "Dosya yedekleme hatası: {SourceName}", source.SourceName);
             }

@@ -209,7 +209,9 @@ namespace KoruMsSqlYedek.Engine.Notification
                 int totalSkipped = data.FileResults.Sum(r => r.FilesSkipped);
                 long totalSize = data.FileResults.Sum(r => r.TotalSizeBytes);
 
-                tmpl.WriteSectionTitle($"Dosya Yedekleme ({data.FileResults.Count} kaynak)");
+                tmpl.WriteSectionTitle(string.IsNullOrEmpty(data.FileArchiveError)
+                    ? $"Dosya Yedekleme ({data.FileResults.Count} kaynak)"
+                    : $"Dosya Yedekleme ({data.FileResults.Count} kaynak) — arşiv başarısız");
                 tmpl.BeginSummaryTable();
                 tmpl.WriteTableRow("Kopyalanan Dosya", totalCopied.ToString());
                 tmpl.WriteTableRow("Atlanan Dosya", totalSkipped.ToString());
@@ -217,6 +219,11 @@ namespace KoruMsSqlYedek.Engine.Notification
 
                 if (!string.IsNullOrEmpty(data.FileArchiveFileName))
                     tmpl.WriteTableRow("Arşiv Dosyası", EmailTemplateBuilder.Encode(data.FileArchiveFileName));
+                else if (!string.IsNullOrEmpty(data.FileArchiveError))
+                    // Kaynaklar kopyalandı ama arşiv yok: özet tabloda açıkça kırmızı göster
+                    tmpl.WriteTableRow("Arşiv Dosyası",
+                        "✗ Oluşturulamadı — " + EmailTemplateBuilder.Encode(SanitizeForEmail(data.FileArchiveError)),
+                        EmailTemplateBuilder.GetFailureColor());
 
                 if (data.FileArchiveSizeBytes > 0)
                 {

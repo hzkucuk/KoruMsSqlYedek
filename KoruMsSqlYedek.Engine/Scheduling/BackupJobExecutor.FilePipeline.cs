@@ -17,25 +17,25 @@ namespace KoruMsSqlYedek.Engine.Scheduling
         /// Dosya yedekleme pipeline'ı: Copy → Compress.
         /// Bulut yükleme yapılmaz, arşiv yolu döndürülür.
         /// </summary>
-        private async Task<(List<FileBackupResult> FileResults, string ArchivePath)> ExecuteFileBackupAsync(BackupPlan plan, string correlationId, CancellationToken ct,
+        private async Task<(List<FileBackupResult> FileResults, string ArchivePath, string ArchiveError)> ExecuteFileBackupAsync(BackupPlan plan, string correlationId, CancellationToken ct,
             List<string> cleanupPaths)
         {
             if (FileBackupService == null)
             {
                 Log.Error("Dosya yedekleme: FileBackupService null (Autofac inject başarısız). Plan={PlanName}", plan.PlanName);
-                return (new List<FileBackupResult>(), null);
+                return (new List<FileBackupResult>(), null, null);
             }
 
             if (plan.FileBackup == null)
             {
                 Log.Warning("Dosya yedekleme: Plan.FileBackup yapılandırması null. Plan={PlanName}", plan.PlanName);
-                return (new List<FileBackupResult>(), null);
+                return (new List<FileBackupResult>(), null, null);
             }
 
             if (!plan.FileBackup.IsEnabled)
             {
                 Log.Information("Dosya yedekleme: FileBackup devre dışı. Plan={PlanName}", plan.PlanName);
-                return (new List<FileBackupResult>(), null);
+                return (new List<FileBackupResult>(), null, null);
             }
 
             int enabledSources = plan.FileBackup.Sources?.Count(s => s.IsEnabled) ?? 0;
@@ -50,6 +50,32 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 StepName = "Dosya Yedekleme",
                 Message = $"Dosya yedekleme başlıyor: {enabledSources} kaynak"
             });
+
+            // Önceki çalıştırmadan kalan ara Files klasörü (arşiv hatası, silinemeyen dosya, süreç
+            // sonlanması) temizlenir. Kopya ayna değildir: kaynakta silinmiş eski dosyalar aksi
+            // halde yeni arşive girer. Her çalıştırma tam kopya yaptığından veri kaybı yoktur.
+            string staleFilesDir = Path.Combine(plan.LocalPath, "Files");
+            if (Directory.Exists(staleFilesDir))
+            {
+                try
+                {
+                    FileBackup.FileBackupService.ClearReadOnlyRecursive(staleFilesDir);
+                    Directory.Delete(staleFilesDir, recursive: true);
+                    Log.Information("Önceki çalıştırmadan kalan ara Files klasörü silindi: {FilesDir}", staleFilesDir);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Önceki ara Files klasörü silinemedi: {FilesDir}", staleFilesDir);
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "Temizlik",
+                        Message = $"Önceki ara Files klasörü silinemedi, eski dosyalar arşive girebilir: {ExceptionMessageHelper.Describe(ex)}"
+                    });
+                }
+            }
 
             var results = await FileBackupService.BackupFilesAsync(plan, null, ct);
 
@@ -81,7 +107,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                    r.FilesCopied > 0))
             {
                 Log.Warning("Dosya yedekleme: Hiçbir dosya kopyalanamadı, sıkıştırma atlanıyor. Plan={PlanName}", plan.PlanName);
-                return (results, null);
+                return (results, null, null);
             }
 
             string filesDir = Path.Combine(plan.LocalPath, "Files");
@@ -93,23 +119,29 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             if (!Directory.Exists(filesDir))
             {
                 Log.Warning("Dosya yedekleme: Hedef dizin bulunamadı, sıkıştırma atlanıyor: {FilesDir}", filesDir);
-                return (results, null);
+                return (results, null, null);
             }
 
             if (!Directory.EnumerateFiles(filesDir, "*.*", SearchOption.AllDirectories).Any())
             {
                 Log.Warning("Dosya yedekleme: Hedef dizinde dosya yok, sıkıştırma atlanıyor: {FilesDir}", filesDir);
-                return (results, null);
+                return (results, null, null);
             }
 
             // Sıkıştır — yapılandırılmışsa o ayarları kullan, yoksa varsayılan (Level 3, şifresiz)
             string archivePath = null;
+            bool archiveOk = false;
+            string archiveError = null;
             try
             {
                 if (CompressionService is Engine.Compression.SevenZipCompressionService sevenZip)
                 {
                     string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                     archivePath = Path.Combine(plan.LocalPath, $"Files_{timestamp}.7z");
+
+                    // Yarım arşiv iptal/hata temizliğinde silinsin diye sıkıştırma ÖNCESİ izlenir
+                    cleanupPaths.Add(archivePath);
+
                     string password = plan.Compression != null && !string.IsNullOrEmpty(plan.Compression.ArchivePassword)
                         ? PasswordProtector.Unprotect(plan.Compression.ArchivePassword)
                         : null;
@@ -133,10 +165,29 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     });
 
                     await sevenZip.CompressDirectoryAsync(filesDir, archivePath, password, level, compressProgress, ct);
-                    Log.Information("Dosya yedek arşivi oluşturuldu: {ArchivePath}", archivePath);
 
-                    // Ara dosya takibi: .7z
-                    cleanupPaths.Add(archivePath);
+                    // Bütünlük doğrulaması (SQL pipeline ile aynı kural): bozuk arşiv yüklenmez
+                    if (plan.VerifyAfterBackup)
+                    {
+                        bool verified = await sevenZip.VerifyArchiveAsync(archivePath, password, ct);
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            ActivityType = BackupActivityType.StepChanged,
+                            StepName = "Arşiv Doğrulama",
+                            Message = verified
+                                ? $"Arşiv bütünlük doğrulaması başarılı ✓: {Path.GetFileName(archivePath)}"
+                                : $"Arşiv bütünlük doğrulaması başarısız ✕: {Path.GetFileName(archivePath)}"
+                        });
+
+                        if (!verified)
+                            throw new InvalidDataException(
+                                $"Arşiv bütünlük doğrulaması başarısız: {Path.GetFileName(archivePath)}");
+                    }
+
+                    archiveOk = true;
+                    Log.Information("Dosya yedek arşivi oluşturuldu: {ArchivePath}", archivePath);
 
                     long archiveSize = 0;
                     try { archiveSize = new FileInfo(archivePath).Length; } catch { }
@@ -153,19 +204,44 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 else
                 {
                     Log.Warning("SevenZipCompressionService bulunamadı, dosya yedekleri sıkıştırılamadı.");
+                    archiveError = "Sıkıştırma servisi bulunamadı";
                 }
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 Log.Error(ex, "Dosya yedek sıkıştırma hatası: Plan={PlanName}", plan.PlanName);
+                archiveError = ExceptionMessageHelper.Describe(ex);
+                RuntimeHealth.ReportAssemblyLoadFailure(ex);
             }
 
-            // Arşiv oluşturuldu mu?
-            if (archivePath == null || !File.Exists(archivePath))
+            // Arşiv yalnızca sıkıştırma (ve doğrulama) gerçekten başarılıysa kullanılır.
+            // Yalnızca File.Exists'e bakmak yarım kalmış .7z'nin buluta yüklenip başarılı
+            // sayılmasına yol açıyordu.
+            if (!archiveOk || !File.Exists(archivePath))
             {
-                Log.Warning("Dosya yedekleme: Arşiv oluşturulamadı veya bulunamadı. Plan={PlanName}", plan.PlanName);
-                return (results, null);
+                if (archivePath != null)
+                {
+                    TryDeleteFile(archivePath);
+                    cleanupPaths.Remove(archivePath);
+                }
+
+                archiveError ??= "Arşiv dosyası oluşturulamadı";
+                Log.Warning("Dosya yedekleme: Arşiv oluşturulamadı, yükleme atlanıyor. Plan={PlanName} — {Error}",
+                    plan.PlanName, archiveError);
+
+                BackupActivityHub.Raise(new BackupActivityEventArgs
+                {
+                    PlanId = plan.PlanId,
+                    PlanName = plan.PlanName,
+                    ActivityType = BackupActivityType.StepChanged,
+                    StepName = "Dosya Sıkıştırma",
+                    Message = $"Dosya arşivi oluşturulamadı: {archiveError}. Ara dosyalar korundu, buluta yükleme yapılmadı."
+                });
+
+                // Ara Files klasörü bilinçli olarak SİLİNMEZ (bir sonraki çalıştırma üzerine yazar)
+                cleanupPaths.Remove(filesDir);
+                return (results, null, archiveError);
             }
 
             // Arşiv başarılıysa ara Files klasörünü sil
@@ -174,6 +250,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 try
                 {
                     int fileCount = Directory.GetFiles(filesDir, "*.*", SearchOption.AllDirectories).Length;
+                    FileBackup.FileBackupService.ClearReadOnlyRecursive(filesDir);
                     Directory.Delete(filesDir, recursive: true);
                     cleanupPaths.Remove(filesDir);
                     Log.Information(
@@ -195,7 +272,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 }
             }
 
-            return (results, archivePath);
+            return (results, archivePath, null);
         }
     }
 }

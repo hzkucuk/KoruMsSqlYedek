@@ -309,6 +309,8 @@ namespace KoruMsSqlYedek.Win
 
             if (e.ActivityType == BackupActivityType.Completed && !e.IsSuccess && !string.IsNullOrEmpty(e.Message))
                 logColor = Theme.ModernTheme.LogWarning;
+            else if (e.ActivityType == BackupActivityType.CloudUploadCompleted && !e.IsSuccess)
+                logColor = Theme.ModernTheme.LogError;
 
             AppendBackupLog(e.PlanId, BuildActivityLogLine(e), logColor, isProgress);
         }
@@ -378,8 +380,12 @@ namespace KoruMsSqlYedek.Win
             BackupActivityType.CloudUploadProgress
                 => BuildCloudUploadLogLine(e),
 
+            // Başarılı yükleme özet satırında görünür; başarısızlıkta sebep ayrıca yazılır
             BackupActivityType.CloudUploadCompleted
-                => "",
+                => e.IsSuccess
+                    ? ""
+                    : Res.Format("Activity_CloudUploadFailed", e.CloudFileName, e.CloudTargetName,
+                        string.IsNullOrWhiteSpace(e.Message) ? "?" : e.Message),
 
             BackupActivityType.CloudUploadAbandoned
                 => e.AbandonedFiles is { Count: > 0 }

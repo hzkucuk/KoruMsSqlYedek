@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Interfaces;
+using KoruMsSqlYedek.Core.IPC;
 using KoruMsSqlYedek.Service.IPC;
 using KoruMsSqlYedek.Service.SelfUpdate;
 
@@ -25,6 +26,7 @@ namespace KoruMsSqlYedek.Service
         private readonly IPlanManager _planManager;
         private readonly ICloudUploadOrchestrator _orchestrator;
         private readonly ServicePipeServer _pipeServer;
+        private readonly RuntimeRestartGuard _restartGuard;
         private CancellationTokenSource _cts;
         private FileSystemWatcher _planWatcher;
 
@@ -37,12 +39,14 @@ namespace KoruMsSqlYedek.Service
             ISchedulerService schedulerService,
             IPlanManager planManager,
             ICloudUploadOrchestrator orchestrator,
-            ServicePipeServer pipeServer)
+            ServicePipeServer pipeServer,
+            IBackupCancellationRegistry cancellationRegistry)
         {
             _schedulerService = schedulerService;
             _planManager = planManager;
             _orchestrator = orchestrator;
             _pipeServer = pipeServer;
+            _restartGuard = new RuntimeRestartGuard(cancellationRegistry);
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -50,6 +54,10 @@ namespace KoruMsSqlYedek.Service
             Log.Information("KoruMsSqlYedek Service başlatılıyor...");
 
             _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            // Kritik derlemeleri açılışta yükle; yüklenemezse (veya çalışırken yükleme hatası
+            // raporlanırsa) servis yeniden başlatılır — CLR hatayı süreç boyunca önbelleğe alır.
+            bool runtimeHealthy = _restartGuard.Start(_cts.Token);
 
             await _schedulerService.StartAsync(_cts.Token);
 
@@ -62,6 +70,18 @@ namespace KoruMsSqlYedek.Service
 
             StartPlanWatcher();
             _pipeServer.Start();
+
+            // Önceki süreç derleme hatası yüzünden yeniden başlatıldıysa o süreçte başarısız
+            // olan planları hemen yeniden çalıştır (gecenin yedeği kaybolmasın)
+            if (runtimeHealthy)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try { await _restartGuard.TriggerPendingPlansAsync(_schedulerService, _cts.Token); }
+                    catch (OperationCanceledException) { }
+                    catch (Exception ex) { Log.Warning(ex, "Bekleyen planlar tetiklenemedi."); }
+                }, _cts.Token);
+            }
 
             // Self-update sonrası bekleyen tray app restart kontrolü (arka planda — installer bitene kadar bekler)
             _ = Task.Run(async () =>

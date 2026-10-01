@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Serilog;
 using KoruMsSqlYedek.Core.Interfaces;
 using KoruMsSqlYedek.Core.Models;
+using KoruMsSqlYedek.Core.Helpers;
 
 namespace KoruMsSqlYedek.Engine.Cloud
 {
@@ -50,7 +51,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 }
                 catch (Exception ex)
                 {
-                    deleteResult.ErrorMessage = ex.Message;
+                    deleteResult.ErrorMessage = ExceptionMessageHelper.Describe(ex);
                     Log.Error(ex, "Bulut silme hatası: {Provider} — {FileId}",
                         target.DisplayName, remoteFileIdentifier);
                 }
@@ -146,7 +147,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 }
                 catch (Exception ex)
                 {
-                    testResult.ErrorMessage = ex.Message;
+                    testResult.ErrorMessage = ExceptionMessageHelper.Describe(ex);
                     Log.Error(ex, "Bağlantı testi hatası: {Provider}", target.DisplayName);
                 }
 

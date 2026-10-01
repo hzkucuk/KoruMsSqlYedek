@@ -56,6 +56,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
             BackupPlan plan = null;
             bool lockAcquired = false;
+            bool registered = false;
             var cleanupPaths = new List<string>();
             var logLines = new List<string>();
             DateTime jobStartedAt = DateTime.Now;
@@ -115,6 +116,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 jobStartedAt = DateTime.Now;
 
                 CancellationRegistry?.Register(planId, cts);
+                registered = true;
                 try
                 {
 
@@ -136,7 +138,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         // Dosya yedekleme tipi
                         if (backupType == "FileBackup")
                         {
-                            var (fileResults, fileArchivePath) =
+                            var (fileResults, fileArchivePath, fileArchiveError) =
                                 await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
 
                             // Konsolide bulut yükleme (tüm dosyalar tek seferde)
@@ -170,7 +172,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             await EmptyTrashIfNeededAsync(plan, cts.Token);
                             cleanupPaths.Clear();
 
-                            bool anyFileSourceFailed = fileResults != null && fileResults.Any(r => r.Status != BackupResultStatus.Success);
+                            bool anyFileSourceFailed = fileArchiveError != null
+                                || (fileResults != null && fileResults.Any(r => r.Status != BackupResultStatus.Success));
                             bool fileOverallSuccess = cloudOk && !anyFileSourceFailed;
 
                             logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme tamamlandı. {(fileOverallSuccess ? "✓" : "⚠")}");
@@ -187,6 +190,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                                 IsSuccess = fileOverallSuccess,
                                 FileResults = fileResults ?? new List<FileBackupResult>(),
                                 FileArchiveFileName = !string.IsNullOrEmpty(fileArchivePath) ? Path.GetFileName(fileArchivePath) : null,
+                                FileArchiveError = fileArchiveError,
                                 FileArchiveSizeBytes = GetFileSize(fileArchivePath),
                                 FileCloudUploadResults = fileCloudResults ?? new List<CloudUploadResult>(),
                                 LogLines = logLines
@@ -211,12 +215,14 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         // Dosya yedekleme — SQL yedek ile aynı zamanlamada çalıştır
                         List<FileBackupResult> fileResults2 = null;
                         string fileArchivePath2 = null;
+                        string fileArchiveError2 = null;
 
                         if (willRunFileBackup && backupType != "FileBackup")
                         {
                             var fileResult = await ExecuteFileBackupAsync(plan, correlationId, cts.Token, cleanupPaths);
                             fileResults2 = fileResult.FileResults;
                             fileArchivePath2 = fileResult.ArchivePath;
+                            fileArchiveError2 = fileResult.ArchiveError;
                         }
 
                         // Disk imajı yedekleme — SQL ve dosya yedekten sonra çalıştır
@@ -270,7 +276,8 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         }
 
                         bool anySqlFailed = sqlResults != null && sqlResults.Any(r => r.Status != BackupResultStatus.Success);
-                        bool anyFileFailed = fileResults2 != null && fileResults2.Any(r => r.Status != BackupResultStatus.Success);
+                        bool anyFileFailed = fileArchiveError2 != null
+                            || (fileResults2 != null && fileResults2.Any(r => r.Status != BackupResultStatus.Success));
                         bool overallSuccess = allCloudOk && !anySqlFailed && !anyFileFailed;
 
                         // Retention temizliği (SQL + FileBackup combined branch; geçmiş kaydı başarısızsa atlanır)
@@ -294,6 +301,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             SqlResults = sqlResults ?? new List<BackupResult>(),
                             FileResults = fileResults2 ?? new List<FileBackupResult>(),
                             FileArchiveFileName = !string.IsNullOrEmpty(fileArchivePath2) ? Path.GetFileName(fileArchivePath2) : null,
+                            FileArchiveError = fileArchiveError2,
                             FileArchiveSizeBytes = GetFileSize(fileArchivePath2),
                             FileCloudUploadResults = fileCloudResults2 ?? new List<CloudUploadResult>(),
                             LogLines = logLines
@@ -306,7 +314,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                             ActivityType = BackupActivityType.Completed,
                             IsSuccess = overallSuccess,
                             Message = !overallSuccess
-                                ? (anySqlFailed ? "SQL yedekleme başarısız" : "Bulut yükleme başarısız")
+                                ? (anySqlFailed ? "SQL yedekleme başarısız"
+                                    : anyFileFailed ? "Dosya yedekleme başarısız"
+                                    : "Bulut yükleme başarısız")
                                 : (hasCloudTargets ? "Bulut ve yerel Doğruluk Kontrolleri tamamlandı" : null)
                         });
 
@@ -318,7 +328,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     }
                     finally
                     {
-                        CancellationRegistry?.Unregister(planId);
+                        // Kayıt burada SİLİNMEZ: catch blokları (bildirim e-postası, Failed olayı)
+                        // bitene kadar iş "çalışıyor" sayılmalı — servis yeniden başlatma koruması
+                        // IsAnyRunning'e bakar. Silme en dış finally'de yapılır.
                     }
                 }
                 catch (OperationCanceledException)
@@ -358,7 +370,7 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 CleanupOnFailure(cleanupPaths, planId);
                 if (plan != null)
                 {
-                    logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme başarısız: {ex.Message}");
+                    logLines.Add($"[{DateTime.Now:HH:mm:ss}] [{plan.PlanName}] Yedekleme başarısız: {ExceptionMessageHelper.Describe(ex)}");
 
                     await SendConsolidatedNotificationAsync(plan, new JobNotificationData
                     {
@@ -377,12 +389,18 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         PlanId = plan.PlanId,
                         PlanName = plan.PlanName,
                         ActivityType = BackupActivityType.Failed,
-                        Message = ex.Message
+                        Message = ExceptionMessageHelper.Describe(ex)
                     });
                 }
+
+                // Bildirim ve Failed olayından SONRA raporla (yeniden başlatma bunları kesmesin)
+                RuntimeHealth.ReportAssemblyLoadFailure(ex);
             }
             finally
             {
+                if (registered)
+                    CancellationRegistry?.Unregister(planId);
+
                 if (lockAcquired && _planLocks.TryGetValue(planId, out var releaseLock))
                     releaseLock.Release();
             }

@@ -1091,6 +1091,7 @@ Bir sonraki bağlantıda yeni parmak izi öğrenilip kaydedilir.</value></data>
 SFTP için ilk başarılı testte sunucu parmak izi öğrenilip kaydedilir.</value></data>
   <data name="Activity_CloudAbandoned" xml:space="preserve"><value>⚠ Bulut yükleme terk edildi ({0} dosya): {1}</value></data>
   <data name="Activity_CloudAbandonedMsg" xml:space="preserve"><value>⚠ Bulut yükleme terk edildi: {0}</value></data>
+  <data name="Activity_CloudUploadFailed" xml:space="preserve"><value>✕ Bulut yükleme başarısız: {0} → {1} — {2}</value></data>
   <data name="Activity_MaxRetryExceeded" xml:space="preserve"><value>Maksimum deneme aşıldı</value></data>
   <data name="Activity_BackupCompleted" xml:space="preserve"><value>[{0}] Yedekleme tamamlandı. ✓</value></data>
   <data name="Activity_BackupCompletedMsg" xml:space="preserve"><value>[{0}] Yedekleme tamamlandı. ✓ {1}.</value></data>

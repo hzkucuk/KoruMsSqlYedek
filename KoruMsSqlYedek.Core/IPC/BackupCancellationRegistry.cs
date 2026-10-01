@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace KoruMsSqlYedek.Core.IPC
@@ -25,6 +27,9 @@ namespace KoruMsSqlYedek.Core.IPC
 
         /// <summary>Herhangi bir plan şu an çalışıyor mu?</summary>
         bool IsAnyRunning();
+
+        /// <summary>Şu an çalışan planların kimlikleri (anlık görüntü).</summary>
+        IReadOnlyCollection<string> GetRunningPlanIds();
     }
 
     /// <summary>Thread-safe, ConcurrentDictionary tabanlı implementasyon.</summary>
@@ -71,5 +76,7 @@ namespace KoruMsSqlYedek.Core.IPC
         }
 
         public bool IsAnyRunning() => !_running.IsEmpty;
+
+        public IReadOnlyCollection<string> GetRunningPlanIds() => _running.Keys.ToArray();
     }
 }

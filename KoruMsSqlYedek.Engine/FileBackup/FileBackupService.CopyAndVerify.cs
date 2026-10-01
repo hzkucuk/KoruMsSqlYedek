@@ -100,6 +100,35 @@ namespace KoruMsSqlYedek.Engine.FileBackup
         }
 
         /// <summary>
+        /// Dosyanın salt okunur özniteliğini kaldırır. File.Copy kaynağın özniteliklerini taşıdığından
+        /// salt okunur kaynaklar (ör. Mikro .SNO) hedefte de salt okunur kalır; sonraki çalıştırmada
+        /// üzerine yazılamaz ve ara Files klasörü silinemez.
+        /// </summary>
+        internal static void ClearReadOnly(string path)
+        {
+            try
+            {
+                var attrs = File.GetAttributes(path);
+                if ((attrs & FileAttributes.ReadOnly) != 0)
+                    File.SetAttributes(path, attrs & ~FileAttributes.ReadOnly);
+            }
+            catch (FileNotFoundException) { }
+            catch (DirectoryNotFoundException) { }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Salt okunur özniteliği kaldırılamadı: {File}", path);
+            }
+        }
+
+        /// <summary>Klasördeki tüm dosyaların salt okunur özniteliğini kaldırır (silme öncesi).</summary>
+        internal static void ClearReadOnlyRecursive(string directory)
+        {
+            if (!Directory.Exists(directory)) return;
+            foreach (string file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+                ClearReadOnly(file);
+        }
+
+        /// <summary>
         /// Kopyalanan dosyanın bütünlüğünü doğrular.
         /// 1. Boyut karşılaştırması (her durumda).
         /// 2. SHA-256 karşılaştırması (kaynak kilitli değilse).

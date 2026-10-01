@@ -211,7 +211,9 @@ namespace KoruMsSqlYedek.Win
                     return;
                 }
 
-                const string silentArgs = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /SP-";
+                string setupLog = System.IO.Path.Combine(
+                    Core.Helpers.PathHelper.LogsDirectory, $"setup-{DateTime.Now:yyyyMMdd_HHmmss}.log");
+                string silentArgs = $"/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /SP- /LOG=\"{setupLog}\"";
                 Log.Information("Installer başlatılıyor — FileName: {FileName}, Arguments: {Arguments}",
                     installerPath, silentArgs);
 

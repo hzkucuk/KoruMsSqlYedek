@@ -161,12 +161,7 @@ namespace KoruMsSqlYedek.Engine.Backup
         /// SMO exception zincirinden en içteki (asıl) hata mesajını çıkarır.
         /// </summary>
         private static string ExtractInnermostMessage(Exception ex)
-        {
-            var inner = ex;
-            while (inner.InnerException != null)
-                inner = inner.InnerException;
-            return inner.Message;
-        }
+            => ExceptionMessageHelper.Describe(ex);
 
         /// <summary>
         /// Bilinen SQL/SMO hata kalıpları için Türkçe açıklama üretir.
@@ -175,6 +170,14 @@ namespace KoruMsSqlYedek.Engine.Backup
         {
             string innerMsg = ExtractInnermostMessage(ex);
             string lowerMsg = innerMsg.ToLowerInvariant();
+
+            // Derleme yükleme hatası: Describe zaten açıklayıcı metin üretir; servis sağlık
+            // izleyicisi de bunu görüp servisi yeniden başlatır (bkz. RuntimeHealth).
+            if (ExceptionMessageHelper.GetFailedAssemblyName(ex) != null)
+            {
+                RuntimeHealth.ReportAssemblyLoadFailure(ex);
+                return innerMsg;
+            }
 
             if (lowerMsg.Contains("operating system error 32") || lowerMsg.Contains("sharing violation"))
                 return $"Veritabanı dosyası başka bir işlem tarafından kullanılıyor. " +
