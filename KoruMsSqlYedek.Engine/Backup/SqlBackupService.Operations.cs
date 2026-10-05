@@ -264,5 +264,131 @@ namespace KoruMsSqlYedek.Engine.Backup
 
             return info;
         }
+
+        /// <summary>SQL 3201: "Cannot open backup device ... Operating system error N".</summary>
+        private const int SqlErrorCannotOpenBackupDevice = 3201;
+
+        public async Task<BackupPathAccessResult> CheckBackupPathWritableAsync(
+            SqlConnInfo connectionInfo,
+            string directoryPath,
+            CancellationToken cancellationToken)
+        {
+            var result = new BackupPathAccessResult { Path = directoryPath };
+            if (connectionInfo == null || string.IsNullOrWhiteSpace(connectionInfo.Server)
+                || string.IsNullOrWhiteSpace(directoryPath))
+                return result;
+
+            string probePath = Path.Combine(directoryPath, $"_KoruYazmaTesti_{Guid.NewGuid():N}.bak");
+            bool probeWritten = false;
+
+            try
+            {
+                using var conn = new SqlConnection(BuildConnectionString(connectionInfo));
+                await conn.OpenAsync(cancellationToken);
+
+                result.InstanceName = await TryScalarAsync(conn, "SELECT @@SERVERNAME", cancellationToken);
+                // VIEW SERVER STATE gerektirir; yoksa hesap adı mesajda yer almaz
+                result.ServiceAccount = await TryScalarAsync(conn,
+                    "SELECT TOP 1 service_account FROM sys.dm_server_services WHERE filename LIKE '%sqlservr.exe%'",
+                    cancellationToken);
+
+                // Yedeklemedeki gibi önce bu süreç oluşturur (BackupDatabaseAsync de öyle yapar), ardından
+                // SQL Server hesabıyla denenir; olmazsa BACKUP hatası (OS error 3/5) karar verir
+                try { Directory.CreateDirectory(directoryPath); }
+                catch (Exception ex) { Log.Debug(ex, "Yedek dizini oluşturulamadı: {Path}", directoryPath); }
+
+                try
+                {
+                    using var mkdir = new SqlCommand("EXEC master.sys.xp_create_subdir @dir", conn);
+                    mkdir.Parameters.AddWithValue("@dir", directoryPath);
+                    await mkdir.ExecuteNonQueryAsync(cancellationToken);
+                }
+                catch (SqlException ex)
+                {
+                    Log.Debug(ex, "xp_create_subdir başarısız: {Path}", directoryPath);
+                }
+
+                using (var backup = new SqlCommand(
+                    "BACKUP DATABASE [model] TO DISK = @path WITH COPY_ONLY, INIT, FORMAT", conn))
+                {
+                    backup.CommandTimeout = 120;
+                    backup.Parameters.AddWithValue("@path", probePath);
+                    await backup.ExecuteNonQueryAsync(cancellationToken);
+                }
+
+                probeWritten = true;
+                result.IsWritable = true;
+                Log.Information("Yedek dizini yazma testi başarılı: {Instance} → {Path}",
+                    result.InstanceName, directoryPath);
+
+                try
+                {
+                    using var del = new SqlCommand("EXEC master.sys.xp_delete_file 0, @path", conn);
+                    del.Parameters.AddWithValue("@path", probePath);
+                    await del.ExecuteNonQueryAsync(cancellationToken);
+                }
+                catch (SqlException ex)
+                {
+                    Log.Debug(ex, "Deneme yedeği SQL ile silinemedi: {Path}", probePath);
+                }
+            }
+            catch (SqlException ex) when (ContainsError(ex, SqlErrorCannotOpenBackupDevice))
+            {
+                result.IsWritable = false;
+                result.ErrorMessage = FirstErrorMessage(ex, SqlErrorCannotOpenBackupDevice);
+                Log.Warning("SQL Server yedek dizinine yazamıyor: {Instance} ({Account}) → {Path} — {Error}",
+                    result.InstanceName, result.ServiceAccount, directoryPath, result.ErrorMessage);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Bağlantı/yetki vb. — test sonuçsuz; asıl yedekleme kendi hatasını raporlar
+                Log.Warning(ex, "Yedek dizini yazma testi sonuçsuz: {Server} → {Path}",
+                    connectionInfo.Server, directoryPath);
+            }
+            finally
+            {
+                // xp_delete_file başarısız olduysa (yetki) yerel yoldan son deneme
+                if (probeWritten)
+                {
+                    try { if (File.Exists(probePath)) File.Delete(probePath); }
+                    catch (Exception ex) { Log.Debug(ex, "Deneme yedeği silinemedi: {Path}", probePath); }
+                }
+            }
+
+            return result;
+        }
+
+        private static async Task<string> TryScalarAsync(SqlConnection conn, string sql, CancellationToken ct)
+        {
+            try
+            {
+                using var cmd = new SqlCommand(sql, conn);
+                object value = await cmd.ExecuteScalarAsync(ct);
+                return value == null || value == DBNull.Value ? null : value.ToString();
+            }
+            catch (SqlException ex)
+            {
+                Log.Debug(ex, "Sorgu çalıştırılamadı: {Sql}", sql);
+                return null;
+            }
+        }
+
+        private static bool ContainsError(SqlException ex, int number)
+        {
+            foreach (SqlError error in ex.Errors)
+                if (error.Number == number) return true;
+            return false;
+        }
+
+        private static string FirstErrorMessage(SqlException ex, int number)
+        {
+            foreach (SqlError error in ex.Errors)
+                if (error.Number == number) return error.Message;
+            return ex.Message;
+        }
     }
 }

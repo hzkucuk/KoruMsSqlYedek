@@ -86,5 +86,15 @@ namespace KoruMsSqlYedek.Core.Interfaces
         Task<SqlServerEditionInfo> GetServerEditionAsync(
             SqlConnectionInfo connection,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// SQL Server servis hesabının yedek dizinine yazıp yazamadığını SQL Server'ın
+        /// kendisine küçük bir deneme yedeği (model, COPY_ONLY) aldırarak test eder.
+        /// Deneme dosyası hemen silinir. Hata fırlatmaz; sonuçsuz testte IsWritable null döner.
+        /// </summary>
+        Task<BackupPathAccessResult> CheckBackupPathWritableAsync(
+            SqlConnectionInfo connection,
+            string directoryPath,
+            CancellationToken cancellationToken);
     }
 }

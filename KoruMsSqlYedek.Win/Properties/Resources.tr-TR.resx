@@ -196,6 +196,10 @@ Bu işlem geri alınamaz.</value></data>
   <data name="PlanEdit_SaveError" xml:space="preserve"><value>Plan kaydedilirken hata oluştu.
 
 {0}</value></data>
+  <data name="PlanEdit_PathNotWritable" xml:space="preserve"><value>{0}
+
+Bu düzeltilene kadar SQL yedekleme başarısız olur. Plan yine de kaydedilsin mi?</value></data>
+  <data name="PlanEdit_PathNotWritableTitle" xml:space="preserve"><value>Yedek dizinine yazılamıyor</value></data>
   <data name="PlanEdit_Testing" xml:space="preserve"><value>Test Ediliyor...</value></data>
   <data name="PlanEdit_TestBtn" xml:space="preserve"><value>🔌 Bağlantıyı Test Et</value></data>
   <data name="PlanEdit_ConnSuccess" xml:space="preserve"><value>SQL Server bağlantısı başarılı!</value></data>

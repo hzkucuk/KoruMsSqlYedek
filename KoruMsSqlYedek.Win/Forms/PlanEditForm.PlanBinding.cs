@@ -301,9 +301,11 @@ namespace KoruMsSqlYedek.Win.Forms
 
         #region Button Events
 
-        private void OnSaveClick(object sender, EventArgs e)
+        private async void OnSaveClick(object sender, EventArgs e)
         {
             if (!SaveUiToPlan()) return;
+
+            if (!await ConfirmBackupPathWritableAsync()) return;
 
             try
             {
@@ -325,6 +327,46 @@ namespace KoruMsSqlYedek.Win.Forms
                 Theme.ModernMessageBox.Show(Res.Format("PlanEdit_SaveError", ex.Message),
                     Res.Get("Error"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        /// <summary>
+        /// SQL Server servis hesabının yedek dizinine yazabildiğini SQL Server'ın kendisine test ettirir.
+        /// Uygulamanın klasöre yazabilmesi yetmez: her instance kendi hesabıyla yazar.
+        /// Yazamıyorsa kullanıcıya sorar; test sonuçsuzsa kaydı engellemez.
+        /// </summary>
+        private async Task<bool> ConfirmBackupPathWritableAsync()
+        {
+            if (_plan.Databases == null || _plan.Databases.Count == 0
+                || string.IsNullOrWhiteSpace(_plan.SqlConnection?.Server))
+                return true;
+
+            BackupPathAccessResult access = null;
+            _btnSave.Enabled = false;
+            UseWaitCursor = true;
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(
+                    _plan.SqlConnection.ConnectionTimeoutSeconds + 120));
+                access = await _sqlBackupService.CheckBackupPathWritableAsync(
+                    _plan.SqlConnection, _plan.LocalPath, cts.Token);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Yedek dizini yazma testi yapılamadı: {PlanId}", _plan.PlanId);
+            }
+            finally
+            {
+                UseWaitCursor = false;
+                _btnSave.Enabled = true;
+            }
+
+            if (access?.IsWritable != false)
+                return true;
+
+            return Theme.ModernMessageBox.Show(
+                Res.Format("PlanEdit_PathNotWritable", access.Describe()),
+                Res.Get("PlanEdit_PathNotWritableTitle"),
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes;
         }
 
         private void OnCancelClick(object sender, EventArgs e)

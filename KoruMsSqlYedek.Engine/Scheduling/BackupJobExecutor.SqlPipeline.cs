@@ -40,6 +40,48 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     return (sqlResults, pendingUploads);
             }
 
+            // Ön kontrol: .bak'ı SQL Server kendi servis hesabıyla yazar (instance başına farklı hesap).
+            // Yazamıyorsa her veritabanı için retry'larla dakikalarca uğraşmak yerine net mesajla geç.
+            if (plan.Databases.Count > 0)
+            {
+                var access = await SqlBackupService.CheckBackupPathWritableAsync(
+                    plan.SqlConnection, plan.LocalPath, ct);
+
+                if (access?.IsWritable == false)
+                {
+                    string message = access.Describe();
+                    Log.Error("SQL yedekleme atlandı — {Message} Plan={PlanName}", message, plan.PlanName);
+
+                    BackupActivityHub.Raise(new BackupActivityEventArgs
+                    {
+                        PlanId = plan.PlanId,
+                        PlanName = plan.PlanName,
+                        ActivityType = BackupActivityType.StepChanged,
+                        StepName = "SQL Yedekleme",
+                        Message = $"SQL yedekleme yapılamadı — {message}"
+                    });
+
+                    DateTime now = DateTime.UtcNow;
+                    foreach (string dbName in plan.Databases)
+                    {
+                        sqlResults.Add(new BackupResult
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            CorrelationId = correlationId,
+                            DatabaseName = dbName,
+                            BackupType = sqlType,
+                            Status = BackupResultStatus.Failed,
+                            StartedAt = now,
+                            CompletedAt = now,
+                            ErrorMessage = message
+                        });
+                    }
+
+                    return (sqlResults, pendingUploads);
+                }
+            }
+
             for (int i = 0; i < plan.Databases.Count; i++)
             {
                 ct.ThrowIfCancellationRequested();

@@ -124,6 +124,48 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
+        public async Task Execute_BackupPathNotWritableBySqlServer_SkipsSqlBackupAndFailsEachDatabase()
+        {
+            // Arrange — SQL Server servis hesabı yedek dizinine yazamıyor (OS error 5)
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "DB1", "DB2" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            _mockSqlBackup.Setup(s => s.CheckBackupPathWritableAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new BackupPathAccessResult
+                {
+                    IsWritable = false,
+                    Path = plan.LocalPath,
+                    InstanceName = @"SUNUCU\MIKRO",
+                    ErrorMessage = "Operating system error 5"
+                });
+
+            var saved = new List<BackupResult>();
+            _mockHistoryManager.Setup(h => h.SaveResult(It.IsAny<BackupResult>()))
+                .Callback<BackupResult>(saved.Add)
+                .Returns(true);
+
+            // Act
+            await _executor.Execute(_mockJobContext.Object);
+
+            // Assert — retry'larla uğraşılmaz, her veritabanı net mesajla başarısız
+            _mockSqlBackup.Verify(
+                s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()),
+                Times.Never);
+
+            var dbResults = saved.Where(r => r.DatabaseName == "DB1" || r.DatabaseName == "DB2").ToList();
+            dbResults.Should().HaveCount(2);
+            dbResults.Should().OnlyContain(r => r.Status == BackupResultStatus.Failed
+                && r.ErrorMessage.Contains(@"SUNUCU\MIKRO"));
+        }
+
+        [TestMethod]
         public async Task Execute_FullBackup_CallsBackupForEachDatabase()
         {
             // Arrange

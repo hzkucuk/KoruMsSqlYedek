@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Serilog;
 using KoruMsSqlYedek.Core.Models;
 
@@ -11,19 +12,18 @@ namespace KoruMsSqlYedek.Engine.FileBackup
     // ── File Collection + Utility Helpers ─────────────────────────────
     public partial class FileBackupService
     {
-        private List<string> CollectFiles(FileBackupSource source)
+        private List<string> CollectFiles(FileBackupSource source, CancellationToken ct = default)
         {
             var files = new List<string>();
-
-            var searchOption = source.Recursive
-                ? SearchOption.AllDirectories
-                : SearchOption.TopDirectoryOnly;
+            bool recursive = source.Recursive;
 
             // ── Yeni davranış: TreeView seçili yollar ──
             if (source.SelectedPaths?.Count > 0)
             {
                 foreach (string selectedPath in source.SelectedPaths)
                 {
+                    ct.ThrowIfCancellationRequested();
+
                     if (File.Exists(selectedPath))
                     {
                         // Doğrudan seçili dosya
@@ -32,7 +32,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     else if (Directory.Exists(selectedPath))
                     {
                         // Seçili klasör — içindeki dosyaları topla
-                        CollectFilesFromDirectory(selectedPath, source.IncludePatterns, searchOption, files);
+                        CollectFilesFromDirectory(selectedPath, source.IncludePatterns, recursive, files, ct);
                     }
                     else
                     {
@@ -49,7 +49,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     return files;
                 }
 
-                CollectFilesFromDirectory(source.SourcePath, source.IncludePatterns, searchOption, files);
+                CollectFilesFromDirectory(source.SourcePath, source.IncludePatterns, recursive, files, ct);
             }
 
             // Exclude pattern uygula
@@ -64,37 +64,42 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             return files;
         }
 
-        /// <summary>Bir dizindeki dosyaları include pattern'lara göre toplar.</summary>
+        /// <summary>
+        /// Bir dizindeki dosyaları include pattern'lara göre toplar.
+        /// Erişilemeyen alt klasörler atlanır (Directory.GetFiles tek bir erişilemez alt klasörde
+        /// tüm listeyi kaybediyordu); büyük ağaçlarda iptal her dosyada kontrol edilir.
+        /// </summary>
         private void CollectFilesFromDirectory(
-            string directoryPath, List<string> includePatterns, SearchOption searchOption, List<string> files)
+            string directoryPath, List<string> includePatterns, bool recursive, List<string> files,
+            CancellationToken ct)
         {
-            if (includePatterns?.Count > 0)
+            var options = new EnumerationOptions
             {
-                foreach (string pattern in includePatterns)
-                {
-                    try
-                    {
-                        files.AddRange(Directory.GetFiles(directoryPath, pattern, searchOption));
-                    }
-                    catch (UnauthorizedAccessException ex)
-                    {
-                        Log.Warning(ex, "Erişim engellendi: {Path} ({Pattern})", directoryPath, pattern);
-                    }
-                    catch (DirectoryNotFoundException)
-                    {
-                        // Alt dizin silinmiş olabilir, atla
-                    }
-                }
-            }
-            else
+                RecurseSubdirectories = recursive,
+                IgnoreInaccessible = true,
+                AttributesToSkip = 0,          // GetFiles gibi gizli/sistem dosyaları da dahil
+                MatchType = MatchType.Win32,
+                MatchCasing = MatchCasing.CaseInsensitive
+            };
+
+            var patterns = includePatterns?.Count > 0 ? includePatterns : new List<string> { "*" };
+            foreach (string pattern in patterns)
             {
                 try
                 {
-                    files.AddRange(Directory.GetFiles(directoryPath, "*.*", searchOption));
+                    foreach (string file in Directory.EnumerateFiles(directoryPath, pattern, options))
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        files.Add(file);
+                    }
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    Log.Warning(ex, "Erişim engellendi: {Path}", directoryPath);
+                    Log.Warning(ex, "Erişim engellendi: {Path} ({Pattern})", directoryPath, pattern);
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    // Dizin silinmiş olabilir, atla
                 }
             }
         }

@@ -92,16 +92,18 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             Directory.CreateDirectory(destDir);
             result.DestinationPath = destDir;
 
+            Guid? snapshotId = null;
+
             try
             {
-                var filesToBackup = CollectFiles(source);
+                // Büyük ağaçlarda tarama dakikalar sürebilir — çağıran thread'i bloke etmesin, iptal edilebilsin
+                var filesToBackup = await Task.Run(() => CollectFiles(source, cancellationToken), cancellationToken);
 
                 Log.Information(
                     "Dosya yedekleme başlıyor: {SourceName} — {FileCount} dosya bulundu",
                     source.SourceName, filesToBackup.Count);
 
                 bool useVss = source.UseVss && _vssService != null && _vssService.IsAvailable();
-                Guid? snapshotId = null;
 
                 if (useVss)
                 {
@@ -113,10 +115,24 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                         if (string.IsNullOrEmpty(volumeRoot) && source.SelectedPaths?.Count > 0)
                             volumeRoot = Path.GetPathRoot(source.SelectedPaths[0]);
 
-                        // CreateSnapshot bloke edici VSS çağrıları içerir — Task.Run ile offload et
-                        snapshotId = await Task.Run(
+                        // CreateSnapshot bloke edici VSS çağrıları içerir — Task.Run ile offload et.
+                        // İptal beklenmeden döner; geç tamamlanan snapshot arka planda silinir.
+                        var snapshotTask = Task.Run(
                             () => _vssService.CreateSnapshot(volumeRoot, cancellationToken),
                             CancellationToken.None);
+                        try
+                        {
+                            snapshotId = await snapshotTask.WaitAsync(cancellationToken);
+                        }
+                        catch (OperationCanceledException) when (!snapshotTask.IsCompleted)
+                        {
+                            _ = snapshotTask.ContinueWith(
+                                t => _vssService.DeleteSnapshot(t.Result),
+                                CancellationToken.None,
+                                TaskContinuationOptions.OnlyOnRanToCompletion,
+                                TaskScheduler.Default);
+                            throw;
+                        }
                         result.UsedVss = true;
                         Log.Information("VSS snapshot aktif: {Volume}", volumeRoot);
                     }
@@ -188,6 +204,10 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                             result.FilesSkipped++;
                         }
                     }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         result.FilesSkipped++;
@@ -202,12 +222,6 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     processedFiles++;
                     if (filesToBackup.Count > 0)
                         progress?.Report((int)((double)processedFiles / filesToBackup.Count * 100));
-                }
-
-                // VSS snapshot'ı temizle
-                if (snapshotId.HasValue)
-                {
-                    _vssService.DeleteSnapshot(snapshotId.Value);
                 }
 
                 result.Status = filesToBackup.Count == 0
@@ -228,12 +242,23 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     source.SourceName, result.FilesCopied, result.FilesSkipped,
                     result.FilesVerified, result.Status, result.TotalSizeBytes / BytesPerMb);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // İptal "başarısız kaynak" sonucuna dönüştürülmez; pipeline iptal yoluna düşmeli
+                throw;
+            }
             catch (Exception ex)
             {
                 result.Status = BackupResultStatus.Failed;
                 result.ErrorMessage = ExceptionMessageHelper.Describe(ex);
                 result.CompletedAt = DateTime.UtcNow;
                 Log.Error(ex, "Dosya yedekleme hatası: {SourceName}", source.SourceName);
+            }
+            finally
+            {
+                // İptal/hata dahil her durumda snapshot bırakılır (önceden yalnızca başarılı yolda siliniyordu)
+                if (snapshotId.HasValue)
+                    _vssService.DeleteSnapshot(snapshotId.Value);
             }
 
             return result;

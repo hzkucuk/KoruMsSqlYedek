@@ -17,13 +17,12 @@ namespace KoruMsSqlYedek.Engine.FileBackup
             {
                 string snapshotPath = _vssService.GetSnapshotFilePath(snapshotId, sourceFile);
 
-                await Task.Run(() =>
-                {
-                    File.Copy(snapshotPath, destFile, overwrite: true);
-                }, ct);
+                // File.Copy iptal edilemez; büyük PST/OST kopyaları dakikalar sürebildiğinden parçalı kopya
+                await CopyFileCancellableAsync(snapshotPath, sourceFile, destFile, ct);
 
                 return true;
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
                 Log.Debug(ex, "VSS kopyalama başarısız, direkt denenecek: {File}", sourceFile);
@@ -36,59 +35,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
         {
             try
             {
-                const int bufferSize = 1_048_576; // 1 MB — büyük dosyalarda I/O verimliliği
-                long fileSize = 0;
-                try { fileSize = new FileInfo(sourceFile).Length; } catch { }
-
-                // Büyük dosyalar (100 MB+) için ilerleme loglaması
-                bool logProgress = fileSize > 100 * 1024 * 1024;
-                if (logProgress)
-                {
-                    Log.Information(
-                        "Büyük dosya kopyalanıyor: {File} [{SizeMb:F1} MB]",
-                        Path.GetFileName(sourceFile), fileSize / BytesPerMb);
-                }
-
-                await Task.Run(() =>
-                {
-                    using (var sourceStream = new FileStream(
-                        sourceFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize))
-                    using (var destStream = new FileStream(
-                        destFile, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize))
-                    {
-                        if (!logProgress)
-                        {
-                            sourceStream.CopyTo(destStream, bufferSize);
-                        }
-                        else
-                        {
-                            // Buffered kopyalama ile periyodik log
-                            byte[] buffer = new byte[bufferSize];
-                            long copied = 0;
-                            int lastLoggedPct = 0;
-                            int bytesRead;
-                            while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
-                            {
-                                ct.ThrowIfCancellationRequested();
-                                destStream.Write(buffer, 0, bytesRead);
-                                copied += bytesRead;
-                                if (fileSize > 0)
-                                {
-                                    int pct = (int)(copied * 100 / fileSize);
-                                    if (pct >= lastLoggedPct + 25) // %25 aralıklarla logla
-                                    {
-                                        lastLoggedPct = pct;
-                                        Log.Information(
-                                            "  Kopyalanıyor: {File} — %{Pct} ({CopiedMb:F0}/{TotalMb:F0} MB)",
-                                            Path.GetFileName(sourceFile), pct,
-                                            copied / BytesPerMb, fileSize / BytesPerMb);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }, ct);
-
+                await CopyFileCancellableAsync(sourceFile, sourceFile, destFile, ct);
                 return true;
             }
             catch (OperationCanceledException) { throw; }
@@ -97,6 +44,59 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                 Log.Warning(ex, "Direkt dosya kopyalama başarısız: {File}", sourceFile);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// 1 MB'lık parçalarla kopyalar; iptal her parçada kontrol edilir.
+        /// <paramref name="readPath"/> VSS snapshot yolu olabilir, <paramref name="displayPath"/> loglar içindir.
+        /// </summary>
+        private static Task CopyFileCancellableAsync(
+            string readPath, string displayPath, string destFile, CancellationToken ct)
+        {
+            const int bufferSize = 1_048_576; // 1 MB — büyük dosyalarda I/O verimliliği
+
+            return Task.Run(() =>
+            {
+                using var sourceStream = new FileStream(
+                    readPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize);
+                using var destStream = new FileStream(
+                    destFile, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize);
+
+                long fileSize = 0;
+                try { fileSize = sourceStream.Length; } catch { }
+
+                // Büyük dosyalar (100 MB+) için ilerleme loglaması
+                bool logProgress = fileSize > 100 * 1024 * 1024;
+                if (logProgress)
+                {
+                    Log.Information(
+                        "Büyük dosya kopyalanıyor: {File} [{SizeMb:F1} MB]",
+                        Path.GetFileName(displayPath), fileSize / BytesPerMb);
+                }
+
+                byte[] buffer = new byte[bufferSize];
+                long copied = 0;
+                int lastLoggedPct = 0;
+                int bytesRead;
+                while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    destStream.Write(buffer, 0, bytesRead);
+                    copied += bytesRead;
+                    if (logProgress)
+                    {
+                        int pct = (int)(copied * 100 / fileSize);
+                        if (pct >= lastLoggedPct + 25) // %25 aralıklarla logla
+                        {
+                            lastLoggedPct = pct;
+                            Log.Information(
+                                "  Kopyalanıyor: {File} — %{Pct} ({CopiedMb:F0}/{TotalMb:F0} MB)",
+                                Path.GetFileName(displayPath), pct,
+                                copied / BytesPerMb, fileSize / BytesPerMb);
+                        }
+                    }
+                }
+            }, ct);
         }
 
         /// <summary>
@@ -175,6 +175,7 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                     Path.GetFileName(sourceFile));
                 return true;
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
                 Log.Warning(ex, "Dosya bütünlük doğrulaması başarısız: {File}", sourceFile);

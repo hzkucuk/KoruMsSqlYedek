@@ -1,4 +1,35 @@
-﻿## [0.99.97] - 2026-10-01 — 🩺 Servis Kendini Onarır, Yarım Arşiv Yüklenmez, Hata Sebebi Görünür
+﻿## [0.99.98] - 2026-10-05 — ⛔ İptal Gerçekten Durdurur, Yedek Dizini Önceden Test Edilir
+
+> Sahada iki plan aynı `e:\Backups` dizinine yazıyordu; ikinci planın veritabanları
+> farklı bir SQL Server instance'ındaydı. O instance'ın servis hesabının dizine yazma
+> yetkisi yoktu (`Operating system error 5`). Her veritabanı retry'larla dakikalarca
+> uğraştı, ardından dosya yedekleme adımında "İptal Et" hiçbir etki göstermedi.
+
+### Düzeltildi
+
+- **Dosya yedekleme iptal edilebilir.** Dosya taraması arka planda yapılır ve her
+  dosyada iptali kontrol eder. VSS üzerinden kopyalama da 1 MB'lık parçalarla yapılır
+  (`File.Copy` büyük PST/OST'de durdurulamıyordu). İptal artık "başarısız kaynak" olarak
+  yutulmaz, doğrulama adımında da yutulmaz.
+- **VSS snapshot her durumda silinir.** Önceden yalnızca başarılı yolda siliniyordu;
+  iptal veya hata snapshot'ı diskte bırakıyordu. Oluşturulurken iptal edilen snapshot
+  tamamlandığında arka planda silinir.
+- **Erişilemeyen alt klasör tüm kaynağı düşürmez.** Tek bir yetkisiz alt klasör
+  (ör. `System Volume Information`) dosya listesinin tamamını kaybettiriyordu; artık atlanır.
+
+### Eklendi
+
+- **Yedek dizini SQL Server gözünden test edilir.** `.bak` dosyasını SQL Server kendi
+  servis hesabıyla yazar ve her instance'ın hesabı farklıdır; uygulamanın klasöre
+  yazabilmesi yetmez. Test, SQL Server'a `model` veritabanının küçük bir `COPY_ONLY`
+  yedeğini aldırıp hemen siler.
+  - **Plan kaydedilirken:** yazılamıyorsa instance adı ve servis hesabı gösterilir,
+    "yine de kaydedilsin mi?" diye sorulur.
+  - **Her çalıştırmanın başında:** yazılamıyorsa SQL adımı retry'lara girmeden net
+    mesajla başarısız sayılır; dosya yedekleme her zamanki gibi devam eder.
+  - Test sonuçsuz kalırsa (bağlantı, yetki) hiçbir şey engellenmez.
+
+## [0.99.97] - 2026-10-01 — 🩺 Servis Kendini Onarır, Yarım Arşiv Yüklenmez, Hata Sebebi Görünür
 
 > Bir müşteri PC'sinde üç gece üst üste 17 SQL veritabanının tamamı saniyesinde
 > başarısız oldu, Google Drive yüklemesi düştü, ekranda ise yalnızca

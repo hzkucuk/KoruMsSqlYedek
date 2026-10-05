@@ -196,6 +196,10 @@ This action cannot be undone.</value></data>
   <data name="PlanEdit_SaveError" xml:space="preserve"><value>Error saving plan.
 
 {0}</value></data>
+  <data name="PlanEdit_PathNotWritable" xml:space="preserve"><value>{0}
+
+The backup will fail until this is fixed. Save the plan anyway?</value></data>
+  <data name="PlanEdit_PathNotWritableTitle" xml:space="preserve"><value>Backup folder is not writable</value></data>
   <data name="PlanEdit_Testing" xml:space="preserve"><value>Testing...</value></data>
   <data name="PlanEdit_TestBtn" xml:space="preserve"><value>🔌 Test Connection</value></data>
   <data name="PlanEdit_ConnSuccess" xml:space="preserve"><value>SQL Server connection successful!</value></data>
