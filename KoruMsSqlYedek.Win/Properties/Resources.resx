@@ -546,6 +546,11 @@ If you forget your password, you can reset it using the security question.</valu
   <data name="PlanEdit_AutoPromote" xml:space="preserve"><value>Auto Full Backup Threshold:</value></data>
   <data name="PlanEdit_Verify" xml:space="preserve"><value>Run integrity verification after backup (RESTORE VERIFYONLY)</value></data>
   <data name="PlanEdit_EnableSqlVss" xml:space="preserve"><value>Take VSS raw MDF/LDF copy after SQL backup</value></data>
+  <data name="PlanEdit_DisableAutoClose" xml:space="preserve"><value>Turn off database AUTO_CLOSE (recommended)</value></data>
+  <data name="PlanEdit_Tip_DisableAutoClose" xml:space="preserve"><value>If AUTO_CLOSE is on for a backed-up database, it is turned off before the backup.
+A database with AUTO_CLOSE closes when idle; if its file is accessed at that moment,
+SQL Server cannot reopen it and the database becomes unavailable.
+Recommendation: keep enabled.</value></data>
   <data name="PlanEdit_Tip_EnableSqlVss" xml:space="preserve"><value>In addition to the standard .bak backup, a VSS snapshot is used to create a .7z archive of the MDF/LDF files.
 When disabled: only the standard SMO backup is taken; the VSS step is skipped.
 Note: File backup (FileBackup) is not affected by this setting.

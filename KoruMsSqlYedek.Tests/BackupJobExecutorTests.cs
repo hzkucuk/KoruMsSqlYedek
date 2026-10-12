@@ -194,6 +194,93 @@ namespace KoruMsSqlYedek.Tests
         }
 
         [TestMethod]
+        public async Task Execute_DisableAutoCloseOn_DisablesBeforeBackup()
+        {
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "DB1", "DB2" };
+            plan.DisableAutoClose = true;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+
+            var order = new List<string>();
+            _mockSqlBackup.Setup(s => s.DisableAutoCloseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("autoclose"))
+                .ReturnsAsync(new List<string> { "DB1" });
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .Callback(() => order.Add("backup"))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult());
+
+            await _executor.Execute(_mockJobContext.Object);
+
+            _mockSqlBackup.Verify(s => s.DisableAutoCloseAsync(
+                    It.IsAny<SqlConnectionInfo>(),
+                    It.Is<IEnumerable<string>>(n => n.SequenceEqual(new[] { "DB1", "DB2" })),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+            order.First().Should().Be("autoclose");
+        }
+
+        [TestMethod]
+        public async Task Execute_DisableAutoCloseOff_DoesNotTouchAutoClose()
+        {
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "DB1" };
+            plan.DisableAutoClose = false;
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult());
+
+            await _executor.Execute(_mockJobContext.Object);
+
+            _mockSqlBackup.Verify(s => s.DisableAutoCloseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [TestMethod]
+        public async Task Execute_DisableAutoCloseThrows_BackupStillRuns()
+        {
+            var plan = TestDataFactory.CreateValidPlan();
+            plan.Databases = new List<string> { "DB1" };
+
+            SetJobData(plan.PlanId, "Full");
+            _mockPlanManager.Setup(p => p.GetPlanById(plan.PlanId)).Returns(plan);
+            _mockSqlBackup.Setup(s => s.DisableAutoCloseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("yetki yok"));
+            _mockSqlBackup.Setup(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), It.IsAny<string>(),
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(TestDataFactory.CreateSuccessResult());
+
+            await _executor.Execute(_mockJobContext.Object);
+
+            _mockSqlBackup.Verify(s => s.BackupDatabaseAsync(
+                    It.IsAny<SqlConnectionInfo>(), "DB1",
+                    It.IsAny<SqlBackupType>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [TestMethod]
+        public void BackupPlan_DisableAutoClose_DefaultsTrue_ForOldJson()
+        {
+            var plan = Newtonsoft.Json.JsonConvert.DeserializeObject<BackupPlan>("{\"planName\":\"Eski\"}");
+            plan.DisableAutoClose.Should().BeTrue();
+        }
+
+        [TestMethod]
         public async Task Execute_SuccessfulBackup_CallsVerifyCompressRetentionHistoryNotify()
         {
             // Arrange

@@ -109,6 +109,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _nudAutoPromote.Value = _plan.Strategy?.AutoPromoteToFullAfter ?? 7;
             _chkVerify.Checked = _plan.VerifyAfterBackup;
             _chkEnableSqlVss.Checked = _plan.EnableSqlVssBackup;
+            _chkDisableAutoClose.Checked = _plan.DisableAutoClose;
             UpdateStrategyFieldsVisibility();
 
             // Adım 4: Sıkıştırma + Saklama
@@ -220,6 +221,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _plan.Strategy.AutoPromoteToFullAfter = (int)_nudAutoPromote.Value;
             _plan.VerifyAfterBackup = _chkVerify.Checked;
             _plan.EnableSqlVssBackup = _chkEnableSqlVss.Checked;
+            _plan.DisableAutoClose = _chkDisableAutoClose.Checked;
             _plan.FileBackup.Schedule = null;
 
             // Adım 4: Sıkıştırma + Saklama

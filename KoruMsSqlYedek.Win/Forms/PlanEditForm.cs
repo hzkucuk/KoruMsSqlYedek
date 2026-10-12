@@ -234,6 +234,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _lblAutoPromote.Text = Res.Get("PlanEdit_AutoPromote");
             _chkVerify.Text = Res.Get("PlanEdit_Verify");
             _chkEnableSqlVss.Text = Res.Get("PlanEdit_EnableSqlVss");
+            _chkDisableAutoClose.Text = Res.Get("PlanEdit_DisableAutoClose");
             _lblStep3FileSchedHeader.Text = Res.Get("PlanEdit_FileSchedHeader");
             _lblFileSchedule.Text = Res.Get("PlanEdit_FileSchedule");
 
@@ -303,6 +304,7 @@ namespace KoruMsSqlYedek.Win.Forms
             _toolTip.SetToolTip(_cronIncr, Res.Get("PlanEdit_Tip_IncrCron"));
             _toolTip.SetToolTip(_nudAutoPromote, Res.Get("PlanEdit_Tip_AutoPromote"));
             _toolTip.SetToolTip(_chkVerify, Res.Get("PlanEdit_Tip_Verify"));
+            _toolTip.SetToolTip(_chkDisableAutoClose, Res.Get("PlanEdit_Tip_DisableAutoClose"));
             _toolTip.SetToolTip(_cmbAlgorithm, Res.Get("PlanEdit_Tip_Algorithm"));
             _toolTip.SetToolTip(_cmbLevel, Res.Get("PlanEdit_Tip_Level"));
             _toolTip.SetToolTip(_txtArchivePassword, Res.Get("PlanEdit_Tip_ArchivePassword"));

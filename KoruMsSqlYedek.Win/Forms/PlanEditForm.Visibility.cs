@@ -117,8 +117,12 @@ namespace KoruMsSqlYedek.Win.Forms
             _nudAutoPromote.Location = new System.Drawing.Point(tx, y);
             y += 30;
 
-            // Verify checkbox
+            // Verify / SQL VSS / AUTO_CLOSE checkboxes
             _chkVerify.Location = new System.Drawing.Point(lx, y);
+            y += 24;
+            _chkEnableSqlVss.Location = new System.Drawing.Point(lx, y);
+            y += 24;
+            _chkDisableAutoClose.Location = new System.Drawing.Point(lx, y);
             y += 32;
 
             // File schedule separator (hidden)

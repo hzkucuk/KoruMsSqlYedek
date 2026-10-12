@@ -116,8 +116,11 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                 backupComponents = factory.CreateVssBackupComponents();
 
                 backupComponents.InitializeForBackup(null);
+                // Copy: SQL Writer snapshot'ı COPY_ONLY kaydeder. Full, volume'deki her açık
+                // veritabanının differential tabanını sıfırlıyordu; snapshot sonra silindiği için
+                // sonraki differential yedekler var olmayan bir tam yedeğe dayanıyordu.
                 backupComponents.SetBackupState(false, true,
-                    Alphaleonis.Win32.Vss.VssBackupType.Full, false);
+                    Alphaleonis.Win32.Vss.VssBackupType.Copy, false);
 
                 // GatherWriterMetadata bloke edici çağrı — tamamlandıktan sonra ct kontrolü
                 backupComponents.GatherWriterMetadata();

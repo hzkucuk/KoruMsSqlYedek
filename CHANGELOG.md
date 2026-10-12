@@ -1,4 +1,44 @@
-﻿## [0.99.98] - 2026-10-05 — ⛔ İptal Gerçekten Durdurur, Yedek Dizini Önceden Test Edilir
+﻿## [0.99.99] - 2026-10-12 — 🛡️ Veritabanları Artık RECOVERY_PENDING'e Düşmez
+
+> Bir müşteride Mikro veritabanları (MikroDesktop_PRIMA2018/2022) gece 22:05–22:30
+> arasında dört kez RECOVERY_PENDING'e düştü ve biri elle OFFLINE/ONLINE yapana kadar
+> 2–4 gün kullanılamadı. SQL Server logunda her seferinde aynı satır vardı:
+> `FCB::Open failed: Could not open file ...\MikroDesktop_PRIMA2018_log.ldf ... OS error: 32`
+> (dosya başka bir işlem tarafından kullanılıyor). Sebep bizdik: dosya yedeği dosyayı
+> VSS snapshot'tan kopyalıyor, ama ardından SHA-256 doğrulamasını **orijinal** dosya
+> üzerinden yapıyordu. Express'te varsayılan açık olan AUTO_CLOSE veritabanını boşta
+> kapatıp dosyayı bıraktığında bizim süreç dosyayı açabiliyor; tam o sırada Mikro
+> veritabanını açmak isteyince SQL Server dosyayı alamıyor ve veritabanını kurtarma
+> bekliyor durumuna düşürüyordu.
+
+### Düzeltildi
+
+- **SQL Server dosyaları orijinal yolundan hiç açılmaz.** Dosya yedeği bir dosyayı
+  hangi yoldan kopyaladıysa (VSS'te snapshot) doğrulamayı da o yoldan yapar. SQL
+  Server'a ait dosyalar (`.mdf/.ndf/.ldf`, Mikro'nun `._MS` veri dosyası ve uzantıdan
+  bağımsız olarak `sys.master_files`'taki her dosya) snapshot yoksa doğrudan kopyalamaya
+  düşmez; atlanır ve açık bir mesajla raporlanır. Diğer dosyalarda doğrudan kopyalama
+  önceki gibi devam eder.
+- Snapshot yalnızca kaynağın volume'ü için alınır; başka diskteki seçili dosyalar artık
+  snapshot yolundan (yanlış dosyadan) okunmaz, doğrudan kopyalanır.
+- Kopyalanamayan dosyanın yarım ya da önceki çalıştırmadan kalan hedefi silinir; arşive
+  girmez.
+- **VSS snapshot'ları differential zincirini bozmaz.** Snapshot `Full` yerine `Copy`
+  tipinde alınır. `Full`, volume'deki her açık veritabanını SQL Server'a "tam
+  yedeklendi" diye kaydettirip differential tabanını sıfırlıyordu; snapshot sonra
+  silindiği için sonraki differential yedekler var olmayan bir tam yedeğe dayanıyordu.
+- Snapshot sonrası değişen canlı dosyalarda (PST, açık Office belgeleri) görülen
+  sahte "SHA-256 uyuşmazlığı" da aynı düzeltmeyle ortadan kalktı.
+
+### Eklendi
+
+- **"Veritabanlarının otomatik kapanmasını (AUTO_CLOSE) kapat" plan seçeneği**
+  (varsayılan açık; mevcut planlarda da açık gelir). Yedekten önce plandaki
+  veritabanlarında ve dosyaları dosya yedeğine giren veritabanlarında AUTO_CLOSE
+  açıksa `ALTER DATABASE ... SET AUTO_CLOSE OFF WITH NO_WAIT` ile kapatılır. Kapatılamazsa
+  (yetki, kilit) yedekleme durmaz, bir sonraki çalıştırmada yeniden denenir.
+
+## [0.99.98] - 2026-10-05 — ⛔ İptal Gerçekten Durdurur, Yedek Dizini Önceden Test Edilir
 
 > Sahada iki plan aynı `e:\Backups` dizinine yazıyordu; ikinci planın veritabanları
 > farklı bir SQL Server instance'ındaydı. O instance'ın servis hesabının dizine yazma

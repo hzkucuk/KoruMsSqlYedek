@@ -96,5 +96,23 @@ namespace KoruMsSqlYedek.Core.Interfaces
             SqlConnectionInfo connection,
             string directoryPath,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Instance'taki tüm veritabanı dosyalarını (sys.master_files) döndürür.
+        /// Dosya yedeği bu yolları orijinalinden açmamak için kullanır. Hata fırlatmaz;
+        /// sorgu başarısızsa boş liste döner.
+        /// </summary>
+        Task<List<SqlDatabaseFileInfo>> GetDatabaseFilesAsync(
+            SqlConnectionInfo connection,
+            CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Verilen veritabanlarında AUTO_CLOSE açıksa kapatır (ALTER DATABASE ... SET AUTO_CLOSE OFF).
+        /// Hata fırlatmaz; kapatılan veritabanlarının adlarını döndürür.
+        /// </summary>
+        Task<List<string>> DisableAutoCloseAsync(
+            SqlConnectionInfo connection,
+            IEnumerable<string> databaseNames,
+            CancellationToken cancellationToken);
     }
 }

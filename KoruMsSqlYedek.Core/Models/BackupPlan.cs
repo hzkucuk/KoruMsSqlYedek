@@ -114,6 +114,16 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("enableSqlVssBackup")]
         public bool EnableSqlVssBackup { get; set; } = true;
 
+        /// <summary>
+        /// Yedeklenen veritabanlarında (SQL listesi + dosya yedeğine giren veritabanı dosyaları)
+        /// AUTO_CLOSE açıksa yedekten önce kapatılsın mı? Express'te varsayılan açık gelen
+        /// AUTO_CLOSE, boştaki veritabanını kapatıp dosyasını bırakır; o anda dosyaya erişen
+        /// herhangi bir süreç SQL Server'ın yeniden açışını düşürür (RECOVERY_PENDING).
+        /// Default true; JSON'da alan yoksa (eski planlar) da true kalır.
+        /// </summary>
+        [JsonProperty("disableAutoClose")]
+        public bool DisableAutoClose { get; set; } = true;
+
         [JsonProperty("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

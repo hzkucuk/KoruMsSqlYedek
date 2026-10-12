@@ -10,7 +10,11 @@ namespace KoruMsSqlYedek.Engine.FileBackup
     // ── Copy Operations + Integrity Verification ─────────────────────
     public partial class FileBackupService
     {
-        private async Task<bool> TryCopyViaVssAsync(
+        /// <summary>
+        /// Dosyayı snapshot üzerinden kopyalar.
+        /// </summary>
+        /// <returns>Kopyanın okunduğu snapshot yolu; başarısızsa null.</returns>
+        private async Task<string> TryCopyViaVssAsync(
             Guid snapshotId, string sourceFile, string destFile, CancellationToken ct)
         {
             try
@@ -20,13 +24,13 @@ namespace KoruMsSqlYedek.Engine.FileBackup
                 // File.Copy iptal edilemez; büyük PST/OST kopyaları dakikalar sürebildiğinden parçalı kopya
                 await CopyFileCancellableAsync(snapshotPath, sourceFile, destFile, ct);
 
-                return true;
+                return snapshotPath;
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
-                Log.Debug(ex, "VSS kopyalama başarısız, direkt denenecek: {File}", sourceFile);
-                return false;
+                Log.Debug(ex, "VSS kopyalama başarısız: {File}", sourceFile);
+                return null;
             }
         }
 
@@ -134,6 +138,10 @@ namespace KoruMsSqlYedek.Engine.FileBackup
         /// 2. SHA-256 karşılaştırması (kaynak kilitli değilse).
         /// Kaynak kilitli ise boyut eşleşmesi yeterli kabul edilir.
         /// </summary>
+        /// <param name="sourceFile">
+        /// Kopyanın OKUNDUĞU yol (VSS'te snapshot yolu). Orijinal yol buraya verilmemeli:
+        /// SQL Server dosyasını tutmak veritabanını RECOVERY_PENDING'e düşürür.
+        /// </param>
         private async Task<bool> VerifyFileCopyIntegrityAsync(
             string sourceFile, string destFile, CancellationToken ct)
         {

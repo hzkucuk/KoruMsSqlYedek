@@ -82,6 +82,33 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                 }
             }
 
+            // AUTO_CLOSE açık veritabanı boşta kapanıp dosyasını bırakır; o anda dosyaya erişen
+            // herhangi bir süreç (yedek, antivirüs) SQL Server'ın yeniden açışını düşürür → RECOVERY_PENDING.
+            if (plan.DisableAutoClose && plan.Databases.Count > 0)
+            {
+                try
+                {
+                    var changed = await SqlBackupService.DisableAutoCloseAsync(
+                        plan.SqlConnection, plan.Databases, ct);
+                    if (changed?.Count > 0)
+                    {
+                        BackupActivityHub.Raise(new BackupActivityEventArgs
+                        {
+                            PlanId = plan.PlanId,
+                            PlanName = plan.PlanName,
+                            ActivityType = BackupActivityType.StepChanged,
+                            StepName = "SQL Yedekleme",
+                            Message = $"Otomatik kapanma (AUTO_CLOSE) kapatıldı: {string.Join(", ", changed)}"
+                        });
+                    }
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "AUTO_CLOSE kapatma adımı başarısız, yedekleme devam ediyor: {PlanName}", plan.PlanName);
+                }
+            }
+
             for (int i = 0; i < plan.Databases.Count; i++)
             {
                 ct.ThrowIfCancellationRequested();

@@ -104,6 +104,7 @@
             _nudAutoPromote = new KoruMsSqlYedek.Win.Theme.ModernNumericUpDown();
             _chkVerify = new System.Windows.Forms.CheckBox();
             _chkEnableSqlVss = new System.Windows.Forms.CheckBox();
+            _chkDisableAutoClose = new System.Windows.Forms.CheckBox();
             _lblStep3FileSchedHeader = new System.Windows.Forms.Label();
             _lblStep3FileSep = new System.Windows.Forms.Label();
             _lblFileSchedule = new System.Windows.Forms.Label();
@@ -716,6 +717,14 @@
             _toolTip.SetToolTip(_chkEnableSqlVss, "Standart .bak yede\u011fine ek olarak VSS snapshot \u00fczerinden\nMDF/LDF dosyalar\u0131n\u0131n .7z arşivi al\u0131n\u0131r.\nKapal\u0131ysa: sadece standart SMO yede\u011fi al\u0131n\u0131r, VSS ad\u0131m\u0131 atlan\u0131r.\nNot: Dosya yedekleme (FileBackup) bu ayardan etkilenmez.\n\u00d6neri: Express edition'da a\u00e7\u0131k tutun.");
             _pnlStep3.Controls.Add(_chkEnableSqlVss);
 
+            _chkDisableAutoClose.Text = "Veritabanlarının otomatik kapanmasını (AUTO_CLOSE) kapat (önerilir)";
+            _chkDisableAutoClose.Name = "_chkDisableAutoClose";
+            _chkDisableAutoClose.Location = new System.Drawing.Point(24, 305);
+            _chkDisableAutoClose.AutoSize = true;
+            _chkDisableAutoClose.Checked = true;
+            _toolTip.SetToolTip(_chkDisableAutoClose, "Yedeklenen veritabanlarında AUTO_CLOSE açıksa yedekten önce kapatılır.\nAUTO_CLOSE açık veritabanı boştayken kapanır; o sırada dosyasına erişilirse\nSQL Server veritabanını açamaz ve veritabanı kullanılamaz hale gelir.\nÖneri: Açık tutun.");
+            _pnlStep3.Controls.Add(_chkDisableAutoClose);
+
             // --- Dosya Yedekleme Zamanlaması (gizli) ---
             _lblStep3FileSep.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             _lblStep3FileSep.Name = "_lblStep3FileSep";
@@ -1259,6 +1268,7 @@
         private Theme.ModernNumericUpDown _nudAutoPromote;
         private System.Windows.Forms.CheckBox _chkVerify;
         private System.Windows.Forms.CheckBox _chkEnableSqlVss;
+        private System.Windows.Forms.CheckBox _chkDisableAutoClose;
         private System.Windows.Forms.Label _lblStep3FileSchedHeader;
         private System.Windows.Forms.Label _lblStep3FileSep;
         private System.Windows.Forms.Label _lblFileSchedule;
