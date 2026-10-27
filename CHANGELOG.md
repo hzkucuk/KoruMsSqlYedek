@@ -28,6 +28,13 @@
   kaydı kurala bakılmadan siliniyordu; yedek diski değişse ya da klasör taşınsa buluttaki
   bütün kopyalar giderdi.
 
+- **Toplu temizlik emniyeti.** Birikmiş yedeklerin temizliği kademeli yapılır: bir
+  çalıştırmada yerelde ve her bulut hedefinde en fazla 20 dosya silinir (en eskiler önce),
+  kalanı sonraki çalıştırmalarda erir. Günlük işleyişte bu sınır devreye girmez.
+  Güncellemeden sonraki ilk 14 gün Google Drive silmeleri, hedefte çöp kutusu kapalı olsa
+  bile **çöpe** gönderilir; yanlışlıkla silinen bir yedek Drive çöpünden geri alınabilir
+  (Drive çöpü 30 günde kendiliğinden boşaltır).
+
 ### Düzeltildi
 
 - **Bulut kopyaları silinmiyordu.** Google Drive ve UNC yüklemeleri geçmişe hedefin adı

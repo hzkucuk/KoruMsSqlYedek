@@ -38,6 +38,29 @@ namespace KoruMsSqlYedek.Engine.Retention
 
         private const string FileBackupDatabaseName = "__FileBackup__";
 
+        // ── Toplu temizlik emniyeti ──
+        // v0.99.100 ile biriken eski yedekler ilk çalıştırmada temizlenir ve sürüm otomatik
+        // güncellemeyle tüm kurulumlara aynı anda gider. Beklenmeyen bir durumda zarar sınırlı
+        // ve geri alınabilir kalsın diye:
+        // - Bir çalıştırmada yerelde ve her bulut hedefinde en fazla MaxDeletionsPerRun dosya
+        //   silinir (en eskiler önce); birikmiş yedekler birkaç çalıştırmada erir. Günlük
+        //   işleyişte çalıştırma başına 1-2 silme olduğundan sınır devreye girmez.
+        // - Güvenli dönemde (ilk SafeModeDuration) Google Drive silmeleri, hedefte çöp kutusu
+        //   kapalı olsa bile çöpe gönderilir (Drive çöpü 30 günde kendiliğinden boşaltır).
+
+        /// <summary>Bir çalıştırmada yerelde ve her bulut hedefinde silinebilecek en fazla dosya.</summary>
+        internal const int MaxDeletionsPerRun = 20;
+
+        /// <summary>Drive silmelerinin çöpe gönderildiği güvenli dönem.</summary>
+        internal static readonly TimeSpan SafeModeDuration = TimeSpan.FromDays(14);
+
+        /// <summary>
+        /// Güvenli dönemin başladığı anı (ilk çalıştırma, UTC) tutan dosya. Testler geçici bir
+        /// yol verir.
+        /// </summary>
+        internal string SafeModeMarkerPath { get; set; } =
+            Path.Combine(PathHelper.ConfigDirectory, "retention-guvenli-donem.txt");
+
         private readonly IBackupHistoryManager _historyManager;
         private readonly ICloudUploadOrchestrator _cloudOrchestrator;
         private readonly IPlanManager _planManager;
@@ -253,7 +276,7 @@ namespace KoruMsSqlYedek.Engine.Retention
             }
 
             int deleted = 0, kept = 0;
-            foreach (var (group, item) in toDelete)
+            foreach (var (group, item) in ApplyRunLimit(toDelete, "Yerel"))
             {
                 ct.ThrowIfCancellationRequested();
                 string path = item.Keys[0];
@@ -354,15 +377,18 @@ namespace KoruMsSqlYedek.Engine.Retention
 
                 LogSkippedForeign(target.DisplayName, skippedForeign);
 
+                var selected = ApplyRunLimit(SelectForDeletion(plan, itemsByGroup), target.DisplayName);
+                var deleteTarget = selected.Count > 0 ? WithSafeModeTrash(listTarget) : listTarget;
+
                 int deleted = 0;
-                foreach (var (group, item) in SelectForDeletion(plan, itemsByGroup))
+                foreach (var (group, item) in selected)
                 {
                     foreach (string fileId in item.Keys)
                     {
                         ct.ThrowIfCancellationRequested();
                         try
                         {
-                            bool ok = await _cloudOrchestrator.DeleteFromTargetAsync(fileId, listTarget, ct)
+                            bool ok = await _cloudOrchestrator.DeleteFromTargetAsync(fileId, deleteTarget, ct)
                                 .ConfigureAwait(false);
                             if (ok)
                             {
@@ -390,6 +416,68 @@ namespace KoruMsSqlYedek.Engine.Retention
                     "Cloud folder sweep tamamlandı: {Provider} — {Count} eski dosya silindi (Plan={PlanName}, klasör={Folder})",
                     target.DisplayName, deleted, plan.PlanName,
                     listTarget.Type == CloudProviderType.UncPath ? listTarget.LocalOrUncPath : listTarget.RemoteFolderPath);
+            }
+        }
+
+        /// <summary>
+        /// Bir çalıştırmadaki silmeleri <see cref="MaxDeletionsPerRun"/> ile sınırlar (en eskiler önce);
+        /// kalanlar sonraki çalıştırmalara bırakılır.
+        /// </summary>
+        private static List<(RetentionGroup Group, RetentionItem Item)> ApplyRunLimit(
+            List<(RetentionGroup Group, RetentionItem Item)> toDelete, string where)
+        {
+            if (toDelete.Count <= MaxDeletionsPerRun)
+                return toDelete;
+
+            Log.Information(
+                "Retention ({Where}): {Total} eski dosyadan en eski {Limit} tanesi bu çalıştırmada silinecek, " +
+                "kalan {Rest} sonraki çalıştırmalara bırakıldı",
+                where, toDelete.Count, MaxDeletionsPerRun, toDelete.Count - MaxDeletionsPerRun);
+
+            return toDelete.OrderBy(d => d.Item.Time).Take(MaxDeletionsPerRun).ToList();
+        }
+
+        /// <summary>
+        /// Güvenli dönemde, çöp kutusu kapalı Google Drive hedefinin silmeleri çöpe gitsin diye
+        /// TrashRetentionDays verilmiş bir kopya döndürür; aksi halde hedefin kendisi.
+        /// </summary>
+        private CloudTargetConfig WithSafeModeTrash(CloudTargetConfig target)
+        {
+            if (target.Type != CloudProviderType.GoogleDrivePersonal || target.UsesTrash || !IsInSafeMode())
+                return target;
+
+            var copy = Cloud.CloudUploadOrchestrator.ShallowCopyWithFolder(target, target.RemoteFolderPath);
+            copy.TrashRetentionDays = (int)SafeModeDuration.TotalDays;
+            Log.Information(
+                "Retention güvenli dönem: {Provider} silmeleri kalıcı değil, çöp kutusuna gönderiliyor",
+                target.DisplayName);
+            return copy;
+        }
+
+        /// <summary>
+        /// Güvenli dönemde miyiz? Başlangıç ilk çağrıda kaydedilir. Dosya okunamaz/yazılamazsa
+        /// güvenli tarafta kalınır (true).
+        /// </summary>
+        private bool IsInSafeMode()
+        {
+            try
+            {
+                if (File.Exists(SafeModeMarkerPath) &&
+                    DateTime.TryParse(File.ReadAllText(SafeModeMarkerPath).Trim(),
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.RoundtripKind, out DateTime start))
+                {
+                    return DateTime.UtcNow < start.ToUniversalTime() + SafeModeDuration;
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(SafeModeMarkerPath));
+                File.WriteAllText(SafeModeMarkerPath, DateTime.UtcNow.ToString("o"));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Retention güvenli dönem bilgisi okunamadı/yazılamadı, silmeler çöpe gönderilecek");
+                return true;
             }
         }
 

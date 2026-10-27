@@ -589,7 +589,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
         /// <summary>
         /// Sadece RemoteFolderPath değiştirilmiş sığ kopya döndürür (orijinal config'i değiştirmez).
         /// </summary>
-        private static CloudTargetConfig ShallowCopyWithFolder(CloudTargetConfig src, string folderPath)
+        internal static CloudTargetConfig ShallowCopyWithFolder(CloudTargetConfig src, string folderPath)
         {
             return new CloudTargetConfig
             {

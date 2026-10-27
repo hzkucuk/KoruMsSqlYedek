@@ -379,6 +379,70 @@ namespace KoruMsSqlYedek.Tests
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        // ── Toplu temizlik emniyeti ──
+
+        [TestMethod]
+        public async Task Local_ManyOldBackups_DeletedGraduallyOldestFirst()
+        {
+            var files = Enumerable.Range(0, 30).Select(i => CreateLocal("DB_Full", Now.AddDays(-40 + i))).ToList();
+
+            await Service().CleanupAsync(NewPlan(KeepLast(1)), CancellationToken.None);
+
+            // 29 aday var; bu çalıştırmada en eski 20'si silinir
+            files.Take(RetentionCleanupService.MaxDeletionsPerRun).Should().OnlyContain(f => !File.Exists(f));
+            files.Skip(RetentionCleanupService.MaxDeletionsPerRun).Should().OnlyContain(f => File.Exists(f));
+        }
+
+        [TestMethod]
+        public async Task Cloud_ManyOldBackups_DeletedGradually()
+        {
+            var remote = Enumerable.Range(0, 30).Select(i => Remote($"id{i}", "DB_Full", Now.AddDays(-40 + i))).ToList();
+            var cloud = NewCloud(remote);
+
+            await Service(cloud: cloud).CleanupAsync(NewPlan(KeepLast(1), DriveTarget("KoruYedek")), CancellationToken.None);
+
+            cloud.Verify(c => c.DeleteFromTargetAsync(It.IsAny<string>(), It.IsAny<CloudTargetConfig>(),
+                It.IsAny<CancellationToken>()), Times.Exactly(RetentionCleanupService.MaxDeletionsPerRun));
+            VerifyDeleted(cloud, "id0");
+            VerifyNotDeleted(cloud, "id25");
+        }
+
+        [TestMethod]
+        public async Task Cloud_SafeMode_DriveDeletesGoToTrashEvenWhenTrashDisabled()
+        {
+            var cloud = NewCloud(new List<CloudFileEntry>
+            {
+                Remote("old", "DB_Full", Now.AddDays(-2)),
+                Remote("new", "DB_Full", Now.AddDays(-1))
+            });
+            var target = DriveTarget("KoruYedek");
+            target.TrashRetentionDays = 0;
+
+            await Service(cloud: cloud).CleanupAsync(NewPlan(KeepLast(1), target), CancellationToken.None);
+
+            cloud.Verify(c => c.DeleteFromTargetAsync("old",
+                It.Is<CloudTargetConfig>(t => t.UsesTrash), It.IsAny<CancellationToken>()), Times.Once);
+            target.TrashRetentionDays.Should().Be(0, "plandaki hedef ayarı değişmemeli");
+        }
+
+        [TestMethod]
+        public async Task Cloud_AfterSafeMode_DriveDeletesFollowTargetSetting()
+        {
+            var cloud = NewCloud(new List<CloudFileEntry>
+            {
+                Remote("old", "DB_Full", Now.AddDays(-2)),
+                Remote("new", "DB_Full", Now.AddDays(-1))
+            });
+            var service = Service(cloud: cloud);
+            Directory.CreateDirectory(Path.GetDirectoryName(service.SafeModeMarkerPath));
+            File.WriteAllText(service.SafeModeMarkerPath, DateTime.UtcNow.AddDays(-20).ToString("o"));
+
+            await service.CleanupAsync(NewPlan(KeepLast(1), DriveTarget("KoruYedek")), CancellationToken.None);
+
+            cloud.Verify(c => c.DeleteFromTargetAsync("old",
+                It.Is<CloudTargetConfig>(t => !t.UsesTrash), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         [TestMethod]
         public void UncAndFtpProviders_SupportFolderListing()
         {
@@ -490,7 +554,10 @@ namespace KoruMsSqlYedek.Tests
             var mock = new Mock<IBackupHistoryManager>();
             mock.Setup(h => h.GetRecentHistory(It.IsAny<int>()))
                 .Returns((history ?? new List<BackupResult>()).Concat(foreignHistory ?? new List<BackupResult>()).ToList());
-            return new RetentionCleanupService(mock.Object, cloud?.Object, planManager?.Object);
+            return new RetentionCleanupService(mock.Object, cloud?.Object, planManager?.Object)
+            {
+                SafeModeMarkerPath = Path.Combine(Path.GetTempPath(), "KoruRetentionRegression", Guid.NewGuid().ToString("N") + ".txt")
+            };
         }
 
         private static Mock<ICloudUploadOrchestrator> NewCloud(List<CloudFileEntry> remote = null)
