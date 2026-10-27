@@ -76,6 +76,12 @@ namespace KoruMsSqlYedek.Engine.Cloud
 
                     result.RetryCount = attempt;
 
+                    // Bazı sağlayıcılar (Google Drive, UNC) sonuca kendi sabit adlarını yazar.
+                    // Retention kaydı hedefle bu adla eşleştirir; hedefin adı yazılmalı.
+                    result.ProviderType = target.Type;
+                    if (!string.IsNullOrEmpty(target.DisplayName))
+                        result.DisplayName = target.DisplayName;
+
                     if (result.IsSuccess)
                     {
                         // Bütünlük kontrolü: uzak dosya boyutu yerel ile eşleşmeli

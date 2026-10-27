@@ -109,15 +109,9 @@ namespace KoruMsSqlYedek.Engine.Cloud
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var effectiveTarget = target;
-                if (string.IsNullOrWhiteSpace(target.RemoteFolderPath))
+                var effectiveTarget = WithEffectiveFolder(target, planName);
+                if (!ReferenceEquals(effectiveTarget, target))
                 {
-                    string safePlanName = SanitizeFolderName(planName);
-                    effectiveTarget = ShallowCopyWithFolder(target,
-                        string.IsNullOrEmpty(safePlanName)
-                            ? "KoruMsSqlYedek"
-                            : $"KoruMsSqlYedek/{safePlanName}");
-
                     Log.Information(
                         "RemoteFolderPath boş, varsayılan kullanılıyor: '{Folder}' — {Provider}",
                         effectiveTarget.RemoteFolderPath, target.DisplayName);
@@ -352,15 +346,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    var effectiveTarget = target;
-                    if (string.IsNullOrWhiteSpace(target.RemoteFolderPath))
-                    {
-                        string safePlanName = SanitizeFolderName(planName);
-                        effectiveTarget = ShallowCopyWithFolder(target,
-                            string.IsNullOrEmpty(safePlanName)
-                                ? "KoruMsSqlYedek"
-                                : $"KoruMsSqlYedek/{safePlanName}");
-                    }
+                    var effectiveTarget = WithEffectiveFolder(target, planName);
 
                     var stateRecord = pendingStates.FirstOrDefault(s =>
                         s.LocalFilePath == localFilePath &&
@@ -581,6 +567,23 @@ namespace KoruMsSqlYedek.Engine.Cloud
             {
                 Log.Warning(ex, "SFTP host parmak izi kalıcı hale getirilemedi (PlanId={PlanId})", planId);
             }
+        }
+
+        /// <summary>
+        /// Yüklemenin gerçekte kullandığı hedefi döndürür: RemoteFolderPath boşsa
+        /// "KoruMsSqlYedek/{Plan}" klasörlü sığ kopya, doluysa hedefin kendisi.
+        /// Listeleme ve çöp boşaltma da aynı klasöre bakmalıdır; aksi halde boş yolla atlanırlar.
+        /// </summary>
+        internal static CloudTargetConfig WithEffectiveFolder(CloudTargetConfig target, string planName)
+        {
+            if (target == null || !string.IsNullOrWhiteSpace(target.RemoteFolderPath))
+                return target;
+
+            string safePlanName = SanitizeFolderName(planName);
+            return ShallowCopyWithFolder(target,
+                string.IsNullOrEmpty(safePlanName)
+                    ? "KoruMsSqlYedek"
+                    : $"KoruMsSqlYedek/{safePlanName}");
         }
 
         /// <summary>

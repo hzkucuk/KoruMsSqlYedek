@@ -138,6 +138,23 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     }
                 }
 
+                // Differential tabanı: SQL Server'ın bildiği son tam yedek plan klasöründe olmalı.
+                // Değilse (iptal edilmiş Full'ün .bak'ı silindi, başka bir araç/plan Full aldı)
+                // bu diff klasördeki hiçbir tam yedeğe uygulanamaz → Full'e yükselt.
+                // Log yedeği hariç: tam yedek (disk imajı -vssFull, Veeam dahil) log zincirini kırmaz.
+                if (effectiveType == SqlBackupType.Differential)
+                {
+                    string baseFile = await SqlBackupService.GetLastFullBackupFileAsync(
+                        plan.SqlConnection, dbName, ct);
+                    if (!string.IsNullOrEmpty(baseFile) && !IsFullBackupInFolder(baseFile, plan.LocalPath))
+                    {
+                        Log.Warning(
+                            "Differential tabanı (son tam yedek) plan klasöründe yok, Full'e yükseltiliyor: {Database} — {BaseFile}",
+                            dbName, baseFile);
+                        effectiveType = SqlBackupType.Full;
+                    }
+                }
+
                 // Otomatik Full yükseltme kontrolü
                 if (effectiveType == SqlBackupType.Differential && ChainValidator != null)
                 {
@@ -371,6 +388,9 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                     // VSS dosyası
                     if (!string.IsNullOrEmpty(result.VssFileCopyPath) && File.Exists(result.VssFileCopyPath))
                     {
+                        // Yükleme hiç sonuç döndürmezse (istisna, iptal) arşiv "buluta gitmedi"
+                        // sayılıp yerelde korunsun; null yalnızca eski sürüm kaydı demektir.
+                        result.VssCloudUploadResults = new List<CloudUploadResult>();
                         pendingUploads.Add((result.VssFileCopyPath, Path.GetFileName(result.VssFileCopyPath), result, true));
                     }
                 }
@@ -390,6 +410,27 @@ namespace KoruMsSqlYedek.Engine.Scheduling
             // Bu yuzden temizlik, is akisinin sonunda cagiranda TEK sefer calisir.
 
             return (sqlResults, pendingUploads);
+        }
+
+        /// <summary>
+        /// msdb'deki tam yedek dosyası plan klasöründe .bak olarak ya da (sıkıştırma sonrası)
+        /// aynı gövdeli .7z olarak duruyor mu? VSS/sanal cihaz adları ({GUID}) hiçbir zaman bulunmaz.
+        /// </summary>
+        private static bool IsFullBackupInFolder(string baseFile, string localPath)
+        {
+            try
+            {
+                string name = Path.GetFileName(baseFile);
+                if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(localPath))
+                    return false;
+
+                string candidate = Path.Combine(localPath, name);
+                return File.Exists(candidate) || File.Exists(Path.ChangeExtension(candidate, ".7z"));
+            }
+            catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is IOException)
+            {
+                return false;
+            }
         }
     }
 }

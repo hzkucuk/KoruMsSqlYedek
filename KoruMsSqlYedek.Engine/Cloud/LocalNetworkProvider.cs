@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ namespace KoruMsSqlYedek.Engine.Cloud
     /// UNC ağ paylaşımı provider'ı.
     /// UNC kimlik bilgisi, buffered kopyalama, ilerleme raporlama ve boyut doğrulama destekler.
     /// </summary>
-    public class LocalNetworkProvider : ICloudProvider
+    public class LocalNetworkProvider : ICloudProvider, ICloudFolderListProvider
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<LocalNetworkProvider>();
         private readonly CloudProviderType _type;
@@ -131,6 +132,49 @@ namespace KoruMsSqlYedek.Engine.Cloud
                 Log.Warning(ex, "Dosya silinemedi: {Path}", remoteFileIdentifier);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Retention "folder sweep" için hedef dizindeki .bak/.7z dosyalarını listeler.
+        /// FileId, DeleteAsync'e verilen tam yoldur. Dizin yoksa boş liste döner;
+        /// erişim hatası fırlatılır (orkestratör yakalar).
+        /// </summary>
+        public Task<List<CloudFileEntry>> ListFolderAsync(
+            CloudTargetConfig config,
+            CancellationToken cancellationToken)
+        {
+            ValidateConfig(config);
+
+            return Task.Run(() =>
+            {
+                var entries = new List<CloudFileEntry>();
+                using (CreateUncConnectionIfNeeded(config))
+                {
+                    if (!Directory.Exists(config.LocalOrUncPath))
+                        return entries;
+
+                    foreach (string path in Directory.GetFiles(config.LocalOrUncPath))
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (!path.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) &&
+                            !path.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        var info = new FileInfo(path);
+                        entries.Add(new CloudFileEntry
+                        {
+                            FileId = path,
+                            Name = info.Name,
+                            CreatedAtUtc = info.CreationTimeUtc,
+                            SizeBytes = info.Length
+                        });
+                    }
+                }
+
+                Log.Information("UNC folder sweep listesi: {Count} dosya (dizin: {Path})",
+                    entries.Count, config.LocalOrUncPath);
+                return entries;
+            }, cancellationToken);
         }
 
         public async Task<bool> TestConnectionAsync(

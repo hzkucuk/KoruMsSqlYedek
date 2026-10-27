@@ -73,6 +73,13 @@ namespace KoruMsSqlYedek.Core.Models
         [JsonProperty("cloudUploadResults")]
         public List<CloudUploadResult> CloudUploadResults { get; set; } = new List<CloudUploadResult>();
 
+        /// <summary>
+        /// VSS arşivinin (<see cref="VssFileCopyPath"/>) bulut yükleme sonuçları.
+        /// Retention bulut kopyasını bu kayıttaki fileId ile siler.
+        /// </summary>
+        [JsonProperty("vssCloudUploadResults")]
+        public List<CloudUploadResult> VssCloudUploadResults { get; set; }
+
         [JsonProperty("errorMessage")]
         public string ErrorMessage { get; set; }
     }

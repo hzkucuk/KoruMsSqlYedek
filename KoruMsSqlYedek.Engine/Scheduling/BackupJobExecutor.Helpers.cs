@@ -24,7 +24,11 @@ namespace KoruMsSqlYedek.Engine.Scheduling
 
             try
             {
-                int trashDeleted = await CloudOrchestrator.EmptyTrashForAllAsync(plan.CloudTargets, ct);
+                // Yükleme boş RemoteFolderPath'te varsayılan klasöre gider; çöp de orada aranmalı
+                var effectiveTargets = plan.CloudTargets
+                    .Select(t => Cloud.CloudUploadOrchestrator.WithEffectiveFolder(t, plan.PlanName))
+                    .ToList();
+                int trashDeleted = await CloudOrchestrator.EmptyTrashForAllAsync(effectiveTargets, ct);
                 if (trashDeleted > 0)
                 {
                     Log.Information("Bulut çöp kutusu temizlendi: {DeletedCount} öğe silindi. Plan={PlanName}",
@@ -289,9 +293,12 @@ namespace KoruMsSqlYedek.Engine.Scheduling
                         {
                             var fileResults = batchResults[batchIdx];
 
-                            if (!pending.IsVss && pending.SqlResult != null)
+                            if (pending.SqlResult != null)
                             {
-                                pending.SqlResult.CloudUploadResults = fileResults;
+                                if (pending.IsVss)
+                                    pending.SqlResult.VssCloudUploadResults = fileResults;
+                                else
+                                    pending.SqlResult.CloudUploadResults = fileResults;
                             }
 
                             int successCount = fileResults.Count(r => r.IsSuccess);

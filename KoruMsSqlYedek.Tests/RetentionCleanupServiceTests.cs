@@ -25,8 +25,19 @@ namespace KoruMsSqlYedek.Tests
         {
             _testDir = Path.Combine(Path.GetTempPath(), "KoruMsSqlYedek_RetentionTests", Guid.NewGuid().ToString());
             Directory.CreateDirectory(_testDir);
+            _service = new RetentionCleanupService(CreateOwningHistory(_testDir).Object);
+        }
+
+        /// <summary>
+        /// Retention yalnızca planın geçmişinde kaydı olan dosyaları siler. Bu testler
+        /// politika davranışını sınar; dizindeki her dosya plana ait olarak kaydedilir.
+        /// </summary>
+        internal static Mock<IBackupHistoryManager> CreateOwningHistory(string dir)
+        {
             var mockHistory = new Mock<IBackupHistoryManager>();
-            _service = new RetentionCleanupService(mockHistory.Object);
+            mockHistory.Setup(h => h.GetAllHistoryByPlan(It.IsAny<string>())).Returns(() =>
+                Directory.GetFiles(dir).Select(f => new BackupResult { BackupFilePath = f }).ToList());
+            return mockHistory;
         }
 
         [TestCleanup]
@@ -397,20 +408,17 @@ namespace KoruMsSqlYedek.Tests
         public async Task CleanupAsync_FileBackupArchives_GfsPolicy_ProtectsCorrectFiles()
         {
             // Arrange
-            var mockHistory = new Mock<IBackupHistoryManager>();
-            var service = new RetentionCleanupService(mockHistory.Object);
+            var service = new RetentionCleanupService(CreateOwningHistory(_testDir).Object);
 
-            string today = Path.Combine(_testDir, "Files_today.7z");
+            // Yedek zamani dosya adindaki damgadan okunur
+            string today = Path.Combine(_testDir, $"Files_{Ts(DateTime.Now)}.7z");
             File.WriteAllBytes(today, new byte[500]);
-            File.SetCreationTime(today, DateTime.Now);
 
-            string yesterday = Path.Combine(_testDir, "Files_yesterday.7z");
+            string yesterday = Path.Combine(_testDir, $"Files_{Ts(DateTime.Now.AddDays(-1))}.7z");
             File.WriteAllBytes(yesterday, new byte[400]);
-            File.SetCreationTime(yesterday, DateTime.Now.AddDays(-1));
 
-            string old = Path.Combine(_testDir, "Files_old.7z");
+            string old = Path.Combine(_testDir, $"Files_{Ts(DateTime.Now.AddDays(-30))}.7z");
             File.WriteAllBytes(old, new byte[300]);
-            File.SetCreationTime(old, DateTime.Now.AddDays(-30));
 
             var plan = new BackupPlan
             {
@@ -477,9 +485,12 @@ namespace KoruMsSqlYedek.Tests
         public async Task CleanupAsync_RetentionScheme_LogFilesIndependent()
         {
             // Arrange � 10 Log dosyas�; scheme: Log�4
+            // Log zinciri tam yedege baglidir: en yeni Full'den sonraki loglar korunur.
+            // Burada tum loglar Full'den sonra degil, oncesinde alinmis olsun.
+            CreateBackupFile("TestDB_Full_20250102_000000.bak");
             for (int i = 0; i < 10; i++)
             {
-                string log = CreateBackupFile($"TestDB_Log_20250101_0{i:D2}0000.bak");
+                string log = CreateBackupFile($"TestDB_Incremental_20250101_{i:D2}0000.bak");
                 File.SetCreationTime(log, DateTime.Now.AddHours(-10 + i));
             }
 
@@ -501,7 +512,7 @@ namespace KoruMsSqlYedek.Tests
             await _service.CleanupAsync(plan, CancellationToken.None);
 
             // Assert � sadece Log'lardan 4 kalmal�
-            Directory.GetFiles(_testDir, "TestDB_Log_*.bak").Should().HaveCount(4);
+            Directory.GetFiles(_testDir, "TestDB_Incremental_*.bak").Should().HaveCount(4);
         }
 
         [TestMethod]
@@ -554,7 +565,7 @@ namespace KoruMsSqlYedek.Tests
                 var diff = CreateBackupFile($"TestDB_Differential_2025010{i + 1}_020000.bak");
                 File.SetCreationTime(diff, DateTime.Now.AddDays(-5 + i));
 
-                var log = CreateBackupFile($"TestDB_Log_2025010{i + 1}_020000.bak");
+                var log = CreateBackupFile($"TestDB_Incremental_2025010{i + 1}_020000.bak");
                 File.SetCreationTime(log, DateTime.Now.AddDays(-5 + i));
 
                 var files = CreateBackupFile($"Files_2025010{i + 1}_020000.7z");
@@ -575,7 +586,7 @@ namespace KoruMsSqlYedek.Tests
             // Assert � her tip kendi limitine g�re temizlenmeli
             Directory.GetFiles(_testDir, "TestDB_Full_*.bak").Should().HaveCount(2);
             Directory.GetFiles(_testDir, "TestDB_Differential_*.bak").Should().HaveCount(3);
-            Directory.GetFiles(_testDir, "TestDB_Log_*.bak").Should().HaveCount(4);
+            Directory.GetFiles(_testDir, "TestDB_Incremental_*.bak").Should().HaveCount(4);
             Directory.GetFiles(_testDir, "Files_*.7z").Should().HaveCount(2);
         }
 
@@ -658,6 +669,8 @@ namespace KoruMsSqlYedek.Tests
             plan.GetEffectiveRetention(BackupFileType.SqlFull).KeepLastN.Should().Be(42);
             plan.GetEffectiveRetention(BackupFileType.FileBackup).KeepLastN.Should().Be(42);
         }
+
+        internal static string Ts(DateTime when) => when.ToString("yyyyMMdd_HHmmss");
 
         private string CreateBackupFile(string fileName)
         {
@@ -880,11 +893,11 @@ namespace KoruMsSqlYedek.Tests
             var mockHistory = new Mock<IBackupHistoryManager>();
             var service = new RetentionCleanupService(mockHistory.Object);
 
-            string today = CreateFileWithDate("TestDB_Full_today.bak", DateTime.Now, 500);
-            string yesterday = CreateFileWithDate("TestDB_Full_yesterday.bak", DateTime.Now.AddDays(-1), 400);
-            string tenDays = CreateFileWithDate("TestDB_Full_10d.bak", DateTime.Now.AddDays(-10), 300);
-            string fortyDays = CreateFileWithDate("TestDB_Full_40d.bak", DateTime.Now.AddDays(-40), 200);
-            string hundredDays = CreateFileWithDate("TestDB_Full_100d.bak", DateTime.Now.AddDays(-100), 100);
+            string today = CreateBackupAt("TestDB_Full", DateTime.Now, 500);
+            string yesterday = CreateBackupAt("TestDB_Full", DateTime.Now.AddDays(-1), 400);
+            string tenDays = CreateBackupAt("TestDB_Full", DateTime.Now.AddDays(-10), 300);
+            string fortyDays = CreateBackupAt("TestDB_Full", DateTime.Now.AddDays(-40), 200);
+            string hundredDays = CreateBackupAt("TestDB_Full", DateTime.Now.AddDays(-100), 100);
 
             var plan = new BackupPlan
             {
@@ -922,6 +935,10 @@ namespace KoruMsSqlYedek.Tests
             File.Exists(fortyDays).Should().BeFalse("40 g�n �nceki dosya silinmeli");
             File.Exists(hundredDays).Should().BeFalse("100 g�n �nceki dosya silinmeli");
         }
+
+        /// <summary>"{prefix}_yyyyMMdd_HHmmss.bak" — retention zamani addaki damgadan okur.</summary>
+        private string CreateBackupAt(string prefix, DateTime when, int sizeBytes)
+            => CreateFileWithDate($"{prefix}_{RetentionCleanupServiceTests.Ts(when)}.bak", when, sizeBytes);
 
         private string CreateFileWithDate(string fileName, DateTime creationTime, int sizeBytes)
         {

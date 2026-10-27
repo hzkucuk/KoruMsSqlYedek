@@ -114,5 +114,15 @@ namespace KoruMsSqlYedek.Core.Interfaces
             SqlConnectionInfo connection,
             IEnumerable<string> databaseNames,
             CancellationToken cancellationToken);
+
+        /// <summary>
+        /// SQL Server'ın bildiği son tam yedeğin (copy-only olmayan, msdb.dbo.backupset type='D')
+        /// dosya yolunu döndürür. Differential yedeğin tabanı budur; plan klasöründeki
+        /// son dosya değil. Hata fırlatmaz; bilinmiyorsa veya sorgu başarısızsa null döner.
+        /// </summary>
+        Task<string> GetLastFullBackupFileAsync(
+            SqlConnectionInfo connection,
+            string databaseName,
+            CancellationToken cancellationToken);
     }
 }

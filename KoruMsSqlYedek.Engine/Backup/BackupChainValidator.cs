@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Serilog;
+using KoruMsSqlYedek.Core.Helpers;
 using KoruMsSqlYedek.Core.Models;
 
 namespace KoruMsSqlYedek.Engine.Backup
@@ -10,6 +12,8 @@ namespace KoruMsSqlYedek.Engine.Backup
     /// Yedekleme zincir bütünlüğünü kontrol eder.
     /// Differential/Incremental almadan önce geçerli Full yedek varlığını doğrular.
     /// Incremental (Transaction Log) için de ayrı zincir kontrolü yapar.
+    /// Yedeğin zamanı dosya adındaki damgadan okunur (retention ile aynı ölçü; kopyalanan
+    /// dosyanın oluşturma tarihi yanıltmaz). Aynı gövdeli .bak ve .7z tek yedektir.
     /// </summary>
     public class BackupChainValidator
     {
@@ -23,17 +27,13 @@ namespace KoruMsSqlYedek.Engine.Backup
             if (string.IsNullOrEmpty(localPath) || !Directory.Exists(localPath))
                 return false;
 
-            string pattern = $"{databaseName}_Full_*.bak";
-            var fullBackups = Directory.GetFiles(localPath, pattern)
-                .OrderByDescending(f => File.GetCreationTime(f))
-                .ToList();
-
-            bool hasValid = fullBackups.Count > 0;
+            int count = GetBackupTimes(localPath, databaseName, BackupFileName.Full).Count;
+            bool hasValid = count > 0;
             Log.Debug(
                 "Zincir kontrolü: {Database} Full yedek {Result} ({Count} adet)",
                 databaseName,
                 hasValid ? "bulundu" : "bulunamadı",
-                fullBackups.Count);
+                count);
 
             return hasValid;
         }
@@ -51,19 +51,11 @@ namespace KoruMsSqlYedek.Engine.Backup
                 return false;
 
             // Son Full yedekten sonraki diff sayısını bul
-            string fullPattern = $"{databaseName}_Full_*.bak";
-            var lastFull = Directory.GetFiles(localPath, fullPattern)
-                .OrderByDescending(f => File.GetCreationTime(f))
-                .FirstOrDefault();
-
-            if (lastFull == null)
+            DateTime? lastFullDate = GetLastFullBackupDate(localPath, databaseName);
+            if (lastFullDate == null)
                 return true;
 
-            DateTime lastFullDate = File.GetCreationTime(lastFull);
-
-            string diffPattern = $"{databaseName}_Differential_*.bak";
-            int diffCountSinceLastFull = Directory.GetFiles(localPath, diffPattern)
-                .Count(f => File.GetCreationTime(f) > lastFullDate);
+            int diffCountSinceLastFull = CountSince(localPath, databaseName, BackupFileName.Differential, lastFullDate.Value);
 
             bool shouldPromote = diffCountSinceLastFull >= autoPromoteAfter;
 
@@ -103,19 +95,11 @@ namespace KoruMsSqlYedek.Engine.Backup
             if (string.IsNullOrEmpty(localPath) || !Directory.Exists(localPath))
                 return 0;
 
-            string fullPattern = $"{databaseName}_Full_*.bak";
-            var lastFull = Directory.GetFiles(localPath, fullPattern)
-                .OrderByDescending(f => File.GetCreationTime(f))
-                .FirstOrDefault();
-
-            if (lastFull == null)
+            DateTime? lastFullDate = GetLastFullBackupDate(localPath, databaseName);
+            if (lastFullDate == null)
                 return 0;
 
-            DateTime lastFullDate = File.GetCreationTime(lastFull);
-
-            string diffPattern = $"{databaseName}_Differential_*.bak";
-            return Directory.GetFiles(localPath, diffPattern)
-                .Count(f => File.GetCreationTime(f) > lastFullDate);
+            return CountSince(localPath, databaseName, BackupFileName.Differential, lastFullDate.Value);
         }
 
         /// <summary>
@@ -126,19 +110,11 @@ namespace KoruMsSqlYedek.Engine.Backup
             if (string.IsNullOrEmpty(localPath) || !Directory.Exists(localPath))
                 return 0;
 
-            string fullPattern = $"{databaseName}_Full_*.bak";
-            var lastFull = Directory.GetFiles(localPath, fullPattern)
-                .OrderByDescending(f => File.GetCreationTime(f))
-                .FirstOrDefault();
-
-            if (lastFull == null)
+            DateTime? lastFullDate = GetLastFullBackupDate(localPath, databaseName);
+            if (lastFullDate == null)
                 return 0;
 
-            DateTime lastFullDate = File.GetCreationTime(lastFull);
-
-            string logPattern = $"{databaseName}_Incremental_*.bak";
-            return Directory.GetFiles(localPath, logPattern)
-                .Count(f => File.GetCreationTime(f) > lastFullDate);
+            return CountSince(localPath, databaseName, BackupFileName.Incremental, lastFullDate.Value);
         }
 
         /// <summary>
@@ -149,12 +125,33 @@ namespace KoruMsSqlYedek.Engine.Backup
             if (string.IsNullOrEmpty(localPath) || !Directory.Exists(localPath))
                 return null;
 
-            string fullPattern = $"{databaseName}_Full_*.bak";
-            var lastFull = Directory.GetFiles(localPath, fullPattern)
-                .OrderByDescending(f => File.GetCreationTime(f))
-                .FirstOrDefault();
+            var times = GetBackupTimes(localPath, databaseName, BackupFileName.Full);
+            return times.Count > 0 ? times.Max() : (DateTime?)null;
+        }
 
-            return lastFull != null ? File.GetCreationTime(lastFull) : (DateTime?)null;
+        private static int CountSince(string localPath, string databaseName, string backupType, DateTime since)
+            => GetBackupTimes(localPath, databaseName, backupType).Count(t => t > since);
+
+        /// <summary>
+        /// "{db}_{Tür}_yyyyMMdd_HHmmss" yedeklerinin zamanları: .bak VE .7z (sıkıştırma açıkken
+        /// ara .bak silinir, yalnızca .7z kalır). Aynı gövdeli .bak + .7z bir kez sayılır.
+        /// </summary>
+        private static List<DateTime> GetBackupTimes(string localPath, string databaseName, string backupType)
+        {
+            if (string.IsNullOrEmpty(databaseName))
+                return new List<DateTime>();
+
+            var matcher = BackupFileName.For(databaseName, backupType);
+            var byStem = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (string path in Directory.GetFiles(localPath))
+            {
+                string name = Path.GetFileName(path);
+                if (matcher.TryMatch(name, out DateTime ts))
+                    byStem[Path.GetFileNameWithoutExtension(name)] = ts;
+            }
+
+            return byStem.Values.ToList();
         }
     }
 }

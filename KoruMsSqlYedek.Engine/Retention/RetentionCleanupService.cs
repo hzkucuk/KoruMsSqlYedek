@@ -14,26 +14,89 @@ namespace KoruMsSqlYedek.Engine.Retention
     /// <summary>
     /// Eski yedeklerin retention politikasına göre temizlenmesini yönetir.
     ///
-    /// GÜVENLİK İLKELERİ:
-    /// - Yalnızca BU PLANIN geçmiş kayıtlarında (history) yer alan dosyalar silinir.
-    ///   Aynı dizini/prefix'i paylaşan başka bir planın, elle kopyalanmış veya bilinmeyen
-    ///   dosyalar "sahipsiz" kabul edilir ve ASLA silinmez (Information log ile bildirilir).
+    /// SAHİPLİK:
+    /// - Planın yerel dizinindeki ve her bulut hedefinin klasöründeki, planın veritabanı adlarıyla
+    ///   tam ad desenine uyan dosyalar ({db}_{Tür}_yyyyMMdd_HHmmss.bak|.7z, Files_yyyyMMdd_HHmmss.7z;
+    ///   bkz. <see cref="BackupFileName"/>) bu plana ait sayılır. Geçmiş kaydı aranmaz: veri taşımada
+    ///   ya da eski sürümlerde geçmişi kaybolmuş yedekler de plan kuralına göre temizlenir.
+    /// - Bu cihazdaki BAŞKA bir planın geçmişinde geçen dosyalar asla silinmez.
+    /// - Bulut silme yalnızca hedefin kendi klasör listesinden yapılır; yerel dosyanın yokluğu
+    ///   tek başına bir bulut kopyasını sildirmez.
+    ///
+    /// GÜVENLİK:
+    /// - Her grubun en yeni yedeği her durumda kalır.
+    /// - Fark/log yedekleri zincire bağlıdır: en yeni tam yedekten sonrakiler hiç silinmez,
+    ///   tam yedek yoksa hiçbiri silinmez.
+    /// - Bulut hedefi olan planda buluta gönderilemeyen yerel dosya silinmez.
     /// - Geçmiş okunamazsa hiçbir şey silinmez (fail-safe).
-    /// - Bulut modda: buluta başarıyla gönderilmemiş dosyalar SİLİNMEZ.
     /// </summary>
     public class RetentionCleanupService : IRetentionService
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<RetentionCleanupService>();
 
+        private const string ProtectAllMarker = "*PROTECT_ALL*";
+
+        private const string FileBackupDatabaseName = "__FileBackup__";
+
         private readonly IBackupHistoryManager _historyManager;
         private readonly ICloudUploadOrchestrator _cloudOrchestrator;
+        private readonly IPlanManager _planManager;
 
+        /// <param name="planManager">
+        /// Varsa yalnızca hâlâ var olan planların geçmişi "başka plan" sayılır; silinmiş ya da
+        /// yeniden oluşturulmuş planın eski yedekleri temizlenebilir. Yoksa her başka PlanId korunur.
+        /// </param>
         public RetentionCleanupService(
             IBackupHistoryManager historyManager,
-            ICloudUploadOrchestrator cloudOrchestrator = null)
+            ICloudUploadOrchestrator cloudOrchestrator = null,
+            IPlanManager planManager = null)
         {
             _historyManager = historyManager ?? throw new ArgumentNullException(nameof(historyManager));
             _cloudOrchestrator = cloudOrchestrator;
+            _planManager = planManager;
+        }
+
+        /// <summary>Bir veritabanının bir yedek türü ya da dosya yedeği arşivleri.</summary>
+        private sealed class RetentionGroup
+        {
+            private readonly BackupFileName _matcher;
+
+            public RetentionGroup(string database, string backupType, BackupFileType fileType)
+            {
+                Database = database;
+                BackupType = backupType;
+                FileType = fileType;
+                _matcher = database == null
+                    ? BackupFileName.ForFileArchives()
+                    : BackupFileName.For(database, backupType);
+            }
+
+            /// <summary>null: dosya yedeği arşivleri (Files_*).</summary>
+            public string Database { get; }
+            public string BackupType { get; }
+            public BackupFileType FileType { get; }
+
+            public bool IsChained =>
+                BackupType == BackupFileName.Differential || BackupType == BackupFileName.Incremental;
+
+            public bool TryMatch(string fileName, out DateTime timestamp) =>
+                _matcher.TryMatch(fileName, out timestamp);
+
+            public override string ToString() => Database == null ? "Files" : $"{Database}/{BackupType}";
+        }
+
+        /// <summary>
+        /// Silme kararının verildiği birim. Bulutta aynı adı taşıyan birden çok dosya tek öğedir:
+        /// ya hepsi kalır ya hepsi silinir (aynı adlı kopyalar KeepLastN sayımını şişirmez).
+        /// </summary>
+        private sealed class RetentionItem
+        {
+            public string Name { get; set; }
+            public DateTime Time { get; set; }
+            public long Size { get; set; }
+
+            /// <summary>Yerelde tam yol; bulutta sağlayıcının dosya tanımlayıcısı.</summary>
+            public List<string> Keys { get; } = new List<string>();
         }
 
         public async Task CleanupAsync(BackupPlan plan, CancellationToken cancellationToken)
@@ -44,13 +107,20 @@ namespace KoruMsSqlYedek.Engine.Retention
             Log.Information("Retention temizliği başlıyor: Plan={PlanName}, BulutHedef={HasCloud}",
                 plan.PlanName, plan.HasCloudTargets);
 
-            // Plan geçmişi TEK seferde ve ÜST SINIRSIZ okunur: sahiplik seti, bulut koruma seti
-            // ve cloud fileId haritası hep bu listeden türetilir. Sınırlı (örn. 500) liste,
-            // sık çalışan planlarda eski ama hâlâ diskte duran dosyaların korumasını düşürür.
             List<BackupResult> history;
+            List<BackupResult> foreignHistory;
             try
             {
-                history = _historyManager.GetAllHistoryByPlan(plan.PlanId) ?? new List<BackupResult>();
+                // Geçmiş tek seferde okunur ve plana göre ayrılır
+                var all = (_historyManager.GetRecentHistory(int.MaxValue) ?? new List<BackupResult>())
+                    .Where(r => r != null)
+                    .ToList();
+                history = all.Where(r => r.PlanId == plan.PlanId).ToList();
+
+                var livePlanIds = GetLivePlanIds();
+                foreignHistory = all
+                    .Where(r => r.PlanId != plan.PlanId && (livePlanIds == null || livePlanIds.Contains(r.PlanId ?? string.Empty)))
+                    .ToList();
             }
             catch (Exception ex)
             {
@@ -60,300 +130,530 @@ namespace KoruMsSqlYedek.Engine.Retention
                 return;
             }
 
-            var ownedFiles = BuildOwnedFileSet(history);
+            var groups = BuildGroups(plan);
+            var foreign = BuildForeignSets(foreignHistory);
+            var invalid = BuildInvalidFileSet(history);
+            var cloudProtected = plan.HasCloudTargets ? BuildCloudProtectedFileSet(plan, history) : null;
 
-            HashSet<string> cloudProtectedFiles = null;
-            Dictionary<string, List<(string FileId, CloudTargetConfig Target)>> cloudFileMap = null;
+            await CleanupLocalAsync(plan, groups, foreign, invalid, cloudProtected, cancellationToken)
+                .ConfigureAwait(false);
 
-            if (plan.HasCloudTargets)
+            if (plan.HasCloudTargets && _cloudOrchestrator != null)
             {
-                cloudProtectedFiles = BuildCloudProtectedFileSet(plan, history);
-                if (_cloudOrchestrator != null)
-                    cloudFileMap = BuildCloudFileMap(plan, history);
+                await SweepCloudFoldersAsync(plan, groups, foreign, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Hâlâ var olan planların kimlikleri. Okunamazsa null: o zaman her başka PlanId korunur.
+        /// </summary>
+        private HashSet<string> GetLivePlanIds()
+        {
+            if (_planManager == null)
+                return null;
+
+            try
+            {
+                return new HashSet<string>(
+                    (_planManager.GetAllPlans() ?? new List<BackupPlan>())
+                        .Where(p => p != null && !string.IsNullOrEmpty(p.PlanId))
+                        .Select(p => p.PlanId),
+                    StringComparer.Ordinal);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Retention: plan listesi okunamadı, tüm başka planların geçmişi korunacak");
+                return null;
+            }
+        }
+
+        private static List<RetentionGroup> BuildGroups(BackupPlan plan)
+        {
+            var groups = new List<RetentionGroup>();
+
+            foreach (string db in plan.Databases ?? new List<string>())
+            {
+                if (string.IsNullOrWhiteSpace(db)) continue;
+
+                groups.Add(new RetentionGroup(db, BackupFileName.Full, BackupFileType.SqlFull));
+                groups.Add(new RetentionGroup(db, BackupFileName.Differential, BackupFileType.SqlDifferential));
+                groups.Add(new RetentionGroup(db, BackupFileName.Incremental, BackupFileType.SqlLog));
+                groups.Add(new RetentionGroup(db, BackupFileName.Vss, BackupFileType.SqlVss));
             }
 
-            // Silinecek dosyaları belirle (sync dosya taraması)
-            var filesToDelete = new List<FileInfo>();
-            var skippedUnknown = new List<string>();
+            if (plan.FileBackup?.IsEnabled == true)
+                groups.Add(new RetentionGroup(null, null, BackupFileType.FileBackup));
 
-            await Task.Run(() =>
+            return groups;
+        }
+
+        // ── Yerel ─────────────────────────────────────────────────────────
+
+        private async Task CleanupLocalAsync(
+            BackupPlan plan,
+            List<RetentionGroup> groups,
+            (HashSet<string> Paths, HashSet<string> Names, HashSet<string> RemoteIds) foreign,
+            HashSet<string> invalidFiles,
+            HashSet<string> cloudProtected,
+            CancellationToken ct)
+        {
+            if (!Directory.Exists(plan.LocalPath))
             {
-                foreach (string dbName in plan.Databases)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    CollectFilesToDelete(plan.LocalPath, dbName, BackupFileType.SqlFull,
-                        plan.GetEffectiveRetention(BackupFileType.SqlFull), cloudProtectedFiles, ownedFiles, filesToDelete, skippedUnknown);
-
-                    CollectFilesToDelete(plan.LocalPath, dbName, BackupFileType.SqlDifferential,
-                        plan.GetEffectiveRetention(BackupFileType.SqlDifferential), cloudProtectedFiles, ownedFiles, filesToDelete, skippedUnknown);
-
-                    CollectFilesToDelete(plan.LocalPath, dbName, BackupFileType.SqlLog,
-                        plan.GetEffectiveRetention(BackupFileType.SqlLog), cloudProtectedFiles, ownedFiles, filesToDelete, skippedUnknown);
-
-                    CollectFilesToDelete(plan.LocalPath, dbName, BackupFileType.SqlVss,
-                        plan.GetEffectiveRetention(BackupFileType.SqlVss), cloudProtectedFiles, ownedFiles, filesToDelete, skippedUnknown);
-                }
-
-                if (plan.FileBackup?.IsEnabled == true)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    CollectFileBackupArchivesToDelete(plan.LocalPath,
-                        plan.GetEffectiveRetention(BackupFileType.FileBackup), cloudProtectedFiles, ownedFiles, filesToDelete, skippedUnknown);
-                }
-            }, cancellationToken);
-
-            if (skippedUnknown.Count > 0)
-            {
-                // Çalıştırma başına tek satır: bu plana ait olmayan dosyalar
-                Log.Information(
-                    "Retention: {Count} dosya bu plana ait olmayan dosya olarak atlandı (geçmişte kaydı yok): {Files}",
-                    skippedUnknown.Count, string.Join(", ", skippedUnknown.Take(20)) +
-                    (skippedUnknown.Count > 20 ? ", …" : string.Empty));
+                Log.Warning("Retention: yerel dizin yok veya erişilemiyor, yerel temizlik atlandı: {Path}",
+                    plan.LocalPath);
+                return;
             }
 
-            // Silme işlemini yürüt: önce cloud, sonra local
-            int deletedLocal = 0;
-            int deletedCloud = 0;
-            int skipped = 0;
+            List<FileInfo> files = await Task.Run(
+                () => Directory.GetFiles(plan.LocalPath).Select(f => new FileInfo(f)).ToList(), ct)
+                .ConfigureAwait(false);
 
-            foreach (var file in filesToDelete)
+            var skippedForeign = new List<string>();
+            var itemsByGroup = new Dictionary<RetentionGroup, List<RetentionItem>>();
+            var invalidByGroup = new Dictionary<RetentionGroup, List<RetentionItem>>();
+
+            foreach (var group in groups)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                // Cloud silme
-                if (cloudFileMap != null &&
-                    cloudFileMap.TryGetValue(file.FullName, out var cloudEntries))
+                var items = new List<RetentionItem>();
+                var invalidItems = new List<RetentionItem>();
+                foreach (var file in files)
                 {
-                    foreach (var (fileId, target) in cloudEntries)
+                    if (!group.TryMatch(file.Name, out DateTime ts))
+                        continue;
+
+                    // Aynı klasöre farklı yol yazımıyla (Z:\ ↔ \\srv\, 8.3, junction) ulaşan
+                    // başka bir planın dosyası tam yolla yakalanmaz; ad da karşılaştırılır.
+                    string fullPath = NormalizePath(file.FullName);
+                    if (foreign.Paths.Contains(fullPath) || foreign.Names.Contains(file.Name))
                     {
+                        skippedForeign.Add(file.Name);
+                        continue;
+                    }
+
+                    var item = new RetentionItem { Name = file.Name, Time = ts, Size = file.Length };
+                    item.Keys.Add(file.FullName);
+                    (invalidFiles.Contains(fullPath) ? invalidItems : items).Add(item);
+                }
+                itemsByGroup[group] = items;
+                invalidByGroup[group] = invalidItems;
+            }
+
+            LogSkippedForeign("Yerel", skippedForeign);
+
+            var toDelete = SelectForDeletion(plan, itemsByGroup);
+
+            // Başarısız yedeğin dosyası (doğrulaması geçmemiş .bak vb.) politika sayımına girmez,
+            // zincire taban olmaz; grubunda daha yeni geçerli bir yedek varsa silinir.
+            foreach (var kvp in invalidByGroup)
+            {
+                var valid = itemsByGroup[kvp.Key];
+                if (valid.Count == 0) continue;
+                DateTime newestValid = valid.Max(i => i.Time);
+                toDelete.AddRange(kvp.Value.Where(i => i.Time < newestValid).Select(i => (kvp.Key, i)));
+            }
+
+            int deleted = 0, kept = 0;
+            foreach (var (group, item) in toDelete)
+            {
+                ct.ThrowIfCancellationRequested();
+                string path = item.Keys[0];
+
+                if (cloudProtected != null &&
+                    (cloudProtected.Contains(ProtectAllMarker) || cloudProtected.Contains(NormalizePath(path))))
+                {
+                    kept++;
+                    Log.Warning("Retention atlandı (buluta gönderilememiş): {FileName}", item.Name);
+                    continue;
+                }
+
+                try
+                {
+                    File.Delete(path);
+                    deleted++;
+                    Log.Information("Eski yedek silindi: {FileName} ({Group})", item.Name, group);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Dosya silinemedi: {FileName}", item.Name);
+                }
+            }
+
+            if (deleted > 0 || kept > 0)
+            {
+                Log.Information(
+                    "Yerel retention tamamlandı: Plan={PlanName} — {Deleted} silindi, {Kept} buluta gönderilemediği için korundu",
+                    plan.PlanName, deleted, kept);
+            }
+        }
+
+        // ── Bulut ─────────────────────────────────────────────────────────
+
+        private async Task SweepCloudFoldersAsync(
+            BackupPlan plan,
+            List<RetentionGroup> groups,
+            (HashSet<string> Paths, HashSet<string> Names, HashSet<string> RemoteIds) foreign,
+            CancellationToken ct)
+        {
+            foreach (var target in plan.CloudTargets)
+            {
+                if (target is null || !target.IsEnabled)
+                    continue;
+
+                ct.ThrowIfCancellationRequested();
+
+                // Boş RemoteFolderPath'te yükleme varsayılan klasöre gider; liste ve silme de oradan
+                var listTarget = Cloud.CloudUploadOrchestrator.WithEffectiveFolder(target, plan.PlanName);
+
+                List<CloudFileEntry> remoteFiles;
+                try
+                {
+                    remoteFiles = await _cloudOrchestrator.ListFolderAsync(listTarget, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Cloud folder sweep: Listeleme başarısız ({Provider})", target.DisplayName);
+                    continue;
+                }
+
+                if (remoteFiles is null)
+                {
+                    Log.Warning("Cloud folder sweep: {Provider} listelenemedi, bulut temizliği atlandı.",
+                        target.DisplayName);
+                    continue;
+                }
+
+                var skippedForeign = new List<string>();
+                var itemsByGroup = new Dictionary<RetentionGroup, List<RetentionItem>>();
+
+                foreach (var group in groups)
+                {
+                    var byName = new Dictionary<string, RetentionItem>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var entry in remoteFiles)
+                    {
+                        if (entry == null || string.IsNullOrEmpty(entry.FileId) ||
+                            !group.TryMatch(entry.Name, out DateTime ts))
+                            continue;
+
+                        if (foreign.Names.Contains(entry.Name) || foreign.RemoteIds.Contains(entry.FileId))
+                        {
+                            skippedForeign.Add(entry.Name);
+                            continue;
+                        }
+
+                        if (!byName.TryGetValue(entry.Name, out var item))
+                        {
+                            item = new RetentionItem { Name = entry.Name, Time = ts };
+                            byName[entry.Name] = item;
+                        }
+                        item.Size = Math.Max(item.Size, entry.SizeBytes);
+                        item.Keys.Add(entry.FileId);
+                    }
+                    itemsByGroup[group] = byName.Values.ToList();
+                }
+
+                LogSkippedForeign(target.DisplayName, skippedForeign);
+
+                int deleted = 0;
+                foreach (var (group, item) in SelectForDeletion(plan, itemsByGroup))
+                {
+                    foreach (string fileId in item.Keys)
+                    {
+                        ct.ThrowIfCancellationRequested();
                         try
                         {
-                            var results = await _cloudOrchestrator.DeleteFromAllAsync(
-                                fileId,
-                                new List<CloudTargetConfig> { target },
-                                cancellationToken).ConfigureAwait(false);
-
-                            if (results?.Count > 0 && results[0].IsSuccess)
+                            bool ok = await _cloudOrchestrator.DeleteFromTargetAsync(fileId, listTarget, ct)
+                                .ConfigureAwait(false);
+                            if (ok)
                             {
-                                deletedCloud++;
+                                deleted++;
                                 Log.Information(
-                                    "Cloud retention: {Provider} — silindi: {FileId} ({FileName})",
-                                    target.DisplayName, fileId, file.Name);
+                                    "Cloud folder sweep: {Provider} — eski dosya silindi: {FileName} ({Group})",
+                                    target.DisplayName, item.Name, group);
                             }
                             else
                             {
-                                Log.Warning(
-                                    "Cloud retention: {Provider} — silinemedi: {FileId} ({FileName})",
-                                    target.DisplayName, fileId, file.Name);
+                                Log.Warning("Cloud folder sweep: {Provider} — silme başarısız: {FileName}",
+                                    target.DisplayName, item.Name);
                             }
                         }
                         catch (OperationCanceledException) { throw; }
                         catch (Exception ex)
                         {
-                            Log.Warning(ex,
-                                "Cloud retention hatası: {Provider} — {FileId} ({FileName})",
-                                target.DisplayName, fileId, file.Name);
+                            Log.Warning(ex, "Cloud folder sweep hatası: {Provider} — {FileName}",
+                                target.DisplayName, item.Name);
                         }
                     }
                 }
-                else if (plan.HasCloudTargets && cloudFileMap != null)
-                {
-                    Log.Debug(
-                        "Cloud retention: Geçmişte eşleşme bulunamadı, local silinecek: {FileName}",
-                        file.Name);
-                }
 
-                // Local silme
-                TryDeleteFile(file, ref deletedLocal);
-            }
-
-            if (deletedLocal > 0 || deletedCloud > 0 || skipped > 0)
-            {
                 Log.Information(
-                    "Retention tamamlandı: Plan={PlanName} — Local={DeletedLocal} silindi, Cloud={DeletedCloud} silindi, {Skipped} korundu",
-                    plan.PlanName, deletedLocal, deletedCloud, skipped);
-            }
-
-            // Cloud orphan temizliği:
-            // Yerel dosyası zaten silinmiş ama cloud'da hâlâ duran kayıtları da temizle.
-            // History'deki tüm başarılı cloud upload'ları retention'a tabi tut;
-            // local dosyası artık mevcut değilse (veya zaten sil listesindeyse) cloud'dan da sil.
-            if (plan.HasCloudTargets && _cloudOrchestrator != null && cloudFileMap != null)
-            {
-                await CleanupOrphanCloudEntriesAsync(plan, cloudFileMap, filesToDelete, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-
-            // Cloud folder sweep:
-            // Bulut klasöründe duran ve BU PLANIN geçmişinde kaydı olan yedek dosyalarını
-            // retention politikasına göre temizler. Geçmişte kaydı olmayan dosyalara dokunulmaz.
-            if (plan.HasCloudTargets && _cloudOrchestrator != null)
-            {
-                await SweepCloudFoldersAsync(plan, history, cancellationToken).ConfigureAwait(false);
+                    "Cloud folder sweep tamamlandı: {Provider} — {Count} eski dosya silindi (Plan={PlanName}, klasör={Folder})",
+                    target.DisplayName, deleted, plan.PlanName,
+                    listTarget.Type == CloudProviderType.UncPath ? listTarget.LocalOrUncPath : listTarget.RemoteFolderPath);
             }
         }
 
+        // ── Politika ──────────────────────────────────────────────────────
+
         /// <summary>
-        /// Yerel dosyası silinmiş ama cloud'da hâlâ duran kayıtları retention'a göre temizler.
-        /// cloudFileMap'teki her local yol için: dosya diskte yoksa VE bu run'da sil listesinde de
-        /// yoksa (yani önceki bir run'da silinmiş demek), cloud kaydını da siler.
+        /// Her grup için politikanın sileceği öğeleri seçer. Fark/log grupları zincire bağlıdır:
+        /// aynı veritabanının en yeni tam yedeğinden sonraki fark ve log yedekleri silinmez;
+        /// veritabanının hiç tam yedeği yoksa fark/log yedeklerinin hiçbiri silinmez.
         /// </summary>
-        private async Task CleanupOrphanCloudEntriesAsync(
-            BackupPlan plan,
-            Dictionary<string, List<(string FileId, CloudTargetConfig Target)>> cloudFileMap,
-            List<FileInfo> alreadyDeletedThisRun,
-            CancellationToken ct)
+        private static List<(RetentionGroup Group, RetentionItem Item)> SelectForDeletion(
+            BackupPlan plan, Dictionary<RetentionGroup, List<RetentionItem>> itemsByGroup)
         {
-            // Bu run'da local olarak silinen dosyalar — bunlar yukarıdaki döngüde zaten cloud'dan silindi
-            var alreadyHandled = new HashSet<string>(
-                alreadyDeletedThisRun.Select(f => f.FullName),
+            // Damgası şu andan bir günden fazla ileride olan dosya (sunucu saati bir ara yanlış
+            // ayarlanmış ya da elle bırakılmış) sayıma girmez ve silinmez: aksi halde sonsuza dek
+            // "en yeni" sayılıp gerçek yedeklerin silinmesine yol açardı.
+            DateTime futureLimit = DateTime.Now.AddDays(1);
+            foreach (var group in itemsByGroup.Keys.ToList())
+            {
+                var future = itemsByGroup[group].Where(i => i.Time > futureLimit).ToList();
+                if (future.Count == 0) continue;
+
+                Log.Warning(
+                    "Retention: {Count} dosyanın tarihi ileride, sayılmadı ve silinmeyecek ({Group}): {Files}",
+                    future.Count, group, string.Join(", ", future.Take(10).Select(i => i.Name)));
+                itemsByGroup[group] = itemsByGroup[group].Except(future).ToList();
+            }
+
+            var newestFull = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kvp in itemsByGroup)
+            {
+                if (kvp.Key.BackupType == BackupFileName.Full && kvp.Value.Count > 0)
+                    newestFull[kvp.Key.Database] = kvp.Value.Max(i => i.Time);
+            }
+
+            var result = new List<(RetentionGroup, RetentionItem)>();
+            foreach (var kvp in itemsByGroup)
+            {
+                var group = kvp.Key;
+                var items = kvp.Value;
+                if (items.Count == 0)
+                    continue;
+
+                var policy = plan.GetEffectiveRetention(group.FileType);
+                if (policy == null)
+                    continue;
+
+                DateTime? chainStart = null;
+                if (group.IsChained)
+                {
+                    if (!newestFull.TryGetValue(group.Database, out DateTime t))
+                        continue;
+                    chainStart = t;
+                }
+
+                foreach (var item in SelectByPolicy(items, policy))
+                {
+                    if (chainStart.HasValue && item.Time >= chainStart.Value)
+                        continue;
+                    result.Add((group, item));
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Politikaya göre silinecek öğeler. En yeni öğe her durumda kalır: yedekleme uzun süre
+        /// durduysa "N günden eski" kuralı grubun tamamını silmez.
+        /// </summary>
+        private static List<RetentionItem> SelectByPolicy(List<RetentionItem> items, RetentionPolicy retention)
+        {
+            var ordered = items.OrderByDescending(i => i.Time).ToList();
+            var candidates = new HashSet<RetentionItem>();
+
+            if (retention.Type == RetentionPolicyType.GFS)
+            {
+                var keep = GfsProtected(ordered, retention, i => i.Time, i => i.Size);
+                candidates.UnionWith(ordered.Where(i => !keep.Contains(i)));
+            }
+            else
+            {
+                if (retention.Type == RetentionPolicyType.KeepLastN ||
+                    retention.Type == RetentionPolicyType.Both)
+                {
+                    // KeepLastN=0 "hepsini sil" anlamına gelmez
+                    int keep = retention.KeepLastN;
+                    if (keep < 1)
+                    {
+                        Log.Warning("Retention: KeepLastN={Keep} geçersiz, 1 olarak uygulanıyor", keep);
+                        keep = 1;
+                    }
+                    candidates.UnionWith(ordered.Skip(keep));
+                }
+
+                if (retention.Type == RetentionPolicyType.DeleteOlderThanDays ||
+                    retention.Type == RetentionPolicyType.Both)
+                {
+                    if (retention.DeleteOlderThanDays <= 0)
+                    {
+                        Log.Warning(
+                            "Retention: DeleteOlderThanDays={Days} geçersiz, yaş bazlı silme atlandı",
+                            retention.DeleteOlderThanDays);
+                    }
+                    else
+                    {
+                        DateTime cutoff = DateTime.Now.AddDays(-retention.DeleteOlderThanDays);
+                        candidates.UnionWith(ordered.Where(i => i.Time < cutoff));
+                    }
+                }
+            }
+
+            candidates.Remove(ordered[0]);
+            return ordered.Where(candidates.Contains).ToList();
+        }
+
+        /// <summary>
+        /// GFS (Grandfather-Father-Son) politikasına göre korunacak dosyaları belirler.
+        /// Her periyot (gün/hafta/ay/yıl) için en yeni (en büyük) yedek seçilir.
+        /// </summary>
+        /// <remarks>Public for unit testing.</remarks>
+        public static HashSet<string> BuildGfsProtectedSet(List<FileInfo> files, RetentionPolicy retention)
+        {
+            return new HashSet<string>(
+                GfsProtected(files, retention, f => f.CreationTime, f => f.Length).Select(f => f.FullName),
                 StringComparer.OrdinalIgnoreCase);
+        }
 
-            int orphansDeleted = 0;
+        private static HashSet<T> GfsProtected<T>(
+            List<T> items, RetentionPolicy retention, Func<T, DateTime> time, Func<T, long> size)
+        {
+            var protectedItems = new HashSet<T>();
+            DateTime now = DateTime.Now;
 
-            foreach (var kvp in cloudFileMap)
+            // Günlük: Son N günün her biri için en iyi yedeği koru
+            if (retention.GfsKeepDaily > 0)
             {
-                ct.ThrowIfCancellationRequested();
-
-                string localPath = kvp.Key;
-
-                // Dosya bu run'da zaten işlendi — atla
-                if (alreadyHandled.Contains(localPath))
-                    continue;
-
-                // Dosya hâlâ diskte var — retention henüz silmemişse dokunma
-                if (File.Exists(localPath))
-                    continue;
-
-                // Local dosya yok ama cloud'da kaydı var → orphan, sil
-                Log.Information(
-                    "Cloud orphan temizliği: Local dosya yok, cloud'dan siliniyor: {FileName}",
-                    Path.GetFileName(localPath));
-
-                foreach (var (fileId, target) in kvp.Value)
-                {
-                    try
-                    {
-                        var results = await _cloudOrchestrator.DeleteFromAllAsync(
-                            fileId,
-                            new List<CloudTargetConfig> { target },
-                            ct).ConfigureAwait(false);
-
-                        if (results?.Count > 0 && results[0].IsSuccess)
-                        {
-                            orphansDeleted++;
-                            Log.Information(
-                                "Cloud orphan silindi: {Provider} — {FileId} ({FileName})",
-                                target.DisplayName, fileId, Path.GetFileName(localPath));
-                        }
-                        else
-                        {
-                            Log.Warning(
-                                "Cloud orphan silinemedi: {Provider} — {FileId} ({FileName})",
-                                target.DisplayName, fileId, Path.GetFileName(localPath));
-                        }
-                    }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex,
-                            "Cloud orphan silme hatası: {Provider} — {FileId} ({FileName})",
-                            target.DisplayName, fileId, Path.GetFileName(localPath));
-                    }
-                }
+                SelectBestPerPeriod(items, retention.GfsKeepDaily, time, size,
+                    t => t.Date,
+                    now.Date.AddDays(-retention.GfsKeepDaily + 1),
+                    protectedItems);
             }
 
-            if (orphansDeleted > 0)
-                Log.Information(
-                    "Cloud orphan temizliği tamamlandı: Plan={PlanName} — {Count} cloud kaydı silindi",
-                    plan.PlanName, orphansDeleted);
+            // Haftalık: Son N haftanın her biri için en iyi yedeği koru (ISO hafta başı: Pazartesi)
+            if (retention.GfsKeepWeekly > 0)
+            {
+                SelectBestPerPeriod(items, retention.GfsKeepWeekly, time, size,
+                    GetWeekStart,
+                    GetWeekStart(now).AddDays(-7 * (retention.GfsKeepWeekly - 1)),
+                    protectedItems);
+            }
+
+            // Aylık: Son N ayın her biri için en iyi yedeği koru
+            if (retention.GfsKeepMonthly > 0)
+            {
+                SelectBestPerPeriod(items, retention.GfsKeepMonthly, time, size,
+                    t => new DateTime(t.Year, t.Month, 1),
+                    new DateTime(now.Year, now.Month, 1).AddMonths(-retention.GfsKeepMonthly + 1),
+                    protectedItems);
+            }
+
+            // Yıllık: Son N yılın her biri için en iyi yedeği koru
+            if (retention.GfsKeepYearly > 0)
+            {
+                SelectBestPerPeriod(items, retention.GfsKeepYearly, time, size,
+                    t => new DateTime(t.Year, 1, 1),
+                    new DateTime(now.Year - retention.GfsKeepYearly + 1, 1, 1),
+                    protectedItems);
+            }
+
+            return protectedItems;
         }
 
         /// <summary>
-        /// Geçmişten bu planın ÜRETTİĞİ yerel dosyaların tam yol setini oluşturur.
-        /// (.bak, .7z ve VSS arşivi — durum fark etmeksizin; başarısız kayıtların dosyası da bu plana aittir.)
-        /// Retention yalnızca bu setteki dosyaları silebilir.
+        /// Belirtilen periyot fonksiyonuna göre her dilimden en büyük dosyayı seçer.
         /// </summary>
-        private static HashSet<string> BuildOwnedFileSet(List<BackupResult> history)
+        private static void SelectBestPerPeriod<T>(
+            List<T> items,
+            int keepCount,
+            Func<T, DateTime> time,
+            Func<T, long> size,
+            Func<DateTime, DateTime> periodKeySelector,
+            DateTime cutoff,
+            HashSet<T> protectedItems)
         {
-            var owned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var bestPerPeriod = items
+                .Where(i => time(i) >= cutoff)
+                .GroupBy(i => periodKeySelector(time(i)))
+                .OrderByDescending(g => g.Key)
+                .Take(keepCount)
+                .Select(g => g.OrderByDescending(size).ThenByDescending(time).First());
 
+            foreach (var item in bestPerPeriod)
+                protectedItems.Add(item);
+        }
+
+        /// <summary>
+        /// ISO 8601 hafta başlangıcını (Pazartesi) döndürür.
+        /// </summary>
+        private static DateTime GetWeekStart(DateTime date)
+        {
+            int diff = ((int)date.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+
+            return date.Date.AddDays(-diff);
+        }
+
+        // ── Sahiplik ve koruma setleri ───────────────────────────────────
+
+        /// <summary>
+        /// Bu cihazdaki başka planların geçmişinde geçen yerel yollar, dosya adları ve uzak
+        /// tanımlayıcılar. Bu dosyalar ad desenine uysa da bu plana ait sayılmaz.
+        /// </summary>
+        private static (HashSet<string> Paths, HashSet<string> Names, HashSet<string> RemoteIds) BuildForeignSets(
+            List<BackupResult> foreignHistory)
+        {
+            var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var remoteIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var result in foreignHistory)
+            {
+                foreach (string path in new[] { result.BackupFilePath, result.CompressedFilePath, result.VssFileCopyPath })
+                {
+                    if (string.IsNullOrWhiteSpace(path)) continue;
+                    paths.Add(NormalizePath(path));
+                    names.Add(Path.GetFileName(path));
+                }
+
+                var uploads = (result.CloudUploadResults ?? new List<CloudUploadResult>())
+                    .Concat(result.VssCloudUploadResults ?? new List<CloudUploadResult>());
+                foreach (var upload in uploads)
+                {
+                    if (upload != null && !string.IsNullOrEmpty(upload.RemoteFilePath))
+                        remoteIds.Add(upload.RemoteFilePath);
+                }
+            }
+
+            return (paths, names, remoteIds);
+        }
+
+        /// <summary>
+        /// Başarısız SQL yedeklerinin (yedek ya da doğrulama hatası) yerel dosyaları (normalize).
+        /// Geçerli yedek sayılmazlar. Dosya yedeği kaydı bir kaynak bile kilitliyse "Failed" olur
+        /// ama arşivi geçerlidir; bu yüzden dosya yedeği kayıtları dahil edilmez.
+        /// </summary>
+        private static HashSet<string> BuildInvalidFileSet(List<BackupResult> history)
+        {
+            var invalid = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var result in history)
             {
-                AddNormalized(owned, result.BackupFilePath);
-                AddNormalized(owned, result.CompressedFilePath);
-                AddNormalized(owned, result.VssFileCopyPath);
+                if (result.Status == BackupResultStatus.Success || result.DatabaseName == FileBackupDatabaseName)
+                    continue;
+
+                AddNormalized(invalid, result.BackupFilePath);
+                AddNormalized(invalid, result.CompressedFilePath);
             }
-
-            return owned;
-        }
-
-        private static void AddNormalized(HashSet<string> set, string path)
-        {
-            if (string.IsNullOrWhiteSpace(path)) return;
-            set.Add(NormalizePath(path));
-        }
-
-        private static string NormalizePath(string path)
-        {
-            try { return Path.GetFullPath(path); }
-            catch { return path; }
+            return invalid;
         }
 
         /// <summary>
-        /// History'den local dosya yolu → cloud (fileId, target) listesi haritası oluşturur.
-        /// Bir local dosyanın birden fazla cloud hedefine yüklenmiş olabileceği gözetilir.
-        /// </summary>
-        private Dictionary<string, List<(string FileId, CloudTargetConfig Target)>> BuildCloudFileMap(
-            BackupPlan plan, List<BackupResult> history)
-        {
-            var map = new Dictionary<string, List<(string, CloudTargetConfig)>>(
-                StringComparer.OrdinalIgnoreCase);
-
-            try
-            {
-                foreach (var result in history)
-                {
-                    if (result.CloudUploadResults == null) continue;
-
-                    // Bu backup'ın local dosya yolu (.7z varsa onu, yoksa .bak)
-                    string localPath = result.CompressedFilePath ?? result.BackupFilePath;
-                    if (string.IsNullOrEmpty(localPath)) continue;
-
-                    foreach (var upload in result.CloudUploadResults)
-                    {
-                        if (!upload.IsSuccess || string.IsNullOrEmpty(upload.RemoteFilePath))
-                            continue;
-
-                        // Hangi CloudTargetConfig bu upload'a karşılık geliyor?
-                        var matchedTarget = plan.CloudTargets?.FirstOrDefault(t =>
-                            t.IsEnabled && t.Type == upload.ProviderType &&
-                            t.DisplayName == upload.DisplayName);
-
-                        if (matchedTarget == null) continue;
-
-                        if (!map.TryGetValue(localPath, out var list))
-                        {
-                            list = new List<(string, CloudTargetConfig)>();
-                            map[localPath] = list;
-                        }
-
-                        list.Add((upload.RemoteFilePath, matchedTarget));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Cloud dosya haritası oluşturulamadı — cloud retention atlanacak");
-            }
-
-            return map;
-        }
-
-        /// <summary>
-        /// Buluta gönderilmemiş dosyaların tam yol setini oluşturur.
-        /// Bu dosyalar retention tarafından silinmeyecektir.
+        /// Buluta tam gönderilmemiş yedeklerin yerel yollarını (normalize) toplar; bu dosyalar
+        /// yerelden silinmez. Başarısız SQL yedeğinin .bak'ı korunmaz (geçerli yedek değildir,
+        /// korunması diski sonsuza dek doldururdu). Arşivler (.7z, Files_*) durumdan bağımsız korunur:
+        /// kısmi başarılı dosya yedeği "Failed" kaydedilir ama arşivi tek kopyadır.
         /// </summary>
         private HashSet<string> BuildCloudProtectedFileSet(BackupPlan plan, List<BackupResult> history)
         {
@@ -369,12 +669,16 @@ namespace KoruMsSqlYedek.Engine.Retention
 
                     if (!allUploadsSuccessful)
                     {
-                        // Bu dosya buluta tam gönderilmemiş — koru
-                        if (!string.IsNullOrEmpty(result.BackupFilePath))
-                            protectedFiles.Add(result.BackupFilePath);
+                        if (result.Status == BackupResultStatus.Success)
+                            AddNormalized(protectedFiles, result.BackupFilePath);
+                        AddNormalized(protectedFiles, result.CompressedFilePath);
+                    }
 
-                        if (!string.IsNullOrEmpty(result.CompressedFilePath))
-                            protectedFiles.Add(result.CompressedFilePath);
+                    // VSS arşivi kendi yükleme sonucuna göre korunur (null: eski sürüm kaydı, bilinmez)
+                    if (result.VssCloudUploadResults != null &&
+                        (result.VssCloudUploadResults.Count == 0 || !result.VssCloudUploadResults.All(r => r.IsSuccess)))
+                    {
+                        AddNormalized(protectedFiles, result.VssFileCopyPath);
                     }
                 }
 
@@ -388,575 +692,32 @@ namespace KoruMsSqlYedek.Engine.Retention
             catch (Exception ex)
             {
                 Log.Error(ex, "Bulut koruma kontrolü yapılamadı — güvenlik gereği hiçbir dosya silinmeyecek");
-                // Güvenlik: geçmiş işlenemezse tüm dosyalar korunur
-                protectedFiles.Add("*PROTECT_ALL*");
+                protectedFiles.Add(ProtectAllMarker);
             }
 
             return protectedFiles;
         }
 
-        private void CollectFilesToDelete(
-            string localPath,
-            string databaseName,
-            BackupFileType fileType,
-            RetentionPolicy retention,
-            HashSet<string> cloudProtectedFiles,
-            HashSet<string> ownedFiles,
-            List<FileInfo> result,
-            List<string> skippedUnknown)
+        private static void LogSkippedForeign(string where, List<string> skipped)
         {
-            if (retention == null || !Directory.Exists(localPath))
-                return;
-
-            string typeToken = fileType switch
-            {
-                BackupFileType.SqlDifferential => "Differential_",
-                BackupFileType.SqlLog => "Log_",
-                BackupFileType.SqlVss => "VSS_",
-                _ => "Full_"
-            };
-
-            // Dosya adı PathHelper.GenerateBackupFileName ile aynı temizlemeden geçer;
-            // aksi halde üretilen dosya ile arama deseni eşleşmez.
-            string pattern = $"{PathHelper.SanitizeFileNameComponent(databaseName)}_{typeToken}*";
-
-            var allFiles = Directory.GetFiles(localPath, pattern)
-                .Where(f => f.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
-                            f.EndsWith(".7z", StringComparison.OrdinalIgnoreCase))
-                .Select(f => new FileInfo(f))
-                .OrderByDescending(f => f.CreationTime)
-                .ToList();
-
-            Log.Debug(
-                "Retention tarama: {Database}/{FileType} — {Count} dosya bulundu (Pattern: {Pattern})",
-                databaseName, fileType, allFiles.Count, pattern);
-
-            if (allFiles.Count == 0)
-                return;
-
-            CollectCandidates(allFiles, retention, cloudProtectedFiles, ownedFiles, result, skippedUnknown);
-        }
-
-        /// <summary>
-        /// GFS (Grandfather-Father-Son) politikasına göre korunacak dosyaları belirler.
-        /// Her periyot (gün/hafta/ay/yıl) için en yeni (en büyük) yedek seçilir.
-        /// </summary>
-        /// <remarks>Public for unit testing.</remarks>
-        public static HashSet<string> BuildGfsProtectedSet(List<FileInfo> files, RetentionPolicy retention)
-        {
-            var protectedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            DateTime now = DateTime.Now;
-
-            // Günlük: Son N günün her biri için en iyi yedeği koru
-            if (retention.GfsKeepDaily > 0)
-            {
-                SelectBestPerPeriod(files, retention.GfsKeepDaily,
-                    f => f.CreationTime.Date,
-                    now.Date.AddDays(-retention.GfsKeepDaily + 1),
-                    protectedFiles);
-            }
-
-            // Haftalık: Son N haftanın her biri için en iyi yedeği koru (ISO hafta başı: Pazartesi)
-            if (retention.GfsKeepWeekly > 0)
-            {
-                SelectBestPerPeriod(files, retention.GfsKeepWeekly,
-                    f => GetWeekStart(f.CreationTime),
-                    GetWeekStart(now).AddDays(-7 * (retention.GfsKeepWeekly - 1)),
-                    protectedFiles);
-            }
-
-            // Aylık: Son N ayın her biri için en iyi yedeği koru
-            if (retention.GfsKeepMonthly > 0)
-            {
-                SelectBestPerPeriod(files, retention.GfsKeepMonthly,
-                    f => new DateTime(f.CreationTime.Year, f.CreationTime.Month, 1),
-                    new DateTime(now.Year, now.Month, 1).AddMonths(-retention.GfsKeepMonthly + 1),
-                    protectedFiles);
-            }
-
-            // Yıllık: Son N yılın her biri için en iyi yedeği koru
-            if (retention.GfsKeepYearly > 0)
-            {
-                SelectBestPerPeriod(files, retention.GfsKeepYearly,
-                    f => new DateTime(f.CreationTime.Year, 1, 1),
-                    new DateTime(now.Year - retention.GfsKeepYearly + 1, 1, 1),
-                    protectedFiles);
-            }
-
-            return protectedFiles;
-        }
-
-        /// <summary>
-        /// Belirtilen periyot fonksiyonuna göre her dilimden en büyük dosyayı seçer.
-        /// </summary>
-        private static void SelectBestPerPeriod(
-            List<FileInfo> files,
-            int keepCount,
-            Func<FileInfo, DateTime> periodKeySelector,
-            DateTime cutoff,
-            HashSet<string> protectedFiles)
-        {
-            var eligible = files.Where(f => f.CreationTime >= cutoff);
-
-            var bestPerPeriod = eligible
-                .GroupBy(periodKeySelector)
-                .OrderByDescending(g => g.Key)
-                .Take(keepCount)
-                .Select(g => g.OrderByDescending(f => f.Length).ThenByDescending(f => f.CreationTime).First());
-
-            foreach (var file in bestPerPeriod)
-            {
-                protectedFiles.Add(file.FullName);
-            }
-        }
-
-        /// <summary>
-        /// ISO 8601 hafta başlangıcını (Pazartesi) döndürür.
-        /// </summary>
-        private static DateTime GetWeekStart(DateTime date)
-        {
-            int diff = ((int)date.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
-
-            return date.Date.AddDays(-diff);
-        }
-
-        private void CollectFileBackupArchivesToDelete(
-            string localPath,
-            RetentionPolicy retention,
-            HashSet<string> cloudProtectedFiles,
-            HashSet<string> ownedFiles,
-            List<FileInfo> result,
-            List<string> skippedUnknown)
-        {
-            if (retention == null || !Directory.Exists(localPath))
-                return;
-
-            var allFiles = Directory.GetFiles(localPath, "Files_*.7z")
-                .Select(f => new FileInfo(f))
-                .OrderByDescending(f => f.CreationTime)
-                .ToList();
-
-            if (allFiles.Count == 0)
-                return;
-
-            CollectCandidates(allFiles, retention, cloudProtectedFiles, ownedFiles, result, skippedUnknown);
-        }
-
-        /// <summary>
-        /// Retention politikasına göre silinmesi gereken dosyaları result listesine ekler.
-        /// Önce sahiplik filtresi (yalnızca bu planın geçmişindeki dosyalar), sonra politika,
-        /// en son bulut koruma kontrolü uygulanır.
-        /// </summary>
-        private void CollectCandidates(
-            List<FileInfo> allFiles,
-            RetentionPolicy retention,
-            HashSet<string> cloudProtectedFiles,
-            HashSet<string> ownedFiles,
-            List<FileInfo> result,
-            List<string> skippedUnknown)
-        {
-            // ── Sahiplik filtresi ──
-            // Bu plana ait olmayan dosyalar ne silinir ne de KeepLastN sayımına dahil edilir
-            // (yabancı bir dosya, planın kendi yedeğinin yerini "işgal" etmemelidir).
-            var owned = new List<FileInfo>(allFiles.Count);
-            foreach (var file in allFiles)
-            {
-                if (ownedFiles != null && ownedFiles.Contains(NormalizePath(file.FullName)))
-                    owned.Add(file);
-                else
-                    skippedUnknown.Add(file.Name);
-            }
-
-            if (owned.Count == 0)
-                return;
-
-            var candidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            if (retention.Type == RetentionPolicyType.GFS)
-            {
-                var protectedByGfs = BuildGfsProtectedSet(owned, retention);
-                foreach (var file in owned)
-                {
-                    if (!protectedByGfs.Contains(file.FullName))
-                        candidates.Add(file.FullName);
-                }
-            }
-            else
-            {
-                if (retention.Type == RetentionPolicyType.KeepLastN ||
-                    retention.Type == RetentionPolicyType.Both)
-                {
-                    // En az 1 yedek her zaman korunur (KeepLastN=0 "hepsini sil" anlamına gelmez)
-                    int keep = retention.KeepLastN;
-                    if (keep < 1)
-                    {
-                        Log.Warning("Retention: KeepLastN={Keep} geçersiz, 1 olarak uygulanıyor", keep);
-                        keep = 1;
-                    }
-
-                    foreach (var file in owned.Skip(keep))
-                        candidates.Add(file.FullName);
-                }
-
-                if (retention.Type == RetentionPolicyType.DeleteOlderThanDays ||
-                    retention.Type == RetentionPolicyType.Both)
-                {
-                    if (retention.DeleteOlderThanDays <= 0)
-                    {
-                        // "Şu an"dan eski = tüm dosyalar demek olurdu; yaş bazlı silme atlanır
-                        Log.Warning(
-                            "Retention: DeleteOlderThanDays={Days} geçersiz, yaş bazlı silme atlandı",
-                            retention.DeleteOlderThanDays);
-                    }
-                    else
-                    {
-                        DateTime cutoff = DateTime.Now.AddDays(-retention.DeleteOlderThanDays);
-                        foreach (var file in owned.Where(f => f.CreationTime < cutoff))
-                            candidates.Add(file.FullName);
-                    }
-                }
-            }
-
-            foreach (var fullPath in candidates)
-            {
-                // Bulut koruma kontrolü
-                if (cloudProtectedFiles != null)
-                {
-                    if (cloudProtectedFiles.Contains("*PROTECT_ALL*"))
-                    {
-                        Log.Warning("Retention atlandı (geçmiş okunamadı, güvenlik modu): {FileName}",
-                            Path.GetFileName(fullPath));
-                        continue;
-                    }
-
-                    if (cloudProtectedFiles.Contains(fullPath))
-                    {
-                        Log.Warning("Retention atlandı (buluta gönderilememiş): {FileName}",
-                            Path.GetFileName(fullPath));
-                        continue;
-                    }
-                }
-
-                var fi = owned.First(f => f.FullName.Equals(fullPath, StringComparison.OrdinalIgnoreCase));
-                result.Add(fi);
-            }
-        }
-
-        private void TryDeleteFile(FileInfo file, ref int deletedCount)
-        {
-            try
-            {
-                if (file.Exists)
-                {
-                    file.Delete();
-                    deletedCount++;
-                    Log.Information("Eski yedek silindi: {FileName}", file.Name);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Dosya silinemedi: {FileName}", file.Name);
-            }
-        }
-
-        // ── Cloud Folder Sweep ────────────────────────────────────────────
-        // Bulut klasöründe duran ve BU PLANIN geçmişinde başarılı yükleme kaydı olan yedek
-        // dosyalarını retention politikasına göre temizler.
-        //
-        // GÜVENLİK:
-        // - YALNIZCA geçmişte (history) bu plana ait bir yükleme kaydı olan uzak dosyalar silinir.
-        //   Eski davranış ("geçmişte kaydı yok → isim desenine uyuyorsa sil") KALDIRILDI:
-        //   aynı bulut klasörünü ve aynı {db}_ prefix'ini paylaşan başka bir planın, başka bir
-        //   cihazın veya elle yüklenmiş dosyaların, bu planın retention'ı tarafından yok edilmesine
-        //   yol açıyordu. Sahipliği kanıtlanamayan bir dosyayı silmek veri kaybıdır; bu tür
-        //   dosyalar kullanıcının elle temizlemesine bırakılır.
-        // - Yalnızca plan'ın bilinen dosya isim desenine uyan dosyalara bakılır
-        //   ({db}_Full_*, {db}_Differential_*, {db}_Log_*, {db}_VSS_*, Files_*).
-        // - Yalnızca .bak veya .7z uzantılı dosyalar.
-        // - Yalnızca config.RemoteFolderPath altındaki dosyalar (provider tarafından zorlanır).
-        // - GFS modunda sadece yaş bazlı basit kural uygulanır; GFS karmaşık periyot seçimi
-        //   uzak dosyalar için güvenli değil.
-
-        private async Task SweepCloudFoldersAsync(BackupPlan plan, List<BackupResult> history, CancellationToken ct)
-        {
-            if (plan.CloudTargets is null || plan.CloudTargets.Count == 0)
-            {
-                Log.Information("Cloud folder sweep: Plan={PlanName} — bulut hedefi yok, atlanıyor.", plan.PlanName);
-                return;
-            }
-
-            Log.Information("Cloud folder sweep başlıyor: Plan={PlanName} — {Count} hedef",
-                plan.PlanName, plan.CloudTargets.Count);
-
-            foreach (var target in plan.CloudTargets)
-            {
-                if (target is null || !target.IsEnabled)
-                    continue;
-
-                ct.ThrowIfCancellationRequested();
-
-                List<CloudFileEntry> remoteFiles;
-                try
-                {
-                    remoteFiles = await _cloudOrchestrator.ListFolderAsync(target, ct).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) { throw; }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Cloud folder sweep: Listeleme başarısız ({Provider})", target.DisplayName);
-                    continue;
-                }
-
-                if (remoteFiles is null)
-                {
-                    // Provider listeleme desteklemiyor (FTP/SFTP/Local) — atla
-                    Log.Information("Cloud folder sweep: {Provider} listeleme desteklemiyor (atlandı).",
-                        target.DisplayName);
-                    continue;
-                }
-
-                Log.Information(
-                    "Cloud folder sweep: {Provider} klasöründe {Count} dosya bulundu (RemoteFolderPath={Path})",
-                    target.DisplayName, remoteFiles.Count, string.IsNullOrEmpty(target.RemoteFolderPath) ? "(boş)" : target.RemoteFolderPath);
-
-                if (remoteFiles.Count == 0)
-                    continue;
-
-                // Bu hedefe bu planın başarıyla yüklediği dosyalar (fileId + dosya adı)
-                var known = BuildKnownRemoteSet(history, target);
-
-                var unknownRemote = remoteFiles
-                    .Where(e => !IsKnownRemote(e, known))
-                    .Select(e => e.Name)
-                    .ToList();
-
-                if (unknownRemote.Count > 0)
-                {
-                    Log.Information(
-                        "Cloud folder sweep: {Provider} — {Count} uzak dosya bu plana ait olmayan dosya olarak atlandı (geçmişte kaydı yok): {Files}",
-                        target.DisplayName, unknownRemote.Count,
-                        string.Join(", ", unknownRemote.Take(20)) + (unknownRemote.Count > 20 ? ", …" : string.Empty));
-                }
-
-                var ownedRemote = remoteFiles.Where(e => IsKnownRemote(e, known)).ToList();
-                if (ownedRemote.Count == 0)
-                    continue;
-
-                int deleted = await SweepFilesForTargetAsync(plan, target, ownedRemote, ct)
-                    .ConfigureAwait(false);
-
-                Log.Information(
-                    "Cloud folder sweep tamamlandı: {Provider} — {Count} eski dosya silindi (Plan={PlanName})",
-                    target.DisplayName, deleted, plan.PlanName);
-            }
-        }
-
-        /// <summary>
-        /// Geçmişten, belirtilen hedefe bu planın başarıyla yüklediği dosyaların
-        /// (RemoteFilePath/fileId ve yerel dosya adı) setini oluşturur.
-        /// </summary>
-        private static (HashSet<string> Ids, HashSet<string> Names) BuildKnownRemoteSet(
-            List<BackupResult> history, CloudTargetConfig target)
-        {
-            var ids = new HashSet<string>(StringComparer.Ordinal);
-            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var result in history)
-            {
-                if (result.CloudUploadResults == null) continue;
-
-                foreach (var upload in result.CloudUploadResults)
-                {
-                    if (!upload.IsSuccess) continue;
-                    if (upload.ProviderType != target.Type || upload.DisplayName != target.DisplayName) continue;
-
-                    if (!string.IsNullOrEmpty(upload.RemoteFilePath))
-                    {
-                        ids.Add(upload.RemoteFilePath);
-                        names.Add(Path.GetFileName(upload.RemoteFilePath));
-                    }
-
-                    // Yükleme, yerel dosya adıyla yapılır; uzak listede bu adla görünür
-                    string localPath = result.CompressedFilePath ?? result.BackupFilePath;
-                    if (!string.IsNullOrEmpty(localPath))
-                        names.Add(Path.GetFileName(localPath));
-                    if (!string.IsNullOrEmpty(result.VssFileCopyPath))
-                        names.Add(Path.GetFileName(result.VssFileCopyPath));
-                }
-            }
-
-            return (ids, names);
-        }
-
-        private static bool IsKnownRemote(CloudFileEntry entry, (HashSet<string> Ids, HashSet<string> Names) known)
-        {
-            if (entry == null) return false;
-            if (!string.IsNullOrEmpty(entry.FileId) && known.Ids.Contains(entry.FileId)) return true;
-            if (!string.IsNullOrEmpty(entry.Name) && known.Names.Contains(entry.Name)) return true;
-            return false;
-        }
-
-        private async Task<int> SweepFilesForTargetAsync(
-            BackupPlan plan,
-            CloudTargetConfig target,
-            List<CloudFileEntry> remoteFiles,
-            CancellationToken ct)
-        {
-            int totalDeleted = 0;
-
-            // Her veritabanı + dosya türü için ayrı kümele
-            foreach (string dbName in plan.Databases ?? new List<string>())
-            {
-                string db = PathHelper.SanitizeFileNameComponent(dbName);
-
-                totalDeleted += await SweepGroupAsync(target, remoteFiles,
-                    MatchByPattern(remoteFiles, $"{db}_Full_"),
-                    plan.GetEffectiveRetention(BackupFileType.SqlFull), ct).ConfigureAwait(false);
-
-                totalDeleted += await SweepGroupAsync(target, remoteFiles,
-                    MatchByPattern(remoteFiles, $"{db}_Differential_"),
-                    plan.GetEffectiveRetention(BackupFileType.SqlDifferential), ct).ConfigureAwait(false);
-
-                totalDeleted += await SweepGroupAsync(target, remoteFiles,
-                    MatchByPattern(remoteFiles, $"{db}_Log_"),
-                    plan.GetEffectiveRetention(BackupFileType.SqlLog), ct).ConfigureAwait(false);
-
-                totalDeleted += await SweepGroupAsync(target, remoteFiles,
-                    MatchByPattern(remoteFiles, $"{db}_VSS_"),
-                    plan.GetEffectiveRetention(BackupFileType.SqlVss), ct).ConfigureAwait(false);
-            }
-
-            if (plan.FileBackup?.IsEnabled == true)
-            {
-                totalDeleted += await SweepGroupAsync(target, remoteFiles,
-                    MatchByPattern(remoteFiles, "Files_"),
-                    plan.GetEffectiveRetention(BackupFileType.FileBackup), ct).ConfigureAwait(false);
-            }
-
-            return totalDeleted;
-        }
-
-        private static List<CloudFileEntry> MatchByPattern(
-            List<CloudFileEntry> all, string namePrefix)
-        {
-            // Plan dosya isim deseni: "{db}_{Type}_yyyyMMdd_HHmmss.bak" veya ".7z"
-            return all.Where(e =>
-                    !string.IsNullOrEmpty(e.Name) &&
-                    e.Name.StartsWith(namePrefix, StringComparison.OrdinalIgnoreCase) &&
-                    (e.Name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
-                     e.Name.EndsWith(".7z", StringComparison.OrdinalIgnoreCase)))
-                .ToList();
-        }
-
-        private async Task<int> SweepGroupAsync(
-            CloudTargetConfig target,
-            List<CloudFileEntry> allRemoteFiles,
-            List<CloudFileEntry> group,
-            RetentionPolicy retention,
-            CancellationToken ct)
-        {
-            if (retention is null || group.Count == 0)
-                return 0;
+            if (skipped.Count == 0) return;
 
             Log.Information(
-                "Cloud folder sweep grubu: {Provider} — {Count} aday dosya, Policy={Policy} (KeepLastN={Keep}, OlderDays={Days})",
-                target.DisplayName, group.Count, retention.Type, retention.KeepLastN, retention.DeleteOlderThanDays);
-
-            // En yeni dosya başta
-            var ordered = group.OrderByDescending(e => e.CreatedAtUtc).ToList();
-
-            var toDelete = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // GFS uzak dosyalar için güvenli değil (boyut/hash bilgisi sınırlı, periyot seçimi yanılabilir)
-            // → GFS de yaş bazlı basit kural uygular.
-            switch (retention.Type)
-            {
-                case RetentionPolicyType.KeepLastN:
-                    foreach (var e in ordered.Skip(Math.Max(1, retention.KeepLastN)))
-                        toDelete.Add(e.FileId);
-                    break;
-
-                case RetentionPolicyType.DeleteOlderThanDays:
-                    AddOlderThan(ordered, retention.DeleteOlderThanDays, toDelete);
-                    break;
-
-                case RetentionPolicyType.Both:
-                    foreach (var e in ordered.Skip(Math.Max(1, retention.KeepLastN)))
-                        toDelete.Add(e.FileId);
-                    AddOlderThan(ordered, retention.DeleteOlderThanDays, toDelete);
-                    break;
-
-                case RetentionPolicyType.GFS:
-                    {
-                        // Yıl bazlı en uzak periyodu kullan; en azından son 1 günlük dosyayı koru
-                        int days = retention.GfsKeepDaily > 0 ? retention.GfsKeepDaily : 7;
-                        // Aylık varsa aylık günü baz al (12 ay ≈ 365 gün)
-                        if (retention.GfsKeepMonthly > 0)
-                            days = Math.Max(days, retention.GfsKeepMonthly * 31);
-                        if (retention.GfsKeepYearly > 0)
-                            days = Math.Max(days, retention.GfsKeepYearly * 366);
-
-                        DateTime cutoff = DateTime.UtcNow.AddDays(-days);
-                        foreach (var e in ordered.Where(x => x.CreatedAtUtc < cutoff))
-                            toDelete.Add(e.FileId);
-                        break;
-                    }
-            }
-
-            int deleted = 0;
-            foreach (string fileId in toDelete)
-            {
-                ct.ThrowIfCancellationRequested();
-
-                var entry = allRemoteFiles.FirstOrDefault(e => e.FileId == fileId);
-                string fileName = entry?.Name ?? fileId;
-
-                try
-                {
-                    bool ok = await _cloudOrchestrator.DeleteFromTargetAsync(fileId, target, ct)
-                        .ConfigureAwait(false);
-
-                    if (ok)
-                    {
-                        deleted++;
-                        Log.Information(
-                            "Cloud folder sweep: {Provider} — eski dosya silindi: {FileName} (oluşturma: {Created:yyyy-MM-dd})",
-                            target.DisplayName, fileName, entry?.CreatedAtUtc ?? DateTime.MinValue);
-                    }
-                    else
-                    {
-                        Log.Warning(
-                            "Cloud folder sweep: {Provider} — silme başarısız: {FileName}",
-                            target.DisplayName, fileName);
-                    }
-                }
-                catch (OperationCanceledException) { throw; }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex,
-                        "Cloud folder sweep hatası: {Provider} — {FileName}",
-                        target.DisplayName, fileName);
-                }
-            }
-
-            return deleted;
+                "Retention ({Where}): {Count} dosya başka bir planın geçmişinde kayıtlı olduğu için atlandı: {Files}",
+                where, skipped.Count,
+                string.Join(", ", skipped.Take(20)) + (skipped.Count > 20 ? ", …" : string.Empty));
         }
 
-        /// <summary>
-        /// Yaş bazlı uzak silme adaylarını ekler. DeleteOlderThanDays &lt;= 0 ise "şu an"dan eski
-        /// (= hepsi) anlamına geleceğinden atlanır.
-        /// </summary>
-        private static void AddOlderThan(List<CloudFileEntry> ordered, int days, HashSet<string> toDelete)
+        private static void AddNormalized(HashSet<string> set, string path)
         {
-            if (days <= 0)
-            {
-                Log.Warning("Cloud folder sweep: DeleteOlderThanDays={Days} geçersiz, yaş bazlı silme atlandı", days);
-                return;
-            }
+            if (string.IsNullOrWhiteSpace(path)) return;
+            set.Add(NormalizePath(path));
+        }
 
-            DateTime cutoff = DateTime.UtcNow.AddDays(-days);
-            foreach (var e in ordered.Where(x => x.CreatedAtUtc < cutoff))
-                toDelete.Add(e.FileId);
+        private static string NormalizePath(string path)
+        {
+            try { return Path.GetFullPath(path); }
+            catch { return path; }
         }
     }
 }

@@ -381,8 +381,8 @@ namespace KoruMsSqlYedek.Tests
 
                 plan.HasPlanPassword.Should().BeTrue("plan şifresi var");
 
-                var mockHistory = new Mock<IBackupHistoryManager>();
-                var service = new RetentionCleanupService(mockHistory.Object);
+                var service = new RetentionCleanupService(
+                    RetentionCleanupServiceTests.CreateOwningHistory(testDir).Object);
                 await service.CleanupAsync(plan, CancellationToken.None);
 
                 var remaining = Directory.GetFiles(testDir, "TestDB_Full_*.bak");

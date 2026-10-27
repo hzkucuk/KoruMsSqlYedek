@@ -122,5 +122,42 @@ namespace KoruMsSqlYedek.Engine.Backup
 
             return changed;
         }
+
+        public async Task<string> GetLastFullBackupFileAsync(
+            SqlConnInfo connectionInfo,
+            string databaseName,
+            CancellationToken cancellationToken)
+        {
+            if (connectionInfo == null || string.IsNullOrWhiteSpace(connectionInfo.Server)
+                || string.IsNullOrWhiteSpace(databaseName))
+                return null;
+
+            try
+            {
+                EnsureSystemLoginPermission(connectionInfo);
+                using var conn = new SqlConnection(BuildConnectionString(connectionInfo));
+                await conn.OpenAsync(cancellationToken);
+
+                using var cmd = new SqlCommand(
+                    "SELECT TOP 1 mf.physical_device_name " +
+                    "FROM msdb.dbo.backupset bs " +
+                    "JOIN msdb.dbo.backupmediafamily mf ON mf.media_set_id = bs.media_set_id " +
+                    "WHERE bs.database_name = @name AND bs.type = 'D' AND bs.is_copy_only = 0 " +
+                    "ORDER BY bs.backup_finish_date DESC",
+                    conn);
+                cmd.Parameters.AddWithValue("@name", databaseName);
+
+                return await cmd.ExecuteScalarAsync(cancellationToken) as string;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Son tam yedek bilgisi msdb'den okunamadı: {Database}", databaseName);
+                return null;
+            }
+        }
     }
 }

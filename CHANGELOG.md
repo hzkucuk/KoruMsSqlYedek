@@ -1,4 +1,67 @@
-﻿## [0.99.99] - 2026-10-12 — 🛡️ Veritabanları Artık RECOVERY_PENDING'e Düşmez
+﻿## [0.99.100] - 2026-10-27 — 🧹 Eski Yedekler Yeniden Siliniyor (Disk + Bulut)
+
+> Sahada eski yedeklerin ne diskten ne buluttan silindiği, ikisinin de sürekli büyüdüğü
+> görüldü. Tek bir sebep yoktu; saklama (retention) zincirinde birbirinden bağımsız
+> kopukluklar vardı. Bu sürümle birlikte ilk çalıştırmada **biriken eski yedekler de plan
+> kuralına göre** diskten ve buluttan temizlenir.
+
+### Değişti
+
+- **Sahiplik dosya adından belirlenir.** Planın yerel dizinindeki ve bulut klasöründeki,
+  planın veritabanı adlarıyla tam ad desenine uyan yedekler
+  (`{db}_{Full|Differential|Incremental|VSS}_yyyyMMdd_HHmmss.bak|.7z`, `Files_…7z`)
+  plana ait sayılır; geçmiş kaydı aranmaz. Veri taşımada ya da eski sürümlerde geçmişi
+  kaybolmuş yedekler de böylece temizlenir. Bu cihazdaki **başka (hâlâ var olan) bir
+  planın** geçmişinde geçen dosyalara dokunulmaz; silinmiş ya da yeniden kurulmuş bir
+  planın eski yedekleri ise temizlenir. Yedeğin zamanı dosya adındaki damgadan okunur
+  (kopyalanan dosyanın oluşturma tarihi yanıltmaz).
+  ⚠️ Yedek klasörünü (Drive/FTP klasörü ya da UNC paylaşımı) başka bir sunucuyla/kurulumla
+  paylaşıyorsanız ve iki tarafta aynı veritabanı adı varsa, iki tarafın yedekleri birlikte
+  sayılır ve biri diğerininkini silebilir. Her kurulum için ayrı klasör kullanın. Drive/FTP'de
+  Uzak klasör boşsa varsayılan `KoruMsSqlYedek/{Plan}` kullanılır; UNC hedefi her zaman
+  girilen paylaşım yoluna yazar.
+- Doğrulaması geçmeyen yedeğin diskte kalan dosyası artık "en yeni yedek" sayılıp doğrulanmış
+  bir önceki yedeğin silinmesine yol açmaz; daha yeni geçerli yedek alınınca kendisi silinir.
+- **Bulut temizliği yalnızca hedefin kendi klasör listesinden yapılır.** Google Drive'a ek
+  olarak FTP/FTPS/SFTP ve Ağ Paylaşımı (UNC) hedefleri de listelenir. Yerel dosyanın
+  yokluğu artık bir bulut kopyasını sildirmez: eskiden yerel dosyası görünmeyen her bulut
+  kaydı kurala bakılmadan siliniyordu; yedek diski değişse ya da klasör taşınsa buluttaki
+  bütün kopyalar giderdi.
+
+### Düzeltildi
+
+- **Bulut kopyaları silinmiyordu.** Google Drive ve UNC yüklemeleri geçmişe hedefin adı
+  yerine sağlayıcının sabit adını ("Google Drive") yazıyordu; saklama kaydı hedefle
+  eşleştiremiyor ve her şeyi "bu plana ait değil" diye atlıyordu. Yükleme sonucu artık
+  hedefin adını taşır; bulut temizliği de artık bu eşleşmeye bağlı değildir.
+- **Log (artırımlı) yedekler hiç silinmiyordu.** Dosyalar `{db}_Incremental_…` adıyla
+  yazılıyor, saklama `{db}_Log_…` arıyordu.
+- **Log ve fark yedekleri zincire bağlı korunur.** En yeni tam yedekten sonraki log/fark
+  yedekleri hiçbir kuralda silinmez; tam yedeği olmayan veritabanında hiçbiri silinmez
+  (GFS'in "günde tek yedek" seçimi loglara uygulanınca zincir kopardı).
+- **Her grubun en yeni yedeği her zaman kalır.** Yedekleme bir süre durmuşsa "N günden
+  eski" kuralı grubun tamamını silmez.
+- Adındaki tarih bir günden fazla ileride olan yedek (sunucu saati bir ara yanlış
+  ayarlanmış) sayıma girmez ve silinmez; sonsuza dek "en yeni" sayılıp gerçek yedekleri
+  sildirmez.
+- **Her fark/artırımlı yedek tam yedeğe yükseltiliyordu.** Zincir kontrolü tam yedeği
+  yalnızca `.bak` olarak arıyordu; sıkıştırma açıkken `.bak` silinip `.7z` kaldığı için
+  her çalıştırma tam boy yedek alıyordu. `.7z` de sayılır.
+- **Fark yedeği tabanı SQL Server'a sorulur.** Diff almadan önce msdb'deki son tam yedeğin
+  dosyası plan klasöründe yoksa (iptal edilmiş tam yedek, başka bir araç ya da plan tam
+  yedek aldı) Full'e yükseltilir; geri yüklenemeyen diff üretilmez. Log yedeklerine
+  uygulanmaz: tam yedek (disk imajı, Veeam) log zincirini kırmaz.
+- **Ad deseni katı.** "Muhasebe" veritabanının kuralı artık "Muhasebe_Log" veritabanının
+  yedeklerini yakalamaz.
+- **VSS arşivlerinin bulut yükleme sonucu kayda geçer**; yüklenemeyen (istisna/iptal dahil)
+  VSS arşivi yerelde korunur.
+- Başarısız yedeklerin dosyaları "buluta gönderilemedi" koruması yüzünden diskte sonsuza
+  dek kalmaz; koruma yalnızca başarılı yedeklere uygulanır. Koruma yolları normalize edilir.
+- **Uzak klasör boş bırakılan hedeflerde bulut taraması ve çöp boşaltma çalışmıyordu.**
+  Yükleme `KoruMsSqlYedek/{Plan}` klasörüne gidiyor, tarama ve çöp boşaltma boş yola
+  bakıyordu. İkisi de yüklemeyle aynı klasörü kullanır.
+
+## [0.99.99] - 2026-10-12 — 🛡️ Veritabanları Artık RECOVERY_PENDING'e Düşmez
 
 > Bir müşteride Mikro veritabanları (MikroDesktop_PRIMA2018/2022) gece 22:05–22:30
 > arasında dört kez RECOVERY_PENDING'e düştü ve biri elle OFFLINE/ONLINE yapana kadar
